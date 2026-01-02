@@ -7,7 +7,6 @@
 
 BookArchivist_Core.lua
 BookArchivist_Location.lua
-BookArchivist_Examples.lua
 BookArchivist_Capture.lua
 BookArchivist.lua
 BookArchivist_UI.lua

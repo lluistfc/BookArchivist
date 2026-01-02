@@ -5,7 +5,6 @@ local ADDON_NAME = ...
 
 local Core = BookArchivist.Core
 local Capture = BookArchivist.Capture
-local Examples = BookArchivist.Examples
 local Location = BookArchivist.Location
 
 local globalCreateFrame = type(_G) == "table" and rawget(_G, "CreateFrame") or nil
@@ -115,10 +114,6 @@ local function handleAddonLoaded(name)
 
   if Core and Core.EnsureDB then
     Core:EnsureDB()
-  end
-
-  if Examples and Examples.Seed then
-    Examples:Seed()
   end
 
   ensureOptionsPanel()
