@@ -420,6 +420,34 @@ local function setupUI()
   searchLabel:SetPoint("LEFT", UI.searchBox, "RIGHT", 10, 0)
   searchLabel:SetText("|cFFFFD100Title, Creator, or Text|r")
 
+  local optionsButton = safeCreateFrame("Button", "BookArchivistCogButton", UI)
+  if optionsButton then
+    optionsButton:SetSize(28, 28)
+    optionsButton:SetPoint("TOPRIGHT", UI, "TOPRIGHT", -52, -30)
+    optionsButton:SetNormalTexture("Interface\\Buttons\\UI-OptionsButton")
+    optionsButton:SetPushedTexture("Interface\\Buttons\\UI-OptionsButton")
+    optionsButton:SetHighlightTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight", "ADD")
+    optionsButton:SetScript("OnEnter", function(self)
+      if GameTooltip then
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip:SetText("Book Archivist Options", 1, 0.82, 0)
+        GameTooltip:AddLine("Open the settings panel", 0.9, 0.9, 0.9)
+        GameTooltip:Show()
+      end
+    end)
+    optionsButton:SetScript("OnLeave", function()
+      if GameTooltip then
+        GameTooltip:Hide()
+      end
+    end)
+    optionsButton:SetScript("OnClick", function()
+      if BookArchivist and type(BookArchivist.OpenOptionsPanel) == "function" then
+        BookArchivist:OpenOptionsPanel()
+      end
+    end)
+    UI.optionsButton = optionsButton
+  end
+
   -- Left list block (like mount list)
   local listBlock = safeCreateFrame("Frame", nil, UI, "InsetFrameTemplate")
   if not listBlock then
@@ -1027,6 +1055,8 @@ local function toggleUI()
     UI:Show()
   end
 end
+
+BookArchivist.ToggleUI = toggleUI
 
 SLASH_BOOKARCHIVIST1 = "/ba"
 SLASH_BOOKARCHIVIST2 = "/bookarchivist"

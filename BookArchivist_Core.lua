@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global
 -- BookArchivist_Core.lua
 -- Shared data helpers, persistence, and SavedVariables management.
 
@@ -70,6 +71,17 @@ local function ensureDB()
   if BookArchivistDB.options.debugEnabled == nil then
     BookArchivistDB.options.debugEnabled = false
   end
+  local minimapDefaults = {
+    angle = 200,
+  }
+  local minimap = BookArchivistDB.options.minimapButton
+  if type(minimap) ~= "table" then
+    minimap = {}
+    BookArchivistDB.options.minimapButton = minimap
+  end
+  if type(minimap.angle) ~= "number" then
+    minimap.angle = minimapDefaults.angle
+  end
   return BookArchivistDB
 end
 
@@ -122,6 +134,15 @@ function Core:GetOptions()
     db.options.debugEnabled = false
   end
   return db.options
+end
+
+function Core:GetMinimapButtonOptions()
+  local opts = self:GetOptions()
+  opts.minimapButton = opts.minimapButton or {}
+  if type(opts.minimapButton.angle) ~= "number" then
+    opts.minimapButton.angle = 200
+  end
+  return opts.minimapButton
 end
 
 function Core:IsDebugEnabled()

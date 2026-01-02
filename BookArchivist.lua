@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global
 -- BookArchivist.lua
 -- Bootstraps the addon by wiring core, capture, and example modules.
 
@@ -6,6 +7,7 @@ local ADDON_NAME = ...
 local Core = BookArchivist.Core
 local Capture = BookArchivist.Capture
 local Location = BookArchivist.Location
+local MinimapModule = BookArchivist.Minimap
 
 local globalCreateFrame = type(_G) == "table" and rawget(_G, "CreateFrame") or nil
 local function createFrameShim(...)
@@ -20,6 +22,7 @@ local function createFrameShim(...)
 end
 
 local optionsPanel
+local optionsCategory
 
 local function registerOptionsPanel(panel)
   if not panel then return end
@@ -43,6 +46,7 @@ local function registerOptionsPanel(panel)
     if category and type(registerAddOnCategory) == "function" then
       category.ID = category.ID or "BOOKARCHIVIST_OPTIONS"
       registerAddOnCategory(category)
+      optionsCategory = category
     end
   end
 
@@ -117,6 +121,9 @@ local function handleAddonLoaded(name)
   end
 
   ensureOptionsPanel()
+  if MinimapModule and MinimapModule.Initialize then
+    MinimapModule:Initialize()
+  end
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -173,4 +180,26 @@ function BookArchivist:SetDebugEnabled(state)
     self.EnableDebugLogging(state, true)
   end
   syncOptionsPanel()
+end
+
+function BookArchivist:OpenOptionsPanel()
+  ensureOptionsPanel()
+  local settingsAPI = type(_G) == "table" and rawget(_G, "Settings") or nil
+  if settingsAPI and type(settingsAPI.OpenToCategory) == "function" and optionsCategory then
+    settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
+    settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
+    return
+  end
+
+  local openLegacy = type(_G) == "table" and rawget(_G, "InterfaceOptionsFrame_OpenToCategory") or nil
+  if type(openLegacy) == "function" and optionsPanel then
+    openLegacy(optionsPanel)
+    openLegacy(optionsPanel)
+  end
+end
+
+function BookArchivist_ToggleFromCompartment()
+  if BookArchivist and type(BookArchivist.ToggleUI) == "function" then
+    BookArchivist:ToggleUI()
+  end
 end
