@@ -420,13 +420,51 @@ local function setupUI()
   searchLabel:SetPoint("LEFT", UI.searchBox, "RIGHT", 10, 0)
   searchLabel:SetText("|cFFFFD100Title, Creator, or Text|r")
 
-  local optionsButton = safeCreateFrame("Button", "BookArchivistCogButton", UI)
+  local optionsButton = safeCreateFrame("Button", "BookArchivistCogButton", UI, "UIPanelCloseButton")
   if optionsButton then
-    optionsButton:SetSize(28, 28)
-    optionsButton:SetPoint("TOPRIGHT", UI, "TOPRIGHT", -52, -30)
-    optionsButton:SetNormalTexture("Interface\\Buttons\\UI-OptionsButton")
-    optionsButton:SetPushedTexture("Interface\\Buttons\\UI-OptionsButton")
+    local closeButton = UI.CloseButton or UI.CloseButtonFrame or UI.CloseButton2
+    local btnWidth, btnHeight = 26, 26
+    if closeButton then
+      btnWidth = closeButton:GetWidth() or btnWidth
+      btnHeight = closeButton:GetHeight() or btnHeight
+    end
+    optionsButton:SetSize(btnWidth, btnHeight)
+    if closeButton then
+      optionsButton:SetPoint("TOPRIGHT", closeButton, "TOPLEFT", 0, 0)
+    else
+      optionsButton:SetPoint("TOPRIGHT", UI, "TOPRIGHT", -40, 0)
+    end
+
+    optionsButton:SetNormalTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Up")
+    optionsButton:SetPushedTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Down")
+    optionsButton:SetDisabledTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Disabled")
     optionsButton:SetHighlightTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight", "ADD")
+
+    local function tintTexture(tex, r, g, b)
+      if tex then
+        tex:SetTexCoord(0, 1, 0, 1)
+        tex:SetVertexColor(r, g, b, 1)
+      end
+    end
+
+    tintTexture(optionsButton:GetNormalTexture(), 0.75, 0.05, 0.05)
+    tintTexture(optionsButton:GetPushedTexture(), 0.6, 0.03, 0.03)
+    tintTexture(optionsButton:GetDisabledTexture(), 0.3, 0.03, 0.03)
+
+    local highlightTexture = optionsButton:GetHighlightTexture()
+    if highlightTexture then
+      highlightTexture:SetTexCoord(0, 1, 0, 1)
+      highlightTexture:SetVertexColor(1, 0.8, 0.2, 0.65)
+    end
+
+    local icon = optionsButton:CreateTexture(nil, "ARTWORK", nil, 1)
+    icon:SetTexture("Interface\\Buttons\\UI-OptionsButton")
+    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    icon:SetPoint("CENTER", 0, 0)
+    icon:SetSize(btnWidth - 12, btnHeight - 12)
+    icon:SetVertexColor(0.95, 0.75, 0.1, 1)
+    optionsButton.icon = icon
+
     optionsButton:SetScript("OnEnter", function(self)
       if GameTooltip then
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
@@ -474,7 +512,6 @@ local function setupUI()
   if not UI.scrollFrame then
     return false, "Unable to create list scroll frame."
   end
-  Widgets.scrollFrame = UI.scrollFrame
   UI.scrollFrame:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 4, -4)
   UI.scrollFrame:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -28, 28)
 
