@@ -23,6 +23,47 @@ end
 
 local optionsPanel
 local optionsCategory
+local settingsPanelHooked = false
+local interfaceOptionsHooked = false
+local gameMenuHooked = false
+local shouldHideGameMenuOnClose = false
+local function resetGameMenuFlagSoon()
+  if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" then
+    return
+  end
+  C_Timer.After(1.0, function()
+    shouldHideGameMenuOnClose = false
+  end)
+end
+
+local function ensureSettingsUILoaded()
+  if type(C_AddOns) ~= "table" then
+    return
+  end
+  local isLoaded = C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("Blizzard_Settings")
+  if not isLoaded and C_AddOns.LoadAddOn then
+    local ok = pcall(C_AddOns.LoadAddOn, "Blizzard_Settings")
+    if not ok then
+      return
+    end
+  end
+end
+
+local function hideGameMenuFrame()
+  if type(_G) ~= "table" then
+    return
+  end
+  local gameMenu = rawget(_G, "GameMenuFrame")
+  if not gameMenu then
+    return
+  end
+  local hideUIPanel = rawget(_G, "HideUIPanel")
+  if type(hideUIPanel) == "function" then
+    hideUIPanel(gameMenu)
+  elseif gameMenu.Hide then
+    gameMenu:Hide()
+  end
+end
 
 local function registerOptionsPanel(panel)
   if not panel then return end
@@ -55,6 +96,51 @@ local function registerOptionsPanel(panel)
   end
 end
 
+local function handleOptionsPanelClosed()
+  if not shouldHideGameMenuOnClose then
+    return
+  end
+  hideGameMenuFrame()
+  resetGameMenuFlagSoon()
+end
+
+local function ensureOptionsCloseHooks()
+  if type(_G) ~= "table" then
+    return
+  end
+
+  local settingsFrame = rawget(_G, "SettingsPanel")
+  if settingsFrame and settingsFrame.HookScript and not settingsPanelHooked then
+    settingsFrame:HookScript("OnHide", handleOptionsPanelClosed)
+    settingsPanelHooked = true
+  end
+
+  local interfaceFrame = rawget(_G, "InterfaceOptionsFrame")
+  if interfaceFrame and interfaceFrame.HookScript and not interfaceOptionsHooked then
+    interfaceFrame:HookScript("OnHide", handleOptionsPanelClosed)
+    interfaceOptionsHooked = true
+  end
+end
+
+local function ensureGameMenuHook()
+  if type(_G) ~= "table" or gameMenuHooked then
+    return
+  end
+  local gameMenu = rawget(_G, "GameMenuFrame")
+  if not gameMenu or not gameMenu.HookScript then
+    return
+  end
+  gameMenu:HookScript("OnShow", function()
+    if not shouldHideGameMenuOnClose then
+      return
+    end
+    shouldHideGameMenuOnClose = false
+    hideGameMenuFrame()
+    resetGameMenuFlagSoon()
+  end)
+  gameMenuHooked = true
+end
+
 local function syncOptionsPanel()
   if not optionsPanel or not optionsPanel.debugCheckbox then
     return
@@ -69,9 +155,12 @@ end
 local function ensureOptionsPanel()
   if optionsPanel or not globalCreateFrame then
     syncOptionsPanel()
+    ensureOptionsCloseHooks()
+    ensureGameMenuHook()
     return
   end
 
+  ensureSettingsUILoaded()
   local parent
   if type(_G) == "table" then
     parent = rawget(_G, "UIParent")
@@ -102,6 +191,8 @@ local function ensureOptionsPanel()
   syncOptionsPanel()
 
   registerOptionsPanel(optionsPanel)
+  ensureOptionsCloseHooks()
+  ensureGameMenuHook()
 end
 
 local eventFrame = createFrameShim("Frame")
@@ -183,18 +274,40 @@ function BookArchivist:SetDebugEnabled(state)
 end
 
 function BookArchivist:OpenOptionsPanel()
+  ensureSettingsUILoaded()
   ensureOptionsPanel()
+  ensureOptionsCloseHooks()
+  ensureGameMenuHook()
+  local gameMenu
+  local wasGameMenuVisible = false
+  if type(_G) == "table" then
+    gameMenu = rawget(_G, "GameMenuFrame")
+    wasGameMenuVisible = gameMenu and gameMenu:IsShown() and true or false
+  end
+  local openedPanel = false
   local settingsAPI = type(_G) == "table" and rawget(_G, "Settings") or nil
   if settingsAPI and type(settingsAPI.OpenToCategory) == "function" and optionsCategory then
     settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
     settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
-    return
+    openedPanel = true
   end
 
-  local openLegacy = type(_G) == "table" and rawget(_G, "InterfaceOptionsFrame_OpenToCategory") or nil
-  if type(openLegacy) == "function" and optionsPanel then
-    openLegacy(optionsPanel)
-    openLegacy(optionsPanel)
+  if not openedPanel then
+    local openLegacy = type(_G) == "table" and rawget(_G, "InterfaceOptionsFrame_OpenToCategory") or nil
+    if type(openLegacy) == "function" and optionsPanel then
+      openLegacy(optionsPanel)
+      openLegacy(optionsPanel)
+      openedPanel = true
+    end
+  end
+
+  if openedPanel then
+    shouldHideGameMenuOnClose = not wasGameMenuVisible
+    if shouldHideGameMenuOnClose then
+      -- Make sure the Game Menu stays hidden while interacting with Settings.
+      hideGameMenuFrame()
+    end
+    ensureOptionsCloseHooks()
   end
 end
 
