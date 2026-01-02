@@ -153,13 +153,29 @@ local function logError(message)
   end
 end
 
-local DEBUG_LOGGING = false
+local function pullDebugPreference()
+  if BookArchivist and type(BookArchivist.IsDebugEnabled) == "function" then
+    local ok, value = pcall(BookArchivist.IsDebugEnabled, BookArchivist)
+    if ok then
+      return value and true or false
+    end
+  end
+  return false
+end
+
+local DEBUG_LOGGING = pullDebugPreference()
 
 local function chatMessage(msg)
   if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
     DEFAULT_CHAT_FRAME:AddMessage(msg)
   elseif type(print) == "function" then
     print(msg)
+  end
+end
+
+local function debugMessage(msg)
+  if DEBUG_LOGGING then
+    chatMessage(msg)
   end
 end
 
@@ -177,7 +193,7 @@ local function flushPendingRefresh()
     return
   end
   debugPrint("[BookArchivist] flushPendingRefresh: running refreshAll")
-  chatMessage("|cFFFFFF00BookArchivist UI refreshing...|r")
+  debugMessage("|cFFFFFF00BookArchivist UI refreshing...|r")
   refreshAll()
 end
 
@@ -236,11 +252,17 @@ end
 
 debugPrint = debugPrintImpl
 
-function BookArchivist.EnableDebugLogging(state)
+function BookArchivist.EnableDebugLogging(state, skipPersist)
   DEBUG_LOGGING = state and true or false
+  if not skipPersist and type(BookArchivist.SetDebugEnabled) == "function" then
+    BookArchivist:SetDebugEnabled(DEBUG_LOGGING)
+    return
+  end
   if DEBUG_LOGGING then
     chatMessage("|cFF00FF00BookArchivist debug logging enabled.|r")
-    BookArchivist.RefreshUI()
+    if type(BookArchivist.RefreshUI) == "function" then
+      BookArchivist.RefreshUI()
+    end
   else
     chatMessage("|cFFFFA000BookArchivist debug logging disabled.|r")
   end
@@ -338,7 +360,7 @@ local ROW_H = 44
 
 local function setupUI()
   if UI then
-    chatMessage("|cFF00FF00BookArchivist UI (setupUI) already initialized.|r")
+    debugMessage("|cFF00FF00BookArchivist UI (setupUI) already initialized.|r")
     return true
   end
 
@@ -956,7 +978,7 @@ function updateList()
 end
 
 local function refreshAllImpl()
-    chatMessage("|cFFFFFF00BookArchivist UI (refreshAllImpl) refreshing...|r")
+  debugMessage("|cFFFFFF00BookArchivist UI (refreshAllImpl) refreshing...|r")
   if not UI or not isInitialized then
     debugPrint("[BookArchivist] refreshAll skipped (UI not initialized)")
     return

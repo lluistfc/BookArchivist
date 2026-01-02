@@ -61,10 +61,15 @@ local function ensureDB()
       createdAt = now(),
       books = {},
       order = {},
+      options = {},
     }
   end
   BookArchivistDB.books = BookArchivistDB.books or {}
   BookArchivistDB.order = BookArchivistDB.order or {}
+  BookArchivistDB.options = BookArchivistDB.options or {}
+  if BookArchivistDB.options.debugEnabled == nil then
+    BookArchivistDB.options.debugEnabled = false
+  end
   return BookArchivistDB
 end
 
@@ -108,6 +113,25 @@ function Core:Delete(key)
   if not db.books[key] then return end
   db.books[key] = nil
   removeFromOrder(db.order, key)
+end
+
+function Core:GetOptions()
+  local db = ensureDB()
+  db.options = db.options or {}
+  if db.options.debugEnabled == nil then
+    db.options.debugEnabled = false
+  end
+  return db.options
+end
+
+function Core:IsDebugEnabled()
+  local opts = self:GetOptions()
+  return opts.debugEnabled and true or false
+end
+
+function Core:SetDebugEnabled(state)
+  local opts = self:GetOptions()
+  opts.debugEnabled = state and true or false
 end
 
 function Core:PersistSession(session)
