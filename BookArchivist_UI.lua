@@ -49,6 +49,9 @@ end
 local UI -- forward declaration so helper functions can reference the frame
 local refreshAll -- forward declaration for lazy init callbacks
 local rebuildFiltered -- forward declaration for filter builder
+local renderSelected -- forward declaration for reader rendering
+local updateList -- forward declaration for list updates
+local safeCreateFrame -- forward declaration for widget helper
 local Widgets = {}
 
 local function getWidget(name)
@@ -61,6 +64,83 @@ local function getWidget(name)
     return Widgets[name]
   end
   return nil
+end
+
+local function rememberWidget(name, widget)
+  if widget then
+    Widgets[name] = widget
+    if UI then
+      UI[name] = widget
+    end
+  end
+  return widget
+end
+
+local function configureDeleteButton(button)
+  if not button then return end
+  button:SetSize(100, 22)
+  button:SetText("Delete")
+  button:SetNormalFontObject("GameFontNormal")
+  button:Disable()
+  button:SetScript("OnEnter", function(self)
+    if self:IsEnabled() then
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:SetText("Delete this book", 1, 1, 1)
+      GameTooltip:AddLine("This will permanently remove the book from your archive.", 1, 0.82, 0, true)
+      GameTooltip:Show()
+    end
+  end)
+
+  button:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+
+  button:SetScript("OnClick", function()
+    local addon = getAddon()
+    if not addon then return end
+    local key = getSelectedKey()
+    if key then
+      addon:Delete(key)
+      setSelectedKey(nil)
+      renderSelected()
+    end
+  end)
+end
+
+local function ensureDeleteButton()
+  local button = getWidget("deleteBtn")
+  if button and button:GetParent() then
+    button:Show()
+    return button
+  end
+  if not UI or not UI.readerBlock then
+    return nil
+  end
+  button = safeCreateFrame("Button", nil, UI.readerBlock, "UIPanelButtonTemplate", "OptionsButtonTemplate")
+  if not button then
+    return nil
+  end
+  rememberWidget("deleteBtn", button)
+  button:SetPoint("BOTTOMLEFT", UI.readerBlock, "BOTTOMLEFT", 12, 10)
+  configureDeleteButton(button)
+  button:SetFrameLevel(UI.readerBlock:GetFrameLevel() + 10)
+  return button
+end
+
+local function ensureInfoText()
+  local infoText = getWidget("infoText")
+  if infoText and infoText:GetObjectType() == "FontString" then
+    infoText:Show()
+    return infoText
+  end
+  if not UI or not UI.listBlock then
+    return nil
+  end
+  infoText = UI.listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  infoText:SetPoint("BOTTOM", UI.listBlock, "BOTTOM", 0, 6)
+  infoText:SetText("|cFF00FF00Tip:|r Open books normally - pages save automatically")
+  rememberWidget("infoText", infoText)
+  return infoText
 end
 local debugPrint = function() end
 
@@ -184,7 +264,7 @@ local function safeStep(label, fn)
   return ok
 end
 
-local function safeCreateFrame(frameType, name, parent, ...)
+safeCreateFrame = function(frameType, name, parent, ...)
   if not CreateFrame then
     logError(string.format("CreateFrame missing; unable to build '%s'", name or frameType))
     return nil
@@ -323,6 +403,7 @@ local function setupUI()
   if not listBlock then
     return false, "Unable to create book list panel."
   end
+  UI.listBlock = listBlock
   listBlock:SetPoint("TOPLEFT", UI, "TOPLEFT", 4, -65)
   listBlock:SetSize(365, 485)
 
@@ -360,6 +441,7 @@ local function setupUI()
   if not readerBlock then
     return false, "Unable to create reader panel."
   end
+  UI.readerBlock = readerBlock
   readerBlock:SetPoint("TOPLEFT", listBlock, "TOPRIGHT", 4, 0)
   readerBlock:SetPoint("BOTTOMRIGHT", UI, "BOTTOMRIGHT", -6, 4)
 
@@ -443,25 +525,10 @@ local function setupUI()
   if not UI.deleteBtn then
     return false, "Unable to create delete button."
   end
-  Widgets.deleteBtn = UI.deleteBtn
-  UI.deleteBtn:SetSize(100, 22)
+  rememberWidget("deleteBtn", UI.deleteBtn)
   UI.deleteBtn:SetPoint("BOTTOMLEFT", readerBlock, "BOTTOMLEFT", 12, 10)
-  UI.deleteBtn:SetText("Delete")
-  UI.deleteBtn:SetNormalFontObject("GameFontNormal")
-  UI.deleteBtn:Disable()
-
-  UI.deleteBtn:SetScript("OnEnter", function(self)
-    if self:IsEnabled() then
-      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-      GameTooltip:SetText("Delete this book", 1, 1, 1)
-      GameTooltip:AddLine("This will permanently remove the book from your archive.", 1, 0.82, 0, true)
-      GameTooltip:Show()
-    end
-  end)
-
-  UI.deleteBtn:SetScript("OnLeave", function()
-    GameTooltip:Hide()
-  end)
+  UI.deleteBtn:SetFrameLevel(readerBlock:GetFrameLevel() + 10)
+  configureDeleteButton(UI.deleteBtn)
 
   -- Book count display
   UI.countText = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -470,10 +537,11 @@ local function setupUI()
   UI.countText:SetText("|cFF888888Books saved as you read them in-game|r")
 
   -- Info text in list block (below the list)
-  UI.infoText = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-  Widgets.infoText = UI.infoText
-  UI.infoText:SetPoint("BOTTOM", listBlock, "BOTTOM", 0, 6)
-  UI.infoText:SetText("|cFF00FF00Tip:|r Open books normally - pages save automatically")
+  UI.infoText = rememberWidget("infoText", listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall"))
+  if UI.infoText then
+    UI.infoText:SetPoint("BOTTOM", listBlock, "BOTTOM", 0, 6)
+    UI.infoText:SetText("|cFF00FF00Tip:|r Open books normally - pages save automatically")
+  end
 
   -- Wire scroll and input handlers
   UI.scrollFrame:SetScript("OnMouseWheel", function(self, delta)
@@ -496,20 +564,7 @@ local function setupUI()
     debugPrint("[BookArchivist] search text changed; rebuild/update")
   end)
 
-  UI.deleteBtn:SetScript("OnClick", function()
-    local addon = getAddon()
-    if not addon then return end
-    local key = getSelectedKey()
-    if key then
-      debugPrint("[BookArchivist] setupUI: already built")
-      addon:Delete(key)
-      setSelectedKey(nil)
-      rebuildFiltered()
-      updateList()
-      renderSelected()
-    end
-  end)
-    debugPrint("[BookArchivist] setupUI: creating BookArchivistFrame")
+  debugPrint("[BookArchivist] setupUI: creating BookArchivistFrame")
 
   UI:SetScript("OnShow", function()
     local success, err = pcall(refreshAll)
@@ -557,9 +612,6 @@ local ButtonPool = {
   free = {},
   active = {},
 }
-
--- Forward declare functions that will be used in button callbacks
-local renderSelected, updateList
 
 local function entryToDisplay(entry)
   local title = entry.title or "(Untitled)"
@@ -697,13 +749,11 @@ local function rebuildFiltered()
     debugPrint("[BookArchivist] rebuildFiltered skipped (UI missing)")
     return
   end
-  local deleteBtn = getWidget("deleteBtn")
+  local deleteBtn = ensureDeleteButton()
   local filtered = getFilteredKeys()
   wipe(filtered)
   if deleteBtn then
     deleteBtn:Disable()
-  else
-    debugPrint("[BookArchivist] rebuildFiltered: delete button missing; continuing")
   end
 
   local addon = getAddon()
@@ -747,7 +797,7 @@ end
 -- Define renderSelected function
 function renderSelected()
   if not UI then return end
-  local deleteBtn = getWidget("deleteBtn")
+  local deleteBtn = ensureDeleteButton()
   local bookTitle = getWidget("bookTitle")
   local metaDisplay = getWidget("meta")
   local countText = getWidget("countText")
@@ -850,7 +900,7 @@ function updateList()
     debugPrint("[BookArchivist] updateList skipped (scroll child missing)")
     return
   end
-  local infoText = getWidget("infoText")
+  local infoText = ensureInfoText()
   local addon = getAddon()
   if not addon then
     debugPrint("[BookArchivist] updateList: addon missing")

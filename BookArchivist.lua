@@ -75,4 +75,7 @@ function BookArchivist:Delete(key)
   if Core and Core.Delete then
     Core:Delete(key)
   end
+  if type(self.RefreshUI) == "function" then
+    self:RefreshUI()
+  end
 end

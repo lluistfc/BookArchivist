@@ -192,28 +192,9 @@ function Capture:OnReady()
 
   ensureSessionLocation(activeSession)
 
-  -- Debug: print every page read so we can verify capture flow in the wild.
-  if type(print) == "function" then
-    local snippet = text
-    if #snippet > 200 then
-      snippet = snippet:sub(1, 200) .. "…"
-    end
-    print(string.format("[BookArchivist] ITEM_TEXT_READY page=%d title='%s' len=%d material='%s'", pageNum, tostring(title), #text, tostring(material)))
-    print(string.format("[BookArchivist] page %d text: %s", pageNum, snippet))
-  end
-
   -- Persist incrementally so we don't lose data if the close event is skipped by other UIs.
   if Core and Core.PersistSession then
     local persisted = Core:PersistSession(activeSession)
-    if persisted and type(print) == "function" then
-      local pageCount = 0
-      if persisted.pages then
-        for _, _ in pairs(persisted.pages) do
-          pageCount = pageCount + 1
-        end
-      end
-      print(string.format("[BookArchivist] saved key=%s pages=%d title='%s'", tostring(persisted.key), pageCount, tostring(persisted.title)))
-    end
     if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
       BookArchivist.RefreshUI()
     end
