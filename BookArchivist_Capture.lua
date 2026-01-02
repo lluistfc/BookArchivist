@@ -20,6 +20,10 @@ BookArchivist.Capture = Capture
 ---@field itemID number|nil
 ---@field sourceKind string|nil
 ---@field location table|nil
+---@field seenPages table<number, boolean>|nil
+---@field caching boolean|nil
+---@field cachingComplete boolean|nil
+---@field returningToFirst boolean|nil
 local session ---@type BookArchivistCaptureSession|nil
 
 local function getGlobal(name)
@@ -41,8 +45,27 @@ local function trim(s)
   return s:gsub("^%s+", ""):gsub("%s+$", "")
 end
 
+-- All captures are treated as book item text; heuristics removed for simplicity
+
+local function parseGuid(guid)
+  if type(guid) ~= "string" then return nil end
+  local objectType = guid:match("^(%a+)%-")
+  if objectType == "GameObject" then
+    local id = guid:match("GameObject%-%d+%-%d+%-%d+%-%d+%-(%d+)")
+    return objectType, id and tonumber(id) or nil
+  elseif objectType == "Item" then
+    local id = guid:match("Item%-%d+%-%d+%-%d+%-%d+%-(%d+)")
+    return objectType, id and tonumber(id) or nil
+  elseif objectType == "Creature" or objectType == "Vehicle" then
+    local id = guid:match("%a+%-%d+%-%d+%-%d+%-(%d+)%-%x+")
+    return objectType, id and tonumber(id) or nil
+  end
+  return objectType
+end
+
 local function currentSourceInfo()
   local src = { kind = "itemtext" }
+
   local frame = getGlobal("ItemTextFrame")
   if frame then
     if frame.itemID then
@@ -52,6 +75,21 @@ local function currentSourceInfo()
       src.page = frame.page
     end
   end
+
+  local UnitGUIDFn = getGlobal("UnitGUID")
+  local guid = UnitGUIDFn and UnitGUIDFn("npc")
+  if guid then
+    local objectType, objectID = parseGuid(guid)
+    src.guid = guid
+    src.objectType = objectType
+    src.objectID = objectID
+    if objectType == "GameObject" then
+      src.kind = "world"
+    elseif objectType == "Item" then
+      src.kind = "inventory"
+    end
+  end
+
   return src
 end
 
@@ -64,43 +102,6 @@ local function resolvePageNumber()
     end
   end
   return 1
-end
-
-local function gossipSpeakerInfo()
-  local UnitGUID = getGlobal("UnitGUID")
-  local UnitExists = getGlobal("UnitExists")
-  local guid = UnitGUID and UnitGUID("npc") or nil
-  local exists = UnitExists and UnitExists("npc") or false
-  local isGameObject = guid and guid:match("^GameObject") ~= nil
-  if isGameObject then
-    return true, guid
-  end
-  if exists then
-    return false, guid
-  end
-  return true, guid
-end
-
-local function gossipHasChoices(api)
-  if not api then return false end
-  local hasOptions = false
-  if api.GetOptions then
-    local options = api.GetOptions()
-    hasOptions = type(options) == "table" and #options > 0
-  end
-  if hasOptions then return true end
-
-  local active = api.GetActiveQuests and api.GetActiveQuests()
-  if type(active) == "table" and #active > 0 then
-    return true
-  end
-
-  local available = api.GetAvailableQuests and api.GetAvailableQuests()
-  if type(available) == "table" and #available > 0 then
-    return true
-  end
-
-  return false
 end
 
 local function ensureSessionLocation(target)
@@ -124,12 +125,13 @@ local function ensureSessionLocation(target)
   end
 end
 
+
 function Capture:OnBegin()
   local frame = getGlobal("ItemTextFrame")
   local itemID = frame and frame.itemID or nil
-    if type(itemID) == "string" then
-      itemID = tonumber(itemID)
-    end
+  if type(itemID) == "string" then
+    itemID = tonumber(itemID)
+  end
   session = {
     title = "",
     creator = "",
@@ -142,6 +144,7 @@ function Capture:OnBegin()
     itemID = itemID,
     sourceKind = itemID and "inventory" or "world",
     location = nil,
+    seenPages = {},
   }
 
   if not itemID then
@@ -164,8 +167,12 @@ function Capture:OnReady()
   local ItemTextGetCreator = getGlobal("ItemTextGetCreator")
   local ItemTextGetMaterial = getGlobal("ItemTextGetMaterial")
   local ItemTextGetText = getGlobal("ItemTextGetText")
+  local ItemTextGetItem = getGlobal("ItemTextGetItem")
 
   local title = ItemTextGetTitle and ItemTextGetTitle() or ""
+  if (not title or title == "") and ItemTextGetItem then
+    title = ItemTextGetItem()
+  end
   local creator = ItemTextGetCreator and ItemTextGetCreator() or ""
   local material = ItemTextGetMaterial and ItemTextGetMaterial() or ""
   local text = ItemTextGetText and ItemTextGetText() or ""
@@ -181,8 +188,36 @@ function Capture:OnReady()
 
   activeSession.pages = activeSession.pages or {}
   activeSession.pages[pageNum] = trim(text)
+  activeSession.seenPages[pageNum] = true
 
   ensureSessionLocation(activeSession)
+
+  -- Debug: print every page read so we can verify capture flow in the wild.
+  if type(print) == "function" then
+    local snippet = text
+    if #snippet > 200 then
+      snippet = snippet:sub(1, 200) .. "…"
+    end
+    print(string.format("[BookArchivist] ITEM_TEXT_READY page=%d title='%s' len=%d material='%s'", pageNum, tostring(title), #text, tostring(material)))
+    print(string.format("[BookArchivist] page %d text: %s", pageNum, snippet))
+  end
+
+  -- Persist incrementally so we don't lose data if the close event is skipped by other UIs.
+  if Core and Core.PersistSession then
+    local persisted = Core:PersistSession(activeSession)
+    if persisted and type(print) == "function" then
+      local pageCount = 0
+      if persisted.pages then
+        for _, _ in pairs(persisted.pages) do
+          pageCount = pageCount + 1
+        end
+      end
+      print(string.format("[BookArchivist] saved key=%s pages=%d title='%s'", tostring(persisted.key), pageCount, tostring(persisted.title)))
+    end
+    if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
+      BookArchivist.RefreshUI()
+    end
+  end
 end
 
 function Capture:OnClosed()
@@ -194,62 +229,4 @@ function Capture:OnClosed()
   session = nil
 end
 
-function Capture:OnGossipShow()
-  local GossipAPI = getGlobal("C_GossipInfo")
-  if not GossipAPI or not GossipAPI.GetText then
-    return
-  end
 
-  local text = GossipAPI.GetText()
-  if not text or trim(text) == "" then
-    return
-  end
-
-  local isObject, guid = gossipSpeakerInfo()
-  if not isObject then
-    return
-  end
-
-  if gossipHasChoices(GossipAPI) then
-    return
-  end
-
-  local titleWidget = getGlobal("GossipFrameNpcNameText")
-  local rawTitle = titleWidget and titleWidget:GetText() or ""
-  local title = trim(rawTitle)
-  if title == "" and Location and Location.GetGuidName then
-    title = Location:GetGuidName(guid) or ""
-  end
-  if title == "" then
-    title = "Unmarked Relic"
-  end
-  if title == "" then
-    title = "Unmarked Inscription"
-  end
-
-  local payload = {
-    title = title,
-  creator = title,
-    author = "",
-    material = "Carved Tablet",
-    pages = {
-      [1] = trim(text),
-    },
-    source = {
-      kind = "gossip",
-      guid = guid,
-      title = title,
-    },
-    firstPageSeen = 1,
-    startedAt = now(),
-    location = Location and Location:BuildWorldLocation() or nil,
-  }
-
-  if Core and Core.PersistSession then
-    Core:PersistSession(payload)
-  end
-end
-
-function Capture:OnGossipClosed()
-  -- Reserved for future state tracking if needed
-end

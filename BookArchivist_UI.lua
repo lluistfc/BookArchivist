@@ -1,6 +1,11 @@
----@diagnostic disable: undefined-global
+---@diagnostic disable: undefined-global, undefined-field
 -- BookArchivist_UI.lua
 -- Simple in-game UI to browse stored books and re-read them.
+
+local isInitialized = false
+local needsRefresh = false
+
+BookArchivist = BookArchivist or {}
 
 local function ensureAddon()
   if not BookArchivist or not BookArchivist.GetDB then
@@ -43,6 +48,58 @@ end
 
 local UI -- forward declaration so helper functions can reference the frame
 local refreshAll -- forward declaration for lazy init callbacks
+local rebuildFiltered -- forward declaration for filter builder
+local Widgets = {}
+
+local function getWidget(name)
+  local widget = Widgets[name]
+  if widget then
+    return widget
+  end
+  if UI and UI[name] then
+    Widgets[name] = UI[name]
+    return Widgets[name]
+  end
+  return nil
+end
+local debugPrint = function() end
+
+local function logError(message)
+  local formatted = "|cFFFF0000BookArchivist:|r " .. (message or "Unknown error")
+  if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+    DEFAULT_CHAT_FRAME:AddMessage(formatted)
+  elseif print then
+    print(formatted)
+  end
+end
+
+local DEBUG_LOGGING = false
+
+local function chatMessage(msg)
+  if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+    DEFAULT_CHAT_FRAME:AddMessage(msg)
+  elseif type(print) == "function" then
+    print(msg)
+  end
+end
+
+local function flushPendingRefresh()
+  if not needsRefresh then
+    debugPrint("[BookArchivist] flushPendingRefresh: nothing queued")
+    return
+  end
+  if not UI then
+    debugPrint("[BookArchivist] flushPendingRefresh: UI missing")
+    return
+  end
+  if not isInitialized then
+    debugPrint("[BookArchivist] flushPendingRefresh: UI not initialized")
+    return
+  end
+  debugPrint("[BookArchivist] flushPendingRefresh: running refreshAll")
+  chatMessage("|cFFFFFF00BookArchivist UI refreshing...|r")
+  refreshAll()
+end
 
 local function formatZoneText(chain)
   if not chain or #chain == 0 then
@@ -86,13 +143,45 @@ local function stripHTMLTags(text)
   return cleaned
 end
 
-local function logError(message)
-  local formatted = "|cFFFF0000BookArchivist:|r " .. (message or "Unknown error")
-  if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-    DEFAULT_CHAT_FRAME:AddMessage(formatted)
-  elseif print then
-    print(formatted)
+local function debugPrintImpl(...)
+  if not DEBUG_LOGGING then
+    return
   end
+  local parts = {}
+  for i = 1, select("#", ...) do
+    parts[i] = tostring(select(i, ...))
+  end
+  chatMessage(table.concat(parts, " "))
+end
+
+debugPrint = debugPrintImpl
+
+function BookArchivist.EnableDebugLogging(state)
+  DEBUG_LOGGING = state and true or false
+  if DEBUG_LOGGING then
+    chatMessage("|cFF00FF00BookArchivist debug logging enabled.|r")
+    BookArchivist.RefreshUI()
+  else
+    chatMessage("|cFFFFA000BookArchivist debug logging disabled.|r")
+  end
+end
+
+local function captureError(err)
+  if type(debugstack) == "function" then
+    local stack = debugstack(2, 8, 8)
+    if stack and stack ~= "" then
+      return string.format("%s\n%s", tostring(err), stack)
+    end
+  end
+  return tostring(err)
+end
+
+local function safeStep(label, fn)
+  local ok, err = xpcall(fn, captureError)
+  if not ok then
+    logError(string.format("%s failed: %s", label, err))
+  end
+  return ok
 end
 
 local function safeCreateFrame(frameType, name, parent, ...)
@@ -126,20 +215,20 @@ local function safeCreateFrame(frameType, name, parent, ...)
 end
 
 local function updateReaderHeight(height)
-  if not UI or not UI.textChild then return end
-  UI.textChild:SetHeight(math.max(1, (height or 0) + 20))
+  local textChild = getWidget("textChild")
+  if not textChild then return end
+  textChild:SetHeight(math.max(1, (height or 0) + 20))
 end
 
 local function renderBookContent(text)
-  if not UI or not UI.textPlain then
-    return
-  end
+  local textPlain = getWidget("textPlain")
+  if not textPlain then return end
   text = text or ""
   local hasHTMLMarkup = isHTMLContent(text)
-  local htmlWidget = UI.htmlText
+  local htmlWidget = getWidget("htmlText")
   local canRenderHTML = htmlWidget ~= nil and hasHTMLMarkup
   if canRenderHTML and htmlWidget then
-    UI.textPlain:Hide()
+    textPlain:Hide()
     htmlWidget:Show()
     htmlWidget:SetWidth(460)
     htmlWidget:SetText(text)
@@ -149,16 +238,16 @@ local function renderBookContent(text)
     if htmlWidget then
       htmlWidget:Hide()
     end
-    UI.textPlain:Show()
-    UI.textPlain:SetWidth(460)
+    textPlain:Show()
+    textPlain:SetWidth(460)
     local displayText
     if hasHTMLMarkup and not canRenderHTML then
       displayText = stripHTMLTags(text)
     else
       displayText = text
     end
-    UI.textPlain:SetText(displayText)
-    local plainHeight = UI.textPlain:GetStringHeight()
+    textPlain:SetText(displayText)
+    local plainHeight = textPlain:GetStringHeight()
     updateReaderHeight(plainHeight)
   end
 end
@@ -169,6 +258,7 @@ local ROW_H = 44
 
 local function setupUI()
   if UI then
+    chatMessage("|cFF00FF00BookArchivist UI (setupUI) already initialized.|r")
     return true
   end
 
@@ -215,6 +305,7 @@ local function setupUI()
   if not UI.searchBox then
     return false, "Unable to create search box widget."
   end
+  Widgets.searchBox = UI.searchBox
   UI.searchBox:SetSize(200, 20)
   UI.searchBox:SetPoint("LEFT", 0, 0)
   UI.searchBox:SetAutoFocus(false)
@@ -252,12 +343,17 @@ local function setupUI()
   if not UI.scrollFrame then
     return false, "Unable to create list scroll frame."
   end
+  Widgets.scrollFrame = UI.scrollFrame
   UI.scrollFrame:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 4, -4)
   UI.scrollFrame:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -28, 28)
 
   UI.scrollChild = CreateFrame("Frame", nil, UI.scrollFrame)
   UI.scrollFrame:SetScrollChild(UI.scrollChild)
   UI.scrollChild:SetSize(336, 1)
+  UI.scrollChild:ClearAllPoints()
+  UI.scrollChild:SetPoint("TOPLEFT", UI.scrollFrame, "TOPLEFT", 0, 0)
+  UI.scrollChild:SetPoint("TOPRIGHT", UI.scrollFrame, "TOPRIGHT", -14, 0)
+  Widgets.scrollChild = UI.scrollChild
 
   -- Right reader block (like mount details panel)
   local readerBlock = safeCreateFrame("Frame", nil, UI, "InsetFrameTemplate")
@@ -280,6 +376,7 @@ local function setupUI()
   readerSeparator:SetColorTexture(0.25, 0.25, 0.25, 1)
 
   UI.bookTitle = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  Widgets.bookTitle = UI.bookTitle
   UI.bookTitle:SetPoint("TOPLEFT", readerSeparator, "BOTTOMLEFT", 4, -8)
   UI.bookTitle:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -12, -36)
   UI.bookTitle:SetJustifyH("LEFT")
@@ -287,6 +384,7 @@ local function setupUI()
   UI.bookTitle:SetTextColor(1, 0.82, 0)
 
   UI.meta = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  Widgets.meta = UI.meta
   UI.meta:SetPoint("TOPLEFT", UI.bookTitle, "BOTTOMLEFT", 0, -6)
   UI.meta:SetPoint("TOPRIGHT", UI.bookTitle, "BOTTOMRIGHT", 0, -6)
   UI.meta:SetJustifyH("LEFT")
@@ -304,14 +402,17 @@ local function setupUI()
   if not UI.textScroll then
     return false, "Unable to create reader scroll frame."
   end
+  Widgets.textScroll = UI.textScroll
   UI.textScroll:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", 4, -6)
   UI.textScroll:SetPoint("BOTTOMRIGHT", readerBlock, "BOTTOMRIGHT", -28, 40)
 
   UI.textChild = CreateFrame("Frame", nil, UI.textScroll)
   UI.textChild:SetSize(1, 1)
   UI.textScroll:SetScrollChild(UI.textChild)
+  Widgets.textChild = UI.textChild
 
   UI.textPlain = UI.textChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  Widgets.textPlain = UI.textPlain
   UI.textPlain:SetPoint("TOPLEFT", 6, -6)
   UI.textPlain:SetJustifyH("LEFT")
   UI.textPlain:SetJustifyV("TOP")
@@ -325,6 +426,7 @@ local function setupUI()
 
   if htmlCreated and htmlFrame then
     UI.htmlText = htmlFrame
+  Widgets.htmlText = UI.htmlText
     UI.htmlText:SetPoint("TOPLEFT", 6, -6)
     UI.htmlText:SetPoint("TOPRIGHT", -12, -6)
     UI.htmlText:SetFontObject("GameFontNormal")
@@ -333,6 +435,7 @@ local function setupUI()
     UI.htmlText:Hide()
   else
     UI.htmlText = nil
+    Widgets.htmlText = nil
   end
 
   -- Delete button with red theme
@@ -340,6 +443,7 @@ local function setupUI()
   if not UI.deleteBtn then
     return false, "Unable to create delete button."
   end
+  Widgets.deleteBtn = UI.deleteBtn
   UI.deleteBtn:SetSize(100, 22)
   UI.deleteBtn:SetPoint("BOTTOMLEFT", readerBlock, "BOTTOMLEFT", 12, 10)
   UI.deleteBtn:SetText("Delete")
@@ -361,11 +465,13 @@ local function setupUI()
 
   -- Book count display
   UI.countText = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  Widgets.countText = UI.countText
   UI.countText:SetPoint("BOTTOM", readerBlock, "BOTTOM", 0, 10)
   UI.countText:SetText("|cFF888888Books saved as you read them in-game|r")
 
   -- Info text in list block (below the list)
   UI.infoText = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  Widgets.infoText = UI.infoText
   UI.infoText:SetPoint("BOTTOM", listBlock, "BOTTOM", 0, 6)
   UI.infoText:SetText("|cFF00FF00Tip:|r Open books normally - pages save automatically")
 
@@ -387,6 +493,7 @@ local function setupUI()
     end
     rebuildFiltered()
     updateList()
+    debugPrint("[BookArchivist] search text changed; rebuild/update")
   end)
 
   UI.deleteBtn:SetScript("OnClick", function()
@@ -394,6 +501,7 @@ local function setupUI()
     if not addon then return end
     local key = getSelectedKey()
     if key then
+      debugPrint("[BookArchivist] setupUI: already built")
       addon:Delete(key)
       setSelectedKey(nil)
       rebuildFiltered()
@@ -401,23 +509,35 @@ local function setupUI()
       renderSelected()
     end
   end)
+    debugPrint("[BookArchivist] setupUI: creating BookArchivistFrame")
 
   UI:SetScript("OnShow", function()
     local success, err = pcall(refreshAll)
+    debugPrint("[BookArchivist] UI OnShow fired")
     if not success then
       logError("Error refreshing UI: " .. tostring(err))
     end
   end)
 
-  refreshAll()
+  isInitialized = true
+  UI.__BookArchivistInitialized = true
+  needsRefresh = true
+  debugPrint("[BookArchivist] setupUI: finished, pending refresh")
+  flushPendingRefresh()
   return true
 end
 
 local function ensureUI()
   if UI then
+    if not isInitialized then
+      debugPrint("[BookArchivist] ensureUI: repairing missing initialization flag")
+      isInitialized = true
+    end
+    debugPrint(string.format("[BookArchivist] ensureUI: already initialized (isInitialized=%s needsRefresh=%s)", tostring(isInitialized), tostring(needsRefresh)))
+    flushPendingRefresh()
     return true
   end
-
+  chatMessage("|cFFFFFF00BookArchivist UI not initialized, creating...|r")
   local ok, err = setupUI()
   if not ok then
     initializationError = err or "BookArchivist UI failed to initialize."
@@ -425,6 +545,11 @@ local function ensureUI()
   end
 
   initializationError = nil
+  isInitialized = true
+  debugPrint("[BookArchivist] ensureUI: initialized via setup (needsRefresh=" .. tostring(needsRefresh) .. ")")
+  if needsRefresh then
+    flushPendingRefresh()
+  end
   return true
 end
 
@@ -461,7 +586,8 @@ local function entryToDisplay(entry)
 end
 
 local function makeRow()
-  local b = CreateFrame("Button", nil, UI.scrollChild)
+  local parent = getWidget("scrollChild") or (UI and UI.scrollChild)
+  local b = CreateFrame("Button", nil, parent)
   b:SetSize(340, ROW_H)
 
   -- Background with alternating color support
@@ -529,6 +655,7 @@ function ButtonPool:Acquire()
   local button = table.remove(self.free)
   if not button then
     button = makeRow()
+    debugPrint("[BookArchivist] ButtonPool: created new row button")
   end
   button:Show()
   table.insert(self.active, button)
@@ -566,21 +693,41 @@ local function matches(entry, q)
 end
 
 local function rebuildFiltered()
-  if not UI or not UI.deleteBtn then return end
+  if not UI then
+    debugPrint("[BookArchivist] rebuildFiltered skipped (UI missing)")
+    return
+  end
+  local deleteBtn = getWidget("deleteBtn")
   local filtered = getFilteredKeys()
   wipe(filtered)
-  UI.deleteBtn:Disable()
+  if deleteBtn then
+    deleteBtn:Disable()
+  else
+    debugPrint("[BookArchivist] rebuildFiltered: delete button missing; continuing")
+  end
 
   local addon = getAddon()
-  if not addon then return end
+  if not addon then
+    debugPrint("[BookArchivist] rebuildFiltered: addon missing")
+    logError("BookArchivist addon missing during rebuildFiltered")
+    return
+  end
   local db = addon:GetDB()
-  local q = (UI.searchBox and UI.searchBox:GetText()) or ""
+  if not db then
+    debugPrint("[BookArchivist] rebuildFiltered: DB missing")
+    logError("BookArchivist DB missing during rebuildFiltered")
+    return
+  end
+  local order = db.order or {}
+  debugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d)", #order))
+  local searchBox = getWidget("searchBox")
+  local q = (searchBox and searchBox:GetText()) or ""
   q = q:gsub("^%s+", ""):gsub("%s+$", "")
 
   local selectedKey = getSelectedKey()
   local selectionStillValid = false
 
-  for _, key in ipairs(db.order or {}) do
+  for _, key in ipairs(order) do
     local e = db.books[key]
     if e and matches(e, q) then
       table.insert(filtered, key)
@@ -590,6 +737,8 @@ local function rebuildFiltered()
     end
   end
 
+  debugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #order))
+
   if selectedKey and not selectionStillValid then
     setSelectedKey(nil)
   end
@@ -597,25 +746,39 @@ end
 
 -- Define renderSelected function
 function renderSelected()
-  if not UI or not UI.deleteBtn then return end
+  if not UI then return end
+  local deleteBtn = getWidget("deleteBtn")
+  local bookTitle = getWidget("bookTitle")
+  local metaDisplay = getWidget("meta")
+  local countText = getWidget("countText")
+  if not bookTitle or not metaDisplay then
+    debugPrint("[BookArchivist] renderSelected skipped (title/meta widgets missing)")
+    return
+  end
   local addon = getAddon()
-  if not addon then return end
+  if not addon then
+    debugPrint("[BookArchivist] renderSelected: addon missing")
+    return
+  end
   local db = addon:GetDB()
 
   local key = getSelectedKey()
   local entry = key and db.books[key] or nil
   if not entry then
-    UI.bookTitle:SetText("Select a book from the list")
-    UI.bookTitle:SetTextColor(0.5, 0.5, 0.5)
-    UI.meta:SetText("")
+    debugPrint("[BookArchivist] renderSelected: no entry for key", tostring(key))
+    bookTitle:SetText("Select a book from the list")
+    bookTitle:SetTextColor(0.5, 0.5, 0.5)
+    metaDisplay:SetText("")
     renderBookContent("")
-    UI.deleteBtn:Disable()
-    UI.countText:SetText("|cFF888888Books saved as you read them in-game|r")
+    if deleteBtn then deleteBtn:Disable() end
+    if countText then
+      countText:SetText("|cFF888888Books saved as you read them in-game|r")
+    end
     return
   end
 
-  UI.bookTitle:SetText(entry.title or "(Untitled Book)")
-  UI.bookTitle:SetTextColor(1, 0.82, 0)
+  bookTitle:SetText(entry.title or "(Untitled Book)")
+  bookTitle:SetTextColor(1, 0.82, 0)
 
   local meta = {}
   if entry.creator and entry.creator ~= "" then 
@@ -634,7 +797,7 @@ function renderSelected()
   if locationLine then
     table.insert(meta, locationLine)
   end
-  UI.meta:SetText(table.concat(meta, "  |cFF666666•|r  "))
+  metaDisplay:SetText(table.concat(meta, "  |cFF666666•|r  "))
 
   -- Assemble pages in order
   local textParts = {}
@@ -662,7 +825,7 @@ function renderSelected()
   end
   renderBookContent(fullText)
 
-  UI.deleteBtn:Enable()
+  if deleteBtn then deleteBtn:Enable() end
   
   -- Update count text
   local pageCount = entry.pages and 0 or 0
@@ -671,25 +834,40 @@ function renderSelected()
       pageCount = pageCount + 1
     end
   end
-  UI.countText:SetText(string.format("|cFFFFD100%d|r page%s", pageCount, pageCount ~= 1 and "s" or ""))
+  if countText then
+    countText:SetText(string.format("|cFFFFD100%d|r page%s", pageCount, pageCount ~= 1 and "s" or ""))
+  end
 end
 
 -- Define updateList function
 function updateList()
-  if not UI or not UI.scrollChild or not UI.infoText then
+  if not UI then
+    debugPrint("[BookArchivist] updateList skipped (UI missing)")
     return
   end
+  local scrollChild = getWidget("scrollChild")
+  if not scrollChild then
+    debugPrint("[BookArchivist] updateList skipped (scroll child missing)")
+    return
+  end
+  local infoText = getWidget("infoText")
   local addon = getAddon()
-  if not addon then return end
+  if not addon then
+    debugPrint("[BookArchivist] updateList: addon missing")
+    return
+  end
   local db = addon:GetDB()
   local filtered = getFilteredKeys()
   local total = #filtered
+
+  local dbCount = db.order and #db.order or 0
+  debugPrint(string.format("[BookArchivist] updateList filtered=%d totalDB=%d", total, dbCount))
 
   ButtonPool:ReleaseAll()
 
   -- Set scroll child height
   local totalHeight = math.max(1, total * ROW_H)
-  UI.scrollChild:SetSize(336, totalHeight)
+  scrollChild:SetSize(336, totalHeight)
 
   -- Create buttons for all items
   for i = 1, total do
@@ -720,16 +898,46 @@ function updateList()
   if total ~= #(db.order or {}) then
     countText = countText .. string.format(" (filtered from |cFFFFD100%d|r)", #(db.order or {}))
   end
-  UI.infoText:SetText(countText)
+  if infoText then
+    infoText:SetText(countText)
+  else
+    debugPrint("[BookArchivist] updateList: info text missing; count suppressed")
+  end
 end
 
-local function refreshAll()
-  if not UI then
+local function refreshAllImpl()
+    chatMessage("|cFFFFFF00BookArchivist UI (refreshAllImpl) refreshing...|r")
+  if not UI or not isInitialized then
+    debugPrint("[BookArchivist] refreshAll skipped (UI not initialized)")
     return
   end
-  rebuildFiltered()
-  updateList()
-  renderSelected()
+  debugPrint("[BookArchivist] refreshAll")
+  debugPrint("[BookArchivist] refreshAll: starting rebuildFiltered")
+  if not safeStep("BookArchivist rebuildFiltered", rebuildFiltered) then
+    debugPrint("[BookArchivist] refreshAll: rebuildFiltered failed")
+    return
+  end
+  debugPrint("[BookArchivist] refreshAll: starting updateList")
+  if not safeStep("BookArchivist updateList", updateList) then
+    debugPrint("[BookArchivist] refreshAll: updateList failed")
+    return
+  end
+  debugPrint("[BookArchivist] refreshAll: starting renderSelected")
+  safeStep("BookArchivist renderSelected", renderSelected)
+  needsRefresh = false
+end
+
+refreshAll = refreshAllImpl
+
+-- Expose a safe refresh hook for the capture module to call after new pages are saved
+function BookArchivist.RefreshUI()
+  needsRefresh = true
+  debugPrint("[BookArchivist] RefreshUI: invoked (UI exists=" .. tostring(UI ~= nil) .. ", initialized=" .. tostring(isInitialized) .. ")")
+  if not UI then
+    chatMessage("|cFFFF0000BookArchivist UI not available, creating...|r")
+    ensureUI()
+  end
+  flushPendingRefresh()
 end
 
 local function toggleUI()
@@ -742,7 +950,7 @@ local function toggleUI()
   if UI:IsShown() then
     UI:Hide()
   else
-    refreshAll()
+    flushPendingRefresh()
     UI:Show()
   end
 end
@@ -754,6 +962,27 @@ SlashCmdList["BOOKARCHIVIST"] = function()
   local ok, err = pcall(toggleUI)
   if not ok then
     logError(tostring(err))
+  end
+end
+
+-- Debug helper: /balist prints stored keys and counts
+SLASH_BOOKARCHIVISTLIST1 = "/balist"
+SlashCmdList["BOOKARCHIVISTLIST"] = function()
+  local addon = getAddon()
+  if not addon or not addon.GetDB then
+    logError("BookArchivist not ready.")
+    return
+  end
+  local db = addon:GetDB()
+  local order = db.order or {}
+  print(string.format("[BookArchivist] %d book(s) in archive", #order))
+  for i, key in ipairs(order) do
+    local entry = db.books and db.books[key]
+    local pageCount = 0
+    if entry and entry.pages then
+      for _ in pairs(entry.pages) do pageCount = pageCount + 1 end
+    end
+    print(string.format(" #%d key='%s' pages=%d title='%s'", i, tostring(key), pageCount, entry and entry.title or ""))
   end
 end
 

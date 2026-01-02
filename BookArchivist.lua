@@ -25,11 +25,7 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("ITEM_TEXT_BEGIN")
 eventFrame:RegisterEvent("ITEM_TEXT_READY")
 eventFrame:RegisterEvent("ITEM_TEXT_CLOSED")
-eventFrame:RegisterEvent("GOSSIP_SHOW")
-eventFrame:RegisterEvent("GOSSIP_CLOSED")
-eventFrame:RegisterEvent("LOOT_OPENED")
-eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-eventFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+-- Simplified: treat all captures as item text books only
 
 local function handleAddonLoaded(name)
   if name ~= ADDON_NAME then
@@ -62,26 +58,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
   elseif event == "ITEM_TEXT_CLOSED" then
     if Capture and Capture.OnClosed then
       Capture:OnClosed()
-    end
-  elseif event == "GOSSIP_SHOW" then
-    if Capture and Capture.OnGossipShow then
-      Capture:OnGossipShow()
-    end
-  elseif event == "GOSSIP_CLOSED" then
-    if Capture and Capture.OnGossipClosed then
-      Capture:OnGossipClosed()
-    end
-  elseif event == "LOOT_OPENED" then
-    if Location and Location.OnLootOpened then
-      Location:OnLootOpened()
-    end
-  elseif event == "PLAYER_TARGET_CHANGED" then
-    if Location and Location.OnPlayerTargetChanged then
-      Location:OnPlayerTargetChanged()
-    end
-  elseif event == "UPDATE_MOUSEOVER_UNIT" then
-    if Location and Location.OnMouseoverUnit then
-      Location:OnMouseoverUnit()
     end
   end
 end)
