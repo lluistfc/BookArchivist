@@ -950,6 +950,7 @@ local function toggleUI()
   if UI:IsShown() then
     UI:Hide()
   else
+    needsRefresh = true
     flushPendingRefresh()
     UI:Show()
   end
@@ -1002,6 +1003,10 @@ local function tryInitializeAndAnnounce()
     if print then
       print("|cFF00FF00BookArchivist UI loaded.|r Type /ba to open.")
     end
+  end
+
+  if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
+    BookArchivist.RefreshUI()
   end
 end
 
