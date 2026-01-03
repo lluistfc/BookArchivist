@@ -14,17 +14,16 @@ local chatMessage = ReaderUI.__chatMessage
 local state = ReaderUI.__state or {}
 ReaderUI.__state = state
 local debugPrint = function(...)
-	if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.debugPrint then
-		BookArchivist.UI.Internal.debugPrint(...)
-	end
+	BookArchivist:DebugPrint(...)
 end
 
 local function deleteDebug(...)
-	if debugPrint then
-		local args = { ... }
-		table.insert(args, 1, "[BookArchivist][DeleteBtn]")
-		debugPrint(unpack(args))
+	local args = { ... }
+	if #args == 0 then
+		return
 	end
+	table.insert(args, 1, "[BookArchivist][DeleteBtn]")
+	BookArchivist:DebugPrint(table.unpack(args))
 end
 
 local function describeFrame(frame)

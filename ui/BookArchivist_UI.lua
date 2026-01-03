@@ -173,38 +173,26 @@ Internal.setListMode = setListMode
 
 local function flushPendingRefresh()
 	if not needsRefresh then
-		if Internal.debugPrint then
-			Internal.debugPrint("[BookArchivist] flushPendingRefresh: nothing queued")
-		end
+		BookArchivist:DebugPrint("[BookArchivist] flushPendingRefresh: nothing queued")
 		return
 	end
 
 	if not UI then
-		if Internal.debugPrint then
-			Internal.debugPrint("[BookArchivist] flushPendingRefresh: UI missing")
-		end
+		BookArchivist:DebugPrint("[BookArchivist] flushPendingRefresh: UI missing")
 		return
 	end
 
 	if not isInitialized then
-		if Internal.debugPrint then
-			Internal.debugPrint("[BookArchivist] flushPendingRefresh: UI not initialized")
-		end
+		BookArchivist:DebugPrint("[BookArchivist] flushPendingRefresh: UI not initialized")
 		return
 	end
 
-	if Internal.debugPrint then
-		Internal.debugPrint("[BookArchivist] flushPendingRefresh: running refreshAll")
-	end
-	if Internal.debugMessage then
-		Internal.debugMessage("|cFFFFFF00BookArchivist UI refreshing...|r")
-	end
+	BookArchivist:DebugPrint("[BookArchivist] flushPendingRefresh: running refreshAll")
+	BookArchivist:DebugMessage("|cFFFFFF00BookArchivist UI refreshing...|r")
 
 	local refreshFn = Internal.refreshAll
 	if not refreshFn then
-		if Internal.debugPrint then
-			Internal.debugPrint("[BookArchivist] flushPendingRefresh: refresh handler missing")
-		end
+		BookArchivist:DebugPrint("[BookArchivist] flushPendingRefresh: refresh handler missing")
 		return
 	end
 

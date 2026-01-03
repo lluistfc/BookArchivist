@@ -11,21 +11,15 @@ local ReaderUI = Internal.ReaderUI
 local initializationError
 
 local function debugPrint(...)
-	if Internal.debugPrint then
-		Internal.debugPrint(...)
-	end
+	BookArchivist:DebugPrint(...)
 end
 
 local function debugMessage(msg)
-	if Internal.debugMessage then
-		Internal.debugMessage(msg)
-	end
+	BookArchivist:DebugMessage(msg)
 end
 
 local function logError(msg)
-	if Internal.logError then
-		Internal.logError(msg)
-	end
+	BookArchivist:LogError(msg)
 end
 
 local function configureDrag(frame)

@@ -27,6 +27,10 @@ state.constants = state.constants or {}
 state.constants.rowHeight = state.constants.rowHeight or DEFAULT_ROW_HEIGHT
 state.listModes = state.listModes or DEFAULT_LIST_MODES
 
+local function fallbackDebugPrint(...)
+  BookArchivist:DebugPrint(...)
+end
+
 local function applyContext(ctx, overrides)
   if not overrides then
     return ctx or {}
@@ -39,7 +43,9 @@ local function applyContext(ctx, overrides)
 end
 
 function ListUI:Init(context)
-  self.__state.ctx = context or {}
+  local ctx = context or {}
+  ctx.debugPrint = ctx.debugPrint or fallbackDebugPrint
+  self.__state.ctx = ctx
   if context and context.listModes then
     self.__state.listModes = context.listModes
   elseif not self.__state.listModes then
@@ -49,7 +55,9 @@ end
 
 function ListUI:SetCallbacks(callbacks)
   local ctx = self:GetContext()
-  self.__state.ctx = applyContext(ctx, callbacks)
+  local merged = applyContext(ctx, callbacks)
+  merged.debugPrint = merged.debugPrint or fallbackDebugPrint
+  self.__state.ctx = merged
 end
 
 function ListUI:GetContext()
@@ -211,9 +219,8 @@ end
 
 function ListUI:DebugPrint(...)
   local ctx = self:GetContext()
-  if ctx and ctx.debugPrint then
-    ctx.debugPrint(...)
-  end
+  local logger = (ctx and ctx.debugPrint) or fallbackDebugPrint
+  logger(...)
 end
 
 function ListUI:LogError(message)

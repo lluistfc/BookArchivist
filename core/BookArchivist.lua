@@ -4,10 +4,37 @@
 
 local ADDON_NAME = ...
 
+BookArchivist = BookArchivist or {}
+
 local Core = BookArchivist.Core
 local Capture = BookArchivist.Capture
 local Location = BookArchivist.Location
 local MinimapModule = BookArchivist.Minimap
+
+local function callInternalDebug(method, ...)
+  local ui = BookArchivist.UI
+  local internal = ui and ui.Internal
+  if not internal then
+    return nil
+  end
+  local fn = internal[method]
+  if type(fn) == "function" then
+    return fn(...)
+  end
+  return nil
+end
+
+function BookArchivist:DebugPrint(...)
+  return callInternalDebug("debugPrint", ...)
+end
+
+function BookArchivist:DebugMessage(...)
+  return callInternalDebug("debugMessage", ...)
+end
+
+function BookArchivist:LogError(...)
+  return callInternalDebug("logError", ...)
+end
 
 local globalCreateFrame = type(_G) == "table" and rawget(_G, "CreateFrame") or nil
 local function createFrameShim(...)
@@ -81,8 +108,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
   end
 end)
-
-BookArchivist = BookArchivist or {}
 
 function BookArchivist:GetDB()
   if Core and Core.GetDB then

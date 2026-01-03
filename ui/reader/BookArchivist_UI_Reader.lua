@@ -45,10 +45,13 @@ local function formatLocationLine(loc)
   return nil
 end
 
+local function fallbackDebugPrint(...)
+  BookArchivist:DebugPrint(...)
+end
+
 local function debugPrint(...)
-  if ctx and ctx.debugPrint then
-    ctx.debugPrint(...)
-  end
+  local logger = (ctx and ctx.debugPrint) or fallbackDebugPrint
+  logger(...)
 end
 
 local function logError(message)
@@ -179,6 +182,7 @@ end
 
 function ReaderUI:Init(context)
   ctx = context or {}
+  ctx.debugPrint = ctx.debugPrint or fallbackDebugPrint
 end
 
 function ReaderUI:RenderSelected()
