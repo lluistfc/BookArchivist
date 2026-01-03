@@ -1,28 +1,67 @@
-local addon = BookArchivist
+---@diagnostic disable: undefined-global
+BookArchivist = BookArchivist or {}
+
 local WoWUnit = rawget(_G or {}, "WoWUnit")
-local tinsert = table.insert
-if not addon or not WoWUnit then
+if not WoWUnit then
 	return
 end
 
-addon.UI = addon.UI or {}
-local ReaderUI = addon.UI.Reader
-if not ReaderUI or not ReaderUI.__ensureDeleteButton then
-	return
+BookArchivistTests = BookArchivistTests or {}
+local Helpers = {}
+
+local function deepcopy(value)
+	if type(value) ~= "table" then
+		return value
+	end
+	local copy = {}
+	for k, v in pairs(value) do
+		copy[k] = deepcopy(v)
+	end
+	return copy
 end
 
-local state = ReaderUI.__state or {}
-ReaderUI.__state = state
+function Helpers.resetSavedVariables()
+	BookArchivistDB = nil
+end
 
-local DeleteButtonGroup = WoWUnit("BookArchivist Delete Button", "PLAYER_LOGIN")
+function Helpers.snapshotTable(tbl)
+	if not tbl then
+		return nil
+	end
+	return deepcopy(tbl)
+end
 
-local function newFakeFrame(name)
-	local frame = { __name = name }
-	frame.shown = true
-	frame.points = {}
-	frame.frameLevel = 1
-	frame.frameStrata = "MEDIUM"
+function Helpers.restoreTable(target, snapshot)
+	if snapshot == nil then
+		return
+	end
+	for k in pairs(target) do
+		target[k] = nil
+	end
+	for k, v in pairs(snapshot) do
+		target[k] = deepcopy(v)
+	end
+end
 
+function Helpers.stub(target, key, replacement)
+	target = target or {}
+	local original = target[key]
+	target[key] = replacement
+	return function()
+		target[key] = original
+	end
+end
+
+function Helpers.withStub(target, key, replacement, fn)
+	local restore = Helpers.stub(target, key, replacement)
+	local ok, err = pcall(fn)
+	restore()
+	if not ok then
+		error(err)
+	end
+end
+
+local function attachFrameAPI(frame)
 	function frame:SetSize(width, height)
 		self.width, self.height = width, height
 	end
@@ -32,7 +71,7 @@ local function newFakeFrame(name)
 	end
 
 	function frame:SetPoint(...)
-		tinsert(self.points, { ... })
+		table.insert(self.points, { ... })
 	end
 
 	function frame:SetFrameLevel(level)
@@ -82,9 +121,21 @@ local function newFakeFrame(name)
 	return frame
 end
 
-local function newFakeButton()
-	local button = newFakeFrame("DeleteButton")
-	button.enabled = false
+function Helpers.newFrame(name, opts)
+	opts = opts or {}
+	local frame = {
+		__name = name or "Frame",
+		shown = opts.shown ~= false,
+		points = {},
+		frameLevel = opts.frameLevel or 1,
+		frameStrata = opts.frameStrata or "MEDIUM",
+	}
+	return attachFrameAPI(frame)
+end
+
+function Helpers.newButton(name, opts)
+	local button = Helpers.newFrame(name or "Button", opts)
+	button.enabled = opts and opts.enabled or false
 
 	function button:SetText(text)
 		self.text = text
@@ -103,7 +154,7 @@ local function newFakeButton()
 	end
 
 	function button:IsEnabled()
-		return self.enabled
+		return not not self.enabled
 	end
 
 	function button:SetMotionScriptsWhileDisabled()
@@ -117,48 +168,13 @@ local function newFakeButton()
 	return button
 end
 
-local function restoreState(snapshot)
-	state.deleteButton = snapshot.deleteButton
-	state.readerBlock = snapshot.readerBlock
-	state.uiFrame = snapshot.uiFrame
-end
-
-function DeleteButtonGroup:DeleteButtonBecomesVisibleWhenEnsured()
-	local snapshot = {
-		deleteButton = state.deleteButton,
-		readerBlock = state.readerBlock,
-		uiFrame = state.uiFrame,
-	}
-
-	local ok, err = pcall(function()
-		local parent = newFakeFrame("ReaderBlock")
-		parent:SetFrameLevel(4)
-		parent:SetFrameStrata("LOW")
-
-		local button = newFakeButton()
-		button:Hide()
-		button:SetParent(nil)
-
-		state.readerBlock = nil
-		state.uiFrame = parent
-		state.deleteButton = button
-
-		local ensureDeleteButton = ReaderUI.__ensureDeleteButton
-		WoWUnit.Exists(ensureDeleteButton)
-
-		local result = ensureDeleteButton(parent)
-
-		WoWUnit.AreEqual(button, result)
-		WoWUnit.IsTrue(button:IsShown())
-		WoWUnit.AreEqual(parent, button:GetParent())
-		WoWUnit.AreEqual(true, button.toplevel)
-		WoWUnit.AreEqual(math.min(parent:GetFrameLevel() + 25, 128), button:GetFrameLevel())
-		WoWUnit.AreEqual(parent:GetFrameStrata(), button:GetFrameStrata())
-	end)
-
-	restoreState(snapshot)
-
-	if not ok then
-		error(err)
+function Helpers.spy()
+	local calls = {}
+	return function(...)
+		table.insert(calls, { ... })
+	end, function()
+		return #calls, calls
 	end
 end
+
+BookArchivistTests.Helpers = Helpers

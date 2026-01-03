@@ -20,7 +20,7 @@ Book Archivist is a World of Warcraft® addon that records every "book" (anythin
 | `ui/minimap/BookArchivist_UI_Minimap.lua` | Creates the physical minimap button, handles dragging/clicking, and defers persistence to `core/BookArchivist_Minimap.lua`. |
 | `ui/options/BookArchivist_UI_Options.lua` | Settings panel, Blizzard Settings integration, and debug checkbox wiring. |
 | `ui/BookArchivist_UI_Runtime.lua` | Runtime orchestration: `RefreshUI`, slash commands, UI creation on login, and safe refresh sequencing. |
-| `tests/BookArchivist_Tests.lua` | WoWUnit suite currently validating the reader delete-button helper. |
+| `tests/**` | WoWUnit harness plus module-focused suites (core, capture, location, minimap, UI list/reader) that mirror the addon structure for easier coverage. |
 
 ## Runtime architecture
 1. **Boot**: `core/BookArchivist.lua` registers for `ADDON_LOADED` and ItemText events. On load it ensures the DB, wires the minimap module, and configures the options UI.
@@ -49,12 +49,19 @@ Book Archivist is a World of Warcraft® addon that records every "book" (anythin
 
 ## Testing
 - **Framework**: [WoWUnit](https://github.com/Gethe/WoWUnit) (packaged locally under `../WoWUnit`). Tests run in-game or in a WoWUnit-capable harness because they rely on Blizzard UI widget APIs.
-- **Current coverage**: `tests/BookArchivist_Tests.lua` validates the reader delete-button helper to ensure proper parenting/frame strata when recreated.
+- **Current coverage**: module suites now live beside their runtime counterparts:
+  - `tests/BookArchivist_Tests.lua` — shared mocks/helpers.
+  - `tests/core/Core_Tests.lua` — SavedVariables defaults, persistence, deletion.
+  - `tests/capture/Capture_Tests.lua` — simulates ItemText APIs to ensure sessions persist and refresh the UI.
+  - `tests/location/Location_Tests.lua` — zone-text fallbacks and formatting.
+  - `tests/minimap/Minimap_Tests.lua` — angle normalization and button registration.
+  - `tests/ui/list/List_Tests.lua` — context wiring, widget caching, safe frame creation hooks.
+  - `tests/ui/reader/Reader_Tests.lua` — delete-button helper + disable flows.
 - **How to run**:
   1. Install/enable the WoWUnit addon alongside BookArchivist.
   2. Log in, load the character with both addons enabled.
-  3. WoWUnit will execute suites automatically on `PLAYER_LOGIN`; open the WoWUnit UI (`/wu`) to see pass/fail results.
-- **Extending tests**: follow the existing pattern—mock Blizzard frames/helpers, call into UI internals (e.g., `ReaderUI.__ensureDeleteButton`), and assert via WoWUnit helpers (`WoWUnit.AreEqual`, etc.).
+  3. WoWUnit runs every suite automatically on `PLAYER_LOGIN`; open the WoWUnit UI (`/wu`) to inspect pass/fail output.
+- **Extending tests**: add a new file under `tests/<module>/` that mirrors the runtime folder, require any helpers you need from `BookArchivistTests.Helpers`, and register additional WoWUnit groups with meaningful event triggers.
 
 ## Common workflows
 - **Adding a new capture heuristic**: extend `core/BookArchivist_Capture.lua` to enrich `session.source` (e.g., quest context), then update `Reader` metadata formatting to render the new fields.
