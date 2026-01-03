@@ -24,9 +24,19 @@ local function getAddon()
   return cachedAddon
 end
 
+local LIST_MODES = {
+  BOOKS = "books",
+  LOCATIONS = "locations",
+}
+
 local ViewModel = {
   filteredKeys = {},
   selectedKey = nil,
+  listMode = LIST_MODES.BOOKS,
+  locationPath = {},
+  locationRows = {},
+  locationRoot = nil,
+  locationActiveNode = nil,
 }
 
 local function setSelectedKey(key)
@@ -74,6 +84,240 @@ local function rememberWidget(name, widget)
     end
   end
   return widget
+end
+
+local function getListMode()
+  return ViewModel.listMode or LIST_MODES.BOOKS
+end
+
+local function normalizeLocationLabel(label)
+  if not label or label == "" then
+    return "Unknown Location"
+  end
+  return label
+end
+
+local function buildLocationTreeFromDB(db)
+  local root = {
+    name = "__ROOT__",
+    depth = 0,
+    children = {},
+    childNames = {},
+  }
+
+  if not db or not db.books then
+    return root
+  end
+
+  local order = db.order or {}
+  for _, key in ipairs(order) do
+    local entry = db.books[key]
+    if entry then
+      local chain = entry.location and entry.location.zoneChain
+      if not chain or #chain == 0 then
+        local fallback = entry.location and entry.location.zoneText
+        if fallback and fallback ~= "" then
+          chain = { fallback }
+        else
+          chain = { "Unknown Location" }
+        end
+      end
+
+      local node = root
+      for _, segment in ipairs(chain) do
+        local name = normalizeLocationLabel(segment)
+        node.children = node.children or {}
+        node.childNames = node.childNames or {}
+        if not node.children[name] then
+          node.children[name] = {
+            name = name,
+            depth = (node.depth or 0) + 1,
+            parent = node,
+            children = {},
+            childNames = {},
+            books = {},
+          }
+          table.insert(node.childNames, name)
+        end
+        node = node.children[name]
+      end
+
+      node.books = node.books or {}
+      table.insert(node.books, key)
+    end
+  end
+
+  local function sortNode(node)
+    if not node or not node.childNames or #node.childNames == 0 then
+      return
+    end
+    table.sort(node.childNames, function(a, b)
+      return a:lower() < b:lower()
+    end)
+    for _, childName in ipairs(node.childNames) do
+      sortNode(node.children and node.children[childName])
+    end
+  end
+
+  sortNode(root)
+  return root
+end
+
+local function ensureLocationPathValid()
+  local root = ViewModel.locationRoot
+  local path = ViewModel.locationPath
+  if not path then
+    path = {}
+    ViewModel.locationPath = path
+  end
+  if not root then
+    wipe(path)
+    ViewModel.locationActiveNode = nil
+    return
+  end
+
+  local node = root
+  for i = 1, #path do
+    local segment = path[i]
+    if node.children and node.children[segment] then
+      node = node.children[segment]
+    else
+      for j = #path, i, -1 do
+        table.remove(path, j)
+      end
+      break
+    end
+  end
+  ViewModel.locationActiveNode = node
+end
+
+local function rebuildLocationRowsForCurrentNode()
+  local rows = {}
+  local node = ViewModel.locationActiveNode or ViewModel.locationRoot
+  if not node then
+    ViewModel.locationRows = rows
+    return
+  end
+
+  local path = ViewModel.locationPath or {}
+  if #path > 0 then
+    table.insert(rows, { kind = "back" })
+  end
+
+  local childNames = node.childNames or {}
+  if childNames and #childNames > 0 then
+    for _, childName in ipairs(childNames) do
+      table.insert(rows, { kind = "location", name = childName, node = node.children and node.children[childName] })
+    end
+  else
+    local books = node.books or {}
+    for _, key in ipairs(books) do
+      table.insert(rows, { kind = "book", key = key })
+    end
+  end
+
+  ViewModel.locationRows = rows
+end
+
+local function getLocationBreadcrumbText()
+  local path = ViewModel.locationPath or {}
+  if #path == 0 then
+    return "All locations"
+  end
+  return table.concat(path, " > ")
+end
+
+local function rebuildLocationView()
+  local addon = getAddon()
+  if not addon then
+    ViewModel.locationRoot = nil
+    ViewModel.locationRows = {}
+    ViewModel.locationActiveNode = nil
+    return
+  end
+  local db = addon:GetDB()
+  ViewModel.locationRoot = buildLocationTreeFromDB(db)
+  ensureLocationPathValid()
+  rebuildLocationRowsForCurrentNode()
+end
+
+local function updateListModeUI()
+  if not UI then return end
+  local mode = getListMode()
+
+  if UI.listHeader then
+    if mode == LIST_MODES.BOOKS then
+      UI.listHeader:SetText("Saved Books")
+    else
+      UI.listHeader:SetText("Browse by Location")
+    end
+  end
+
+  if UI.locationBreadcrumb then
+    if mode == LIST_MODES.LOCATIONS and ViewModel.locationRoot then
+      UI.locationBreadcrumb:SetText("|cFFCCCCCC" .. getLocationBreadcrumbText() .. "|r")
+      UI.locationBreadcrumb:Show()
+    else
+      UI.locationBreadcrumb:SetText("")
+      UI.locationBreadcrumb:Hide()
+    end
+  end
+
+  if UI.listSeparator and UI.listHeader then
+    UI.listSeparator:ClearAllPoints()
+    local anchorTarget = UI.listHeader
+    if mode == LIST_MODES.LOCATIONS and UI.locationBreadcrumb and UI.locationBreadcrumb:IsShown() then
+      anchorTarget = UI.locationBreadcrumb
+    end
+    UI.listSeparator:SetPoint("TOPLEFT", anchorTarget, "BOTTOMLEFT", -4, -4)
+    local rightAnchor = (UI.listBlock or UI)
+    UI.listSeparator:SetPoint("TOPRIGHT", rightAnchor, "TOPRIGHT", -8, -28)
+  end
+
+  if UI.booksModeButton and UI.locationsModeButton then
+    UI.booksModeButton:SetEnabled(mode ~= LIST_MODES.BOOKS)
+    UI.locationsModeButton:SetEnabled(mode ~= LIST_MODES.LOCATIONS)
+  end
+end
+
+local function pushLocationSegment(segment)
+  segment = normalizeLocationLabel(segment)
+  if segment == "" then return end
+  local path = ViewModel.locationPath or {}
+  ViewModel.locationPath = path
+  path[#path + 1] = segment
+  ensureLocationPathValid()
+  rebuildLocationRowsForCurrentNode()
+  updateListModeUI()
+end
+
+local function popLocationSegment()
+  local path = ViewModel.locationPath
+  if not path or #path == 0 then return end
+  table.remove(path)
+  ensureLocationPathValid()
+  rebuildLocationRowsForCurrentNode()
+  updateListModeUI()
+end
+
+local function setListMode(mode)
+  if mode ~= LIST_MODES.BOOKS and mode ~= LIST_MODES.LOCATIONS then
+    mode = LIST_MODES.BOOKS
+  end
+  if ViewModel.listMode == mode then
+    if mode == LIST_MODES.LOCATIONS and not ViewModel.locationRoot then
+      rebuildLocationView()
+    end
+    updateListModeUI()
+    return
+  end
+  ViewModel.listMode = mode
+  if mode == LIST_MODES.LOCATIONS then
+    rebuildLocationView()
+  else
+    updateListModeUI()
+  end
+  updateList()
 end
 
 local function configureDeleteButton(button)
@@ -499,6 +743,16 @@ local function setupUI()
   local listHeader = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   listHeader:SetPoint("TOPLEFT", listBlock, "TOPLEFT", 8, -8)
   listHeader:SetText("Saved Books")
+  UI.listHeader = listHeader
+
+  local breadcrumb = listBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  breadcrumb:SetPoint("TOPLEFT", listHeader, "BOTTOMLEFT", 0, -2)
+  breadcrumb:SetPoint("RIGHT", listBlock, "RIGHT", -150, 0)
+  breadcrumb:SetJustifyH("LEFT")
+  breadcrumb:SetWordWrap(false)
+  breadcrumb:SetText("")
+  breadcrumb:Hide()
+  UI.locationBreadcrumb = breadcrumb
 
   -- Separator line below header
   local listSeparator = listBlock:CreateTexture(nil, "ARTWORK")
@@ -506,6 +760,33 @@ local function setupUI()
   listSeparator:SetPoint("TOPLEFT", listHeader, "BOTTOMLEFT", -4, -4)
   listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -8, -28)
   listSeparator:SetColorTexture(0.25, 0.25, 0.25, 1)
+  UI.listSeparator = listSeparator
+
+  local modeToggleLocations = safeCreateFrame("Button", nil, listBlock, "UIPanelButtonTemplate")
+  if modeToggleLocations then
+    modeToggleLocations:SetSize(88, 22)
+    modeToggleLocations:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -8, -6)
+    modeToggleLocations:SetText("Locations")
+    modeToggleLocations:SetScript("OnClick", function()
+      setListMode(LIST_MODES.LOCATIONS)
+    end)
+    UI.locationsModeButton = modeToggleLocations
+  end
+
+  local modeToggleBooks = safeCreateFrame("Button", nil, listBlock, "UIPanelButtonTemplate")
+  if modeToggleBooks then
+    modeToggleBooks:SetSize(70, 22)
+    if modeToggleLocations then
+      modeToggleBooks:SetPoint("RIGHT", modeToggleLocations, "LEFT", -4, 0)
+    else
+      modeToggleBooks:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -8, -6)
+    end
+    modeToggleBooks:SetText("Books")
+    modeToggleBooks:SetScript("OnClick", function()
+      setListMode(LIST_MODES.BOOKS)
+    end)
+    UI.booksModeButton = modeToggleBooks
+  end
 
   -- Modern ScrollFrame list with dynamic buttons
   UI.scrollFrame = safeCreateFrame("ScrollFrame", "BookArchivistListScroll", listBlock, "UIPanelScrollFrameTemplate")
@@ -661,6 +942,8 @@ local function setupUI()
     end
   end)
 
+  updateListModeUI()
+
   isInitialized = true
   UI.__BookArchivistInitialized = true
   needsRefresh = true
@@ -703,7 +986,6 @@ local ButtonPool = {
 local function entryToDisplay(entry)
   local title = entry.title or "(Untitled)"
   local creator = entry.creator or ""
-  local seen = entry.seenCount or 1
   
   -- Color the title based on material or default gold
   local titleColor = "|cFFFFD100"
@@ -715,10 +997,6 @@ local function entryToDisplay(entry)
   
   if creator ~= "" then
     result = result .. "\n|cFF999999   " .. creator .. "|r"
-  end
-  
-  if seen > 1 then
-    result = result .. " |cFF666666(" .. seen .. "x)|r"
   end
   
   return result
@@ -774,9 +1052,24 @@ local function makeRow()
     if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON then
       PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
     end
-    setSelectedKey(self.bookKey)
-    renderSelected()
-    updateList()
+
+    if getListMode() == LIST_MODES.LOCATIONS then
+      if self.itemKind == "location" and self.locationName then
+        pushLocationSegment(self.locationName)
+        updateList()
+        return
+      elseif self.itemKind == "back" then
+        popLocationSegment()
+        updateList()
+        return
+      end
+    end
+
+    if self.bookKey then
+      setSelectedKey(self.bookKey)
+      renderSelected()
+      updateList()
+    end
   end)
 
   return b
@@ -786,6 +1079,8 @@ local function resetButton(button)
   button:Hide()
   button:ClearAllPoints()
   button.bookKey = nil
+  button.itemKind = nil
+  button.locationName = nil
   if button.selected then button.selected:Hide() end
   if button.selectedEdge then button.selectedEdge:Hide() end
 end
@@ -924,9 +1219,6 @@ function renderSelected()
   if entry.material and entry.material ~= "" then 
     table.insert(meta, "|cFFFFD100Material:|r " .. entry.material) 
   end
-  if entry.seenCount and entry.seenCount > 1 then
-    table.insert(meta, "|cFFFFD100Read:|r " .. entry.seenCount .. "x")
-  end
   if entry.lastSeenAt then 
     table.insert(meta, "|cFFFFD100Last viewed:|r " .. fmtTime(entry.lastSeenAt)) 
   end
@@ -994,51 +1286,129 @@ function updateList()
     return
   end
   local db = addon:GetDB()
-  local filtered = getFilteredKeys()
-  local total = #filtered
+  if not db then
+    debugPrint("[BookArchivist] updateList: DB missing")
+    return
+  end
 
-  local dbCount = db.order and #db.order or 0
-  debugPrint(string.format("[BookArchivist] updateList filtered=%d totalDB=%d", total, dbCount))
+  local mode = getListMode()
+  updateListModeUI()
 
   ButtonPool:ReleaseAll()
 
-  -- Set scroll child height
-  local totalHeight = math.max(1, total * ROW_H)
-  scrollChild:SetSize(336, totalHeight)
+  if mode == LIST_MODES.BOOKS then
+    local filtered = getFilteredKeys()
+    local total = #filtered
+    local dbCount = db.order and #db.order or 0
+    debugPrint(string.format("[BookArchivist] updateList filtered=%d totalDB=%d", total, dbCount))
 
-  -- Create buttons for all items
-  for i = 1, total do
-    local button = ButtonPool:Acquire()
-    button:SetPoint("TOPLEFT", 0, -(i-1) * ROW_H)
-    
-    local key = filtered[i]
-    if key then
-      local entry = db.books[key]
-      if entry then
-        button.bookKey = key
-        button.text:SetText(entryToDisplay(entry))
-        
-        -- Show selection
-        if key == getSelectedKey() then
-          button.selected:Show()
-          button.selectedEdge:Show()
-        else
-          button.selected:Hide()
-          button.selectedEdge:Hide()
+    local totalHeight = math.max(1, total * ROW_H)
+    scrollChild:SetSize(336, totalHeight)
+
+    for i = 1, total do
+      local button = ButtonPool:Acquire()
+      button:SetPoint("TOPLEFT", 0, -(i-1) * ROW_H)
+
+      local key = filtered[i]
+      if key then
+        local entry = db.books[key]
+        if entry then
+          button.bookKey = key
+          button.itemKind = "book"
+          button.text:SetText(entryToDisplay(entry))
+
+          if key == getSelectedKey() then
+            button.selected:Show()
+            button.selectedEdge:Show()
+          else
+            button.selected:Hide()
+            button.selectedEdge:Hide()
+          end
         end
       end
     end
+
+    local countText = string.format("|cFFFFD100%d|r book%s", total, total ~= 1 and "s" or "")
+    if total ~= #(db.order or {}) then
+      countText = countText .. string.format(" (filtered from |cFFFFD100%d|r)", #(db.order or {}))
+    end
+    if infoText then
+      infoText:SetText(countText)
+    end
+    return
   end
-  
-  -- Update count display
-  local countText = string.format("|cFFFFD100%d|r book%s", total, total ~= 1 and "s" or "")
-  if total ~= #(db.order or {}) then
-    countText = countText .. string.format(" (filtered from |cFFFFD100%d|r)", #(db.order or {}))
+
+  -- Location browsing mode
+  local rows = ViewModel.locationRows or {}
+  local total = #rows
+  scrollChild:SetSize(336, math.max(1, total * ROW_H))
+  local activeNode = ViewModel.locationActiveNode or ViewModel.locationRoot
+
+  for i = 1, total do
+    local row = rows[i]
+    local button = ButtonPool:Acquire()
+    button:SetPoint("TOPLEFT", 0, -(i-1) * ROW_H)
+    button.itemKind = row.kind
+
+    if row.kind == "back" then
+      button.locationName = nil
+      button.bookKey = nil
+      button.text:SetText("|cFF00FF00⟵ Back|r\n|cFF999999Up one level|r")
+      button.selected:Hide()
+      button.selectedEdge:Hide()
+    elseif row.kind == "location" then
+      button.locationName = row.name
+      button.bookKey = nil
+      local childNode = row.node
+      local childCount = childNode and childNode.childNames and #childNode.childNames or 0
+      local bookCount = childNode and childNode.books and #childNode.books or 0
+      local detail
+      if childCount > 0 then
+        detail = string.format("%d sub-location%s", childCount, childCount ~= 1 and "s" or "")
+      elseif bookCount > 0 then
+        detail = string.format("%d book%s", bookCount, bookCount ~= 1 and "s" or "")
+      else
+        detail = "Empty location"
+      end
+      button.text:SetText(string.format("|cFFFFD100%s|r\n|cFF999999%s|r", row.name, detail))
+      button.selected:Hide()
+      button.selectedEdge:Hide()
+    elseif row.kind == "book" then
+      local key = row.key
+      button.bookKey = key
+      button.locationName = nil
+      local entry = key and db.books and db.books[key]
+      button.text:SetText(entry and entryToDisplay(entry) or "|cFFFFD100Unknown Book|r")
+      if key == getSelectedKey() then
+        button.selected:Show()
+        button.selectedEdge:Show()
+      else
+        button.selected:Hide()
+        button.selectedEdge:Hide()
+      end
+    else
+      button.text:SetText("?")
+      button.selected:Hide()
+      button.selectedEdge:Hide()
+    end
   end
-  if infoText then
-    infoText:SetText(countText)
+
+  local infoMessage
+  if not activeNode or (total == 0 and (#(ViewModel.locationPath or {}) == 0)) then
+    infoMessage = "|cFF888888No saved locations yet|r"
   else
-    debugPrint("[BookArchivist] updateList: info text missing; count suppressed")
+    local hasChildren = activeNode.childNames and #activeNode.childNames > 0
+    if hasChildren then
+      local count = #activeNode.childNames
+      infoMessage = string.format("|cFFFFD100%d|r location%s", count, count ~= 1 and "s" or "")
+    else
+      local count = activeNode.books and #activeNode.books or 0
+      infoMessage = string.format("|cFFFFD100%d|r book%s in this location", count, count ~= 1 and "s" or "")
+    end
+  end
+
+  if infoText then
+    infoText:SetText(infoMessage)
   end
 end
 
@@ -1052,6 +1422,10 @@ local function refreshAllImpl()
   debugPrint("[BookArchivist] refreshAll: starting rebuildFiltered")
   if not safeStep("BookArchivist rebuildFiltered", rebuildFiltered) then
     debugPrint("[BookArchivist] refreshAll: rebuildFiltered failed")
+    return
+  end
+  if not safeStep("BookArchivist rebuildLocationView", rebuildLocationView) then
+    debugPrint("[BookArchivist] refreshAll: rebuildLocationView failed")
     return
   end
   debugPrint("[BookArchivist] refreshAll: starting updateList")
