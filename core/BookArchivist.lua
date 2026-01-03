@@ -21,178 +21,20 @@ local function createFrameShim(...)
   return dummy
 end
 
-local optionsPanel
-local optionsCategory
-local settingsPanelHooked = false
-local interfaceOptionsHooked = false
-local gameMenuHooked = false
-local shouldHideGameMenuOnClose = false
-local function resetGameMenuFlagSoon()
-  if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" then
-    return
+BookArchivist.__createFrame = createFrameShim
+
+local function getOptionsUI()
+  if not BookArchivist.UI then
+    return nil
   end
-  C_Timer.After(1.0, function()
-    shouldHideGameMenuOnClose = false
-  end)
+  return BookArchivist.UI.Options
 end
 
-local function ensureSettingsUILoaded()
-  if type(C_AddOns) ~= "table" then
-    return
+local function syncOptionsUI()
+  local optionsUI = getOptionsUI()
+  if optionsUI and optionsUI.Sync then
+    optionsUI:Sync()
   end
-  local isLoaded = C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("Blizzard_Settings")
-  if not isLoaded and C_AddOns.LoadAddOn then
-    local ok = pcall(C_AddOns.LoadAddOn, "Blizzard_Settings")
-    if not ok then
-      return
-    end
-  end
-end
-
-local function hideGameMenuFrame()
-  if type(_G) ~= "table" then
-    return
-  end
-  local gameMenu = rawget(_G, "GameMenuFrame")
-  if not gameMenu then
-    return
-  end
-  local hideUIPanel = rawget(_G, "HideUIPanel")
-  if type(hideUIPanel) == "function" then
-    hideUIPanel(gameMenu)
-  elseif gameMenu.Hide then
-    gameMenu:Hide()
-  end
-end
-
-local function registerOptionsPanel(panel)
-  if not panel then return end
-  local settingsAPI
-  local addCategoryFn
-  if type(_G) == "table" then
-    settingsAPI = rawget(_G, "Settings")
-    addCategoryFn = rawget(_G, "InterfaceOptions_AddCategory")
-  end
-
-  if type(settingsAPI) == "table" then
-    local registerAddOnCategory = settingsAPI.RegisterAddOnCategory
-    local registerCanvas = settingsAPI.RegisterCanvasLayoutCategory
-    local registerVertical = settingsAPI.RegisterVerticalLayoutCategory
-    local category
-    if type(registerCanvas) == "function" then
-      category = registerCanvas(panel, panel.name)
-    elseif type(registerVertical) == "function" then
-      category = registerVertical(panel, panel.name)
-    end
-    if category and type(registerAddOnCategory) == "function" then
-      category.ID = category.ID or "BOOKARCHIVIST_OPTIONS"
-      registerAddOnCategory(category)
-      optionsCategory = category
-    end
-  end
-
-  if type(addCategoryFn) == "function" then
-    addCategoryFn(panel)
-  end
-end
-
-local function handleOptionsPanelClosed()
-  if not shouldHideGameMenuOnClose then
-    return
-  end
-  hideGameMenuFrame()
-  resetGameMenuFlagSoon()
-end
-
-local function ensureOptionsCloseHooks()
-  if type(_G) ~= "table" then
-    return
-  end
-
-  local settingsFrame = rawget(_G, "SettingsPanel")
-  if settingsFrame and settingsFrame.HookScript and not settingsPanelHooked then
-    settingsFrame:HookScript("OnHide", handleOptionsPanelClosed)
-    settingsPanelHooked = true
-  end
-
-  local interfaceFrame = rawget(_G, "InterfaceOptionsFrame")
-  if interfaceFrame and interfaceFrame.HookScript and not interfaceOptionsHooked then
-    interfaceFrame:HookScript("OnHide", handleOptionsPanelClosed)
-    interfaceOptionsHooked = true
-  end
-end
-
-local function ensureGameMenuHook()
-  if type(_G) ~= "table" or gameMenuHooked then
-    return
-  end
-  local gameMenu = rawget(_G, "GameMenuFrame")
-  if not gameMenu or not gameMenu.HookScript then
-    return
-  end
-  gameMenu:HookScript("OnShow", function()
-    if not shouldHideGameMenuOnClose then
-      return
-    end
-    shouldHideGameMenuOnClose = false
-    hideGameMenuFrame()
-    resetGameMenuFlagSoon()
-  end)
-  gameMenuHooked = true
-end
-
-local function syncOptionsPanel()
-  if not optionsPanel or not optionsPanel.debugCheckbox then
-    return
-  end
-  local enabled = false
-  if BookArchivist and type(BookArchivist.IsDebugEnabled) == "function" then
-    enabled = BookArchivist:IsDebugEnabled() and true or false
-  end
-  optionsPanel.debugCheckbox:SetChecked(enabled)
-end
-
-local function ensureOptionsPanel()
-  if optionsPanel or not globalCreateFrame then
-    syncOptionsPanel()
-    ensureOptionsCloseHooks()
-    ensureGameMenuHook()
-    return
-  end
-
-  ensureSettingsUILoaded()
-  local parent
-  if type(_G) == "table" then
-    parent = rawget(_G, "UIParent")
-  end
-  optionsPanel = createFrameShim("Frame", "BookArchivistOptionsPanel", parent)
-  optionsPanel.name = "Book Archivist"
-
-  local title = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-  title:SetPoint("TOPLEFT", 16, -16)
-  title:SetText("Book Archivist")
-
-  local subtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-  subtitle:SetText("Enable verbose diagnostics to troubleshoot refresh issues.")
-
-  local checkbox = createFrameShim("CheckButton", "BookArchivistDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
-  checkbox:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -12)
-  checkbox.Text:SetText("Enable debug logging")
-  checkbox.tooltipText = "Shows extra BookArchivist information in chat for troubleshooting."
-  checkbox:SetScript("OnClick", function(self)
-    if BookArchivist and type(BookArchivist.SetDebugEnabled) == "function" then
-      BookArchivist:SetDebugEnabled(self:GetChecked())
-    end
-  end)
-
-  optionsPanel.debugCheckbox = checkbox
-  optionsPanel.refresh = syncOptionsPanel
-  syncOptionsPanel()
-
-  registerOptionsPanel(optionsPanel)
-  ensureOptionsCloseHooks()
-  ensureGameMenuHook()
 end
 
 local eventFrame = createFrameShim("Frame")
@@ -210,8 +52,10 @@ local function handleAddonLoaded(name)
   if Core and Core.EnsureDB then
     Core:EnsureDB()
   end
-
-  ensureOptionsPanel()
+  local optionsUI = getOptionsUI()
+  if optionsUI and optionsUI.OnAddonLoaded then
+    optionsUI:OnAddonLoaded(name)
+  end
   if MinimapModule and MinimapModule.Initialize then
     MinimapModule:Initialize()
   end
@@ -270,44 +114,13 @@ function BookArchivist:SetDebugEnabled(state)
   if type(self.EnableDebugLogging) == "function" then
     self.EnableDebugLogging(state, true)
   end
-  syncOptionsPanel()
+  syncOptionsUI()
 end
 
 function BookArchivist:OpenOptionsPanel()
-  ensureSettingsUILoaded()
-  ensureOptionsPanel()
-  ensureOptionsCloseHooks()
-  ensureGameMenuHook()
-  local gameMenu
-  local wasGameMenuVisible = false
-  if type(_G) == "table" then
-    gameMenu = rawget(_G, "GameMenuFrame")
-    wasGameMenuVisible = gameMenu and gameMenu:IsShown() and true or false
-  end
-  local openedPanel = false
-  local settingsAPI = type(_G) == "table" and rawget(_G, "Settings") or nil
-  if settingsAPI and type(settingsAPI.OpenToCategory) == "function" and optionsCategory then
-    settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
-    settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
-    openedPanel = true
-  end
-
-  if not openedPanel then
-    local openLegacy = type(_G) == "table" and rawget(_G, "InterfaceOptionsFrame_OpenToCategory") or nil
-    if type(openLegacy) == "function" and optionsPanel then
-      openLegacy(optionsPanel)
-      openLegacy(optionsPanel)
-      openedPanel = true
-    end
-  end
-
-  if openedPanel then
-    shouldHideGameMenuOnClose = not wasGameMenuVisible
-    if shouldHideGameMenuOnClose then
-      -- Make sure the Game Menu stays hidden while interacting with Settings.
-      hideGameMenuFrame()
-    end
-    ensureOptionsCloseHooks()
+  local optionsUI = getOptionsUI()
+  if optionsUI and optionsUI.Open then
+    optionsUI:Open()
   end
 end
 
