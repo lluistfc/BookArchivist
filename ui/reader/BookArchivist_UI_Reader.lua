@@ -112,6 +112,17 @@ local function stripHTMLTags(text)
   return cleaned
 end
 
+local function getDeleteButton()
+  if state.deleteButton and state.deleteButton.IsObjectType and state.deleteButton:IsObjectType("Button") then
+    return state.deleteButton
+  end
+  local ensureFn = ReaderUI.__ensureDeleteButton
+  if ensureFn then
+    state.deleteButton = ensureFn()
+  end
+  return state.deleteButton
+end
+
 local function updateReaderHeight(height)
   if not state.textChild then
     state.textChild = getWidget("textChild")
@@ -160,8 +171,9 @@ local function renderBookContent(text)
 end
 
 function ReaderUI:DisableDeleteButton()
-  if state.deleteButton then
-    state.deleteButton:Disable()
+  local button = getDeleteButton()
+  if button then
+    button:Disable()
   end
 end
 
@@ -204,7 +216,8 @@ function ReaderUI:RenderSelected()
     bookTitle:SetTextColor(0.5, 0.5, 0.5)
     metaDisplay:SetText("")
     renderBookContent("")
-    if state.deleteButton then state.deleteButton:Disable() end
+    local deleteButton = getDeleteButton()
+    if deleteButton then deleteButton:Disable() end
     if state.countText then
       state.countText:SetText("|cFF888888Books saved as you read them in-game|r")
     end
@@ -255,7 +268,8 @@ function ReaderUI:RenderSelected()
   end
   renderBookContent(fullText)
 
-  if state.deleteButton then state.deleteButton:Enable() end
+  local deleteButton = getDeleteButton()
+  if deleteButton then deleteButton:Enable() end
 
   local pageCount = 0
   if entry.pages then

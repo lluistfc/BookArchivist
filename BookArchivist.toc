@@ -7,19 +7,20 @@
 ## AddonCompartmentFunc: BookArchivist_ToggleFromCompartment
 ## OptionalDeps: WoWUnit
 
-BookArchivist_Core.lua
-BookArchivist_Location.lua
-BookArchivist_Capture.lua
-BookArchivist_Minimap.lua
-BookArchivist.lua
-BookArchivist_UI_List.lua
-BookArchivist_UI_List_Layout.lua
-BookArchivist_UI_List_Filter.lua
-BookArchivist_UI_List_Location.lua
-BookArchivist_UI_List_Rows.lua
-BookArchivist_UI_Reader.lua
-BookArchivist_UI_Reader_Layout.lua
-BookArchivist_UI.lua
-BookArchivist_UI_Core.lua
-BookArchivist_UI_Frame.lua
-BookArchivist_UI_Runtime.lua
+core/BookArchivist_Core.lua
+core/BookArchivist_Location.lua
+core/BookArchivist_Capture.lua
+core/BookArchivist_Minimap.lua
+core/BookArchivist.lua
+ui/list/BookArchivist_UI_List.lua
+ui/list/BookArchivist_UI_List_Layout.lua
+ui/list/BookArchivist_UI_List_Filter.lua
+ui/list/BookArchivist_UI_List_Location.lua
+ui/list/BookArchivist_UI_List_Rows.lua
+ui/reader/BookArchivist_UI_Reader.lua
+ui/reader/BookArchivist_UI_Reader_Layout.lua
+ui/BookArchivist_UI.lua
+ui/BookArchivist_UI_Core.lua
+ui/BookArchivist_UI_Frame.lua
+ui/BookArchivist_UI_Runtime.lua
+tests/BookArchivist_Tests.lua
