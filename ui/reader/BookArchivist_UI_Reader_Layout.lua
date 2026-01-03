@@ -17,13 +17,64 @@ local debugPrint = function(...)
 	BookArchivist:DebugPrint(...)
 end
 
+local tableUnpack = table and table.unpack or nil
+---@diagnostic disable-next-line: deprecated
+local fallbackUnpack = type(_G) == "table" and (_G.unpack or _G.table and _G.table.unpack) or nil
+
+local unsupportedHTMLFontTags = {}
+local unsupportedHTMLSpacingTags = {}
+
+local function resolveFontObject(font)
+	if type(font) == "string" then
+		local globalFonts = _G or {}
+		return globalFonts[font] or font
+	end
+	return font
+end
+
+local function safeHTMLCall(frame, methodName, ...)
+	if not frame or type(frame[methodName]) ~= "function" then
+		return false
+	end
+	local ok, err = pcall(frame[methodName], frame, ...)
+	if not ok and debugPrint then
+		debugPrint(string.format("[BookArchivist] ReaderUI %s failed: %s", tostring(methodName), tostring(err)))
+	end
+	return ok
+end
+
+local function applyHTMLFont(frame, tag, font)
+	if not font or unsupportedHTMLFontTags[tag] then
+		return
+	end
+	local resolved = resolveFontObject(font)
+	if not safeHTMLCall(frame, "SetFontObject", tag, resolved) then
+		unsupportedHTMLFontTags[tag] = true
+	end
+end
+
+local function applyHTMLSpacing(frame, tag, amount)
+	if not amount or unsupportedHTMLSpacingTags[tag] then
+		return
+	end
+	if not safeHTMLCall(frame, "SetSpacing", tag, amount) then
+		unsupportedHTMLSpacingTags[tag] = true
+	end
+end
+
 local function deleteDebug(...)
 	local args = { ... }
 	if #args == 0 then
 		return
 	end
 	table.insert(args, 1, "[BookArchivist][DeleteBtn]")
-	BookArchivist:DebugPrint(table.unpack(args))
+	if tableUnpack then
+		BookArchivist:DebugPrint(tableUnpack(args))
+	elseif fallbackUnpack then
+		BookArchivist:DebugPrint(fallbackUnpack(args))
+	else
+		BookArchivist:DebugPrint(table.concat(args, " "))
+	end
 end
 
 local function describeFrame(frame)
@@ -295,8 +346,16 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 		htmlFrame:SetPoint("TOPLEFT", 6, -6)
 		htmlFrame:SetPoint("TOPRIGHT", -12, -6)
-		htmlFrame:SetFontObject("GameFontNormal")
-		htmlFrame:SetSpacing(2)
+		local bodyFont = GameFontNormal or "GameFontNormal"
+		local headingFont = GameFontNormalLarge or bodyFont
+		local subHeadingFont = GameFontHighlight or bodyFont
+		applyHTMLFont(htmlFrame, "p", bodyFont)
+		applyHTMLFont(htmlFrame, "li", bodyFont)
+		applyHTMLFont(htmlFrame, "h1", headingFont)
+		applyHTMLFont(htmlFrame, "h2", subHeadingFont)
+		applyHTMLFont(htmlFrame, "h3", subHeadingFont)
+		applyHTMLSpacing(htmlFrame, "p", 2)
+		applyHTMLSpacing(htmlFrame, "li", 2)
 		htmlFrame:SetWidth(460)
 		htmlFrame:Hide()
 		uiFrame.htmlText = htmlFrame

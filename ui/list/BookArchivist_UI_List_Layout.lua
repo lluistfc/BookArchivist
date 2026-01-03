@@ -2,6 +2,10 @@
 local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
+local function hasMethod(obj, methodName)
+  return obj and type(obj[methodName]) == "function"
+end
+
 local function wireSearchHandlers(listUI, box)
   if not box then
     return
@@ -33,15 +37,40 @@ function ListUI:EnsureInfoText()
   end
 
   local listBlock = self:GetFrame("listBlock")
-  if not listBlock then
+  if not hasMethod(listBlock, "CreateFontString") then
     return nil
   end
 
   info = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-  info:SetPoint("BOTTOM", listBlock, "BOTTOM", 0, 6)
-  info:SetText("|cFF00FF00Tip:|r Open books normally - pages save automatically")
+  if hasMethod(info, "SetPoint") then
+    info:SetPoint("BOTTOM", listBlock, "BOTTOM", 0, 6)
+  end
+  if hasMethod(info, "SetText") then
+    info:SetText("|cFF00FF00Tip:|r Open books normally - pages save automatically")
+  end
   self:SetFrame("infoText", info)
   return info
+end
+
+function ListUI:EnsureListHeader()
+  local listHeader = self:GetFrame("listHeader")
+  if listHeader and hasMethod(listHeader, "SetText") then
+    return listHeader
+  end
+
+  local listBlock = self:GetFrame("listBlock")
+  if not hasMethod(listBlock, "CreateFontString") then
+    return nil
+  end
+
+  listHeader = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  if listHeader and hasMethod(listHeader, "SetPoint") then
+    listHeader:SetPoint("TOPLEFT", listBlock, "TOPLEFT", 8, -8)
+  end
+  if listHeader and hasMethod(listHeader, "SetText") then
+    listHeader:SetText("Saved Books")
+  end
+  return self:SetFrame("listHeader", listHeader)
 end
 
 function ListUI:GetListBlock()
@@ -164,8 +193,8 @@ function ListUI:UpdateListModeUI()
   local mode = self:GetListMode()
   local modes = self:GetListModes()
 
-  local listHeader = self:GetFrame("listHeader")
-  if listHeader then
+  local listHeader = self:EnsureListHeader()
+  if listHeader and hasMethod(listHeader, "SetText") then
     if mode == modes.BOOKS then
       listHeader:SetText("Saved Books")
     else
@@ -174,31 +203,37 @@ function ListUI:UpdateListModeUI()
   end
 
   local breadcrumb = self:GetFrame("locationBreadcrumb")
-  if breadcrumb then
-    if mode == modes.LOCATIONS and self:GetLocationState().root then
+  if breadcrumb and hasMethod(breadcrumb, "SetText") then
+    local shouldShow = mode == modes.LOCATIONS and self:GetLocationState().root
+    if shouldShow then
       breadcrumb:SetText("|cFFCCCCCC" .. (self:GetLocationBreadcrumbText() or "") .. "|r")
-      breadcrumb:Show()
+      if hasMethod(breadcrumb, "Show") then
+        breadcrumb:Show()
+      end
     else
       breadcrumb:SetText("")
-      breadcrumb:Hide()
+      if hasMethod(breadcrumb, "Hide") then
+        breadcrumb:Hide()
+      end
     end
   end
 
   local listSeparator = self:GetFrame("listSeparator")
   local listBlock = self:GetFrame("listBlock")
-  if listSeparator and listHeader and listBlock then
+  if hasMethod(listSeparator, "ClearAllPoints") and hasMethod(listSeparator, "SetPoint") and listBlock then
     listSeparator:ClearAllPoints()
     local anchorTarget = listHeader
-    if mode == modes.LOCATIONS and breadcrumb and breadcrumb:IsShown() then
+    if mode == modes.LOCATIONS and breadcrumb and hasMethod(breadcrumb, "IsShown") and breadcrumb:IsShown() then
       anchorTarget = breadcrumb
     end
+    anchorTarget = anchorTarget or listBlock
     listSeparator:SetPoint("TOPLEFT", anchorTarget, "BOTTOMLEFT", -4, -4)
     listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -8, -28)
   end
 
   local booksModeButton = self:GetFrame("booksModeButton")
   local locationsModeButton = self:GetFrame("locationsModeButton")
-  if booksModeButton and locationsModeButton then
+  if hasMethod(booksModeButton, "SetEnabled") and hasMethod(locationsModeButton, "SetEnabled") then
     booksModeButton:SetEnabled(mode ~= modes.BOOKS)
     locationsModeButton:SetEnabled(mode ~= modes.LOCATIONS)
   end

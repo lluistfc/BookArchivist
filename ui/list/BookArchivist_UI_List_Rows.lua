@@ -2,6 +2,12 @@
 local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
+local BACK_ICON_TAG = "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:14:14:0:0|t"
+
+local function hasMethod(obj, methodName)
+  return obj and type(obj[methodName]) == "function"
+end
+
 local function entryToDisplay(entry)
   local title = entry.title or "(Untitled)"
   local creator = entry.creator or ""
@@ -168,7 +174,11 @@ function ListUI:UpdateList()
     self:DebugPrint(string.format("[BookArchivist] updateList filtered=%d totalDB=%d", total, dbCount))
 
     local totalHeight = math.max(1, total * rowHeight)
-    scrollChild:SetSize(336, totalHeight)
+    if hasMethod(scrollChild, "SetSize") then
+      scrollChild:SetSize(336, totalHeight)
+    else
+      self:DebugPrint("[BookArchivist] scrollChild missing SetSize; skipping resize")
+    end
 
     for i = 1, total do
       local button = acquireButton(self)
@@ -205,7 +215,11 @@ function ListUI:UpdateList()
 
   local rows = self:GetLocationRows()
   local total = #rows
-  scrollChild:SetSize(336, math.max(1, total * rowHeight))
+  if hasMethod(scrollChild, "SetSize") then
+    scrollChild:SetSize(336, math.max(1, total * rowHeight))
+  else
+    self:DebugPrint("[BookArchivist] scrollChild missing SetSize; skipping resize")
+  end
   local state = self:GetLocationState()
   local activeNode = state.activeNode or state.root
 
@@ -218,7 +232,7 @@ function ListUI:UpdateList()
     if row.kind == "back" then
       button.locationName = nil
       button.bookKey = nil
-      button.text:SetText("|cFF00FF00⟵ Back|r\n|cFF999999Up one level|r")
+      button.text:SetText(string.format("%s |cFFFFD100Back|r\n|cFF999999Up one level|r", BACK_ICON_TAG))
       button.selected:Hide()
       button.selectedEdge:Hide()
     elseif row.kind == "location" then
