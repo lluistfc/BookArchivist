@@ -61,7 +61,7 @@ local function configureOptionsButton(uiFrame, safeCreateFrame)
 	local function tint(tex, r, g, b)
 		if tex then
 			tex:SetTexCoord(0, 1, 0, 1)
-			ex:SetVertexColor(r, g, b, 1)
+			tex:SetVertexColor(r, g, b, 1)
 		end
 	end
 

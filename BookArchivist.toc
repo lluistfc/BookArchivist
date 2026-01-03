@@ -5,6 +5,7 @@
 ## Interface: 110000
 ## SavedVariablesPerCharacter: BookArchivistDB
 ## AddonCompartmentFunc: BookArchivist_ToggleFromCompartment
+## OptionalDeps: WoWUnit
 
 BookArchivist_Core.lua
 BookArchivist_Location.lua
