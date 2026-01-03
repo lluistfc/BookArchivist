@@ -11,4 +11,14 @@ BookArchivist_Location.lua
 BookArchivist_Capture.lua
 BookArchivist_Minimap.lua
 BookArchivist.lua
+BookArchivist_UI_List.lua
+BookArchivist_UI_List_Layout.lua
+BookArchivist_UI_List_Filter.lua
+BookArchivist_UI_List_Location.lua
+BookArchivist_UI_List_Rows.lua
+BookArchivist_UI_Reader.lua
+BookArchivist_UI_Reader_Layout.lua
 BookArchivist_UI.lua
+BookArchivist_UI_Core.lua
+BookArchivist_UI_Frame.lua
+BookArchivist_UI_Runtime.lua

@@ -1,0 +1,83 @@
+---@diagnostic disable: undefined-global, undefined-field
+local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
+if not ListUI then return end
+
+local function matches(entry, query)
+  if query == "" then
+    return true
+  end
+
+  query = query:lower()
+
+  local function has(text)
+    text = (text or ""):lower()
+    return text:find(query, 1, true) ~= nil
+  end
+
+  if has(entry.title) or has(entry.creator) or has(entry.author) then
+    return true
+  end
+
+  if entry.pages then
+    for _, page in pairs(entry.pages) do
+      if has(page) then
+        return true
+      end
+    end
+  end
+
+  return false
+end
+
+local function trim(text)
+  text = text or ""
+  return text:gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+function ListUI:GetSearchQuery()
+  return trim(self:GetSearchText())
+end
+
+function ListUI:RebuildFiltered()
+  local filtered = self:GetFilteredKeys()
+  wipe(filtered)
+  self:DisableDeleteButton()
+
+  local addon = self:GetAddon()
+  if not addon then
+    self:DebugPrint("[BookArchivist] rebuildFiltered: addon missing")
+    self:LogError("BookArchivist addon missing during rebuildFiltered")
+    return
+  end
+
+  local db = addon:GetDB()
+  if not db then
+    self:DebugPrint("[BookArchivist] rebuildFiltered: DB missing")
+    self:LogError("BookArchivist DB missing during rebuildFiltered")
+    return
+  end
+
+  local order = db.order or {}
+  self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d)", #order))
+  local query = self:GetSearchQuery()
+
+  local selectedKey = self:GetSelectedKey()
+  local selectionStillValid = false
+
+  for _, key in ipairs(order) do
+    local entry = db.books[key]
+    if entry and matches(entry, query) then
+      table.insert(filtered, key)
+      if key == selectedKey then
+        selectionStillValid = true
+      end
+    end
+  end
+
+  self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #order))
+
+  if selectedKey and not selectionStillValid then
+    self:SetSelectedKey(nil)
+    self:NotifySelectionChanged()
+  end
+end
