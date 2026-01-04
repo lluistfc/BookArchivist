@@ -500,6 +500,23 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	state.textChild = textChild
 	uiFrame.textChild = textChild
 
+	local function applyReaderTextWidths()
+		local hostWidth = 0
+		if readerScrollRow and readerScrollRow.GetWidth then
+			hostWidth = readerScrollRow:GetWidth() or 0
+		elseif readerBlock and readerBlock.GetWidth then
+			hostWidth = readerBlock:GetWidth() or 0
+		end
+		local gutter = (Metrics.PAD or 12) + (Metrics.SCROLLBAR_GUTTER or 18)
+		local targetWidth = math.max(520, hostWidth - (innerPad * 2) - gutter)
+		if state.textPlain and state.textPlain.SetWidth then
+			state.textPlain:SetWidth(targetWidth)
+		end
+		if state.htmlText and state.htmlText.SetWidth then
+			state.htmlText:SetWidth(targetWidth)
+		end
+	end
+
 	local textPlain = textChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	if rememberWidget then
 		rememberWidget("textPlain", textPlain)
@@ -509,7 +526,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	textPlain:SetJustifyH("LEFT")
 	textPlain:SetJustifyV("TOP")
 	textPlain:SetSpacing(3.5)
-	textPlain:SetWidth(460)
+	textPlain:SetWidth(560)
 
 	local htmlFrame
 	local htmlCreated = pcall(function()
@@ -532,7 +549,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		applyHTMLFont(htmlFrame, "h3", subHeadingFont)
 		applyHTMLSpacing(htmlFrame, "p", 2)
 		applyHTMLSpacing(htmlFrame, "li", 2)
-		htmlFrame:SetWidth(460)
+		htmlFrame:SetWidth(560)
 		htmlFrame:Hide()
 		uiFrame.htmlText = htmlFrame
 	else
@@ -542,6 +559,13 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
+	applyReaderTextWidths()
+	if readerScrollRow and readerScrollRow.SetScript then
+		readerScrollRow:SetScript("OnSizeChanged", function()
+			applyReaderTextWidths()
+		end)
+	end
+
 	local deleteParent = actionsRail or readerHeaderRow
 	local deleteButton = ensureDeleteButton(deleteParent)
 	if not deleteButton then
@@ -549,13 +573,6 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
 			BookArchivist.UI.Internal.logError("BookArchivist delete button failed to initialize.")
 		end
-	end
-
-	if actionsRail and deleteButton then
-		nextButton:ClearAllPoints()
-		nextButton:SetHeight(Metrics.BTN_H)
-		nextButton:SetPoint("TOPLEFT", deleteButton, "BOTTOMLEFT", 0, -(Metrics.GAP_S or Metrics.GUTTER * 0.5))
-		nextButton:SetPoint("TOPRIGHT", deleteButton, "BOTTOMRIGHT", 0, -(Metrics.GAP_S or Metrics.GUTTER * 0.5))
 	end
 
 	local countTextParent = uiFrame or readerBlock

@@ -41,7 +41,7 @@ local DEFAULT_PORTRAIT = "Interface\\Icons\\INV_Misc_Book_09"
 local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"
 local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
 local MIN_LIST_WIDTH = 260
-local MIN_READER_WIDTH = 440
+local MIN_READER_WIDTH = 520
 local HEADER_ROW_GAP_Y = Metrics.GAP_XS or 0
 local function computeHeaderRowHeights()
 	local headerH = Metrics.HEADER_H or 72

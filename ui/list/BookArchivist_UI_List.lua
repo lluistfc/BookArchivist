@@ -330,10 +330,6 @@ function ListUI:FormatRowMetadata(entry)
     table.insert(parts, zone)
   end
 
-  if entry.lastSeenAt then
-    table.insert(parts, self:GetTimeFormatter()(entry.lastSeenAt))
-  end
-
   if #parts == 0 then
     return "Stored automatically when you read" -- fallback
   end
