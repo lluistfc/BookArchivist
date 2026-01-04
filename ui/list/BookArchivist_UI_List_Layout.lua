@@ -202,38 +202,58 @@ function ListUI:Create(uiFrame)
   local headerLeft = uiFrame.HeaderLeft or header
   local headerCenter = uiFrame.HeaderCenter or header
   local headerRight = uiFrame.HeaderRight or header
+  local headerLeftTop = uiFrame.HeaderLeftTop or headerLeft
+  local headerLeftBottom = uiFrame.HeaderLeftBottom or headerLeft
+  local headerCenterTop = uiFrame.HeaderCenterTop or headerCenter
+  local headerCenterBottom = uiFrame.HeaderCenterBottom or headerCenter
   local headerRightTop = uiFrame.HeaderRightTop or headerRight
   local headerRightBottom = uiFrame.HeaderRightBottom or headerRight
 
-  local titleText = headerLeft:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
-  titleText:SetPoint("TOPLEFT", headerLeft, "TOPLEFT", 0, 0)
-  titleText:SetPoint("TOPRIGHT", headerLeft, "TOPRIGHT", 0, 0)
-  titleText:SetJustifyH("LEFT")
-  titleText:SetJustifyV("TOP")
-  titleText:SetText("Book Archivist")
-  self:SetFrame("headerTitle", titleText)
+  local titleHost = headerLeftTop or headerLeft
+  local titleText
+  if titleHost and titleHost.CreateFontString then
+    titleText = titleHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
+  end
+  if titleText then
+    titleText:SetPoint("TOPLEFT", titleHost, "TOPLEFT", 0, 0)
+    titleText:SetPoint("BOTTOMRIGHT", titleHost, "BOTTOMRIGHT", 0, 0)
+    titleText:SetJustifyH("LEFT")
+    titleText:SetJustifyV("MIDDLE")
+    titleText:SetText("Book Archivist")
+    self:SetFrame("headerTitle", titleText)
+  else
+    self:LogError("Unable to create header title text (HeaderLeftTop missing?)")
+  end
 
-  local headerCount = headerLeft:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  headerCount:SetPoint("TOPLEFT", titleText, "BOTTOMLEFT", 0, -(Metrics.GAP_XS or 4))
-  headerCount:SetPoint("RIGHT", headerLeft, "RIGHT", 0, 0)
-  headerCount:SetJustifyH("LEFT")
-  headerCount:SetJustifyV("TOP")
-  headerCount:SetText("Saving every page you read")
-  self:SetFrame("headerCountText", headerCount)
+  local countHost = headerLeftBottom or headerLeft
+  local headerCount
+  if countHost and countHost.CreateFontString then
+    headerCount = countHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  end
+  if headerCount then
+    headerCount:SetPoint("TOPLEFT", countHost, "TOPLEFT", 0, 0)
+    headerCount:SetPoint("BOTTOMRIGHT", countHost, "BOTTOMRIGHT", 0, 0)
+    headerCount:SetJustifyH("LEFT")
+    headerCount:SetJustifyV("MIDDLE")
+    headerCount:SetText("Saving every page you read")
+    self:SetFrame("headerCountText", headerCount)
+  else
+    self:LogError("Unable to create header count text (HeaderLeftBottom missing?)")
+  end
 
-  local searchBox = self:SafeCreateFrame("EditBox", "BookArchivistSearchBox", headerCenter, "SearchBoxTemplate")
+  local searchHost = headerCenterBottom or headerCenter
+  local searchBox = self:SafeCreateFrame("EditBox", "BookArchivistSearchBox", searchHost, "SearchBoxTemplate")
   if searchBox then
     self:SetFrame("searchBox", searchBox)
     searchBox:SetHeight((Metrics.BTN_H or 22) + (Metrics.GAP_S or 0))
-    searchBox:SetPoint("CENTER", headerCenter, "CENTER", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
-    searchBox:SetPoint("LEFT", headerCenter, "LEFT", 0, 0)
-    searchBox:SetPoint("RIGHT", headerCenter, "RIGHT", 0, 0)
+    searchBox:SetPoint("TOPLEFT", searchHost, "TOPLEFT", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
+    searchBox:SetPoint("BOTTOMRIGHT", searchHost, "BOTTOMRIGHT", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
     wireSearchHandlers(self, searchBox)
   end
 
-  local clearButton = self:SafeCreateFrame("Button", nil, headerCenter, "UIPanelCloseButton")
+  local clearButton = self:SafeCreateFrame("Button", nil, searchHost, "UIPanelCloseButton")
   if clearButton and searchBox then
     clearButton:SetScale(0.7)
     clearButton:SetPoint("LEFT", searchBox, "RIGHT", -(Metrics.GAP_XS or 4), 0)
@@ -282,7 +302,6 @@ function ListUI:Create(uiFrame)
   sortDropdown:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
   sortDropdown:SetPoint("CENTER", headerRightBottom, "CENTER", 0, 0)
   self:InitializeSortDropdown(sortDropdown)
-  headerCount:SetPoint("RIGHT", sortDropdown, "LEFT", -(Metrics.GAP_L or Metrics.GAP_M or (Metrics.GUTTER or 10)), 0)
 
   local filterContainer = CreateFrame("Frame", nil, headerRightBottom)
   filterContainer:SetPoint("LEFT", headerRightBottom, "LEFT", 0, 0)

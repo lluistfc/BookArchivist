@@ -20,7 +20,7 @@ local Metrics = BookArchivist.UI.Metrics or {
 	HEADER_LEFT_SAFE_X = 54,
 	HEADER_LEFT_W = 260,
 	HEADER_CENTER_BIAS_Y = 0,
-	HEADER_H = 72,
+	HEADER_H = 90,
 	LIST_HEADER_H = 34,
 	LIST_TIP_H = 20,
 	READER_HEADER_H = 54,
@@ -36,16 +36,30 @@ local Metrics = BookArchivist.UI.Metrics or {
 }
 
 local DEFAULT_WIDTH = 900
-local DEFAULT_HEIGHT = 600
+local DEFAULT_HEIGHT = 680
 local DEFAULT_PORTRAIT = "Interface\\Icons\\INV_Misc_Book_09"
 local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"
 local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
 local MIN_LIST_WIDTH = 260
 local MIN_READER_WIDTH = 320
-local HEADER_ROW_GAP = math.max(4, math.floor((Metrics.GUTTER or 10) * 0.5))
-local headerRowGapY = Metrics.GAP_XS or 0
-local headerTopRowHeight = math.max(34, (Metrics.BTN_H or 22) + (Metrics.GAP_S or 6))
-local headerBottomRowHeight = math.max(32, (Metrics.BTN_H or 22) + (Metrics.GAP_S or 6))
+local HEADER_ROW_GAP_Y = Metrics.GAP_XS or 0
+local function computeHeaderRowHeights()
+	local headerH = Metrics.HEADER_H or 72
+	local inset = Metrics.PAD_INSET or Metrics.PAD or 10
+	local innerH = math.max(20, headerH - (inset * 2))
+	local base = math.max(24, (Metrics.BTN_H or 22) + (Metrics.GAP_S or 6))
+	local top = base
+	local bottom = base
+	local total = top + bottom
+	if total > innerH then
+		local scale = innerH / total
+		top = math.max(20, math.floor(top * scale))
+		bottom = math.max(20, innerH - top)
+	end
+	return top, bottom
+end
+
+local HEADER_TOP_ROW_H, HEADER_BOTTOM_ROW_H = computeHeaderRowHeights()
 
 --[[
 Layout invariants (Plan v4)
@@ -67,26 +81,6 @@ local function resolveSafeCreateFrame(override)
 		return CreateFrame
 	end
 	return nil
-end
-
-local function createColumnRows(column, safeCreateFrame)
-	if not column then
-		return nil, nil
-	end
-	local top = safeCreateFrame("Frame", nil, column)
-	local bottom = safeCreateFrame("Frame", nil, column)
-	if not top or not bottom then
-		return column, column
-	end
-	top:SetPoint("TOPLEFT", column, "TOPLEFT", 0, 0)
-	top:SetPoint("TOPRIGHT", column, "TOPRIGHT", 0, 0)
-	top:SetHeight(headerTopRowHeight)
-	bottom:SetPoint("BOTTOMLEFT", column, "BOTTOMLEFT", 0, 0)
-	bottom:SetPoint("BOTTOMRIGHT", column, "BOTTOMRIGHT", 0, 0)
-	bottom:SetHeight(headerBottomRowHeight)
-	top:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT", 0, headerRowGapY)
-	top:SetPoint("BOTTOMRIGHT", bottom, "TOPRIGHT", 0, headerRowGapY)
-	return top, bottom
 end
 
 local function ClearAnchors(frame, resetSize)
@@ -115,6 +109,24 @@ local function CreateRow(name, parent, height, template, override)
 		row:SetHeight(height)
 	end
 	return row
+end
+
+local function createColumnRows(column, safeCreateFrame)
+	if not column or type(safeCreateFrame) ~= "function" then
+		return column, column
+	end
+	local top = safeCreateFrame("Frame", nil, column)
+	local bottom = safeCreateFrame("Frame", nil, column)
+	if not top or not bottom then
+		return column, column
+	end
+	top:SetPoint("TOPLEFT", column, "TOPLEFT", 0, 0)
+	top:SetPoint("TOPRIGHT", column, "TOPRIGHT", 0, 0)
+	top:SetHeight(HEADER_TOP_ROW_H)
+	bottom:SetPoint("BOTTOMLEFT", column, "BOTTOMLEFT", 0, 0)
+	bottom:SetPoint("BOTTOMRIGHT", column, "BOTTOMRIGHT", 0, 0)
+	bottom:SetHeight(HEADER_BOTTOM_ROW_H)
+	return top, bottom
 end
 
 FrameUI.CreateContainer = FrameUI.CreateContainer or CreateContainer
@@ -270,22 +282,18 @@ local function createHeaderBar(frame, safeCreateFrame)
 	headerCenter:SetPoint("TOPRIGHT", header, "TOPRIGHT", -centerRightInset, -padInset)
 	headerCenter:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", -centerRightInset, padInset)
 
-
-	local rightGap = Metrics.GAP_S or 6
-	local headerRightTop = safeCreateFrame("Frame", nil, headerRight)
-	headerRightTop:SetPoint("TOPLEFT", headerRight, "TOPLEFT", 0, 0)
-	headerRightTop:SetPoint("TOPRIGHT", headerRight, "TOPRIGHT", 0, 0)
-	headerRightTop:SetHeight((Metrics.BTN_H or 22) + (Metrics.GAP_XS or 4))
-
-	local headerRightBottom = safeCreateFrame("Frame", nil, headerRight)
-	headerRightBottom:SetPoint("BOTTOMLEFT", headerRight, "BOTTOMLEFT", 0, 0)
-	headerRightBottom:SetPoint("BOTTOMRIGHT", headerRight, "BOTTOMRIGHT", 0, 0)
-	headerRightBottom:SetPoint("TOPLEFT", headerRightTop, "BOTTOMLEFT", 0, -rightGap)
+	local headerLeftTop, headerLeftBottom = createColumnRows(headerLeft, safeCreateFrame)
+	local headerCenterTop, headerCenterBottom = createColumnRows(headerCenter, safeCreateFrame)
+	local headerRightTop, headerRightBottom = createColumnRows(headerRight, safeCreateFrame)
 
 	frame.HeaderFrame = header
 	frame.HeaderLeft = headerLeft
 	frame.HeaderCenter = headerCenter
 	frame.HeaderRight = headerRight
+	frame.HeaderLeftTop = headerLeftTop
+	frame.HeaderLeftBottom = headerLeftBottom
+	frame.HeaderCenterTop = headerCenterTop
+	frame.HeaderCenterBottom = headerCenterBottom
 	frame.HeaderRightTop = headerRightTop
 	frame.HeaderRightBottom = headerRightBottom
 
@@ -294,6 +302,10 @@ local function createHeaderBar(frame, safeCreateFrame)
 		Internal.registerGridTarget("header-left", headerLeft)
 		Internal.registerGridTarget("header-center", headerCenter)
 		Internal.registerGridTarget("header-right", headerRight)
+		Internal.registerGridTarget("header-left-top", headerLeftTop)
+		Internal.registerGridTarget("header-left-bottom", headerLeftBottom)
+		Internal.registerGridTarget("header-center-top", headerCenterTop)
+		Internal.registerGridTarget("header-center-bottom", headerCenterBottom)
 		Internal.registerGridTarget("header-right-top", headerRightTop)
 		Internal.registerGridTarget("header-right-bottom", headerRightBottom)
 	end
