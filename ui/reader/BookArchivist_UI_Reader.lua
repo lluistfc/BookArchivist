@@ -128,6 +128,13 @@ local function stripHTMLTags(text)
   return cleaned
 end
 
+local function isUIDebugEnabled()
+  if BookArchivist and BookArchivist.IsUIDebugEnabled then
+    return BookArchivist:IsUIDebugEnabled() and true or false
+  end
+  return false
+end
+
 local function normalizeHTMLForReader(html, maxWidth)
   if not html or html == "" then
     return html or "", 0, 0
@@ -147,23 +154,17 @@ local function normalizeHTMLForReader(html, maxWidth)
       return tag
     end
     local lowerSrc = src:lower()
-    local width = tonumber(tag:match("width%s*=%s*\"(%d+)\"") or tag:match("width%s*=%s*'(%d+)'") or tag:match("width%s*=%s*(%d+)"))
-    local height = tonumber(tag:match("height%s*=%s*\"(%d+)\"") or tag:match("height%s*=%s*'(%d+)'") or tag:match("height%s*=%s*(%d+)"))
 
     if lowerSrc:find("interface\\common\\spacer", 1, true) then
-      local h = height or 0
-      if h >= 80 then
-        spacerCount = spacerCount + 1
-        return "<BR/><BR/>"
-      elseif h >= 30 then
-        spacerCount = spacerCount + 1
-        return "<BR/>"
-      else
-        spacerCount = spacerCount + 1
-        local newH = (h > 0) and math.min(h, 28) or 20
-        return string.format("<IMG src=\"%s\" width=\"1\" height=\"%d\"/>", src, newH)
-      end
+      -- Spacer images are only used for vertical padding in Blizzard's
+      -- HTML. Our custom layout already manages spacing, so drop these
+      -- entirely instead of preserving their (sometimes very large)
+      -- heights.
+      return ""
     end
+
+    local width = tonumber(tag:match("width%s*=%s*\"(%d+)\"") or tag:match("width%s*=%s*'(%d+)'") or tag:match("width%s*=%s*(%d+)"))
+    local height = tonumber(tag:match("height%s*=%s*\"(%d+)\"") or tag:match("height%s*=%s*'(%d+)'") or tag:match("height%s*=%s*(%d+)"))
 
 		-- For non-spacer images, SimpleHTML often requires width/height or
 		-- it will refuse to render. Rebuild the tag with safe defaults if
@@ -363,6 +364,87 @@ local function parsePageToBlocks(html)
   return blocks
 end
 
+--
+-- Static atlas data for Legion artifact book artwork. This is copied
+-- from DialogueUI's BookUI_Atlas so that we can crop the large
+-- 512x256 textures down to the visible sword/staff area without
+-- needing that addon to be loaded. Keys are full, lowercased texture
+-- paths such as "interface\\pictures\\artifactbook-paladin-ashbringer".
+--
+local ArtifactBookAtlas = (function()
+  local atlas = {}
+  local WIDTH, HEIGHT = 512, 256
+  local PREFIX = "interface\\pictures\\artifactbook-"
+  local Info = {
+    ["warrior-scaleoftheearthwarder"]         = {0, 178},
+    ["warrior-stromkar"]                      = {24, 104},
+    ["warrior-warswordsofthevalarjar"]        = {12, 140},
+
+    ["paladin-ashbringer"]                    = {18, 112},
+    ["paladin-silverhand"]                    = {0, 138},
+    ["paladin-truthguard"]                    = {0, 174},
+
+    ["hunter-talonclaw"]                      = {0, 118},
+    ["hunter-thasdorah"]                      = {0, 118},
+    ["hunter-titanstrike"]                    = {24, 104},
+
+    ["rogue-dreadblades"]                     = {0, 134},
+    ["rogue-fangsofthedevourer"]             = {0, 106},
+    ["rogue-kingslayers"]                     = {14, 128},
+
+    ["priest-lightswrath"]                    = {24, 130},
+    ["priest-tuure"]                          = {24, 130},
+    ["priest-xalatath"]                       = {0, 140},
+
+    ["deathknight-apocalypse"]                = {0, 128},
+    ["deathknight-bladesofthefallenprince"]   = {36, 106},
+    ["deathknight-mawofthedamned"]            = {0, 148},
+
+    ["shaman-doomhammer"]                     = {0, 120},
+    ["shaman-fistofraden"]                    = {4, 138},
+    ["shaman-sharasdal"]                      = {6, 112},
+
+    ["mage-aluneth"]                          = {0, 126},
+    ["mage-ebonchill"]                        = {12, 78},
+    ["mage-felomelorn"]                       = {10, 78},
+
+    ["warlock-scepterofsargeras"]             = {0, 140},
+    ["warlock-skullofthemanari"]              = {0, 162},
+    ["warlock-ulthalesh"]                     = {0, 132},
+
+    ["monk-fists"]                            = {8, 134},
+    ["monk-fuzan"]                            = {0, 150},
+    ["monk-sheilun"]                          = {0, 114},
+
+    ["druid-ghanirthemothertree"]             = {0, 120},
+    ["druid-scytheofelune"]                   = {0, 160},
+    ["druid-theclawsofursoc"]                 = {8, 134},
+    ["druid-thefangsofashamane"]              = {8, 136},
+
+    ["demonhunter-thealdrachiwarblades"]      = {0, 140},
+    ["demonhunter-twinbladesofthedeceiver"]   = {0, 134},
+  }
+
+  for name, bounds in pairs(Info) do
+    local topPx, bottomPx = bounds[1], bounds[2]
+    local ratio = (bottomPx - topPx) / WIDTH
+    local left = 0 / WIDTH
+    local right = WIDTH / WIDTH
+    local top = topPx / HEIGHT
+    local bottom = bottomPx / HEIGHT
+    atlas[PREFIX .. name] = { ratio, left, right, top, bottom }
+  end
+
+  return atlas
+end)()
+
+local function getArtifactBookTexInfo(path)
+  if not path or path == "" then
+    return nil
+  end
+  return ArtifactBookAtlas[path:lower()]
+end
+
 local function resetRichPools()
   if state.richTextPool then
     for _, entry in ipairs(state.richTextPool) do
@@ -376,6 +458,54 @@ local function resetRichPools()
       if entry.tex then entry.tex:Hide() end
     end
   end
+end
+
+local function resetRichDebugFrames(parent)
+  if not state.richDebugFrames then
+    return
+  end
+  parent = parent or state.textChild or getWidget("textChild") or UIParent
+  for _, frame in ipairs(state.richDebugFrames) do
+    if frame then
+      frame:Hide()
+      frame:ClearAllPoints()
+      frame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+      frame:SetSize(0.01, 0.01)
+    end
+  end
+end
+
+local function ensureRichDebugFrame(index, parent)
+  if not isUIDebugEnabled() then
+    return nil
+  end
+  parent = parent or state.textChild or getWidget("textChild")
+  if not parent then
+    return nil
+  end
+
+  state.richDebugFrames = state.richDebugFrames or {}
+  local frame = state.richDebugFrames[index]
+  if not frame then
+    frame = (safeCreateFrame and safeCreateFrame("Frame", nil, parent))
+      or (CreateFrame and CreateFrame("Frame", nil, parent))
+    if not frame then
+      return nil
+    end
+    frame:EnableMouse(false)
+    local level = (parent.GetFrameLevel and parent:GetFrameLevel()) or 0
+    frame:SetFrameLevel(math.min(level + 5, 128))
+
+    state.richDebugFrames[index] = frame
+
+    if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+      and BookArchivist.UI.Internal.registerGridTarget then
+      local name = "reader-html-" .. tostring(index)
+      BookArchivist.UI.Internal.registerGridTarget(name, frame)
+    end
+  end
+  frame:Show()
+  return frame
 end
 
 local function acquireFontStringForKind(kind)
@@ -414,6 +544,7 @@ local function acquireFontStringForKind(kind)
   fs:SetWordWrap(true)
   fs:SetNonSpaceWrap(true)
   fs:SetSpacing(2)
+
   local entry = { fs = fs, inUse = true }
   table.insert(state.richTextPool, entry)
   return fs
@@ -440,6 +571,7 @@ local function acquireTextureForKind(kind)
   if kind == "rule" then
     tex:SetColorTexture(1, 1, 1, 0.25)
   end
+
   local entry = { tex = tex, inUse = true }
   table.insert(state.richTexPool, entry)
   return tex
@@ -464,6 +596,7 @@ local function renderRichHTMLPage(text)
   end
 
   resetRichPools()
+  resetRichDebugFrames(child)
 
   local host = state.contentHost or getWidget("contentHost")
   local availableWidth = host and host.GetWidth and host:GetWidth() or (child.GetWidth and child:GetWidth()) or 400
@@ -486,8 +619,17 @@ local function renderRichHTMLPage(text)
   end
 
   local y = -topPad
+  local previousKind = nil
+  local previousVisualKind = nil -- "image" or "text" for tightening gaps
+  local debugIndex = 1
   for _, block in ipairs(blocks) do
     if block.kind == "heading" then
+      if previousVisualKind == "image" then
+    -- After an image, give headings a bit of extra
+    -- breathing room below the artwork instead of
+    -- pulling them tightly upwards.
+    y = y - 4
+      end
       local kindKey = block.level == 1 and "heading1" or (block.level == 2 and "heading2" or "heading3")
       local fs = acquireFontStringForKind(kindKey)
       if fs then
@@ -497,9 +639,23 @@ local function renderRichHTMLPage(text)
         fs:SetText(block.text or "")
         fs:SetPoint("TOPLEFT", child, "TOPLEFT", padX, y)
         local h = fs:GetStringHeight() or 0
-        y = y - h - 8
+
+        local dbg = ensureRichDebugFrame(debugIndex, child)
+        if dbg then
+          dbg:ClearAllPoints()
+          dbg:SetAllPoints(fs)
+        end
+        debugIndex = debugIndex + 1
+
+		y = y - h - 10
       end
+      previousVisualKind = "text"
     elseif block.kind == "paragraph" then
+      if previousVisualKind == "image" then
+		-- Similar spacing tweak for paragraphs that
+		-- follow an image directly.
+		y = y - 4
+      end
       local fs = acquireFontStringForKind("paragraph")
       if fs then
         fs:ClearAllPoints()
@@ -508,18 +664,46 @@ local function renderRichHTMLPage(text)
         fs:SetText(block.text or "")
         fs:SetPoint("TOPLEFT", child, "TOPLEFT", padX, y)
         local h = fs:GetStringHeight() or 0
-        y = y - h - 6
+
+        local dbg = ensureRichDebugFrame(debugIndex, child)
+        if dbg then
+          dbg:ClearAllPoints()
+          dbg:SetAllPoints(fs)
+        end
+        debugIndex = debugIndex + 1
+
+    		y = y - h - 8
       end
+      previousVisualKind = "text"
     elseif block.kind == "image" then
       local tex = acquireTextureForKind("image")
       if tex and block.src and block.src ~= "" then
         tex:ClearAllPoints()
-        tex:SetTexture(block.src)
-        local w = block.width or contentWidth
-        local h = block.height or math.floor(w * 0.62 + 0.5)
-        w = math.min(w, contentWidth)
-        h = math.min(h, 600)
-        tex:SetSize(w, h)
+      tex:SetTexture(block.src)
+      local w = block.width or contentWidth
+      local h = block.height or math.floor(w * 0.62 + 0.5)
+      w = math.min(w, contentWidth)
+      h = math.min(h, 600)
+
+      local usedAtlas = false
+      local atlasInfo = getArtifactBookTexInfo(block.src)
+      if atlasInfo then
+        local ratio, left, right, top, bottom = unpack(atlasInfo)
+        local imageWidth = contentWidth
+        local imageHeight = math.min(600, math.max(32, math.floor(imageWidth * ratio + 0.5)))
+        w, h = imageWidth, imageHeight
+        tex:SetTexCoord(left, right, top, bottom)
+        usedAtlas = true
+      end
+
+      if not usedAtlas then
+        -- Fallback: show the full texture. For non-atlas images we
+        -- just respect whatever width/height were provided or derived
+        -- above.
+        tex:SetTexCoord(0, 1, 0, 1)
+      end
+
+      tex:SetSize(w, h)
         local align = block.align or "CENTER"
         if align == "LEFT" then
           tex:SetPoint("TOPLEFT", child, "TOPLEFT", padX, y)
@@ -528,10 +712,25 @@ local function renderRichHTMLPage(text)
         else
           tex:SetPoint("TOP", child, "TOP", 0, y)
         end
+
+        local dbg = ensureRichDebugFrame(debugIndex, child)
+        if dbg then
+          dbg:ClearAllPoints()
+          dbg:SetAllPoints(tex)
+        end
+        debugIndex = debugIndex + 1
+
         y = y - h - 6
       end
+      previousVisualKind = "image"
     elseif block.kind == "spacer" then
       local gap = tonumber(block.height) or 10
+      -- When a spacer comes directly after an image, keep the
+      -- vertical gap very small so titles like "Ashbringer" sit
+      -- close to their artwork instead of floating far below.
+      if previousKind == "image" then
+        gap = math.min(gap, 4)
+      end
       y = y - gap
     elseif block.kind == "rule" then
       local tex = acquireTextureForKind("rule")
@@ -540,9 +739,20 @@ local function renderRichHTMLPage(text)
         tex:SetHeight(2)
         tex:SetPoint("TOPLEFT", child, "TOPLEFT", padX, y)
         tex:SetPoint("TOPRIGHT", child, "TOPRIGHT", -padX, y)
+
+        local dbg = ensureRichDebugFrame(debugIndex, child)
+        if dbg then
+          dbg:ClearAllPoints()
+          dbg:SetAllPoints(tex)
+        end
+        debugIndex = debugIndex + 1
+
         y = y - 8
       end
+      previousVisualKind = "text"
     end
+
+    previousKind = block.kind
   end
 
   local totalHeight = (-y) + bottomPad
