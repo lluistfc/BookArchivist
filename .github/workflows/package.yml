@@ -35,6 +35,7 @@ jobs:
       - name: Verify ZIP contains .toc at correct path
         run: |
           set -euo pipefail
+          ADDON_NAME="BookArchivist"
           ZIP="$(ls dist/*.zip | head -n 1)"
           unzip -l "$ZIP" | grep -E " ${ADDON_NAME}/BookArchivist\.toc$" >/dev/null \
             || (echo "ERROR: Missing ${ADDON_NAME}/BookArchivist.toc in zip" && unzip -l "$ZIP" && exit 1)
