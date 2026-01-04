@@ -18,6 +18,8 @@ ui/list/BookArchivist_UI_List_Filter.lua
 ui/list/BookArchivist_UI_List_Location.lua
 ui/list/BookArchivist_UI_List_Rows.lua
 ui/reader/BookArchivist_UI_Reader.lua
+ui/reader/BookArchivist_UI_Reader_ArtifactAtlas.lua
+ui/reader/BookArchivist_UI_Reader_Rich.lua
 ui/reader/BookArchivist_UI_Reader_Layout.lua
 ui/minimap/BookArchivist_UI_Minimap.lua
 ui/options/BookArchivist_UI_Options.lua
