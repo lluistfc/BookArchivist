@@ -47,6 +47,7 @@ state.search = state.search or { pendingToken = 0 }
 state.pagination = state.pagination or { page = 1, pageSize = PAGE_SIZE_DEFAULT }
 state.filterButtons = state.filterButtons or {}
 state.locationMenuFrame = state.locationMenuFrame or nil
+state.selectedListTab = state.selectedListTab or 1
 
 local function fallbackDebugPrint(...)
   BookArchivist:DebugPrint(...)
@@ -151,6 +152,22 @@ end
 
 function ListUI:GetListModes()
   return self.__state.listModes or DEFAULT_LIST_MODES
+end
+
+function ListUI:TabIdToMode(tabId)
+  local modes = self:GetListModes()
+  if tabId == 2 then
+    return modes.LOCATIONS
+  end
+  return modes.BOOKS
+end
+
+function ListUI:ModeToTabId(mode)
+  local modes = self:GetListModes()
+  if mode == modes.LOCATIONS then
+    return 2
+  end
+  return 1
 end
 
 function ListUI:GetSortOptions()
@@ -610,10 +627,32 @@ function ListUI:GetListMode()
 end
 
 function ListUI:SetListMode(mode)
+  if mode then
+    self.__state.selectedListTab = self:ModeToTabId(mode)
+  end
   local ctx = self:GetContext()
   if ctx and ctx.setListMode then
     ctx.setListMode(mode)
   end
+end
+
+function ListUI:GetSelectedListTab()
+  local tab = tonumber(self.__state.selectedListTab) or 1
+  if tab == 2 then
+    return 2
+  end
+  return 1
+end
+
+function ListUI:SetSelectedListTab(tabId)
+  self.__state.selectedListTab = (tabId == 2) and 2 or 1
+end
+
+function ListUI:SyncSelectedTabFromMode()
+  local mode = self:GetListMode()
+  local tabId = self:ModeToTabId(mode)
+  self:SetSelectedListTab(tabId)
+  return tabId
 end
 
 function ListUI:GetFilteredKeys()
