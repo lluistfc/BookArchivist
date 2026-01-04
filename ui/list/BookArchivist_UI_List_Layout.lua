@@ -256,8 +256,10 @@ function ListUI:EnsureListTipRow()
   ClearAnchors(row)
   row:SetPoint("BOTTOMLEFT", listBlock, "BOTTOMLEFT", inset, inset)
   row:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -inset, inset)
+  local gap = Metrics.GAP_S or Metrics.GAP_XS or 4
+  local btnH = Metrics.BTN_H or 22
   local tipH = Metrics.TIP_ROW_H or Metrics.LIST_TIP_H or (Metrics.LIST_INFO_H or 18)
-  row:SetHeight(math.max(tipH, Metrics.BTN_H or 22))
+  row:SetHeight(math.max(tipH, (btnH * 2) + gap))
   self:SetFrame("listTipRow", row)
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-tip-row", row)
@@ -365,10 +367,31 @@ function ListUI:EnsurePaginationControls()
   local gap = Metrics.GAP_S or Metrics.GAP_XS or 4
   local btnH = Metrics.BTN_H or 22
 
-  local prev = self:SafeCreateFrame("Button", "BookArchivistListPrevPage", pagination, "UIPanelButtonTemplate")
+  local topRow = self:SafeCreateFrame("Frame", nil, pagination)
+  if topRow then
+    topRow:SetPoint("TOPLEFT", pagination, "TOPLEFT", 0, 0)
+    topRow:SetPoint("TOPRIGHT", pagination, "TOPRIGHT", 0, 0)
+    topRow:SetHeight(btnH)
+  end
+
+  local bottomRow = self:SafeCreateFrame("Frame", nil, pagination)
+  if bottomRow then
+    if topRow then
+      bottomRow:SetPoint("TOPLEFT", topRow, "BOTTOMLEFT", 0, -gap)
+      bottomRow:SetPoint("TOPRIGHT", topRow, "BOTTOMRIGHT", 0, -gap)
+    else
+      bottomRow:SetPoint("TOPLEFT", pagination, "TOPLEFT", 0, 0)
+      bottomRow:SetPoint("TOPRIGHT", pagination, "TOPRIGHT", 0, 0)
+    end
+    bottomRow:SetPoint("BOTTOMLEFT", pagination, "BOTTOMLEFT", 0, 0)
+    bottomRow:SetPoint("BOTTOMRIGHT", pagination, "BOTTOMRIGHT", 0, 0)
+    bottomRow:SetHeight(btnH)
+  end
+
+  local prev = self:SafeCreateFrame("Button", "BookArchivistListPrevPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if prev then
     prev:SetSize(60, btnH)
-    prev:SetPoint("LEFT", pagination, "LEFT", 0, 0)
+    prev:SetPoint("LEFT", bottomRow or pagination, "LEFT", 0, 0)
     prev:SetText("< Prev")
     prev:SetScript("OnClick", function()
       self:PrevPage()
@@ -376,10 +399,10 @@ function ListUI:EnsurePaginationControls()
     self:SetFrame("pagePrevButton", prev)
   end
 
-  local nextBtn = self:SafeCreateFrame("Button", "BookArchivistListNextPage", pagination, "UIPanelButtonTemplate")
+  local nextBtn = self:SafeCreateFrame("Button", "BookArchivistListNextPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if nextBtn then
     nextBtn:SetSize(60, btnH)
-    nextBtn:SetPoint("LEFT", prev or pagination, prev and "RIGHT" or "LEFT", prev and gap or 0, 0)
+    nextBtn:SetPoint("LEFT", prev or (bottomRow or pagination), prev and "RIGHT" or "LEFT", prev and gap or 0, 0)
     nextBtn:SetText("Next >")
     nextBtn:SetScript("OnClick", function()
       self:NextPage()
@@ -387,7 +410,8 @@ function ListUI:EnsurePaginationControls()
     self:SetFrame("pageNextButton", nextBtn)
   end
 
-  local pageLabel = pagination:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  local pageLabelHost = bottomRow or pagination
+  local pageLabel = pageLabelHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   pageLabel:SetJustifyH("CENTER")
   pageLabel:SetJustifyV("MIDDLE")
   pageLabel:SetHeight(btnH)
@@ -395,14 +419,16 @@ function ListUI:EnsurePaginationControls()
   if prev and nextBtn then
     pageLabel:SetPoint("LEFT", nextBtn, "RIGHT", gap, 0)
   else
-    pageLabel:SetPoint("LEFT", pagination, "LEFT", gap, 0)
+    pageLabel:SetPoint("LEFT", pageLabelHost, "LEFT", gap, 0)
   end
   self:SetFrame("pageLabel", pageLabel)
 
-  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistPageSizeDropdown", pagination, "UIDropDownMenuTemplate")
+  local dropdownHost = topRow or pagination
+  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistPageSizeDropdown", dropdownHost, "UIDropDownMenuTemplate")
   if dropdown then
-    dropdown:SetPoint("LEFT", pageLabel, "RIGHT", gap, 0)
-    dropdown:SetPoint("RIGHT", pagination, "RIGHT", 0, 0)
+    dropdown:ClearAllPoints()
+    dropdown:SetPoint("LEFT", dropdownHost, "LEFT", 0, 0)
+    dropdown:SetPoint("RIGHT", dropdownHost, "RIGHT", 0, 0)
     UIDropDownMenu_SetWidth(dropdown, 110)
     UIDropDownMenu_JustifyText(dropdown, "LEFT")
     UIDropDownMenu_SetText(dropdown, string.format("%d / page", self:GetPageSize()))
