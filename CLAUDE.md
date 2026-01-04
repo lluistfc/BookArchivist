@@ -20,7 +20,6 @@ Book Archivist is a World of Warcraft® addon that records every "book" (anythin
 | `ui/minimap/BookArchivist_UI_Minimap.lua` | Creates the physical minimap button, handles dragging/clicking, and defers persistence to `core/BookArchivist_Minimap.lua`. |
 | `ui/options/BookArchivist_UI_Options.lua` | Settings panel, Blizzard Settings integration, and debug checkbox wiring. |
 | `ui/BookArchivist_UI_Runtime.lua` | Runtime orchestration: `RefreshUI`, slash commands, UI creation on login, and safe refresh sequencing. |
-| `tests/**` | WoWUnit harness plus module-focused suites (core, capture, location, minimap, UI list/reader) that mirror the addon structure for easier coverage. |
 
 ## Runtime architecture
 1. **Boot**: `core/BookArchivist.lua` registers for `ADDON_LOADED` and ItemText events. On load it ensures the DB, wires the minimap module, and configures the options UI.
@@ -43,25 +42,9 @@ Book Archivist is a World of Warcraft® addon that records every "book" (anythin
 
 ## Build & install
 - **Interface version**: `110000` (The War Within launch patch). Confirm the `.toc` number before packaging for other game versions.
-- **Installation**: copy the `BookArchivist` folder (containing `BookArchivist.toc`, `core/`, `ui/`, `tests/`) into `_retail_/Interface/AddOns/` (already structured here for local development).
+- **Installation**: copy the `BookArchivist` folder (containing `BookArchivist.toc`, `core/`, `ui/`) into `_retail_/Interface/AddOns/` (already structured here for local development).
 - **Dependencies**: no hard externals. Optional: `WoWUnit` (shipped separately in this workspace) for running unit tests inside the client.
 - **Debugging**: enable the "Enable debug logging" checkbox in the options panel (or `/run BookArchivist:EnableDebugLogging(true)`), which routes extra messages via `DEFAULT_CHAT_FRAME`.
-
-## Testing
-- **Framework**: [WoWUnit](https://github.com/Gethe/WoWUnit) (packaged locally under `../WoWUnit`). Tests run in-game or in a WoWUnit-capable harness because they rely on Blizzard UI widget APIs.
-- **Current coverage**: module suites now live beside their runtime counterparts:
-  - `tests/BookArchivist_Tests.lua` — shared mocks/helpers.
-  - `tests/core/Core_Tests.lua` — SavedVariables defaults, persistence, deletion.
-  - `tests/capture/Capture_Tests.lua` — simulates ItemText APIs to ensure sessions persist and refresh the UI.
-  - `tests/location/Location_Tests.lua` — zone-text fallbacks and formatting.
-  - `tests/minimap/Minimap_Tests.lua` — angle normalization and button registration.
-  - `tests/ui/list/List_Tests.lua` — context wiring, widget caching, safe frame creation hooks.
-  - `tests/ui/reader/Reader_Tests.lua` — delete-button helper + disable flows.
-- **How to run**:
-  1. Install/enable the WoWUnit addon alongside BookArchivist.
-  2. Log in, load the character with both addons enabled.
-  3. WoWUnit runs every suite automatically on `PLAYER_LOGIN`; open the WoWUnit UI (`/wu`) to inspect pass/fail output.
-- **Extending tests**: add a new file under `tests/<module>/` that mirrors the runtime folder, require any helpers you need from `BookArchivistTests.Helpers`, and register additional WoWUnit groups with meaningful event triggers.
 
 ## Common workflows
 - **Adding a new capture heuristic**: extend `core/BookArchivist_Capture.lua` to enrich `session.source` (e.g., quest context), then update `Reader` metadata formatting to render the new fields.
@@ -81,9 +64,3 @@ Book Archivist is a World of Warcraft® addon that records every "book" (anythin
 - **UI creation**: Always use `Internal.safeCreateFrame` (or the context-injected equivalent) so template fallbacks and error logging remain consistent.
 - **Key generation**: `Core` derives book keys from title/author/material/first-page text; altering the algorithm will orphan existing entries unless you provide a migration.
 - **Location freshness**: Loot provenance expires after 6 hours (`MAX_LOOT_AGE`). If you extend contexts, adjust pruning windows accordingly.
-
-## Roadmap ideas
-- Add more WoWUnit suites around `ListUI` filtering to prevent regressions.
-- Support exporting/importing archives (e.g., to a CSV or WeakAura message).
-- Surface search facets (material, creator, zone) in the UI by reusing `Location` metadata.
-- Consider a Dragonflight+ "Combined" settings panel via `Settings.RegisterAddOnCategory` so the options UI stays future-proof.
