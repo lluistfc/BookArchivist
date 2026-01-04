@@ -373,6 +373,13 @@ function ListUI:UpdateList()
     else
       info:SetText(detailText or crumbText or "|cFF888888Browse saved locations|r")
     end
+    local tipRow = self:GetFrame("listTipRow") or self:EnsureListTipRow()
+    if tipRow then
+      info:ClearAllPoints()
+      info:SetPoint("TOPLEFT", tipRow, "TOPLEFT", 0, 0)
+      info:SetPoint("BOTTOMRIGHT", tipRow, "BOTTOMRIGHT", 0, 0)
+    end
+    info:Show()
   end
 
   local noResults = self:GetFrame("noResultsText")
