@@ -169,9 +169,13 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 			end
 		end
 		if verb == "uidebug" and desiredState ~= nil then
-			BookArchivistDB = BookArchivistDB or {}
-			BookArchivistDB.options = BookArchivistDB.options or {}
-			BookArchivistDB.options.uiDebug = desiredState
+			if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
+				BookArchivist:SetUIDebugEnabled(desiredState)
+			else
+				BookArchivistDB = BookArchivistDB or {}
+				BookArchivistDB.options = BookArchivistDB.options or {}
+				BookArchivistDB.options.uiDebug = desiredState
+			end
 		end
 		local visible
 		if desiredState == nil then

@@ -142,6 +142,32 @@ function BookArchivist:SetDebugEnabled(state)
   syncOptionsUI()
 end
 
+function BookArchivist:IsUIDebugEnabled()
+  if Core and Core.IsUIDebugEnabled then
+    return Core:IsUIDebugEnabled()
+  end
+  local db = self:GetDB() or {}
+  local opts = db.options or {}
+  return opts.uiDebug and true or false
+end
+
+function BookArchivist:SetUIDebugEnabled(state)
+  if Core and Core.SetUIDebugEnabled then
+    Core:SetUIDebugEnabled(state)
+  else
+    local db = self:GetDB() or {}
+    db.options = db.options or {}
+    db.options.uiDebug = state and true or false
+  end
+
+  local internal = self.UI and self.UI.Internal
+  if internal and internal.setGridOverlayVisible then
+    internal.setGridOverlayVisible(state and true or false)
+  end
+
+  syncOptionsUI()
+end
+
 function BookArchivist:GetListWidth()
   if Core and Core.GetListWidth then
     return Core:GetListWidth()

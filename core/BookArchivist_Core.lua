@@ -243,6 +243,16 @@ function Core:SetDebugEnabled(state)
   opts.debugEnabled = state and true or false
 end
 
+function Core:IsUIDebugEnabled()
+  local opts = self:GetOptions()
+  return opts.uiDebug and true or false
+end
+
+function Core:SetUIDebugEnabled(state)
+  local opts = self:GetOptions()
+  opts.uiDebug = state and true or false
+end
+
 function Core:GetUIFrameOptions()
   return ensureUIOptions()
 end

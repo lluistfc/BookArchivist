@@ -136,7 +136,7 @@ local function ensureGameMenuHook()
 end
 
 function OptionsUI:Sync()
-  if not optionsPanel or not optionsPanel.debugCheckbox then
+  if not optionsPanel or not optionsPanel.debugCheckbox or not optionsPanel.uiDebugCheckbox then
     return
   end
   local enabled = false
@@ -144,6 +144,14 @@ function OptionsUI:Sync()
     enabled = BookArchivist:IsDebugEnabled() and true or false
   end
   optionsPanel.debugCheckbox:SetChecked(enabled)
+
+  local uiDebugEnabled = false
+  if BookArchivist and type(BookArchivist.IsUIDebugEnabled) == "function" then
+    uiDebugEnabled = BookArchivist:IsUIDebugEnabled() and true or false
+  elseif BookArchivistDB and BookArchivistDB.options then
+    uiDebugEnabled = BookArchivistDB.options.uiDebug and true or false
+  end
+  optionsPanel.uiDebugCheckbox:SetChecked(uiDebugEnabled)
 end
 
 function OptionsUI:Ensure()
@@ -181,6 +189,26 @@ function OptionsUI:Ensure()
   end)
 
   optionsPanel.debugCheckbox = checkbox
+
+  local uiDebugCheckbox = createFrame("CheckButton", "BookArchivistUIDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
+  uiDebugCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -8)
+  uiDebugCheckbox.Text:SetText("Show UI debug grid")
+  uiDebugCheckbox.tooltipText = "Highlights layout bounds for troubleshooting. Same as /ba uidebug on/off."
+  uiDebugCheckbox:SetScript("OnClick", function(self)
+    local state = self:GetChecked()
+    if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
+      BookArchivist:SetUIDebugEnabled(state)
+    else
+      BookArchivistDB = BookArchivistDB or {}
+      BookArchivistDB.options = BookArchivistDB.options or {}
+      BookArchivistDB.options.uiDebug = state and true or false
+    end
+    if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.setGridOverlayVisible then
+      BookArchivist.UI.Internal.setGridOverlayVisible(state and true or false)
+    end
+  end)
+
+  optionsPanel.uiDebugCheckbox = uiDebugCheckbox
   optionsPanel.refresh = function()
     OptionsUI:Sync()
   end
