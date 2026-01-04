@@ -672,9 +672,10 @@ function ListUI:Create(uiFrame)
     return
   end
   local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
+  local gutter = Metrics.SCROLLBAR_GUTTER or 18
   scrollFrame:ClearAllPoints()
   scrollFrame:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 0, -gap)
-  scrollFrame:SetPoint("BOTTOMRIGHT", listScrollRow, "BOTTOMRIGHT", 0, 0)
+  scrollFrame:SetPoint("BOTTOMRIGHT", listScrollRow, "BOTTOMRIGHT", -gutter, 0)
   self:SetFrame("scrollFrame", scrollFrame)
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-scroll", scrollFrame)
@@ -683,7 +684,7 @@ function ListUI:Create(uiFrame)
   local scrollChild = CreateFrame("Frame", nil, scrollFrame)
   scrollChild:SetSize(336, 1)
   scrollChild:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 0)
-  scrollChild:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", -(Metrics.SCROLLBAR_GUTTER or 18), 0)
+  scrollChild:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 0, 0)
   scrollFrame:SetScrollChild(scrollChild)
   self:SetFrame("scrollChild", scrollChild)
 

@@ -484,6 +484,9 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	state.textScroll = textScroll
 	local innerPad = Metrics.PAD_INSET or Metrics.PAD or 10
 	textScroll:ClearAllPoints()
+	local scrollBar = textScroll.ScrollBar or _G[(textScroll:GetName() or "") .. "ScrollBar"]
+	local sbW = (scrollBar and scrollBar.GetWidth and scrollBar:GetWidth()) or 16
+	local gutter = Metrics.SCROLLBAR_GUTTER or math.ceil(sbW + 10)
 	textScroll:SetPoint("TOPLEFT", readerScrollRow or readerBlock, "TOPLEFT", innerPad, -innerPad)
 	textScroll:SetPoint("BOTTOMRIGHT", readerScrollRow or readerBlock, "BOTTOMRIGHT", -innerPad, innerPad)
 	uiFrame.textScroll = textScroll
@@ -491,8 +494,21 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		Internal.registerGridTarget("reader-scroll", textScroll)
 	end
 
+	local contentHost = (safeCreateFrame and safeCreateFrame("Frame", nil, textScroll)) or CreateFrame("Frame", nil, textScroll)
+	contentHost:ClearAllPoints()
+	contentHost:SetPoint("TOPLEFT", textScroll, "TOPLEFT", innerPad, -innerPad)
+	contentHost:SetPoint("BOTTOMLEFT", textScroll, "BOTTOMLEFT", innerPad, innerPad)
+	contentHost:SetPoint("RIGHT", textScroll, "RIGHT", -(innerPad + gutter), 0)
+	state.contentHost = contentHost
+	if rememberWidget then
+		rememberWidget("contentHost", contentHost)
+	end
+
 	local textChild = CreateFrame("Frame", nil, textScroll)
-	textChild:SetSize(1, 1)
+	textChild:ClearAllPoints()
+	textChild:SetPoint("TOPLEFT", contentHost, "TOPLEFT", 0, 0)
+	textChild:SetPoint("TOPRIGHT", contentHost, "TOPRIGHT", 0, 0)
+	textChild:SetHeight(1)
 	textScroll:SetScrollChild(textChild)
 	if rememberWidget then
 		rememberWidget("textChild", textChild)
@@ -500,33 +516,24 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	state.textChild = textChild
 	uiFrame.textChild = textChild
 
-	local function applyReaderTextWidths()
-		local hostWidth = 0
-		if readerScrollRow and readerScrollRow.GetWidth then
-			hostWidth = readerScrollRow:GetWidth() or 0
-		elseif readerBlock and readerBlock.GetWidth then
-			hostWidth = readerBlock:GetWidth() or 0
-		end
-		local gutter = (Metrics.PAD or 12) + (Metrics.SCROLLBAR_GUTTER or 18)
-		local targetWidth = math.max(520, hostWidth - (innerPad * 2) - gutter)
-		if state.textPlain and state.textPlain.SetWidth then
-			state.textPlain:SetWidth(targetWidth)
-		end
-		if state.htmlText and state.htmlText.SetWidth then
-			state.htmlText:SetWidth(targetWidth)
-		end
-	end
-
+	local textPad = math.floor((Metrics.PAD or 12) * 0.5)
 	local textPlain = textChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	if rememberWidget then
 		rememberWidget("textPlain", textPlain)
 	end
 	state.textPlain = textPlain
-	textPlain:SetPoint("TOPLEFT", textChild, "TOPLEFT", Metrics.PAD * 0.5, -Metrics.PAD * 0.5)
+	textPlain:ClearAllPoints()
+	textPlain:SetPoint("TOPLEFT", textChild, "TOPLEFT", textPad, -textPad)
+	textPlain:SetPoint("TOPRIGHT", textChild, "TOPRIGHT", -textPad, -textPad)
 	textPlain:SetJustifyH("LEFT")
 	textPlain:SetJustifyV("TOP")
 	textPlain:SetSpacing(3.5)
-	textPlain:SetWidth(560)
+	if textPlain.SetWordWrap then
+		textPlain:SetWordWrap(true)
+	end
+	if textPlain.SetNonSpaceWrap then
+		textPlain:SetNonSpaceWrap(true)
+	end
 
 	local htmlFrame
 	local htmlCreated = pcall(function()
@@ -537,8 +544,9 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		if rememberWidget then
 			rememberWidget("htmlText", htmlFrame)
 		end
-		htmlFrame:SetPoint("TOPLEFT", textChild, "TOPLEFT", Metrics.PAD * 0.5, -Metrics.PAD * 0.5)
-		htmlFrame:SetPoint("TOPRIGHT", textChild, "TOPRIGHT", -Metrics.PAD * 0.5, -Metrics.PAD * 0.5)
+		htmlFrame:ClearAllPoints()
+		htmlFrame:SetPoint("TOPLEFT", textChild, "TOPLEFT", textPad, -textPad)
+		htmlFrame:SetPoint("TOPRIGHT", textChild, "TOPRIGHT", -textPad, -textPad)
 		local bodyFont = GameFontNormal or "GameFontNormal"
 		local headingFont = GameFontNormalLarge or bodyFont
 		local subHeadingFont = GameFontHighlight or bodyFont
@@ -549,7 +557,6 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		applyHTMLFont(htmlFrame, "h3", subHeadingFont)
 		applyHTMLSpacing(htmlFrame, "p", 2)
 		applyHTMLSpacing(htmlFrame, "li", 2)
-		htmlFrame:SetWidth(560)
 		htmlFrame:Hide()
 		uiFrame.htmlText = htmlFrame
 	else
@@ -559,12 +566,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	applyReaderTextWidths()
-	if readerScrollRow and readerScrollRow.SetScript then
-		readerScrollRow:SetScript("OnSizeChanged", function()
-			applyReaderTextWidths()
-		end)
-	end
+	-- Width is governed by anchors to contentHost; no explicit SetWidth needed.
 
 	local deleteParent = actionsRail or readerHeaderRow
 	local deleteButton = ensureDeleteButton(deleteParent)

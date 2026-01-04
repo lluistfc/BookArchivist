@@ -135,14 +135,43 @@ local function updateReaderHeight(height)
   end
   local child = state.textChild
   if not child then return end
+  local host = state.contentHost or getWidget("contentHost")
+  if host and child.SetWidth and host.GetWidth then
+    local w = host:GetWidth() or 1
+    child:SetWidth(math.max(1, w))
+  end
+
   child:SetHeight(math.max(1, (height or 0) + 20))
 end
 
-local function getContentWidth()
-  if state.readerBlock and state.readerBlock.GetWidth then
-    return math.max(320, state.readerBlock:GetWidth() - 48)
+local function setReaderMode(useHtml)
+  if not state.textPlain then
+    state.textPlain = getWidget("textPlain")
   end
-  return 460
+  if not state.htmlText then
+    state.htmlText = getWidget("htmlText")
+  end
+
+  local plain = state.textPlain
+  local htmlWidget = state.htmlText
+
+  if useHtml and htmlWidget then
+    if plain and plain.Hide then
+      plain:Hide()
+    end
+    if htmlWidget.Show then
+      htmlWidget:Show()
+    end
+  else
+    if htmlWidget and htmlWidget.Hide then
+      htmlWidget:Hide()
+    end
+    if plain and plain.Show then
+      plain:Show()
+    end
+  end
+
+  return plain, htmlWidget
 end
 
 local function buildPageOrder(entry)
@@ -173,41 +202,45 @@ local function clampPageIndex(order, index)
 end
 
 local function renderBookContent(text)
-  if not state.textPlain then
-    state.textPlain = getWidget("textPlain")
-  end
-  local plain = state.textPlain
-  if not plain then return end
   text = text or ""
   local hasHTMLMarkup = isHTMLContent(text)
-  if not state.htmlText then
-    state.htmlText = getWidget("htmlText")
+  local plain, htmlWidget = setReaderMode(false)
+  if not plain then return end
+
+  local canRenderHTML = false
+  if hasHTMLMarkup then
+    if not htmlWidget then
+      -- Try again to resolve the HTML widget lazily
+      state.htmlText = state.htmlText or getWidget("htmlText")
+      htmlWidget = state.htmlText
+    end
+    canRenderHTML = htmlWidget ~= nil
   end
-  local htmlWidget = state.htmlText
-  local canRenderHTML = htmlWidget ~= nil and hasHTMLMarkup
-  local contentWidth = getContentWidth()
-  if canRenderHTML and htmlWidget then
-    plain:Hide()
-    htmlWidget:Show()
-    htmlWidget:SetWidth(contentWidth)
-    htmlWidget:SetText(text)
-    local htmlHeight = htmlWidget.GetContentHeight and htmlWidget:GetContentHeight() or htmlWidget:GetHeight()
+
+  if hasHTMLMarkup and canRenderHTML and htmlWidget then
+    plain, htmlWidget = setReaderMode(true)
+    if htmlWidget.SetText then
+      htmlWidget:SetText(text)
+    end
+    local htmlHeight = htmlWidget.GetContentHeight and htmlWidget:GetContentHeight() or (htmlWidget.GetHeight and htmlWidget:GetHeight()) or 0
     updateReaderHeight(htmlHeight)
   else
-    if htmlWidget then
-      htmlWidget:Hide()
-    end
-    plain:Show()
-    plain:SetWidth(contentWidth)
     local displayText
     if hasHTMLMarkup and not canRenderHTML then
       displayText = stripHTMLTags(text)
     else
       displayText = text
     end
-    plain:SetText(displayText)
-    local plainHeight = plain:GetStringHeight()
+    plain, htmlWidget = setReaderMode(false)
+    if plain.SetText then
+      plain:SetText(displayText or "")
+    end
+    local plainHeight = plain.GetStringHeight and plain:GetStringHeight() or 0
     updateReaderHeight(plainHeight)
+  end
+
+  if state.textScroll and state.textScroll.UpdateScrollChildRect then
+    state.textScroll:UpdateScrollChildRect()
   end
 end
 
