@@ -14,6 +14,7 @@ core/BookArchivist.lua
 ui/BookArchivist_UI_Metrics.lua
 ui/list/BookArchivist_UI_List.lua
 ui/list/BookArchivist_UI_List_Layout.lua
+ui/list/BookArchivist_UI_List_Tabs.lua
 ui/list/BookArchivist_UI_List_Filter.lua
 ui/list/BookArchivist_UI_List_Location.lua
 ui/list/BookArchivist_UI_List_Rows.lua
