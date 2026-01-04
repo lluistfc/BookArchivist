@@ -29,14 +29,14 @@ jobs:
           git archive \
             --format=zip \
             --prefix="${ADDON_NAME}/" \
-            -o "dist/${ADDON_NAME}-${VERSION}.zip" \
+            -o "dist/${ADDON_NAME}.zip" \
             HEAD
 
       - name: Verify ZIP contains .toc at correct path
         run: |
           set -euo pipefail
           ADDON_NAME="BookArchivist"
-          ZIP="$(ls dist/*.zip | head -n 1)"
+          ZIP="dist/${ADDON_NAME}.zip"
           unzip -l "$ZIP" | grep -E " ${ADDON_NAME}/BookArchivist\.toc$" >/dev/null \
             || (echo "ERROR: Missing ${ADDON_NAME}/BookArchivist.toc in zip" && unzip -l "$ZIP" && exit 1)
 
@@ -44,4 +44,27 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: curseforge-zip
-          path: dist/*.zip
+          path: dist/BookArchivist.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload ZIP to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/BookArchivist.zip
+          asset_name: BookArchivist.zip
+          asset_content_type: application/zip
