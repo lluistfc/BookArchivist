@@ -1,0 +1,28 @@
+## Title: BookArchivist
+## Notes: Records books/letters read via the default ItemTextFrame and provides a UI to re-read them.
+## Author: Bettyboom
+## Version: 1.0.0
+## Interface: 110000
+## SavedVariablesPerCharacter: BookArchivistDB
+## AddonCompartmentFunc: BookArchivist_ToggleFromCompartment
+
+core/BookArchivist_Core.lua
+core/BookArchivist_Location.lua
+core/BookArchivist_Capture.lua
+core/BookArchivist_Minimap.lua
+core/BookArchivist.lua
+ui/BookArchivist_UI_Metrics.lua
+ui/list/BookArchivist_UI_List.lua
+ui/list/BookArchivist_UI_List_Layout.lua
+ui/list/BookArchivist_UI_List_Filter.lua
+ui/list/BookArchivist_UI_List_Location.lua
+ui/list/BookArchivist_UI_List_Rows.lua
+ui/reader/BookArchivist_UI_Reader.lua
+ui/reader/BookArchivist_UI_Reader_Layout.lua
+ui/minimap/BookArchivist_UI_Minimap.lua
+ui/options/BookArchivist_UI_Options.lua
+ui/BookArchivist_UI.lua
+ui/BookArchivist_UI_Core.lua
+ui/BookArchivist_UI_Frame_Builder.lua
+ui/BookArchivist_UI_Frame.lua
+ui/BookArchivist_UI_Runtime.lua
