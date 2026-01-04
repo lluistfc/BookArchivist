@@ -64,6 +64,27 @@ local function computeRadius(button)
   return mapRadius + buttonHalf - OUTER_BUFFER
 end
 
+local function computeAngleFromDelta(dx, dy)
+  if dx == 0 and dy == 0 then
+    return getAngle() or 200
+  end
+  if math.atan2 then
+    return math.deg(math.atan2(dy, dx))
+  end
+  local angle
+  if dx == 0 then
+    angle = (dy >= 0) and 90 or 270
+  else
+    angle = math.deg(math.atan(dy / dx))
+    if dx < 0 then
+      angle = angle + 180
+    elseif dy < 0 then
+      angle = angle + 360
+    end
+  end
+  return angle
+end
+
 local function updatePosition(button)
   if not button or not Minimap then return end
   local angle = getAngle() % 360
@@ -81,7 +102,9 @@ local function updateAngleFromCursor(button)
   local scale = UIParent and UIParent:GetEffectiveScale() or 1
   cx = cx / scale
   cy = cy / scale
-  local angle = math.deg(math.atan(cy - my, cx - mx))
+	local dx = cx - mx
+	local dy = cy - my
+	local angle = computeAngleFromDelta(dx, dy)
   setAngle(angle)
   updatePosition(button)
 end
