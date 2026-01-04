@@ -16,6 +16,13 @@ BookArchivist.Core = Core
 
 local LIST_WIDTH_DEFAULT = 360
 local LIST_SORT_DEFAULT = "recent"
+local LIST_PAGE_SIZE_DEFAULT = 25
+local LIST_PAGE_SIZES = {
+  [10] = true,
+  [25] = true,
+  [50] = true,
+  [100] = true,
+}
 local LIST_FILTER_DEFAULTS = {
   hasLocation = false,
   multiPage = false,
@@ -141,6 +148,9 @@ local function ensureListOptions()
   local listOpts = db.options.list
   if type(listOpts.sortMode) ~= "string" then
     listOpts.sortMode = LIST_SORT_DEFAULT
+  end
+  if type(listOpts.pageSize) ~= "number" or not LIST_PAGE_SIZES[listOpts.pageSize] then
+    listOpts.pageSize = LIST_PAGE_SIZE_DEFAULT
   end
   listOpts.filters = listOpts.filters or {}
   for key, defaultValue in pairs(LIST_FILTER_DEFAULTS) do
@@ -301,6 +311,25 @@ function Core:SetListFilter(filterKey, state)
     return
   end
   listOpts.filters[filterKey] = state and true or false
+end
+
+local function normalizePageSize(size)
+  size = tonumber(size)
+  if LIST_PAGE_SIZES[size] then
+    return size
+  end
+  return LIST_PAGE_SIZE_DEFAULT
+end
+
+function Core:GetListPageSize()
+  local listOpts = ensureListOptions()
+  listOpts.pageSize = normalizePageSize(listOpts.pageSize)
+  return listOpts.pageSize
+end
+
+function Core:SetListPageSize(size)
+  local listOpts = ensureListOptions()
+  listOpts.pageSize = normalizePageSize(size)
 end
 
 function Core:PersistSession(session)

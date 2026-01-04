@@ -82,7 +82,8 @@ function ListUI:EnsureListTipRow()
   ClearAnchors(row)
   row:SetPoint("TOPLEFT", headerRow, "BOTTOMLEFT", 0, -gap)
   row:SetPoint("TOPRIGHT", headerRow, "BOTTOMRIGHT", 0, -gap)
-  row:SetHeight(Metrics.TIP_ROW_H or Metrics.LIST_TIP_H or (Metrics.LIST_INFO_H or 18))
+  local tipH = Metrics.TIP_ROW_H or Metrics.LIST_TIP_H or (Metrics.LIST_INFO_H or 18)
+  row:SetHeight(math.max(tipH, Metrics.BTN_H or 22))
   self:SetFrame("listTipRow", row)
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-tip-row", row)
@@ -151,14 +152,100 @@ function ListUI:EnsureInfoText()
     self:DebugPrint("[BookArchivist] EnsureInfoText aborted (tip row missing)")
     return nil
   end
+  local paginationFrame = self:EnsurePaginationControls()
   info = tipRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   info:SetJustifyH("LEFT")
   info:SetJustifyV("MIDDLE")
   info:SetText("")
   info:SetPoint("TOPLEFT", tipRow, "TOPLEFT", 0, 0)
-  info:SetPoint("BOTTOMRIGHT", tipRow, "BOTTOMRIGHT", 0, 0)
+  if paginationFrame then
+    info:SetPoint("BOTTOMRIGHT", paginationFrame, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER or 10), 0)
+  else
+    info:SetPoint("BOTTOMRIGHT", tipRow, "BOTTOMRIGHT", 0, 0)
+  end
   self:SetFrame("infoText", info)
   return info
+end
+
+function ListUI:EnsurePaginationControls()
+  local pagination = self:GetFrame("paginationFrame")
+  if pagination then
+    return pagination
+  end
+
+  local tipRow = self:EnsureListTipRow()
+  if not tipRow then
+    return nil
+  end
+
+  pagination = self:SafeCreateFrame("Frame", nil, tipRow)
+  if not pagination then
+    return nil
+  end
+  pagination:SetPoint("TOPRIGHT", tipRow, "TOPRIGHT", 0, 0)
+  pagination:SetPoint("BOTTOMRIGHT", tipRow, "BOTTOMRIGHT", 0, 0)
+  pagination:SetWidth(320)
+  self:SetFrame("paginationFrame", pagination)
+
+  local gap = Metrics.GAP_S or Metrics.GAP_XS or 4
+  local btnH = Metrics.BTN_H or 22
+
+  local prev = self:SafeCreateFrame("Button", "BookArchivistListPrevPage", pagination, "UIPanelButtonTemplate")
+  if prev then
+    prev:SetSize(60, btnH)
+    prev:SetPoint("LEFT", pagination, "LEFT", 0, 0)
+    prev:SetText("< Prev")
+    prev:SetScript("OnClick", function()
+      self:PrevPage()
+    end)
+    self:SetFrame("pagePrevButton", prev)
+  end
+
+  local nextBtn = self:SafeCreateFrame("Button", "BookArchivistListNextPage", pagination, "UIPanelButtonTemplate")
+  if nextBtn then
+    nextBtn:SetSize(60, btnH)
+    nextBtn:SetPoint("LEFT", prev or pagination, prev and "RIGHT" or "LEFT", prev and gap or 0, 0)
+    nextBtn:SetText("Next >")
+    nextBtn:SetScript("OnClick", function()
+      self:NextPage()
+    end)
+    self:SetFrame("pageNextButton", nextBtn)
+  end
+
+  local pageLabel = pagination:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  pageLabel:SetJustifyH("CENTER")
+  pageLabel:SetJustifyV("MIDDLE")
+  pageLabel:SetHeight(btnH)
+  pageLabel:SetText("Page 1 / 1")
+  if prev and nextBtn then
+    pageLabel:SetPoint("LEFT", nextBtn, "RIGHT", gap, 0)
+  else
+    pageLabel:SetPoint("LEFT", pagination, "LEFT", gap, 0)
+  end
+  self:SetFrame("pageLabel", pageLabel)
+
+  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistPageSizeDropdown", pagination, "UIDropDownMenuTemplate")
+  if dropdown then
+    dropdown:SetPoint("LEFT", pageLabel, "RIGHT", gap, 0)
+    dropdown:SetPoint("RIGHT", pagination, "RIGHT", 0, 0)
+    UIDropDownMenu_SetWidth(dropdown, 110)
+    UIDropDownMenu_JustifyText(dropdown, "LEFT")
+    UIDropDownMenu_SetText(dropdown, string.format("%d / page", self:GetPageSize()))
+    UIDropDownMenu_Initialize(dropdown, function(frame, level)
+      for _, size in ipairs(self:GetPageSizes()) do
+        local info = UIDropDownMenu_CreateInfo()
+        info.text = string.format("%d / page", size)
+        info.func = function()
+          self:SetPageSize(size)
+        end
+        info.checked = (size == self:GetPageSize())
+        UIDropDownMenu_AddButton(info, level)
+      end
+    end)
+    self:SetFrame("pageSizeDropdown", dropdown)
+  end
+
+  return pagination
 end
 
 local function wireSearchHandlers(self, searchBox)

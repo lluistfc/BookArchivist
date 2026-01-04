@@ -69,6 +69,11 @@ function ListUI:RebuildFiltered()
   local order = db.order or {}
   self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d)", #order))
   local query = self:GetSearchQuery()
+  local previousQuery = self.__state.pagination.lastQuery
+  self.__state.pagination.lastQuery = query
+  if previousQuery ~= query then
+    self.__state.pagination.page = 1
+  end
 
   local selectedKey = self:GetSelectedKey()
   local selectionStillValid = false
@@ -84,6 +89,13 @@ function ListUI:RebuildFiltered()
   end
 
   self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #order))
+
+  local pageCount = self:GetPageCount(#filtered)
+  self.__state.pagination.total = #filtered
+  self.__state.pagination.pageCount = pageCount
+  if self:GetPage() > pageCount then
+    self:SetPage(pageCount > 0 and pageCount or 1, true)
+  end
 
   if db then
     self:ApplySort(filtered, db)

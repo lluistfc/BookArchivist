@@ -187,6 +187,11 @@ function ListUI:UpdateList()
 
   local info = ensureEntryInfo(self)
   local rowHeight = self:GetRowHeight()
+  local paginationFrame = self:GetFrame("paginationFrame")
+
+  if paginationFrame then
+    paginationFrame:Show()
+  end
 
   if mode == modes.BOOKS then
     local filtered = self:GetFilteredKeys()
@@ -194,7 +199,23 @@ function ListUI:UpdateList()
     local dbCount = db.order and #db.order or 0
     self:DebugPrint(string.format("[BookArchivist] updateList filtered=%d totalDB=%d", total, dbCount))
 
-    local totalHeight = math.max(1, total * rowHeight)
+    local pageSize = self:GetPageSize()
+    local pageCount = self:GetPageCount(total)
+    local page = self:GetPage()
+    if page > pageCount then
+      page = pageCount
+      self.__state.pagination.page = page
+    end
+    if page < 1 then
+      page = 1
+      self.__state.pagination.page = page
+    end
+
+    local startIndex = (page - 1) * pageSize + 1
+    local endIndex = math.min(total, startIndex + pageSize - 1)
+    local visibleCount = (total > 0 and endIndex >= startIndex) and (endIndex - startIndex + 1) or 0
+
+    local totalHeight = math.max(1, math.max(visibleCount, 0) * rowHeight)
     if hasMethod(scrollChild, "SetSize") then
       local width = (scrollFrame and scrollFrame:GetWidth()) or 336
       scrollChild:SetSize(width, totalHeight)
@@ -202,9 +223,11 @@ function ListUI:UpdateList()
       self:DebugPrint("[BookArchivist] scrollChild missing SetSize; skipping resize")
     end
 
-    for i = 1, total do
+    local layoutIndex = 0
+    for i = startIndex, endIndex do
+      layoutIndex = layoutIndex + 1
       local button = acquireButton(self)
-      button:SetPoint("TOPLEFT", 0, -(i-1) * rowHeight)
+      button:SetPoint("TOPLEFT", 0, -(layoutIndex-1) * rowHeight)
 
       local key = filtered[i]
       if key then
@@ -226,10 +249,6 @@ function ListUI:UpdateList()
       end
     end
 
-    if info then
-      info:SetText("|cFF888888Tip: Books save automatically as you read them.|r")
-    end
-
     local noResults = self:GetFrame("noResultsText")
     if noResults then
       if total == 0 then
@@ -244,10 +263,15 @@ function ListUI:UpdateList()
       end
     end
 
+    self:UpdatePaginationUI(total, pageCount)
+
     self:UpdateCountsDisplay()
     return
   end
 
+  if paginationFrame then
+    paginationFrame:Hide()
+  end
   local rows = self:GetLocationRows()
   local total = #rows
   if hasMethod(scrollChild, "SetSize") then

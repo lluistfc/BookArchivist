@@ -156,6 +156,19 @@ local function initializeModules()
 					addon:SetListSortMode(mode)
 				end
 			end,
+			getPageSize = function()
+				local addon = Internal.getAddon()
+				if addon and addon.GetListPageSize then
+					return addon:GetListPageSize()
+				end
+				return nil
+			end,
+			setPageSize = function(size)
+				local addon = Internal.getAddon()
+				if addon and addon.SetListPageSize then
+					addon:SetListPageSize(size)
+				end
+			end,
 			getFilters = function()
 				local addon = Internal.getAddon()
 				if addon and addon.GetListFilters then

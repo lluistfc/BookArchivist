@@ -35,7 +35,7 @@ local Metrics = BookArchivist.UI.Metrics or {
 	SEPARATOR_GAP = 6,
 }
 
-local DEFAULT_WIDTH = 900
+local DEFAULT_WIDTH = 1080
 local DEFAULT_HEIGHT = 680
 local DEFAULT_PORTRAIT = "Interface\\Icons\\INV_Misc_Book_09"
 local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"

@@ -14,6 +14,8 @@ local DEFAULT_LIST_MODES = {
 
 local DEFAULT_ROW_HEIGHT = Metrics.ROW_H or 36
 local SEARCH_DEBOUNCE_SECONDS = 0.2
+local PAGE_SIZES = { 10, 25, 50, 100 }
+local PAGE_SIZE_DEFAULT = 25
 
 local SORT_OPTIONS = {
   { value = "recent", label = "Recently Read" },
@@ -42,6 +44,7 @@ state.listModes = state.listModes or DEFAULT_LIST_MODES
 state.filters = state.filters or {}
 state.widgets = state.widgets or {}
 state.search = state.search or { pendingToken = 0 }
+state.pagination = state.pagination or { page = 1, pageSize = PAGE_SIZE_DEFAULT }
 state.filterButtons = state.filterButtons or {}
 state.locationMenuFrame = state.locationMenuFrame or nil
 
@@ -174,6 +177,79 @@ end
 
 function ListUI:GetQuickFilters()
   return QUICK_FILTERS
+end
+
+local function normalizePageSize(size)
+  size = tonumber(size)
+  for _, allowed in ipairs(PAGE_SIZES) do
+    if size == allowed then
+      return allowed
+    end
+  end
+  return PAGE_SIZE_DEFAULT
+end
+
+function ListUI:GetPageSizes()
+  return PAGE_SIZES
+end
+
+function ListUI:GetPageSize()
+  local ctx = self:GetContext()
+  local persisted = ctx and ctx.getPageSize and ctx.getPageSize()
+  local size = normalizePageSize(persisted or self.__state.pagination.pageSize)
+  self.__state.pagination.pageSize = size
+  return size
+end
+
+function ListUI:SetPageSize(size)
+  local normalized = normalizePageSize(size)
+  self.__state.pagination.pageSize = normalized
+  self.__state.pagination.page = 1
+  local ctx = self:GetContext()
+  if ctx and ctx.setPageSize then
+    ctx.setPageSize(normalized)
+  end
+  self:RunSearchRefresh()
+end
+
+function ListUI:GetPage()
+  local page = tonumber(self.__state.pagination.page) or 1
+  if page < 1 then
+    page = 1
+    self.__state.pagination.page = page
+  end
+  return page
+end
+
+function ListUI:SetPage(page, skipRefresh)
+  local total = self.__state.pagination.total or #self:GetFilteredKeys()
+  local pageCount = self:GetPageCount(total)
+  local target = tonumber(page) or 1
+  if pageCount < 1 then
+    pageCount = 1
+  end
+  target = math.min(math.max(1, target), pageCount)
+  self.__state.pagination.page = target
+  if not skipRefresh then
+    self:UpdateList()
+  end
+end
+
+function ListUI:NextPage()
+  self:SetPage(self:GetPage() + 1)
+end
+
+function ListUI:PrevPage()
+  self:SetPage(self:GetPage() - 1)
+end
+
+function ListUI:GetPageCount(total)
+  total = tonumber(total) or 0
+  local pageSize = self:GetPageSize()
+  if pageSize <= 0 then
+    return 1
+  end
+  return math.max(1, math.ceil(total / pageSize))
 end
 
 function ListUI:GetFiltersState()
@@ -611,6 +687,51 @@ function ListUI:UpdateSearchClearButton()
     button:Show()
   else
     button:Hide()
+  end
+end
+
+function ListUI:UpdatePaginationUI(total, pageCount)
+  local frame = self:GetFrame("paginationFrame")
+  if not frame then
+    return
+  end
+
+  total = tonumber(total) or 0
+  pageCount = tonumber(pageCount) or self:GetPageCount(total)
+  if pageCount < 1 then
+    pageCount = 1
+  end
+
+  local page = self:GetPage()
+  if page > pageCount then
+    page = pageCount
+    self.__state.pagination.page = page
+  end
+  if page < 1 then
+    page = 1
+    self.__state.pagination.page = page
+  end
+
+  local prevButton = self:GetFrame("pagePrevButton")
+  local nextButton = self:GetFrame("pageNextButton")
+  local pageLabel = self:GetFrame("pageLabel")
+  local dropdown = self:GetFrame("pageSizeDropdown")
+
+  if prevButton and prevButton.SetEnabled then
+    prevButton:SetEnabled(page > 1)
+  end
+  if nextButton and nextButton.SetEnabled then
+    nextButton:SetEnabled(page < pageCount and total > 0)
+  end
+  if pageLabel and pageLabel.SetText then
+    if total == 0 then
+      pageLabel:SetText("No results")
+    else
+      pageLabel:SetText(string.format("Page %d / %d", page, pageCount))
+    end
+  end
+  if dropdown and UIDropDownMenu_SetText then
+    UIDropDownMenu_SetText(dropdown, string.format("%d / page", self:GetPageSize()))
   end
 end
 

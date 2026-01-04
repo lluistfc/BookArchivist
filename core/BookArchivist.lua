@@ -181,6 +181,19 @@ function BookArchivist:SetListWidth(width)
   end
 end
 
+function BookArchivist:GetListPageSize()
+  if Core and Core.GetListPageSize then
+    return Core:GetListPageSize()
+  end
+  return 25
+end
+
+function BookArchivist:SetListPageSize(size)
+  if Core and Core.SetListPageSize then
+    Core:SetListPageSize(size)
+  end
+end
+
 function BookArchivist:GetListSortMode()
   if Core and Core.GetSortMode then
     return Core:GetSortMode()
