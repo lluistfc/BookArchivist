@@ -193,6 +193,11 @@ function ListUI:UpdateList()
     paginationFrame:Show()
   end
 
+  if info then
+    info:SetText("")
+    info:Hide()
+  end
+
   if mode == modes.BOOKS then
     local filtered = self:GetFilteredKeys()
     local total = #filtered

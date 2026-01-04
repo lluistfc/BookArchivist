@@ -97,8 +97,9 @@ local function ensureTabsRail(self, tabParent)
     return nil
   end
 
-  local padInset = Metrics.PAD_INSET or Metrics.PAD or 10
-  tabsRail:SetPoint("TOPRIGHT", tabParent, "TOPRIGHT", -(padInset + SEPARATOR_GUTTER), TAB_Y_BIAS)
+  ClearAnchors(tabsRail)
+  tabsRail:SetPoint("TOPLEFT", tabParent, "TOPLEFT", 0, TAB_Y_BIAS)
+  tabsRail:SetPoint("BOTTOMLEFT", tabParent, "BOTTOMLEFT", 0, TAB_Y_BIAS)
   tabsRail:SetHeight(TAB_RAIL_H)
   tabsRail:SetWidth(TAB_RAIL_W)
   self:SetFrame("listTabsRail", tabsRail)
@@ -251,10 +252,10 @@ function ListUI:EnsureListTipRow()
   if not row then
     return nil
   end
-  local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
+  local inset = Metrics.PAD_INSET or Metrics.PAD or 8
   ClearAnchors(row)
-  row:SetPoint("TOPLEFT", headerRow, "BOTTOMLEFT", 0, -gap)
-  row:SetPoint("TOPRIGHT", headerRow, "BOTTOMRIGHT", 0, -gap)
+  row:SetPoint("BOTTOMLEFT", listBlock, "BOTTOMLEFT", inset, inset)
+  row:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -inset, inset)
   local tipH = Metrics.TIP_ROW_H or Metrics.LIST_TIP_H or (Metrics.LIST_INFO_H or 18)
   row:SetHeight(math.max(tipH, Metrics.BTN_H or 22))
   self:SetFrame("listTipRow", row)
@@ -281,13 +282,13 @@ function ListUI:EnsureListScrollRow()
   if not row then
     return nil
   end
-  local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
+  local gap = Metrics.LIST_SCROLL_GAP or 0 -- zero gap so tabs sit directly on the separator line
   local inset = Metrics.PAD_INSET or Metrics.PAD or 8
   ClearAnchors(row)
-  row:SetPoint("TOPLEFT", tipRow, "BOTTOMLEFT", 0, -gap)
-  row:SetPoint("TOPRIGHT", tipRow, "BOTTOMRIGHT", 0, -gap)
-  row:SetPoint("BOTTOMLEFT", listBlock, "BOTTOMLEFT", inset, inset)
-  row:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -inset, inset)
+  row:SetPoint("TOPLEFT", self:EnsureListHeaderRow(), "BOTTOMLEFT", 0, -gap)
+  row:SetPoint("TOPRIGHT", self:EnsureListHeaderRow(), "BOTTOMRIGHT", 0, -gap)
+  row:SetPoint("BOTTOMLEFT", tipRow, "TOPLEFT", 0, gap * -1)
+  row:SetPoint("BOTTOMRIGHT", tipRow, "TOPRIGHT", 0, gap * -1)
   self:SetFrame("listScrollRow", row)
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-scroll-row", row)
@@ -311,6 +312,7 @@ function ListUI:EnsureListHeader()
   header:SetJustifyH("LEFT")
   header:SetJustifyV("MIDDLE")
   header:SetText("Saved Books")
+  header:Hide() -- hidden because tabs replace the header label
   self:SetFrame("listHeader", header)
   return header
 end
@@ -625,14 +627,9 @@ function ListUI:Create(uiFrame)
   end
 
   local listHeader = self:EnsureListHeader()
-  if listHeader and tabsRail then
-    listHeader:ClearAllPoints()
-    listHeader:SetPoint("LEFT", listHeaderRow, "LEFT", 0, 0)
-    listHeader:SetPoint("RIGHT", tabsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
+  if listHeader then
+    listHeader:Hide()
   end
-
-  local tipRow = self:EnsureListTipRow()
-  self:EnsureInfoText()
 
   local listSeparator = self:GetFrame("listSeparator") or listScrollRow:CreateTexture(nil, "ARTWORK")
   listSeparator:ClearAllPoints()
@@ -688,13 +685,9 @@ function ListUI:UpdateListModeUI()
   local mode = self:GetListMode()
   local modes = self:GetListModes()
 
-  local listHeader = self:EnsureListHeader()
-  if listHeader and hasMethod(listHeader, "SetText") then
-    if mode == modes.BOOKS then
-      listHeader:SetText("Saved Books")
-    else
-      listHeader:SetText("Browse by Location")
-    end
+  local listHeader = self:GetFrame("listHeader")
+  if listHeader then
+    listHeader:Hide()
   end
 
   local listSeparator = self:GetFrame("listSeparator")
