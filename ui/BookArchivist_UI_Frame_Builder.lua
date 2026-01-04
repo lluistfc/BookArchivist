@@ -28,7 +28,7 @@ local Metrics = BookArchivist.UI.Metrics or {
 	ROW_H = 36,
 	BTN_H = 22,
 	BTN_W = 100,
-	HEADER_RIGHT_STACK_W = 110,
+	HEADER_RIGHT_STACK_W = 360,
 	HEADER_RIGHT_GUTTER = 12,
 	SCROLLBAR_GUTTER = 18,
 	SEPARATOR_W = 10,
@@ -41,7 +41,7 @@ local DEFAULT_PORTRAIT = "Interface\\Icons\\INV_Misc_Book_09"
 local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"
 local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
 local MIN_LIST_WIDTH = 260
-local MIN_READER_WIDTH = 320
+local MIN_READER_WIDTH = 440
 local HEADER_ROW_GAP_Y = Metrics.GAP_XS or 0
 local function computeHeaderRowHeights()
 	local headerH = Metrics.HEADER_H or 72
@@ -370,25 +370,23 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 		return nil
 	end
 
-	local initialWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
-	local separatorGap = Metrics.SEPARATOR_GAP or Metrics.GAP_S or 6
+	ClearAnchors(listInset)
 	listInset:SetPoint("TOPLEFT", body, "TOPLEFT", padInset, -padInset)
 	listInset:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", padInset, padInset)
+
+	ClearAnchors(readerInset)
 	readerInset:SetPoint("TOPRIGHT", body, "TOPRIGHT", -padInset, -padInset)
 	readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -padInset, padInset)
 
 	local splitter = safeCreateFrame("Frame", nil, body)
-	splitter:SetPoint("TOPLEFT", listInset, "TOPRIGHT", 0, 0)
-	splitter:SetPoint("BOTTOMLEFT", listInset, "BOTTOMRIGHT", 0, 0)
-	splitter:SetWidth(Metrics.SEPARATOR_W or math.max(8, math.floor((Metrics.GAP_M or 10) * 0.6)))
+	local separatorWidth = Metrics.SEPARATOR_W or math.max(8, math.floor((Metrics.GAP_M or 10) * 0.6))
+	splitter:SetWidth(separatorWidth)
 	splitter:EnableMouse(true)
 	splitter:RegisterForDrag("LeftButton")
 	configureSplitter(splitter)
 	frame.SplitterFrame = splitter
 	frame.SeparatorFrame = splitter
 
-	readerInset:SetPoint("TOPLEFT", splitter, "TOPRIGHT", separatorGap, 0)
-	readerInset:SetPoint("BOTTOMLEFT", splitter, "BOTTOMRIGHT", separatorGap, 0)
 	if Internal and Internal.registerGridTarget then
 		Internal.registerGridTarget("list-inset", listInset)
 		Internal.registerGridTarget("reader-inset", readerInset)
@@ -400,13 +398,26 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 	frame.readerBlock = readerInset
 	frame.ReaderInset = readerInset
 
+	local separatorGap = Metrics.SEPARATOR_GAP or Metrics.GAP_S or 6
+	local initialWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
 	local layoutState = {
-		currentWidth = clampListWidth(body, initialWidth),
+		currentWidth = 0,
+		separatorWidth = separatorWidth,
 	}
 
 	local function applyWidth(width, skipPersist)
 		layoutState.currentWidth = clampListWidth(body, width)
 		listInset:SetWidth(layoutState.currentWidth)
+
+		local sepOffset = padInset + layoutState.currentWidth
+		ClearAnchors(splitter)
+		splitter:SetPoint("TOPLEFT", body, "TOPLEFT", sepOffset, -padInset)
+		splitter:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", sepOffset, padInset)
+
+		ClearAnchors(readerInset)
+		readerInset:SetPoint("TOPLEFT", body, "TOPLEFT", sepOffset + layoutState.separatorWidth + separatorGap, -padInset)
+		readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -padInset, padInset)
+
 		frame.currentListWidth = layoutState.currentWidth
 		if not skipPersist and opts.onListWidthChanged then
 			opts.onListWidthChanged(layoutState.currentWidth)
@@ -437,7 +448,7 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 			end
 			local bodyLeft = body:GetLeft()
 			if bodyLeft then
-				local desired = cursorX - bodyLeft
+				local desired = cursorX - bodyLeft - padInset
 				applyWidth(desired, true)
 			end
 		end)

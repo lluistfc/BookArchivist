@@ -23,11 +23,7 @@ local SORT_OPTIONS = {
   { value = "lastSeen", label = "Last Seen" },
 }
 
-local QUICK_FILTERS = {
-  { key = "hasLocation", icon = "Interface\\Minimap\\Tracking\\Object", tooltip = "Show only books with a saved location" },
-  { key = "multiPage", icon = "Interface\\Icons\\INV_Misc_Book_08", tooltip = "Show only multi-page books" },
-  { key = "unread", icon = "Interface\\FriendsFrame\\StatusIcon-Offline", tooltip = "Show only books you have not revisited" },
-}
+local QUICK_FILTERS = {}
 
 local state = ListUI.__state or {}
 ListUI.__state = state

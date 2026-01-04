@@ -5,24 +5,30 @@ if not ListUI then return end
 local Metrics = BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics or {
   PAD = 12,
   GUTTER = 10,
-  HEADER_H = 72,
+  HEADER_H = 90,
   BTN_H = 22,
   BTN_W = 100,
   ROW_H = 36,
   LIST_HEADER_H = 34,
   LIST_TOPBAR_H = 28,
   PAD_OUTER = 12,
-  PAD_INSET = 10,
+  PAD_INSET = 11,
   GAP_XS = 4,
   GAP_S = 6,
   GAP_M = 10,
   GAP_L = 14,
-  HEADER_RIGHT_STACK_W = 120,
+  HEADER_RIGHT_STACK_W = 110,
   HEADER_RIGHT_GUTTER = 12,
   SCROLLBAR_GUTTER = 18,
 }
 
 local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+
+local function ClearAnchors(frame)
+  if frame and frame.ClearAllPoints then
+    frame:ClearAllPoints()
+  end
+end
 
 local function hasMethod(obj, methodName)
   return obj and type(obj[methodName]) == "function"
@@ -44,6 +50,7 @@ function ListUI:EnsureListHeaderRow()
     return nil
   end
   local inset = Metrics.PAD_INSET or Metrics.PAD or 8
+  ClearAnchors(row)
   row:SetPoint("TOPLEFT", listBlock, "TOPLEFT", inset, -inset)
   row:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -inset, -inset)
   row:SetHeight(Metrics.LIST_HEADER_H or (Metrics.BTN_H or 22))
@@ -71,13 +78,45 @@ function ListUI:EnsureListTipRow()
   if not row then
     return nil
   end
-  local gap = Metrics.GAP_XS or 4
+  local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
+  ClearAnchors(row)
   row:SetPoint("TOPLEFT", headerRow, "BOTTOMLEFT", 0, -gap)
   row:SetPoint("TOPRIGHT", headerRow, "BOTTOMRIGHT", 0, -gap)
-  row:SetHeight(Metrics.LIST_TIP_H or (Metrics.LIST_INFO_H or 18))
+  row:SetHeight(Metrics.TIP_ROW_H or Metrics.LIST_TIP_H or (Metrics.LIST_INFO_H or 18))
   self:SetFrame("listTipRow", row)
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-tip-row", row)
+  end
+  return row
+end
+
+function ListUI:EnsureListScrollRow()
+  local row = self:GetFrame("listScrollRow")
+  if row then
+    return row
+  end
+  local listBlock = self:GetFrame("listBlock")
+  if not listBlock then
+    return nil
+  end
+  local tipRow = self:EnsureListTipRow()
+  if not tipRow then
+    return nil
+  end
+  row = self:SafeCreateFrame("Frame", nil, listBlock)
+  if not row then
+    return nil
+  end
+  local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
+  local inset = Metrics.PAD_INSET or Metrics.PAD or 8
+  ClearAnchors(row)
+  row:SetPoint("TOPLEFT", tipRow, "BOTTOMLEFT", 0, -gap)
+  row:SetPoint("TOPRIGHT", tipRow, "BOTTOMRIGHT", 0, -gap)
+  row:SetPoint("BOTTOMLEFT", listBlock, "BOTTOMLEFT", inset, inset)
+  row:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -inset, inset)
+  self:SetFrame("listScrollRow", row)
+  if Internal and Internal.registerGridTarget then
+    Internal.registerGridTarget("list-scroll-row", row)
   end
   return row
 end
@@ -303,51 +342,6 @@ function ListUI:Create(uiFrame)
   sortDropdown:SetPoint("CENTER", headerRightBottom, "CENTER", 0, 0)
   self:InitializeSortDropdown(sortDropdown)
 
-  local filterContainer = CreateFrame("Frame", nil, headerRightBottom)
-  filterContainer:SetPoint("LEFT", headerRightBottom, "LEFT", 0, 0)
-  filterContainer:SetPoint("RIGHT", sortDropdown, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER * 0.5), 0)
-  filterContainer:SetPoint("TOP", headerRightBottom, "TOP", 0, 0)
-  filterContainer:SetPoint("BOTTOM", headerRightBottom, "BOTTOM", 0, 0)
-  filterContainer:SetHeight(Metrics.BTN_H)
-  self:SetFrame("filterContainer", filterContainer)
-  local lastButton
-  for _, def in ipairs(self:GetQuickFilters()) do
-    local button = CreateFrame("Button", nil, filterContainer)
-    button:SetSize(Metrics.BTN_H, Metrics.BTN_H)
-    if lastButton then
-      button:SetPoint("RIGHT", lastButton, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER * 0.5), 0)
-    else
-      button:SetPoint("RIGHT", filterContainer, "RIGHT", 0, 0)
-    end
-    button.bg = button:CreateTexture(nil, "BACKGROUND")
-    button.bg:SetAllPoints(true)
-    button.bg:SetColorTexture(0, 0, 0, 0.35)
-    button.icon = button:CreateTexture(nil, "ARTWORK")
-    button.icon:SetAllPoints(true)
-    button.icon:SetTexture(def.icon)
-    button.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    button:SetScript("OnClick", function()
-      if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON then
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-      end
-      self:ToggleFilter(def.key)
-    end)
-    button:SetScript("OnEnter", function(btn)
-      if GameTooltip then
-        GameTooltip:SetOwner(btn, "ANCHOR_TOPLEFT")
-        GameTooltip:SetText(def.tooltip or "Toggle filter", 1, 0.82, 0)
-      end
-    end)
-    button:SetScript("OnLeave", function()
-      if GameTooltip then
-        GameTooltip:Hide()
-      end
-    end)
-    self:SetFilterButton(def.key, button)
-    lastButton = button
-  end
-  self:UpdateFilterButtons()
-
   local listBlock = uiFrame.listBlock or uiFrame.ListInset
   if not listBlock then
     listBlock = self:SafeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate3")
@@ -361,6 +355,8 @@ function ListUI:Create(uiFrame)
   self:SetFrame("listBlock", listBlock)
 
   local listHeaderRow = self:EnsureListHeaderRow()
+  local tipRow = self:EnsureListTipRow()
+  local listScrollRow = self:EnsureListScrollRow()
   local tabsRail = self:GetFrame("listTabsRail")
   if not tabsRail then
     tabsRail = self:SafeCreateFrame("Frame", nil, listHeaderRow)
@@ -412,22 +408,24 @@ function ListUI:Create(uiFrame)
   local tipRow = self:EnsureListTipRow()
   self:EnsureInfoText()
 
-  local listSeparator = listBlock:CreateTexture(nil, "ARTWORK")
+  local listSeparator = self:GetFrame("listSeparator") or listScrollRow:CreateTexture(nil, "ARTWORK")
+  listSeparator:ClearAllPoints()
   listSeparator:SetHeight(1)
   local inset = Metrics.PAD_INSET or Metrics.PAD or 8
-  listSeparator:SetPoint("TOPLEFT", tipRow or listHeaderRow, "BOTTOMLEFT", -(inset * 0.25), -(Metrics.GAP_XS or 4))
-  listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -inset, -inset)
+  listSeparator:SetPoint("TOPLEFT", listScrollRow, "TOPLEFT", -(inset * 0.25), 0)
+  listSeparator:SetPoint("TOPRIGHT", listScrollRow, "TOPRIGHT", inset, 0)
   listSeparator:SetColorTexture(0.25, 0.25, 0.25, 1)
   self:SetFrame("listSeparator", listSeparator)
 
-  local scrollFrame = self:SafeCreateFrame("ScrollFrame", "BookArchivistListScroll", listBlock, "UIPanelScrollFrameTemplate")
+  local scrollFrame = self:SafeCreateFrame("ScrollFrame", "BookArchivistListScroll", listScrollRow, "UIPanelScrollFrameTemplate")
   if not scrollFrame then
     self:LogError("Unable to create list scroll frame.")
     return
   end
-  local scrollAnchor = listSeparator or tipRow or listHeaderRow
-  scrollFrame:SetPoint("TOPLEFT", scrollAnchor, "BOTTOMLEFT", 0, -(Metrics.GAP_M or Metrics.GUTTER))
-  scrollFrame:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -(Metrics.PAD_INSET or Metrics.PAD), Metrics.PAD_INSET or Metrics.PAD)
+  local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
+  scrollFrame:ClearAllPoints()
+  scrollFrame:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 0, -gap)
+  scrollFrame:SetPoint("BOTTOMRIGHT", listScrollRow, "BOTTOMRIGHT", 0, 0)
   self:SetFrame("scrollFrame", scrollFrame)
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-scroll", scrollFrame)
@@ -474,12 +472,12 @@ function ListUI:UpdateListModeUI()
   end
 
   local listSeparator = self:GetFrame("listSeparator")
-  local listBlock = self:GetFrame("listBlock")
-  if hasMethod(listSeparator, "ClearAllPoints") and hasMethod(listSeparator, "SetPoint") and listBlock then
+  local listScrollRow = self:GetFrame("listScrollRow") or self:GetFrame("listBlock")
+  if hasMethod(listSeparator, "ClearAllPoints") and hasMethod(listSeparator, "SetPoint") and listScrollRow then
     listSeparator:ClearAllPoints()
     local inset = Metrics.PAD_INSET or Metrics.PAD or 8
-    listSeparator:SetPoint("TOPLEFT", self:GetFrame("listTipRow") or listHeader or listBlock, "BOTTOMLEFT", -(inset * 0.25), -(Metrics.GAP_XS or 4))
-    listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -inset, -inset)
+    listSeparator:SetPoint("TOPLEFT", listScrollRow, "TOPLEFT", -(inset * 0.25), 0)
+    listSeparator:SetPoint("TOPRIGHT", listScrollRow, "TOPRIGHT", inset, 0)
   end
 
   local booksModeButton = self:GetFrame("booksModeButton")

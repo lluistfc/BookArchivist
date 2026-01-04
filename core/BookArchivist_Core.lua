@@ -90,7 +90,7 @@ local function ensureDB()
     BookArchivistDB.options.debugEnabled = false
   end
   if BookArchivistDB.options.uiDebug == nil then
-    BookArchivistDB.options.uiDebug = true
+    BookArchivistDB.options.uiDebug = false
   end
   BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
   local uiOpts = BookArchivistDB.options.ui

@@ -321,28 +321,33 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		Internal.registerGridTarget("reader-inset", readerBlock)
 	end
 
-	local readerHeader = safeCreateFrame and safeCreateFrame("Frame", nil, readerBlock)
-	if not readerHeader then
+	local padInset = Metrics.PAD_INSET or Metrics.PAD or 10
+	local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
+
+	local readerHeaderRow = safeCreateFrame and safeCreateFrame("Frame", nil, readerBlock)
+	if not readerHeaderRow then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
-			BookArchivist.UI.Internal.logError("Unable to create reader header.")
+			BookArchivist.UI.Internal.logError("Unable to create reader header row.")
 		end
 		return
 	end
-	readerHeader:SetPoint("TOPLEFT", readerBlock, "TOPLEFT", Metrics.PAD_INSET or Metrics.PAD, -(Metrics.PAD_INSET or Metrics.PAD))
-	readerHeader:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -(Metrics.PAD_INSET or Metrics.PAD), -(Metrics.PAD_INSET or Metrics.PAD))
-	readerHeader:SetHeight(Metrics.READER_HEADER_H)
+	readerHeaderRow:ClearAllPoints()
+	readerHeaderRow:SetPoint("TOPLEFT", readerBlock, "TOPLEFT", padInset, -padInset)
+	readerHeaderRow:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -padInset, -padInset)
+	readerHeaderRow:SetHeight(Metrics.READER_HEADER_H or Metrics.SUBHEADER_H or 54)
+	state.readerHeader = readerHeaderRow
 	if rememberWidget then
-		rememberWidget("readerHeader", readerHeader)
+		rememberWidget("readerHeader", readerHeaderRow)
 	end
-	state.readerHeader = readerHeader
 	if Internal and Internal.registerGridTarget then
-		Internal.registerGridTarget("reader-header", readerHeader)
+		Internal.registerGridTarget("reader-header-row", readerHeaderRow)
 	end
 
-	local actionsRail = safeCreateFrame and safeCreateFrame("Frame", nil, readerHeader)
+	local actionsRail = safeCreateFrame and safeCreateFrame("Frame", nil, readerHeaderRow)
 	if actionsRail then
-		actionsRail:SetPoint("TOPRIGHT", readerHeader, "TOPRIGHT", 0, 0)
-		actionsRail:SetPoint("BOTTOMRIGHT", readerHeader, "BOTTOMRIGHT", 0, 0)
+		actionsRail:ClearAllPoints()
+		actionsRail:SetPoint("TOPRIGHT", readerHeaderRow, "TOPRIGHT", 0, 0)
+		actionsRail:SetPoint("BOTTOMRIGHT", readerHeaderRow, "BOTTOMRIGHT", 0, 0)
 		actionsRail:SetWidth(Metrics.READER_ACTIONS_W or Metrics.HEADER_RIGHT_STACK_W or 130)
 		state.readerActionsRail = actionsRail
 		if rememberWidget then
@@ -353,7 +358,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	local bookTitle = readerHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	local bookTitle = readerHeaderRow:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	state.bookTitle = bookTitle
 	if rememberWidget then
 		rememberWidget("bookTitle", bookTitle)
@@ -363,37 +368,54 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	bookTitle:SetText("Select a book from the list")
 	bookTitle:SetTextColor(1, 0.82, 0)
 	uiFrame.bookTitle = bookTitle
-
-	local navRow = safeCreateFrame and safeCreateFrame("Frame", nil, readerHeader)
-	if navRow then
-		navRow:SetPoint("BOTTOMLEFT", readerHeader, "BOTTOMLEFT", 0, 0)
-		if actionsRail then
-			navRow:SetPoint("BOTTOMRIGHT", actionsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
-		else
-			navRow:SetPoint("BOTTOMRIGHT", readerHeader, "BOTTOMRIGHT", 0, 0)
-		end
-		navRow:SetHeight(Metrics.BTN_H + 4)
-		if rememberWidget then
-			rememberWidget("readerNavRow", navRow)
-		end
-		state.readerNavRow = navRow
-		if Internal and Internal.registerGridTarget then
-			Internal.registerGridTarget("reader-nav-row", navRow)
-		end
-	end
 	bookTitle:ClearAllPoints()
-	bookTitle:SetPoint("TOPLEFT", readerHeader, "TOPLEFT", 0, 0)
+	bookTitle:SetPoint("TOPLEFT", readerHeaderRow, "TOPLEFT", 0, 0)
 	if actionsRail then
 		bookTitle:SetPoint("TOPRIGHT", actionsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
 	else
-		bookTitle:SetPoint("TOPRIGHT", readerHeader, "TOPRIGHT", 0, 0)
+		bookTitle:SetPoint("TOPRIGHT", readerHeaderRow, "TOPRIGHT", 0, 0)
 	end
-	bookTitle:SetPoint("BOTTOM", (navRow or readerHeader), "TOP", 0, -(Metrics.GAP_XS or 2))
+	bookTitle:SetPoint("BOTTOM", readerHeaderRow, "CENTER", 0, 0)
 
-	local prevButton = safeCreateFrame and safeCreateFrame("Button", nil, navRow or readerHeader, "UIPanelButtonTemplate")
+	local metaDisplay = readerHeaderRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	state.metaDisplay = metaDisplay
+	if rememberWidget then
+		rememberWidget("meta", metaDisplay)
+	end
+	metaDisplay:ClearAllPoints()
+	metaDisplay:SetPoint("TOPLEFT", bookTitle, "BOTTOMLEFT", 0, -(Metrics.GAP_XS or 2))
+	if actionsRail then
+		metaDisplay:SetPoint("TOPRIGHT", actionsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
+	else
+		metaDisplay:SetPoint("TOPRIGHT", readerHeaderRow, "TOPRIGHT", 0, 0)
+	end
+	metaDisplay:SetPoint("BOTTOM", readerHeaderRow, "BOTTOM", 0, 0)
+	metaDisplay:SetJustifyH("LEFT")
+	metaDisplay:SetJustifyV("TOP")
+	metaDisplay:SetSpacing(1.5)
+	metaDisplay:SetWordWrap(true)
+	metaDisplay:SetText("")
+	uiFrame.meta = metaDisplay
+
+	local readerNavRow = safeCreateFrame and safeCreateFrame("Frame", nil, readerBlock)
+	if readerNavRow then
+		readerNavRow:ClearAllPoints()
+		readerNavRow:SetPoint("TOPLEFT", readerHeaderRow, "BOTTOMLEFT", 0, -gap)
+		readerNavRow:SetPoint("TOPRIGHT", readerHeaderRow, "BOTTOMRIGHT", 0, -gap)
+		readerNavRow:SetHeight(Metrics.NAV_ROW_H or Metrics.BTN_H + 6)
+		state.readerNavRow = readerNavRow
+		if rememberWidget then
+			rememberWidget("readerNavRow", readerNavRow)
+		end
+		if Internal and Internal.registerGridTarget then
+			Internal.registerGridTarget("reader-nav-row", readerNavRow)
+		end
+	end
+
+	local prevButton = safeCreateFrame and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
 	if prevButton then
 		prevButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
-		prevButton:SetPoint("LEFT", navRow or readerHeader, "LEFT", 0, 0)
+		prevButton:SetPoint("LEFT", readerNavRow or readerHeaderRow, "LEFT", 0, 0)
 		prevButton:SetText("< Prev")
 		prevButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
@@ -406,15 +428,10 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.prevButton = prevButton
 
-	local nextButton = safeCreateFrame and safeCreateFrame("Button", nil, navRow or readerHeader, "UIPanelButtonTemplate")
+	local nextButton = safeCreateFrame and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
 	if nextButton then
 		nextButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
-		if actionsRail then
-			nextButton:SetPoint("BOTTOMLEFT", actionsRail, "BOTTOMLEFT", 0, 0)
-			nextButton:SetPoint("BOTTOMRIGHT", actionsRail, "BOTTOMRIGHT", 0, 0)
-		else
-			nextButton:SetPoint("RIGHT", navRow or readerHeader, "RIGHT", 0, 0)
-		end
+		nextButton:SetPoint("RIGHT", readerNavRow or readerHeaderRow, "RIGHT", 0, 0)
 		nextButton:SetText("Next >")
 		nextButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
@@ -427,7 +444,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.nextButton = nextButton
 
-	local pageIndicatorParent = navRow or readerHeader
+	local pageIndicatorParent = readerNavRow or readerHeaderRow
 	local pageIndicator = pageIndicatorParent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	pageIndicator:SetPoint("CENTER", pageIndicatorParent, "CENTER", 0, 0)
 	pageIndicator:SetJustifyH("CENTER")
@@ -438,27 +455,23 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		rememberWidget("pageIndicator", pageIndicator)
 	end
 
-	local metaDisplay = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	state.metaDisplay = metaDisplay
-	if rememberWidget then
-		rememberWidget("meta", metaDisplay)
+	local readerScrollRow = safeCreateFrame and safeCreateFrame("Frame", nil, readerBlock)
+	if readerScrollRow then
+		readerScrollRow:ClearAllPoints()
+		readerScrollRow:SetPoint("TOPLEFT", readerNavRow or readerHeaderRow, "BOTTOMLEFT", 0, -gap)
+		readerScrollRow:SetPoint("TOPRIGHT", readerNavRow or readerHeaderRow, "BOTTOMRIGHT", 0, -gap)
+		readerScrollRow:SetPoint("BOTTOMLEFT", readerBlock, "BOTTOMLEFT", padInset, padInset)
+		readerScrollRow:SetPoint("BOTTOMRIGHT", readerBlock, "BOTTOMRIGHT", -padInset, padInset)
+		state.readerScrollRow = readerScrollRow
+		if rememberWidget then
+			rememberWidget("readerScrollRow", readerScrollRow)
+		end
+		if Internal and Internal.registerGridTarget then
+			Internal.registerGridTarget("reader-scroll-row", readerScrollRow)
+		end
 	end
-	metaDisplay:SetPoint("TOPLEFT", readerHeader, "BOTTOMLEFT", 0, -Metrics.GUTTER)
-	metaDisplay:SetPoint("RIGHT", readerBlock, "RIGHT", -Metrics.PAD, 0)
-	metaDisplay:SetJustifyH("LEFT")
-	metaDisplay:SetJustifyV("TOP")
-	metaDisplay:SetSpacing(1.5)
-	metaDisplay:SetWordWrap(true)
-	metaDisplay:SetText("")
-	uiFrame.meta = metaDisplay
 
-	local divider = readerBlock:CreateTexture(nil, "ARTWORK")
-	divider:SetHeight(1)
-	divider:SetPoint("TOPLEFT", metaDisplay, "BOTTOMLEFT", -Metrics.PAD * 0.25, -Metrics.GUTTER * 0.5)
-	divider:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -Metrics.PAD, -Metrics.GUTTER * 0.5)
-	divider:SetColorTexture(0.25, 0.25, 0.25, 0.5)
-
-	local textScroll = safeCreateFrame and safeCreateFrame("ScrollFrame", "BookArchivistTextScroll", readerBlock, "UIPanelScrollFrameTemplate")
+	local textScroll = safeCreateFrame and safeCreateFrame("ScrollFrame", "BookArchivistTextScroll", readerScrollRow or readerBlock, "UIPanelScrollFrameTemplate")
 	if not textScroll then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
 			BookArchivist.UI.Internal.logError("Unable to create reader scroll frame.")
@@ -470,8 +483,9 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.textScroll = textScroll
 	local innerPad = Metrics.PAD_INSET or Metrics.PAD or 10
-	textScroll:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", innerPad * 0.25, -(Metrics.GUTTER or Metrics.GAP_M or 10))
-	textScroll:SetPoint("BOTTOMRIGHT", readerBlock, "BOTTOMRIGHT", -innerPad, innerPad)
+	textScroll:ClearAllPoints()
+	textScroll:SetPoint("TOPLEFT", readerScrollRow or readerBlock, "TOPLEFT", innerPad, -innerPad)
+	textScroll:SetPoint("BOTTOMRIGHT", readerScrollRow or readerBlock, "BOTTOMRIGHT", -innerPad, innerPad)
 	uiFrame.textScroll = textScroll
 	if Internal and Internal.registerGridTarget then
 		Internal.registerGridTarget("reader-scroll", textScroll)
@@ -528,7 +542,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	local deleteParent = actionsRail or readerHeader
+	local deleteParent = actionsRail or readerHeaderRow
 	local deleteButton = ensureDeleteButton(deleteParent)
 	if not deleteButton then
 		deleteDebug("ReaderUI:Create deleteButton creation failed; logging error")
@@ -537,16 +551,11 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	if actionsRail and nextButton then
+	if actionsRail and deleteButton then
 		nextButton:ClearAllPoints()
 		nextButton:SetHeight(Metrics.BTN_H)
-		if deleteButton then
-			nextButton:SetPoint("TOPLEFT", deleteButton, "BOTTOMLEFT", 0, -(Metrics.GAP_S or Metrics.GUTTER * 0.5))
-			nextButton:SetPoint("TOPRIGHT", deleteButton, "BOTTOMRIGHT", 0, -(Metrics.GAP_S or Metrics.GUTTER * 0.5))
-		else
-			nextButton:SetPoint("BOTTOMLEFT", actionsRail, "BOTTOMLEFT", 0, 0)
-			nextButton:SetPoint("BOTTOMRIGHT", actionsRail, "BOTTOMRIGHT", 0, 0)
-		end
+		nextButton:SetPoint("TOPLEFT", deleteButton, "BOTTOMLEFT", 0, -(Metrics.GAP_S or Metrics.GUTTER * 0.5))
+		nextButton:SetPoint("TOPRIGHT", deleteButton, "BOTTOMRIGHT", 0, -(Metrics.GAP_S or Metrics.GUTTER * 0.5))
 	end
 
 	local countTextParent = uiFrame or readerBlock

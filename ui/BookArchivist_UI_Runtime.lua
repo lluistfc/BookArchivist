@@ -182,7 +182,7 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		else
 			visible = Internal.toggleGridOverlay and Internal.toggleGridOverlay() or desiredState
 		end
-		local statusText = (visible and "UI debug grid enabled.") or "UI debug grid hidden."
+		local statusText = (visible and "UI debug grid enabled.") or "UI debug grid hidden. (default is off)"
 		if Internal.chatMessage then
 			Internal.chatMessage("|cFF00FF00BookArchivist:|r " .. statusText)
 		elseif print then
