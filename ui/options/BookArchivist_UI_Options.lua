@@ -170,12 +170,17 @@ function OptionsUI:Ensure()
   optionsPanel = createFrame("Frame", "BookArchivistOptionsPanel", parent)
   optionsPanel.name = "Book Archivist"
 
+  local logo = optionsPanel:CreateTexture(nil, "ARTWORK")
+  logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo.png")
+  logo:SetSize(128, 128)
+  logo:SetPoint("TOP", optionsPanel, "TOP", 0, -32)
+
   local title = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-  title:SetPoint("TOPLEFT", 16, -16)
+  title:SetPoint("TOP", logo, "BOTTOM", 0, -8)
   title:SetText("Book Archivist")
 
   local subtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+  subtitle:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 16, -220)
   subtitle:SetText("Enable verbose diagnostics to troubleshoot refresh issues.")
 
   local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")

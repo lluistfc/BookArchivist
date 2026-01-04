@@ -26,3 +26,5 @@ ui/BookArchivist_UI_Core.lua
 ui/BookArchivist_UI_Frame_Builder.lua
 ui/BookArchivist_UI_Frame.lua
 ui/BookArchivist_UI_Runtime.lua
+BookArchivist_logo_64x64.png
+BookArchivist_logo.png

@@ -12,7 +12,7 @@ BookArchivist.UI.Minimap = UIMinimap
 
 local MinimapModule = BookArchivist.Minimap or {}
 
-local DEFAULT_ICON = "Interface\\Icons\\INV_Misc_Book_09"
+local DEFAULT_ICON = "Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png"
 local BUTTON_SIZE = 32
 local OUTER_BUFFER = 4
 

@@ -37,7 +37,7 @@ local Metrics = BookArchivist.UI.Metrics or {
 
 local DEFAULT_WIDTH = 1080
 local DEFAULT_HEIGHT = 680
-local DEFAULT_PORTRAIT = "Interface\\Icons\\INV_Misc_Book_09"
+local DEFAULT_PORTRAIT = "Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png"
 local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"
 local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
 local MIN_LIST_WIDTH = 260
