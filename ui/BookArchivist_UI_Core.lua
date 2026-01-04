@@ -138,10 +138,37 @@ local function initializeModules()
 			getListMode = Internal.getListMode,
 			setListMode = Internal.setListMode,
 			listModes = Internal.listModes,
+			fmtTime = Internal.fmtTime,
+			formatLocationLine = Internal.formatLocationLine,
 			debugPrint = debugPrint,
 			logError = logError,
 			debugMessage = debugMessage,
 			getUIFrame = Internal.getUIFrame,
+			getSortMode = function()
+				local addon = Internal.getAddon()
+				if addon and addon.GetListSortMode then
+					return addon:GetListSortMode()
+				end
+			end,
+			setSortMode = function(mode)
+				local addon = Internal.getAddon()
+				if addon and addon.SetListSortMode then
+					addon:SetListSortMode(mode)
+				end
+			end,
+			getFilters = function()
+				local addon = Internal.getAddon()
+				if addon and addon.GetListFilters then
+					return addon:GetListFilters()
+				end
+				return nil
+			end,
+			setFilter = function(filterKey, state)
+				local addon = Internal.getAddon()
+				if addon and addon.SetListFilter then
+					addon:SetListFilter(filterKey, state)
+				end
+			end,
 		}
 		ListUI:Init(listModuleContext)
 	end

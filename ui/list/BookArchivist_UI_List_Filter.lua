@@ -2,8 +2,11 @@
 local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
-local function matches(entry, query)
+local function matches(self, entry, query)
   if query == "" then
+    if self.GetListMode then
+      return self:EntryMatchesFilters(entry)
+    end
     return true
   end
 
@@ -21,11 +24,14 @@ local function matches(entry, query)
   if entry.pages then
     for _, page in pairs(entry.pages) do
       if has(page) then
-        return true
+        return self:EntryMatchesFilters(entry)
       end
     end
   end
 
+  if self.GetListMode then
+    return self:EntryMatchesFilters(entry)
+  end
   return false
 end
 
@@ -66,7 +72,7 @@ function ListUI:RebuildFiltered()
 
   for _, key in ipairs(order) do
     local entry = db.books[key]
-    if entry and matches(entry, query) then
+    if entry and matches(self, entry, query) then
       table.insert(filtered, key)
       if key == selectedKey then
         selectionStillValid = true
@@ -75,6 +81,10 @@ function ListUI:RebuildFiltered()
   end
 
   self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #order))
+
+  if db then
+    self:ApplySort(filtered, db)
+  end
 
   if selectedKey and not selectionStillValid then
     self:SetSelectedKey(nil)

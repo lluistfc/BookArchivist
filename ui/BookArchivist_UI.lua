@@ -48,6 +48,12 @@ local ViewModel = {
 	listMode = LIST_MODES.BOOKS,
 }
 
+local refreshFlags = {
+	list = true,
+	reader = true,
+	location = true,
+}
+
 local function setSelectedKey(key)
 	ViewModel.selectedKey = key
 end
@@ -170,6 +176,47 @@ local function setListMode(mode)
 	runUpdateList()
 end
 Internal.setListMode = setListMode
+
+local function requestFullRefresh()
+	refreshFlags.list = true
+	refreshFlags.reader = true
+	refreshFlags.location = true
+	Internal.setNeedsRefresh(true)
+end
+Internal.requestFullRefresh = requestFullRefresh
+
+local function requestListRefresh()
+	refreshFlags.list = true
+	Internal.setNeedsRefresh(true)
+end
+Internal.requestListRefresh = requestListRefresh
+
+local function requestReaderRefresh()
+	refreshFlags.reader = true
+	Internal.setNeedsRefresh(true)
+end
+Internal.requestReaderRefresh = requestReaderRefresh
+
+local function requestLocationRefresh()
+	refreshFlags.location = true
+	Internal.setNeedsRefresh(true)
+end
+Internal.requestLocationRefresh = requestLocationRefresh
+
+local function getRefreshFlags()
+	return refreshFlags
+end
+Internal.getRefreshFlags = getRefreshFlags
+
+local function markRefreshComplete(kind)
+	if refreshFlags[kind] ~= nil then
+		refreshFlags[kind] = false
+	end
+	if not refreshFlags.list and not refreshFlags.reader and not refreshFlags.location then
+		Internal.setNeedsRefresh(false)
+	end
+end
+Internal.markRefreshComplete = markRefreshComplete
 
 local function flushPendingRefresh()
 	if not needsRefresh then

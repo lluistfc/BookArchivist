@@ -13,6 +13,13 @@ local DEFAULT_HEIGHT = 600
 local DEFAULT_PORTRAIT = "Interface\\Icons\\INV_Misc_Book_09"
 local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"
 local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
+local HEADER_TOP_OFFSET = -32
+local HEADER_LEFT_OFFSET = 56
+local HEADER_RIGHT_OFFSET = -34
+local HEADER_HEIGHT = 78
+local CONTENT_BOTTOM_OFFSET = 38
+local MIN_LIST_WIDTH = 260
+local MIN_READER_WIDTH = 320
 
 local function configureDrag(frame)
 	frame:SetMovable(true)
@@ -115,6 +122,144 @@ local function configureOptionsButton(frame, safeCreateFrame, onOptions)
 	frame.optionsButton = button
 end
 
+local function createHeaderBar(frame, safeCreateFrame)
+	local header = safeCreateFrame("Frame", nil, frame, "InsetFrameTemplate3")
+	if not header then
+		return nil
+	end
+	header:SetPoint("TOPLEFT", frame, "TOPLEFT", HEADER_LEFT_OFFSET, HEADER_TOP_OFFSET)
+	header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", HEADER_RIGHT_OFFSET, HEADER_TOP_OFFSET)
+	header:SetHeight(HEADER_HEIGHT)
+	header.TitleRegion = header:CreateTexture(nil, "BACKGROUND", nil, -1)
+	header.TitleRegion:SetAllPoints(true)
+	header.TitleRegion:SetColorTexture(0, 0, 0, 0.45)
+	frame.HeaderFrame = header
+	return header
+end
+
+local function clampListWidth(content, width)
+	local totalWidth = content:GetWidth() or (DEFAULT_WIDTH - (HEADER_LEFT_OFFSET + math.abs(HEADER_RIGHT_OFFSET)))
+	local maxWidth = math.max(MIN_LIST_WIDTH, totalWidth - MIN_READER_WIDTH)
+	return math.max(MIN_LIST_WIDTH, math.min(width, maxWidth))
+end
+
+local function configureSplitter(splitter)
+	local handle = splitter:CreateTexture(nil, "ARTWORK")
+	handle:SetAllPoints(true)
+	handle:SetColorTexture(0.9, 0.75, 0.3, 0.25)
+	local grip = splitter:CreateTexture(nil, "OVERLAY")
+	grip:SetSize(4, 32)
+	grip:SetPoint("CENTER")
+	grip:SetColorTexture(1, 0.82, 0, 0.75)
+	splitter:SetScript("OnEnter", function(self)
+		self:SetAlpha(1)
+	end)
+	splitter:SetScript("OnLeave", function(self)
+		if not self.__isDragging then
+			self:SetAlpha(0.85)
+		end
+	end)
+	splitter:SetAlpha(0.85)
+end
+
+local function createContentLayout(frame, safeCreateFrame, opts)
+	local header = frame.HeaderFrame or createHeaderBar(frame, safeCreateFrame)
+	local content = safeCreateFrame("Frame", nil, frame)
+	if not content then
+		return nil
+	end
+	content:SetPoint("TOPLEFT", header or frame, "BOTTOMLEFT", 0, -12)
+	content:SetPoint("TOPRIGHT", header or frame, "BOTTOMRIGHT", 0, -12)
+	content:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", HEADER_LEFT_OFFSET, CONTENT_BOTTOM_OFFSET)
+	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", HEADER_RIGHT_OFFSET, CONTENT_BOTTOM_OFFSET)
+	frame.ContentFrame = content
+
+	local listInset = safeCreateFrame("Frame", nil, content, "InsetFrameTemplate3")
+	local readerInset = safeCreateFrame("Frame", nil, content, "InsetFrameTemplate3")
+	if not listInset or not readerInset then
+		return nil
+	end
+
+	local initialWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
+	listInset:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+	listInset:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, 0)
+	listInset:SetWidth(initialWidth)
+	readerInset:SetPoint("TOPRIGHT", content, "TOPRIGHT", 0, 0)
+	readerInset:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
+
+	local splitter = safeCreateFrame("Frame", nil, content)
+	splitter:SetPoint("TOPLEFT", listInset, "TOPRIGHT", 0, 0)
+	splitter:SetPoint("BOTTOMLEFT", listInset, "BOTTOMRIGHT", 0, 0)
+	splitter:SetWidth(10)
+	splitter:EnableMouse(true)
+	splitter:RegisterForDrag("LeftButton")
+	configureSplitter(splitter)
+	frame.SplitterFrame = splitter
+
+	readerInset:SetPoint("TOPLEFT", splitter, "TOPRIGHT", 6, 0)
+	readerInset:SetPoint("BOTTOMLEFT", splitter, "BOTTOMRIGHT", 6, 0)
+
+	frame.listBlock = listInset
+	frame.ListInset = listInset
+	frame.readerBlock = readerInset
+	frame.ReaderInset = readerInset
+
+	local layoutState = {
+		currentWidth = clampListWidth(content, initialWidth),
+	}
+
+	local function applyWidth(width, skipPersist)
+		layoutState.currentWidth = clampListWidth(content, width)
+		listInset:SetWidth(layoutState.currentWidth)
+		frame.currentListWidth = layoutState.currentWidth
+		if not skipPersist and opts.onListWidthChanged then
+			opts.onListWidthChanged(layoutState.currentWidth)
+		end
+	end
+
+	applyWidth(initialWidth, true)
+
+	content:SetScript("OnSizeChanged", function()
+		applyWidth(layoutState.currentWidth, true)
+	end)
+
+	local function finishDrag()
+		splitter.__isDragging = false
+		splitter:SetScript("OnUpdate", nil)
+		splitter:SetAlpha(0.85)
+		applyWidth(layoutState.currentWidth)
+	end
+
+	local function beginDrag()
+		splitter.__isDragging = true
+		splitter:SetAlpha(1)
+		splitter:SetScript("OnUpdate", function()
+			local cursorX = 0
+			local scale = UIParent and UIParent:GetEffectiveScale() or 1
+			if GetCursorPosition then
+				cursorX = select(1, GetCursorPosition()) / scale
+			end
+			local contentLeft = content:GetLeft()
+			if contentLeft then
+				local desired = cursorX - contentLeft
+				applyWidth(desired, true)
+			end
+		end)
+	end
+
+	splitter:SetScript("OnMouseDown", beginDrag)
+	splitter:SetScript("OnDragStart", beginDrag)
+	splitter:SetScript("OnMouseUp", finishDrag)
+	splitter:SetScript("OnDragStop", finishDrag)
+	splitter:SetScript("OnHide", function()
+		if splitter.__isDragging then
+			finishDrag()
+		end
+	end)
+
+	return true
+end
+
 local function attachListUI(listUI, frame)
 	if not listUI or type(listUI.Create) ~= "function" then
 		return
@@ -178,6 +323,8 @@ function FrameUI:Create(opts)
 	applyPortrait(frame)
 	configureTitle(frame, opts.title)
 	configureOptionsButton(frame, safeCreateFrame, opts.onOptions)
+	createHeaderBar(frame, safeCreateFrame)
+	createContentLayout(frame, safeCreateFrame, opts)
 
 	attachListUI(opts.listUI, frame)
 	attachReaderUI(opts.readerUI, opts.listUI, frame)

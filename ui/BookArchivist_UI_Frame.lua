@@ -38,6 +38,17 @@ local function buildFrame(safeCreateFrame)
 		listUI = ListUI,
 		readerUI = ReaderUI,
 		title = "Book Archivist",
+		getPreferredListWidth = function()
+			if addonRoot and addonRoot.GetListWidth then
+				return addonRoot:GetListWidth()
+			end
+			return 360
+		end,
+		onListWidthChanged = function(width)
+			if addonRoot and addonRoot.SetListWidth then
+				addonRoot:SetListWidth(width)
+			end
+		end,
 		debugPrint = debugPrint,
 		logError = logError,
 		onOptions = function()
@@ -80,7 +91,11 @@ local function setupUI()
 
 	Internal.setIsInitialized(true)
 	frame.__BookArchivistInitialized = true
-	Internal.setNeedsRefresh(true)
+	if Internal.requestFullRefresh then
+		Internal.requestFullRefresh()
+	else
+		Internal.setNeedsRefresh(true)
+	end
 	debugPrint("[BookArchivist] setupUI: finished, pending refresh")
 	if Internal.flushPendingRefresh then
 		Internal.flushPendingRefresh()

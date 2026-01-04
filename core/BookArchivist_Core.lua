@@ -14,6 +14,15 @@ end
 local Core = {}
 BookArchivist.Core = Core
 
+local LIST_WIDTH_DEFAULT = 360
+local LIST_SORT_DEFAULT = "recent"
+local LIST_FILTER_DEFAULTS = {
+  hasLocation = false,
+  hasAuthor = false,
+  multiPage = false,
+  unread = false,
+}
+
 local function now()
   return timeProvider()
 end
@@ -71,6 +80,24 @@ local function ensureDB()
   if BookArchivistDB.options.debugEnabled == nil then
     BookArchivistDB.options.debugEnabled = false
   end
+  BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
+  local uiOpts = BookArchivistDB.options.ui
+  if type(uiOpts.listWidth) ~= "number" then
+    uiOpts.listWidth = LIST_WIDTH_DEFAULT
+  end
+
+  BookArchivistDB.options.list = BookArchivistDB.options.list or {}
+  local listOpts = BookArchivistDB.options.list
+  if type(listOpts.sortMode) ~= "string" then
+    listOpts.sortMode = LIST_SORT_DEFAULT
+  end
+  listOpts.filters = listOpts.filters or {}
+  for key, defaultValue in pairs(LIST_FILTER_DEFAULTS) do
+    if listOpts.filters[key] == nil then
+      listOpts.filters[key] = defaultValue
+    end
+  end
+
   local minimapDefaults = {
     angle = 200,
   }
@@ -83,6 +110,32 @@ local function ensureDB()
     minimap.angle = minimapDefaults.angle
   end
   return BookArchivistDB
+end
+
+local function ensureUIOptions()
+  local db = ensureDB()
+  db.options.ui = db.options.ui or {}
+  local uiOpts = db.options.ui
+  if type(uiOpts.listWidth) ~= "number" then
+    uiOpts.listWidth = LIST_WIDTH_DEFAULT
+  end
+  return uiOpts
+end
+
+local function ensureListOptions()
+  local db = ensureDB()
+  db.options.list = db.options.list or {}
+  local listOpts = db.options.list
+  if type(listOpts.sortMode) ~= "string" then
+    listOpts.sortMode = LIST_SORT_DEFAULT
+  end
+  listOpts.filters = listOpts.filters or {}
+  for key, defaultValue in pairs(LIST_FILTER_DEFAULTS) do
+    if listOpts.filters[key] == nil then
+      listOpts.filters[key] = defaultValue
+    end
+  end
+  return listOpts
 end
 
 local function removeFromOrder(order, key)
@@ -153,6 +206,51 @@ end
 function Core:SetDebugEnabled(state)
   local opts = self:GetOptions()
   opts.debugEnabled = state and true or false
+end
+
+function Core:GetUIFrameOptions()
+  return ensureUIOptions()
+end
+
+function Core:GetListWidth()
+  local uiOpts = ensureUIOptions()
+  return uiOpts.listWidth or LIST_WIDTH_DEFAULT
+end
+
+function Core:SetListWidth(width)
+  local uiOpts = ensureUIOptions()
+  if type(width) == "number" then
+    uiOpts.listWidth = math.max(260, math.min(math.floor(width + 0.5), 600))
+  end
+end
+
+function Core:GetSortMode()
+  local listOpts = ensureListOptions()
+  return listOpts.sortMode or LIST_SORT_DEFAULT
+end
+
+function Core:SetSortMode(mode)
+  local listOpts = ensureListOptions()
+  if type(mode) ~= "string" or mode == "" then
+    mode = LIST_SORT_DEFAULT
+  end
+  listOpts.sortMode = mode
+end
+
+function Core:GetListFilters()
+  local listOpts = ensureListOptions()
+  return listOpts.filters
+end
+
+function Core:SetListFilter(filterKey, state)
+  if not filterKey then
+    return
+  end
+  local listOpts = ensureListOptions()
+  if listOpts.filters[filterKey] == nil then
+    return
+  end
+  listOpts.filters[filterKey] = state and true or false
 end
 
 function Core:PersistSession(session)

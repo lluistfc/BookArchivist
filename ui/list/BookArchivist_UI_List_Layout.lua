@@ -12,7 +12,7 @@ local function wireSearchHandlers(listUI, box)
   end
 
   if box.Instructions then
-    box.Instructions:SetText("Search books...")
+    box.Instructions:SetText("Search title, author, or text…")
   end
 
   box:SetScript("OnTextChanged", function(input)
@@ -23,9 +23,19 @@ local function wireSearchHandlers(listUI, box)
         input.Instructions:Show()
       end
     end
-    listUI:RebuildFiltered()
-    listUI:UpdateList()
-    listUI:DebugPrint("[BookArchivist] search text changed; rebuild/update")
+    listUI:UpdateSearchClearButton()
+    listUI:ScheduleSearchRefresh()
+    listUI:DebugPrint("[BookArchivist] search text changed; scheduled refresh")
+  end)
+
+  box:SetScript("OnEnterPressed", function(self)
+    self:ClearFocus()
+  end)
+
+  box:SetScript("OnEscapePressed", function(self)
+    self:SetText("")
+    self:ClearFocus()
+    listUI:RunSearchRefresh()
   end)
 end
 
@@ -84,41 +94,142 @@ function ListUI:Create(uiFrame)
 
   self:SetUIFrame(uiFrame)
 
-  local container = CreateFrame("Frame", nil, uiFrame)
-  container:SetPoint("TOPLEFT", uiFrame, "TOPLEFT", 58, -28)
-  container:SetPoint("TOPRIGHT", uiFrame, "TOPRIGHT", -30, -28)
-  container:SetHeight(32)
+  local header = uiFrame.HeaderFrame
+  if not header then
+    header = self:SafeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate3")
+    header:SetPoint("TOPLEFT", uiFrame, "TOPLEFT", 58, -32)
+    header:SetPoint("TOPRIGHT", uiFrame, "TOPRIGHT", -34, -32)
+    header:SetHeight(78)
+    uiFrame.HeaderFrame = header
+  end
 
-  local searchBox = self:SafeCreateFrame("EditBox", nil, container, "SearchBoxTemplate", "InputBoxTemplate")
+  local titleText = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
+  titleText:SetPoint("TOPLEFT", 14, -10)
+  titleText:SetText("Book Archivist")
+  self:SetFrame("headerTitle", titleText)
+
+  local headerCount = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  headerCount:SetPoint("TOPLEFT", titleText, "BOTTOMLEFT", 0, -4)
+  headerCount:SetText("Saving every page you read")
+  self:SetFrame("headerCountText", headerCount)
+
+  local searchBox = self:SafeCreateFrame("EditBox", "BookArchivistSearchBox", header, "SearchBoxTemplate")
   if searchBox then
     self:SetFrame("searchBox", searchBox)
-    searchBox:SetSize(200, 20)
-    searchBox:SetPoint("LEFT", 0, 0)
+    searchBox:SetSize(260, 24)
+    searchBox:SetPoint("TOP", header, "TOP", -40, -18)
     searchBox:SetAutoFocus(false)
     wireSearchHandlers(self, searchBox)
   end
 
-  local searchLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-  searchLabel:SetPoint("LEFT", searchBox, "RIGHT", 10, 0)
-  searchLabel:SetText("|cFFFFD100Title, Creator, or Text|r")
-
-  local listBlock = self:SafeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate")
-  if not listBlock then
-    self:LogError("Unable to create book list panel.")
-    return
+  local clearButton = self:SafeCreateFrame("Button", nil, header, "UIPanelCloseButton")
+  if clearButton and searchBox then
+    clearButton:SetScale(0.7)
+    clearButton:SetPoint("LEFT", searchBox, "RIGHT", -6, 0)
+    clearButton:SetScript("OnClick", function()
+      searchBox:SetText("")
+      self:RunSearchRefresh()
+      self:UpdateSearchClearButton()
+    end)
+    self:SetFrame("searchClearButton", clearButton)
+    clearButton:Hide()
   end
-  listBlock:SetPoint("TOPLEFT", uiFrame, "TOPLEFT", 4, -65)
-  listBlock:SetSize(365, 485)
+
+  local sortDropdown = CreateFrame("Frame", "BookArchivistSortDropdown", header, "UIDropDownMenuTemplate")
+  sortDropdown:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", -12, 4)
+  self:InitializeSortDropdown(sortDropdown)
+
+  local filterContainer = CreateFrame("Frame", nil, header)
+  filterContainer:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", -8, 6)
+  filterContainer:SetHeight(30)
+  local lastButton
+  for _, def in ipairs(self:GetQuickFilters()) do
+    local button = CreateFrame("Button", nil, filterContainer)
+    button:SetSize(28, 28)
+    if lastButton then
+      button:SetPoint("RIGHT", lastButton, "LEFT", -6, 0)
+    else
+      button:SetPoint("RIGHT", filterContainer, "RIGHT", 0, 0)
+    end
+    button.bg = button:CreateTexture(nil, "BACKGROUND")
+    button.bg:SetAllPoints(true)
+    button.bg:SetColorTexture(0, 0, 0, 0.35)
+    button.icon = button:CreateTexture(nil, "ARTWORK")
+    button.icon:SetAllPoints(true)
+    button.icon:SetTexture(def.icon)
+    button.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    button:SetScript("OnClick", function()
+      if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON then
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+      end
+      self:ToggleFilter(def.key)
+    end)
+    button:SetScript("OnEnter", function(btn)
+      if GameTooltip then
+        GameTooltip:SetOwner(btn, "ANCHOR_TOPLEFT")
+        GameTooltip:SetText(def.tooltip or "Toggle filter", 1, 0.82, 0)
+      end
+    end)
+    button:SetScript("OnLeave", function()
+      if GameTooltip then
+        GameTooltip:Hide()
+      end
+    end)
+    self:SetFilterButton(def.key, button)
+    lastButton = button
+  end
+  self:UpdateFilterButtons()
+
+  local actionButton = self:SafeCreateFrame("Button", nil, header, "UIPanelButtonTemplate")
+  if actionButton then
+    actionButton:SetSize(80, 22)
+    actionButton:SetPoint("TOPRIGHT", header, "TOPRIGHT", -10, -10)
+    actionButton:SetText("Options")
+    actionButton:SetScript("OnClick", function()
+      local addon = self:GetAddon()
+      if addon and addon.OpenOptionsPanel then
+        addon:OpenOptionsPanel()
+      elseif BookArchivist and BookArchivist.OpenOptionsPanel then
+        BookArchivist:OpenOptionsPanel()
+      end
+    end)
+  end
+
+  local helpButton = self:SafeCreateFrame("Button", nil, header, "UIPanelButtonTemplate")
+  if helpButton and actionButton then
+    helpButton:SetSize(70, 22)
+    helpButton:SetPoint("TOPRIGHT", actionButton, "BOTTOMRIGHT", 0, -4)
+    helpButton:SetText("Help")
+    helpButton:SetScript("OnClick", function()
+      local ctx = self:GetContext()
+      local message = "Use the search, filters, and sort menu to find any saved book instantly."
+      if ctx and ctx.chatMessage then
+        ctx.chatMessage("|cFF00FF00BookArchivist:|r " .. message)
+      elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00BookArchivist:|r " .. message)
+      end
+    end)
+  end
+
+  local listBlock = uiFrame.listBlock or uiFrame.ListInset
+  if not listBlock then
+    listBlock = self:SafeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate3")
+    listBlock:SetPoint("TOPLEFT", uiFrame, "TOPLEFT", 4, -90)
+    listBlock:SetPoint("BOTTOMLEFT", uiFrame, "BOTTOMLEFT", 4, 36)
+    listBlock:SetWidth(380)
+    uiFrame.listBlock = listBlock
+  end
   self:SetFrame("listBlock", listBlock)
 
   local listHeader = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  listHeader:SetPoint("TOPLEFT", listBlock, "TOPLEFT", 8, -8)
+  listHeader:SetPoint("TOPLEFT", listBlock, "TOPLEFT", 12, -10)
+  listHeader:SetPoint("RIGHT", listBlock, "RIGHT", -150, 0)
   listHeader:SetText("Saved Books")
   self:SetFrame("listHeader", listHeader)
 
   local breadcrumb = listBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   breadcrumb:SetPoint("TOPLEFT", listHeader, "BOTTOMLEFT", 0, -2)
-  breadcrumb:SetPoint("RIGHT", listBlock, "RIGHT", -150, 0)
+  breadcrumb:SetPoint("RIGHT", listBlock, "RIGHT", -160, 0)
   breadcrumb:SetJustifyH("LEFT")
   breadcrumb:SetWordWrap(false)
   breadcrumb:SetText("")
@@ -127,15 +238,15 @@ function ListUI:Create(uiFrame)
 
   local listSeparator = listBlock:CreateTexture(nil, "ARTWORK")
   listSeparator:SetHeight(1)
-  listSeparator:SetPoint("TOPLEFT", listHeader, "BOTTOMLEFT", -4, -4)
-  listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -8, -28)
+  listSeparator:SetPoint("TOPLEFT", breadcrumb, "BOTTOMLEFT", -4, -6)
+  listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -10, -30)
   listSeparator:SetColorTexture(0.25, 0.25, 0.25, 1)
   self:SetFrame("listSeparator", listSeparator)
 
   local locationsModeButton = self:SafeCreateFrame("Button", nil, listBlock, "UIPanelButtonTemplate")
   if locationsModeButton then
-    locationsModeButton:SetSize(88, 22)
-    locationsModeButton:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -8, -6)
+    locationsModeButton:SetSize(90, 22)
+    locationsModeButton:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -12, -8)
     locationsModeButton:SetText("Locations")
     locationsModeButton:SetScript("OnClick", function()
       local modes = self:GetListModes()
@@ -148,9 +259,9 @@ function ListUI:Create(uiFrame)
   if booksModeButton then
     booksModeButton:SetSize(70, 22)
     if locationsModeButton then
-      booksModeButton:SetPoint("RIGHT", locationsModeButton, "LEFT", -4, 0)
+      booksModeButton:SetPoint("RIGHT", locationsModeButton, "LEFT", -6, 0)
     else
-      booksModeButton:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -8, -6)
+      booksModeButton:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -12, -8)
     end
     booksModeButton:SetText("Books")
     booksModeButton:SetScript("OnClick", function()
@@ -165,17 +276,22 @@ function ListUI:Create(uiFrame)
     self:LogError("Unable to create list scroll frame.")
     return
   end
-  scrollFrame:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 4, -4)
-  scrollFrame:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -28, 28)
+  scrollFrame:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 6, -6)
+  scrollFrame:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -28, 36)
   self:SetFrame("scrollFrame", scrollFrame)
 
   local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-  scrollFrame:SetScrollChild(scrollChild)
   scrollChild:SetSize(336, 1)
-  scrollChild:ClearAllPoints()
   scrollChild:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 0)
   scrollChild:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", -14, 0)
+  scrollFrame:SetScrollChild(scrollChild)
   self:SetFrame("scrollChild", scrollChild)
+
+  local noResults = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  noResults:SetPoint("CENTER", scrollFrame, "CENTER", 0, 0)
+  noResults:SetText("|cFF999999No matches. Clear filters or search.|r")
+  noResults:Hide()
+  self:SetFrame("noResultsText", noResults)
 
   local rowHeight = self:GetRowHeight()
   scrollFrame:SetScript("OnMouseWheel", function(frame, delta)
@@ -186,6 +302,9 @@ function ListUI:Create(uiFrame)
   end)
 
   self:EnsureInfoText()
+  self:UpdateSearchClearButton()
+  self:UpdateSortDropdown()
+  self:UpdateCountsDisplay()
   self:DebugPrint("[BookArchivist] ListUI created")
 end
 
@@ -236,5 +355,9 @@ function ListUI:UpdateListModeUI()
   if hasMethod(booksModeButton, "SetEnabled") and hasMethod(locationsModeButton, "SetEnabled") then
     booksModeButton:SetEnabled(mode ~= modes.BOOKS)
     locationsModeButton:SetEnabled(mode ~= modes.LOCATIONS)
+  end
+
+  if self.UpdateCountsDisplay then
+    self:UpdateCountsDisplay()
   end
 end

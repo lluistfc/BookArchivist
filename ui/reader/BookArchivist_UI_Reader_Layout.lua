@@ -17,6 +17,24 @@ local debugPrint = function(...)
 	BookArchivist:DebugPrint(...)
 end
 
+StaticPopupDialogs = StaticPopupDialogs or {}
+if not StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE then
+	StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE = {
+		text = "Delete '%s'? This cannot be undone.",
+		button1 = YES,
+		button2 = NO,
+		OnAccept = function(_, data)
+			if data and data.onAccept then
+				data.onAccept()
+			end
+		end,
+		hideOnEscape = true,
+		whileDead = true,
+		timeout = 0,
+		preferredIndex = 3,
+	}
+end
+
 local tableUnpack = table and table.unpack or nil
 ---@diagnostic disable-next-line: deprecated
 local fallbackUnpack = type(_G) == "table" and (_G.unpack or _G.table and _G.table.unpack) or nil
@@ -132,15 +150,35 @@ local function configureDeleteButton(button)
 		end
 		local key = getSelectedKey and getSelectedKey()
 		if key then
-			addon:Delete(key)
-			if setSelectedKey then
-				setSelectedKey(nil)
-			end
-			if ReaderUI.RenderSelected then
-				ReaderUI:RenderSelected()
-			end
-			if chatMessage then
-				chatMessage("|cFFFF0000Book deleted from archive.|r")
+			local db = addon.GetDB and addon:GetDB()
+			local entry = db and db.books and db.books[key]
+			local title = entry and entry.title or key
+			if StaticPopup_Show then
+				StaticPopup_Show("BOOKARCHIVIST_CONFIRM_DELETE", title, nil, {
+					onAccept = function()
+						addon:Delete(key)
+						if setSelectedKey then
+							setSelectedKey(nil)
+						end
+						if ReaderUI.RenderSelected then
+							ReaderUI:RenderSelected()
+						end
+						if chatMessage then
+							chatMessage("|cFFFF0000Book deleted from archive.|r")
+						end
+					end,
+				})
+			else
+				addon:Delete(key)
+				if setSelectedKey then
+					setSelectedKey(nil)
+				end
+				if ReaderUI.RenderSelected then
+					ReaderUI:RenderSelected()
+				end
+				if chatMessage then
+					chatMessage("|cFFFF0000Book deleted from archive.|r")
+				end
 			end
 		end
 	end)
@@ -260,24 +298,13 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	uiFrame.readerBlock = readerBlock
 	state.readerBlock = readerBlock
 
-	local readerHeader = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	readerHeader:SetPoint("TOPLEFT", readerBlock, "TOPLEFT", 8, -8)
-	readerHeader:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -150, -8)
-	readerHeader:SetText("Book Reader")
-
-	local readerSeparator = readerBlock:CreateTexture(nil, "ARTWORK")
-	readerSeparator:SetHeight(1)
-	readerSeparator:SetPoint("TOPLEFT", readerHeader, "BOTTOMLEFT", -4, -4)
-	readerSeparator:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -8, -28)
-	readerSeparator:SetColorTexture(0.25, 0.25, 0.25, 1)
-
-	local bookTitle = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	local bookTitle = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	state.bookTitle = bookTitle
 	if rememberWidget then
 		rememberWidget("bookTitle", bookTitle)
 	end
-	bookTitle:SetPoint("TOPLEFT", readerSeparator, "BOTTOMLEFT", 4, -8)
-	bookTitle:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -12, -36)
+	bookTitle:SetPoint("TOPLEFT", readerBlock, "TOPLEFT", 12, -12)
+	bookTitle:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -160, -12)
 	bookTitle:SetJustifyH("LEFT")
 	bookTitle:SetText("Select a book from the list")
 	bookTitle:SetTextColor(1, 0.82, 0)
@@ -289,15 +316,66 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		rememberWidget("meta", metaDisplay)
 	end
 	metaDisplay:SetPoint("TOPLEFT", bookTitle, "BOTTOMLEFT", 0, -6)
-	metaDisplay:SetPoint("TOPRIGHT", bookTitle, "BOTTOMRIGHT", 0, -6)
+	metaDisplay:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -12, -6)
 	metaDisplay:SetJustifyH("LEFT")
+	metaDisplay:SetSpacing(1.5)
+	metaDisplay:SetWordWrap(true)
 	metaDisplay:SetText("")
 	uiFrame.meta = metaDisplay
 
+	local pageControls = CreateFrame("Frame", nil, readerBlock)
+	pageControls:SetPoint("TOPLEFT", metaDisplay, "BOTTOMLEFT", -2, -8)
+	pageControls:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -12, -8)
+	pageControls:SetHeight(32)
+	if rememberWidget then
+		rememberWidget("pageControls", pageControls)
+	end
+	state.pageControls = pageControls
+
+	local prevButton = safeCreateFrame and safeCreateFrame("Button", nil, pageControls, "UIPanelButtonTemplate")
+	if prevButton then
+		prevButton:SetSize(70, 22)
+		prevButton:SetPoint("LEFT", pageControls, "LEFT", 0, 0)
+		prevButton:SetText("< Prev")
+		prevButton:SetScript("OnClick", function()
+			if ReaderUI.ChangePage then
+				ReaderUI:ChangePage(-1)
+			end
+		end)
+		if rememberWidget then
+			rememberWidget("prevButton", prevButton)
+		end
+	end
+	state.prevButton = prevButton
+
+	local nextButton = safeCreateFrame and safeCreateFrame("Button", nil, pageControls, "UIPanelButtonTemplate")
+	if nextButton then
+		nextButton:SetSize(70, 22)
+		nextButton:SetPoint("RIGHT", pageControls, "RIGHT", 0, 0)
+		nextButton:SetText("Next >")
+		nextButton:SetScript("OnClick", function()
+			if ReaderUI.ChangePage then
+				ReaderUI:ChangePage(1)
+			end
+		end)
+		if rememberWidget then
+			rememberWidget("nextButton", nextButton)
+		end
+	end
+	state.nextButton = nextButton
+
+	local pageIndicator = pageControls:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	pageIndicator:SetPoint("CENTER", pageControls, "CENTER", 0, 0)
+	pageIndicator:SetText("Page 1 / 1")
+	state.pageIndicator = pageIndicator
+	if rememberWidget then
+		rememberWidget("pageIndicator", pageIndicator)
+	end
+
 	local divider = readerBlock:CreateTexture(nil, "ARTWORK")
 	divider:SetHeight(1)
-	divider:SetPoint("TOPLEFT", metaDisplay, "BOTTOMLEFT", -4, -8)
-	divider:SetPoint("TOPRIGHT", metaDisplay, "BOTTOMRIGHT", 4, -8)
+	divider:SetPoint("TOPLEFT", pageControls, "BOTTOMLEFT", -4, -6)
+	divider:SetPoint("TOPRIGHT", pageControls, "BOTTOMRIGHT", 4, -6)
 	divider:SetColorTexture(0.25, 0.25, 0.25, 0.5)
 
 	local textScroll = safeCreateFrame and safeCreateFrame("ScrollFrame", "BookArchivistTextScroll", readerBlock, "UIPanelScrollFrameTemplate")
@@ -332,7 +410,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	textPlain:SetPoint("TOPLEFT", 6, -6)
 	textPlain:SetJustifyH("LEFT")
 	textPlain:SetJustifyV("TOP")
-	textPlain:SetSpacing(2)
+	textPlain:SetSpacing(3.5)
 	textPlain:SetWidth(460)
 
 	local htmlFrame

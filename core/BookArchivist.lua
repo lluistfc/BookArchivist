@@ -142,6 +142,45 @@ function BookArchivist:SetDebugEnabled(state)
   syncOptionsUI()
 end
 
+function BookArchivist:GetListWidth()
+  if Core and Core.GetListWidth then
+    return Core:GetListWidth()
+  end
+  return 360
+end
+
+function BookArchivist:SetListWidth(width)
+  if Core and Core.SetListWidth then
+    Core:SetListWidth(width)
+  end
+end
+
+function BookArchivist:GetListSortMode()
+  if Core and Core.GetSortMode then
+    return Core:GetSortMode()
+  end
+  return "recent"
+end
+
+function BookArchivist:SetListSortMode(mode)
+  if Core and Core.SetSortMode then
+    Core:SetSortMode(mode)
+  end
+end
+
+function BookArchivist:GetListFilters()
+  if Core and Core.GetListFilters then
+    return Core:GetListFilters()
+  end
+  return {}
+end
+
+function BookArchivist:SetListFilter(filterKey, state)
+  if Core and Core.SetListFilter then
+    Core:SetListFilter(filterKey, state)
+  end
+end
+
 function BookArchivist:OpenOptionsPanel()
   local optionsUI = getOptionsUI()
   if optionsUI and optionsUI.Open then

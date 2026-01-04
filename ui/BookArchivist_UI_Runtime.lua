@@ -28,39 +28,62 @@ local function refreshAllImpl()
 	end
 
 	BookArchivist:DebugPrint("[BookArchivist] refreshAll")
-	BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildFiltered")
-	if not Internal.safeStep or not Internal.safeStep("BookArchivist rebuildFiltered", function()
-		call(Internal.rebuildFiltered)
-	end) then
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildFiltered failed")
-		return
+	local flags = call(Internal.getRefreshFlags) or { list = true, location = true, reader = true }
+	local needsList = flags.list
+	local needsLocation = flags.location
+	local needsReader = flags.reader
+
+	if needsList then
+		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildFiltered")
+		if not Internal.safeStep or not Internal.safeStep("BookArchivist rebuildFiltered", function()
+			call(Internal.rebuildFiltered)
+		end) then
+			BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildFiltered failed")
+			return
+		end
+		if Internal.markRefreshComplete then
+			Internal.markRefreshComplete("list")
+		end
 	end
 
-	if not Internal.safeStep or not Internal.safeStep("BookArchivist rebuildLocationView", function()
-		call(Internal.rebuildLocationView)
-	end) then
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildLocationView failed")
-		return
+	if needsLocation then
+		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildLocationView")
+		if not Internal.safeStep or not Internal.safeStep("BookArchivist rebuildLocationView", function()
+			call(Internal.rebuildLocationView)
+		end) then
+			BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildLocationView failed")
+			return
+		end
+		if Internal.markRefreshComplete then
+			Internal.markRefreshComplete("location")
+		end
 	end
 
-	BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting updateList")
-	if not Internal.safeStep or not Internal.safeStep("BookArchivist updateList", function()
-		call(Internal.updateList)
-	end) then
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll: updateList failed")
-		return
+	if needsList or needsLocation then
+		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting updateList")
+		if not Internal.safeStep or not Internal.safeStep("BookArchivist updateList", function()
+			call(Internal.updateList)
+		end) then
+			BookArchivist:DebugPrint("[BookArchivist] refreshAll: updateList failed")
+			return
+		end
 	end
 
-	BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting renderSelected")
-	if Internal.safeStep then
-		Internal.safeStep("BookArchivist renderSelected", function()
+	if needsReader then
+		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting renderSelected")
+		if Internal.safeStep then
+			Internal.safeStep("BookArchivist renderSelected", function()
+				call(Internal.renderSelected)
+			end)
+		else
 			call(Internal.renderSelected)
-		end)
-	else
-		call(Internal.renderSelected)
+		end
+		if Internal.markRefreshComplete then
+			Internal.markRefreshComplete("reader")
+		end
 	end
 
-	if Internal.setNeedsRefresh then
+	if not (needsList or needsLocation or needsReader) and Internal.setNeedsRefresh then
 		Internal.setNeedsRefresh(false)
 	end
 end
@@ -68,7 +91,9 @@ end
 Internal.refreshAll = refreshAllImpl
 
 function addonRoot.RefreshUI()
-	if Internal.setNeedsRefresh then
+	if Internal.requestFullRefresh then
+		Internal.requestFullRefresh()
+	elseif Internal.setNeedsRefresh then
 		Internal.setNeedsRefresh(true)
 	end
 	BookArchivist:DebugPrint(
@@ -101,7 +126,9 @@ local function toggleUI()
 	if frame:IsShown() then
 		frame:Hide()
 	else
-		if Internal.setNeedsRefresh then
+		if Internal.requestFullRefresh then
+			Internal.requestFullRefresh()
+		elseif Internal.setNeedsRefresh then
 			Internal.setNeedsRefresh(true)
 		end
 		call(Internal.flushPendingRefresh)

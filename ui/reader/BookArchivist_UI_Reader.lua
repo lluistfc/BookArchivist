@@ -8,6 +8,9 @@ BookArchivist.UI.Reader = ReaderUI
 local ctx
 local state = ReaderUI.__state or {}
 ReaderUI.__state = state
+state.pageOrder = state.pageOrder or {}
+state.currentPageIndex = state.currentPageIndex or 1
+state.currentEntryKey = state.currentEntryKey or nil
 
 local function rememberWidget(name, widget)
   if ctx and ctx.rememberWidget then
@@ -135,6 +138,40 @@ local function updateReaderHeight(height)
   child:SetHeight(math.max(1, (height or 0) + 20))
 end
 
+local function getContentWidth()
+  if state.readerBlock and state.readerBlock.GetWidth then
+    return math.max(320, state.readerBlock:GetWidth() - 48)
+  end
+  return 460
+end
+
+local function buildPageOrder(entry)
+  local order = {}
+  if entry and entry.pages then
+    for pageNum in pairs(entry.pages) do
+      if type(pageNum) == "number" then
+        table.insert(order, pageNum)
+      end
+    end
+  end
+  table.sort(order)
+  return order
+end
+
+local function clampPageIndex(order, index)
+  if not order or #order == 0 then
+    return 1
+  end
+  index = index or 1
+  if index < 1 then
+    return 1
+  end
+  if index > #order then
+    return #order
+  end
+  return index
+end
+
 local function renderBookContent(text)
   if not state.textPlain then
     state.textPlain = getWidget("textPlain")
@@ -148,10 +185,11 @@ local function renderBookContent(text)
   end
   local htmlWidget = state.htmlText
   local canRenderHTML = htmlWidget ~= nil and hasHTMLMarkup
+  local contentWidth = getContentWidth()
   if canRenderHTML and htmlWidget then
     plain:Hide()
     htmlWidget:Show()
-    htmlWidget:SetWidth(460)
+    htmlWidget:SetWidth(contentWidth)
     htmlWidget:SetText(text)
     local htmlHeight = htmlWidget.GetContentHeight and htmlWidget:GetContentHeight() or htmlWidget:GetHeight()
     updateReaderHeight(htmlHeight)
@@ -160,7 +198,7 @@ local function renderBookContent(text)
       htmlWidget:Hide()
     end
     plain:Show()
-    plain:SetWidth(460)
+    plain:SetWidth(contentWidth)
     local displayText
     if hasHTMLMarkup and not canRenderHTML then
       displayText = stripHTMLTags(text)
@@ -178,6 +216,47 @@ function ReaderUI:DisableDeleteButton()
   if button then
     button:Disable()
   end
+end
+
+function ReaderUI:UpdatePageControlsDisplay(totalPages)
+  local prevButton = state.prevButton or getWidget("prevButton")
+  local nextButton = state.nextButton or getWidget("nextButton")
+  local indicator = state.pageIndicator or getWidget("pageIndicator")
+  totalPages = totalPages or #(state.pageOrder or {})
+  local currentIndex = clampPageIndex(state.pageOrder or { 1 }, state.currentPageIndex or 1)
+
+  if indicator then
+    local displayIndex = totalPages == 0 and 0 or currentIndex
+    indicator:SetText(string.format("Page %d / %d", displayIndex, totalPages))
+  end
+
+  if prevButton then
+    if totalPages <= 1 or currentIndex <= 1 then
+      prevButton:Disable()
+    else
+      prevButton:Enable()
+    end
+  end
+
+  if nextButton then
+    if totalPages <= 1 or currentIndex >= totalPages then
+      nextButton:Disable()
+    else
+      nextButton:Enable()
+    end
+  end
+end
+
+function ReaderUI:ChangePage(delta)
+  if not state.pageOrder or #state.pageOrder == 0 then
+    return
+  end
+  local newIndex = clampPageIndex(state.pageOrder, (state.currentPageIndex or 1) + delta)
+  if newIndex == state.currentPageIndex then
+    return
+  end
+  state.currentPageIndex = newIndex
+  self:RenderSelected()
 end
 
 function ReaderUI:Init(context)
@@ -225,6 +304,10 @@ function ReaderUI:RenderSelected()
     if state.countText then
       state.countText:SetText("|cFF888888Books saved as you read them in-game|r")
     end
+    state.currentEntryKey = nil
+    state.pageOrder = {}
+    state.currentPageIndex = 1
+    self:UpdatePageControlsDisplay(0)
     return
   end
 
@@ -245,32 +328,37 @@ function ReaderUI:RenderSelected()
   if locationLine then
     table.insert(meta, locationLine)
   end
-  metaDisplay:SetText(table.concat(meta, "  |cFF666666•|r  "))
+  if #meta == 0 then
+    metaDisplay:SetText("|cFF888888Captured automatically from ItemText.|r")
+  else
+    metaDisplay:SetText(table.concat(meta, "\n"))
+  end
 
-  local textParts = {}
-  if entry.pages then
-    local nums = {}
-    for n, _ in pairs(entry.pages) do
-      if type(n) == "number" then table.insert(nums, n) end
+  local previousKey = state.currentEntryKey
+  state.currentEntryKey = key
+  state.pageOrder = buildPageOrder(entry)
+  if previousKey ~= key then
+    state.currentPageIndex = 1
+  end
+    local totalPages = #state.pageOrder
+    if totalPages > 0 then
+      state.currentPageIndex = clampPageIndex(state.pageOrder, state.currentPageIndex)
+    else
+      state.currentPageIndex = 1
     end
-    table.sort(nums)
-    for _, n in ipairs(nums) do
-      local t = entry.pages[n]
-      if t and t ~= "" then
-        if #nums > 1 then
-          table.insert(textParts, string.format("|cFFD4A017— Page %d —|r\n\n%s", n, t))
-        else
-          table.insert(textParts, t)
-        end
+
+    local pageText
+    if totalPages == 0 then
+      pageText = "|cFF888888No content available|r"
+    else
+      local pageIndex = state.currentPageIndex
+      local pageNum = state.pageOrder[pageIndex]
+      pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
+      if pageText == "" then
+        pageText = "|cFF888888No content available|r"
       end
     end
-  end
-
-  local fullText = table.concat(textParts, "\n\n\n")
-  if fullText == "" then
-    fullText = "|cFF888888No content available|r"
-  end
-  renderBookContent(fullText)
+  renderBookContent(pageText)
 
   local deleteButton = getDeleteButton()
   if deleteButton then deleteButton:Enable() end
@@ -282,6 +370,13 @@ function ReaderUI:RenderSelected()
     end
   end
   if state.countText then
-    state.countText:SetText(string.format("|cFFFFD100%d|r page%s", pageCount, pageCount ~= 1 and "s" or ""))
+    local details = {}
+    table.insert(details, string.format("|cFFFFD100%d|r page%s", pageCount, pageCount ~= 1 and "s" or ""))
+    if entry.lastSeenAt then
+      table.insert(details, "Last viewed " .. fmtTime(entry.lastSeenAt))
+    end
+    state.countText:SetText(table.concat(details, "  |cFF666666•|r  "))
   end
+
+    self:UpdatePageControlsDisplay(totalPages)
 end

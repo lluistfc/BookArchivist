@@ -72,6 +72,22 @@ local function buildLocationTreeFromDB(db)
   end
 
   sortNode(root)
+  local function markTotals(node)
+    if not node then
+      return 0
+    end
+    local total = node.books and #node.books or 0
+    if node.childNames then
+      for _, childName in ipairs(node.childNames) do
+        local child = node.children and node.children[childName]
+        total = total + markTotals(child)
+      end
+    end
+    node.totalBooks = total
+    return total
+  end
+
+  markTotals(root)
   return root
 end
 
@@ -184,4 +200,91 @@ function ListUI:RebuildLocationTree()
   state.root = buildLocationTreeFromDB(db)
   ensureLocationPathValid(state)
   rebuildLocationRows(state)
+end
+
+local function collectBooksRecursive(node, results)
+  if not node then
+    return
+  end
+  if node.books then
+    for _, key in ipairs(node.books) do
+      table.insert(results, key)
+    end
+  end
+  if node.childNames then
+    for _, childName in ipairs(node.childNames) do
+      collectBooksRecursive(node.children and node.children[childName], results)
+    end
+  end
+end
+
+function ListUI:GetBooksForNode(node)
+  local results = {}
+  collectBooksRecursive(node, results)
+  return results
+end
+
+function ListUI:HasBooksInNode(node)
+  return #self:GetBooksForNode(node or {}) > 0
+end
+
+function ListUI:GetLocationMenuFrame()
+  if not self.__state.locationMenuFrame and CreateFrame then
+    self.__state.locationMenuFrame = CreateFrame("Frame", "BookArchivistLocationMenu", UIParent, "UIDropDownMenuTemplate")
+  end
+  return self.__state.locationMenuFrame
+end
+
+function ListUI:OpenRandomFromNode(node)
+  local books = self:GetBooksForNode(node)
+  if #books == 0 then
+    return
+  end
+  local choice = books[math.random(#books)]
+  if not choice then
+    return
+  end
+  self:SetSelectedKey(choice)
+  self:NotifySelectionChanged()
+  self:UpdateList()
+end
+
+function ListUI:OpenMostRecentFromNode(node)
+  local addon = self:GetAddon()
+  local db = addon and addon:GetDB()
+  if not db or not db.books then
+    return
+  end
+  local latestKey
+  local latestTs = -1
+  for _, key in ipairs(self:GetBooksForNode(node)) do
+    local entry = db.books[key]
+    local ts = entry and entry.lastSeenAt or 0
+    if ts > latestTs then
+      latestTs = ts
+      latestKey = key
+    end
+  end
+  if latestKey then
+    self:SetSelectedKey(latestKey)
+    self:NotifySelectionChanged()
+    self:UpdateList()
+  end
+end
+
+function ListUI:ShowLocationContextMenu(anchorButton, node)
+  if not anchorButton or not node or not EasyMenu then
+    return
+  end
+  local menuFrame = self:GetLocationMenuFrame()
+  if not menuFrame then
+    return
+  end
+  local hasBooks = self:HasBooksInNode(node)
+  local menu = {
+    { text = node.name or "Location", isTitle = true, notCheckable = true },
+    { text = "Open random book", notCheckable = true, disabled = not hasBooks, func = function() self:OpenRandomFromNode(node) end },
+    { text = "Open most recent", notCheckable = true, disabled = not hasBooks, func = function() self:OpenMostRecentFromNode(node) end },
+  }
+  EasyMenu(menu, menuFrame, anchorButton, 0, 0, "MENU")
 end
