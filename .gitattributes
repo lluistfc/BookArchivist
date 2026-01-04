@@ -1,0 +1,7 @@
+# Exclude markdown from release archives
+*.md export-ignore
+
+# Optional: exclude repo-only stuff
+.github/ export-ignore
+.gitignore export-ignore
+CLAUDE.md export-ignore

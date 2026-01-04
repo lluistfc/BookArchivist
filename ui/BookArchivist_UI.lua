@@ -321,7 +321,7 @@ local function ensureGridOutline(name)
 	if outline and outline.frame ~= target then
 		for _, tex in ipairs(outline.segments) do
 			tex:Hide()
-			ex:SetParent(nil)
+			tex:SetParent(nil)
 		end
 		outline = nil
 	end
@@ -364,7 +364,11 @@ function Internal.registerGridTarget(name, frame)
 end
 
 function Internal.setGridOverlayVisible(state)
-	gridOverlay.visible = state and true or false
+	local allow = true
+	if state and (not BookArchivistDB or not BookArchivistDB.options or not BookArchivistDB.options.uiDebug) then
+		allow = false
+	end
+	gridOverlay.visible = (state and allow) and true or false
 	for name in pairs(gridOverlay.targets) do
 		applyGridVisibility(name, gridOverlay.visible)
 	end

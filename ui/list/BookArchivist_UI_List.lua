@@ -5,18 +5,19 @@ BookArchivist.UI = BookArchivist.UI or {}
 local ListUI = {}
 BookArchivist.UI.List = ListUI
 
+local Metrics = BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics or {}
+
 local DEFAULT_LIST_MODES = {
   BOOKS = "books",
   LOCATIONS = "locations",
 }
 
-local DEFAULT_ROW_HEIGHT = 44
+local DEFAULT_ROW_HEIGHT = Metrics.ROW_H or 36
 local SEARCH_DEBOUNCE_SECONDS = 0.2
 
 local SORT_OPTIONS = {
   { value = "recent", label = "Recently Read" },
   { value = "title", label = "Title (A–Z)" },
-  { value = "author", label = "Author (A–Z)" },
   { value = "zone", label = "Zone" },
   { value = "firstSeen", label = "First Seen" },
   { value = "lastSeen", label = "Last Seen" },
@@ -24,7 +25,6 @@ local SORT_OPTIONS = {
 
 local QUICK_FILTERS = {
   { key = "hasLocation", icon = "Interface\\Minimap\\Tracking\\Object", tooltip = "Show only books with a saved location" },
-  { key = "hasAuthor", icon = "Interface\\Icons\\INV_Scroll_03", tooltip = "Show only books with an author/creator" },
   { key = "multiPage", icon = "Interface\\Icons\\INV_Misc_Book_08", tooltip = "Show only multi-page books" },
   { key = "unread", icon = "Interface\\FriendsFrame\\StatusIcon-Offline", tooltip = "Show only books you have not revisited" },
 }
@@ -87,13 +87,6 @@ end
 
 local function entryHasLocation(entry)
   return getZoneLabel(entry) ~= nil
-end
-
-local function entryHasAuthor(entry)
-  if not entry then
-    return false
-  end
-  return (entry.author and entry.author ~= "") or (entry.creator and entry.creator ~= "")
 end
 
 local function entryIsUnread(entry)
@@ -332,9 +325,7 @@ function ListUI:FormatRowMetadata(entry)
     return ""
   end
   local parts = {}
-  if entry.author and entry.author ~= "" then
-    table.insert(parts, entry.author)
-  elseif entry.creator and entry.creator ~= "" then
+  if entry.creator and entry.creator ~= "" then
     table.insert(parts, entry.creator)
   end
 
@@ -359,9 +350,6 @@ function ListUI:EntryMatchesFilters(entry)
     return true
   end
   if filters.hasLocation and not entryHasLocation(entry) then
-    return false
-  end
-  if filters.hasAuthor and not entryHasAuthor(entry) then
     return false
   end
   if filters.multiPage and entryPageCount(entry) <= 1 then
@@ -409,10 +397,6 @@ function ListUI:GetSortComparator(mode, db)
   if mode == "title" then
     return alphaComparator(db, function(entry)
       return entry.title or ""
-    end)
-  elseif mode == "author" then
-    return alphaComparator(db, function(entry)
-      return entry.author or entry.creator or ""
     end)
   elseif mode == "zone" then
     return alphaComparator(db, function(entry)

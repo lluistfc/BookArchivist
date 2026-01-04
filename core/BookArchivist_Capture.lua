@@ -11,7 +11,6 @@ BookArchivist.Capture = Capture
 ---@class BookArchivistCaptureSession
 ---@field title string
 ---@field creator string
----@field author string
 ---@field material string
 ---@field pages table<number, string>
 ---@field source table
@@ -135,7 +134,6 @@ function Capture:OnBegin()
   session = {
     title = "",
     creator = "",
-    author = "",
     material = "",
     pages = {},
     source = currentSourceInfo(),
@@ -180,7 +178,6 @@ function Capture:OnReady()
   activeSession.title = trim(title)
   activeSession.creator = trim(creator)
   activeSession.material = trim(material)
-  activeSession.author = activeSession.author or ""
 
   if not activeSession.firstPageSeen then
     activeSession.firstPageSeen = pageNum

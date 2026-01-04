@@ -149,24 +149,48 @@ addonRoot.ToggleUI = toggleUI
 SLASH_BOOKARCHIVIST1 = "/ba"
 SLASH_BOOKARCHIVIST2 = "/bookarchivist"
 SlashCmdList = SlashCmdList or {}
+
 SlashCmdList["BOOKARCHIVIST"] = function(msg)
-	local command = trim(msg):lower()
-	if command == "uigrid" then
+	local cleaned = trim(msg or "")
+	local verb, rest = cleaned:match("^(%S+)%s*(.*)$")
+	verb = (verb or ""):lower()
+	rest = trim(rest or "")
+	if verb == "uigrid" or verb == "uidebug" then
 		local ok = ensureUI()
 		if not ok then
 			return
 		end
-		if Internal.toggleGridOverlay then
-			local state = Internal.toggleGridOverlay()
-			local statusText = state and "Alignment grid enabled." or "Alignment grid hidden."
-			if Internal.chatMessage then
-				Internal.chatMessage("|cFF00FF00BookArchivist:|r " .. statusText)
-			elseif print then
-				print("[BookArchivist] " .. statusText)
+		local desiredState
+		if verb == "uidebug" and rest ~= "" then
+			if rest == "on" then
+				desiredState = true
+			elseif rest == "off" then
+				desiredState = false
 			end
+		end
+		if verb == "uidebug" and desiredState ~= nil then
+			BookArchivistDB = BookArchivistDB or {}
+			BookArchivistDB.options = BookArchivistDB.options or {}
+			BookArchivistDB.options.uiDebug = desiredState
+		end
+		local visible
+		if desiredState == nil then
+			visible = Internal.toggleGridOverlay and Internal.toggleGridOverlay()
+		elseif Internal.setGridOverlayVisible then
+			Internal.setGridOverlayVisible(desiredState)
+			visible = desiredState
+		else
+			visible = Internal.toggleGridOverlay and Internal.toggleGridOverlay() or desiredState
+		end
+		local statusText = (visible and "UI debug grid enabled.") or "UI debug grid hidden."
+		if Internal.chatMessage then
+			Internal.chatMessage("|cFF00FF00BookArchivist:|r " .. statusText)
+		elseif print then
+			print("[BookArchivist] " .. statusText)
 		end
 		return
 	end
+
 	local okCall, err = pcall(toggleUI)
 	if not okCall and Internal.logError then
 		Internal.logError(tostring(err))

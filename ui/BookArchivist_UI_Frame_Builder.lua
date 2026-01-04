@@ -11,13 +11,28 @@ local Internal = BookArchivist.UI.Internal
 
 local Metrics = BookArchivist.UI.Metrics or {
 	PAD = 12,
+	PAD_OUTER = 12,
+	PAD_INSET = 10,
 	GUTTER = 10,
-	HEADER_H = 70,
-	SUBHEADER_H = 34,
+	GAP_S = 6,
+	GAP_M = 10,
+	GAP_L = 14,
+	HEADER_LEFT_SAFE_X = 54,
+	HEADER_LEFT_W = 260,
+	HEADER_CENTER_BIAS_Y = 0,
+	HEADER_H = 72,
+	LIST_HEADER_H = 34,
+	LIST_TIP_H = 20,
 	READER_HEADER_H = 54,
+	READER_ACTIONS_W = 140,
 	ROW_H = 36,
 	BTN_H = 22,
-	BTN_W = 90,
+	BTN_W = 100,
+	HEADER_RIGHT_STACK_W = 110,
+	HEADER_RIGHT_GUTTER = 12,
+	SCROLLBAR_GUTTER = 18,
+	SEPARATOR_W = 10,
+	SEPARATOR_GAP = 6,
 }
 
 local DEFAULT_WIDTH = 900
@@ -28,6 +43,65 @@ local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
 local MIN_LIST_WIDTH = 260
 local MIN_READER_WIDTH = 320
 local HEADER_ROW_GAP = math.max(4, math.floor((Metrics.GUTTER or 10) * 0.5))
+
+--[[
+Layout invariants (Plan v4)
+1. Only HeaderFrame and BodyFrame may anchor directly to the main frame shell.
+2. Header is composed of left/center/right blocks; search input lives in HeaderCenter only.
+3. List inset exposes three stacked rows at the top: ListHeaderRow, ListTipRow, and ListScroll beneath.
+4. Reader inset exposes two stacked rows at the top: ReaderHeaderRow and ReaderNavRow, followed by ReaderScroll.
+5. The vertical separator spans the BodyFrame content height and never anchors to list header internals.
+]]
+
+local function resolveSafeCreateFrame(override)
+	if type(override) == "function" then
+		return override
+	end
+	if Internal and type(Internal.safeCreateFrame) == "function" then
+		return Internal.safeCreateFrame
+	end
+	if type(CreateFrame) == "function" then
+		return CreateFrame
+	end
+	return nil
+end
+
+local function ClearAnchors(frame, resetSize)
+	if not frame then
+		return
+	end
+	if frame.ClearAllPoints then
+		frame:ClearAllPoints()
+	end
+	if resetSize and frame.SetSize then
+		frame:SetSize(1, 1)
+	end
+end
+
+local function CreateContainer(name, parent, template, override)
+	local safeCreateFrame = resolveSafeCreateFrame(override)
+	if not safeCreateFrame or not parent then
+		return nil
+	end
+	return safeCreateFrame("Frame", name, parent, template)
+end
+
+local function CreateRow(name, parent, height, template, override)
+	local row = CreateContainer(name, parent, template, override)
+	if row and height then
+		row:SetHeight(height)
+	end
+	return row
+end
+
+FrameUI.CreateContainer = FrameUI.CreateContainer or CreateContainer
+FrameUI.CreateRow = FrameUI.CreateRow or CreateRow
+FrameUI.ClearAnchors = FrameUI.ClearAnchors or ClearAnchors
+if Internal then
+	Internal.CreateContainer = Internal.CreateContainer or CreateContainer
+	Internal.CreateRow = Internal.CreateRow or CreateRow
+	Internal.ClearAnchors = Internal.ClearAnchors or ClearAnchors
+end
 
 local function configureDrag(frame)
 	frame:SetMovable(true)
@@ -131,42 +205,87 @@ local function configureOptionsButton(frame, safeCreateFrame, onOptions)
 end
 
 local function createHeaderBar(frame, safeCreateFrame)
+	local padOuter = Metrics.PAD_OUTER or Metrics.PAD or 12
+	local padInset = Metrics.PAD_INSET or Metrics.PAD or 10
+	local gap = Metrics.HEADER_RIGHT_GUTTER or Metrics.GAP_M or 12
 	local header = safeCreateFrame("Frame", nil, frame, "InsetFrameTemplate3")
 	if not header then
 		return nil
 	end
-	header:SetPoint("TOPLEFT", frame, "TOPLEFT", Metrics.PAD, -Metrics.PAD)
-	header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
+	ClearAnchors(header)
+	header:SetPoint("TOPLEFT", frame, "TOPLEFT", padOuter, -padOuter)
+	header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -padOuter, -padOuter)
 	header:SetHeight(Metrics.HEADER_H)
 	header.TitleRegion = header:CreateTexture(nil, "BACKGROUND", nil, -1)
 	header.TitleRegion:SetAllPoints(true)
 	header.TitleRegion:SetColorTexture(0, 0, 0, 0.45)
-	local usableHeight = Metrics.HEADER_H - (Metrics.PAD * 2) - HEADER_ROW_GAP
-	local row1Height = math.max(24, math.floor(usableHeight * 0.55))
-	local row2Height = math.max(22, usableHeight - row1Height)
-	local row1 = safeCreateFrame("Frame", nil, header)
-	row1:SetPoint("TOPLEFT", header, "TOPLEFT", Metrics.PAD, -Metrics.PAD)
-	row1:SetPoint("TOPRIGHT", header, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
-	row1:SetHeight(row1Height)
-	header.Row1 = row1
-	local row2 = safeCreateFrame("Frame", nil, header)
-	row2:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", Metrics.PAD, Metrics.PAD)
-	row2:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", -Metrics.PAD, Metrics.PAD)
-	row2:SetPoint("TOPLEFT", row1, "BOTTOMLEFT", 0, -HEADER_ROW_GAP)
-	row2:SetHeight(row2Height)
-	header.Row2 = row2
+
+	local safeLeft = padInset + (Metrics.HEADER_LEFT_SAFE_X or 54)
+
+	local headerRight = safeCreateFrame("Frame", nil, header)
+	ClearAnchors(headerRight)
+	headerRight:SetPoint("TOPRIGHT", header, "TOPRIGHT", -padInset, -padInset)
+	headerRight:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", -padInset, padInset)
+	local baseRightWidth = Metrics.HEADER_RIGHT_STACK_W or 0
+	local minRightWidth = ((Metrics.BTN_W or 100) * 2) + (Metrics.GAP_S or 6) + (Metrics.PAD_INSET or 10)
+	local headerRightWidth = math.max(baseRightWidth, minRightWidth)
+	headerRight:SetWidth(headerRightWidth)
+
+	local headerLeftWidth = Metrics.HEADER_LEFT_W or 260
+	local headerLeft = safeCreateFrame("Frame", nil, header)
+	ClearAnchors(headerLeft)
+	headerLeft:SetPoint("TOPLEFT", header, "TOPLEFT", safeLeft, -padInset)
+	headerLeft:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", safeLeft, padInset)
+	headerLeft:SetWidth(headerLeftWidth)
+
+	local headerCenter = safeCreateFrame("Frame", nil, header)
+	ClearAnchors(headerCenter)
+	local centerLeftOffset = safeLeft + headerLeftWidth + gap
+	local centerRightInset = padInset + gap + headerRightWidth
+	headerCenter:SetPoint("TOPLEFT", header, "TOPLEFT", centerLeftOffset, -padInset)
+	headerCenter:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", centerLeftOffset, padInset)
+	headerCenter:SetPoint("TOPRIGHT", header, "TOPRIGHT", -centerRightInset, -padInset)
+	headerCenter:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", -centerRightInset, padInset)
+
+
+	local rightGap = Metrics.GAP_S or 6
+	local headerRightTop = safeCreateFrame("Frame", nil, headerRight)
+	headerRightTop:SetPoint("TOPLEFT", headerRight, "TOPLEFT", 0, 0)
+	headerRightTop:SetPoint("TOPRIGHT", headerRight, "TOPRIGHT", 0, 0)
+	headerRightTop:SetHeight((Metrics.BTN_H or 22) + (Metrics.GAP_XS or 4))
+
+	local headerRightBottom = safeCreateFrame("Frame", nil, headerRight)
+	headerRightBottom:SetPoint("BOTTOMLEFT", headerRight, "BOTTOMLEFT", 0, 0)
+	headerRightBottom:SetPoint("BOTTOMRIGHT", headerRight, "BOTTOMRIGHT", 0, 0)
+	headerRightBottom:SetPoint("TOPLEFT", headerRightTop, "BOTTOMLEFT", 0, -rightGap)
+
 	frame.HeaderFrame = header
-	frame.HeaderRow1 = row1
-	frame.HeaderRow2 = row2
+	frame.HeaderLeft = headerLeft
+	frame.HeaderCenter = headerCenter
+	frame.HeaderRight = headerRight
+	frame.HeaderRightTop = headerRightTop
+	frame.HeaderRightBottom = headerRightBottom
+
 	if Internal and Internal.registerGridTarget then
-		Internal.registerGridTarget("header", header)
+		Internal.registerGridTarget("header-frame", header)
+		Internal.registerGridTarget("header-left", headerLeft)
+		Internal.registerGridTarget("header-center", headerCenter)
+		Internal.registerGridTarget("header-right", headerRight)
+		Internal.registerGridTarget("header-right-top", headerRightTop)
+		Internal.registerGridTarget("header-right-bottom", headerRightBottom)
 	end
+
 	return header
 end
 
 local function clampListWidth(container, width)
-	local available = (container and container:GetWidth()) or (DEFAULT_WIDTH - (Metrics.PAD * 2))
-	local maxWidth = math.max(MIN_LIST_WIDTH, available - MIN_READER_WIDTH - HEADER_ROW_GAP)
+	local padOuter = Metrics.PAD_OUTER or Metrics.PAD or 12
+	local padInset = Metrics.PAD_INSET or Metrics.PAD or 10
+	local separatorWidth = Metrics.SEPARATOR_W or math.max(8, math.floor((Metrics.GAP_M or 10) * 0.6))
+	local separatorGap = Metrics.SEPARATOR_GAP or Metrics.GAP_S or 6
+	local available = (container and container:GetWidth()) or (DEFAULT_WIDTH - (padOuter * 2))
+	local usable = available - (padInset * 2) - separatorWidth - separatorGap - MIN_READER_WIDTH
+	local maxWidth = math.max(MIN_LIST_WIDTH, usable)
 	return math.max(MIN_LIST_WIDTH, math.min(width, maxWidth))
 end
 
@@ -191,14 +310,19 @@ end
 
 local function createContentLayout(frame, safeCreateFrame, opts)
 	local header = frame.HeaderFrame or createHeaderBar(frame, safeCreateFrame)
+	if not header then
+		return nil
+	end
 	local body = safeCreateFrame("Frame", nil, frame)
 	if not body then
 		return nil
 	end
-	body:SetPoint("TOPLEFT", header or frame, "BOTTOMLEFT", 0, -Metrics.GUTTER)
-	body:SetPoint("TOPRIGHT", header or frame, "BOTTOMRIGHT", 0, -Metrics.GUTTER)
-	body:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", Metrics.PAD, Metrics.PAD)
-	body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -Metrics.PAD, Metrics.PAD)
+	local padOuter = Metrics.PAD_OUTER or Metrics.PAD or 12
+	local padInset = Metrics.PAD_INSET or Metrics.PAD or 10
+	local bodyGap = Metrics.GAP_M or Metrics.GUTTER or 10
+	ClearAnchors(body)
+	body:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -bodyGap)
+	body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -padOuter, padOuter)
 	frame.ContentFrame = body
 	frame.BodyFrame = body
 	if Internal and Internal.registerGridTarget then
@@ -212,23 +336,29 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 	end
 
 	local initialWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
-	local gutterBetween = math.max(6, Metrics.GUTTER)
-	listInset:SetPoint("TOPLEFT", body, "TOPLEFT", 0, 0)
-	listInset:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", 0, 0)
-	readerInset:SetPoint("TOPRIGHT", body, "TOPRIGHT", 0, 0)
-	readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", 0, 0)
+	local separatorGap = Metrics.SEPARATOR_GAP or Metrics.GAP_S or 6
+	listInset:SetPoint("TOPLEFT", body, "TOPLEFT", padInset, -padInset)
+	listInset:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", padInset, padInset)
+	readerInset:SetPoint("TOPRIGHT", body, "TOPRIGHT", -padInset, -padInset)
+	readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -padInset, padInset)
 
 	local splitter = safeCreateFrame("Frame", nil, body)
 	splitter:SetPoint("TOPLEFT", listInset, "TOPRIGHT", 0, 0)
 	splitter:SetPoint("BOTTOMLEFT", listInset, "BOTTOMRIGHT", 0, 0)
-	splitter:SetWidth(math.max(8, math.floor(gutterBetween * 0.6)))
+	splitter:SetWidth(Metrics.SEPARATOR_W or math.max(8, math.floor((Metrics.GAP_M or 10) * 0.6)))
 	splitter:EnableMouse(true)
 	splitter:RegisterForDrag("LeftButton")
 	configureSplitter(splitter)
 	frame.SplitterFrame = splitter
+	frame.SeparatorFrame = splitter
 
-	readerInset:SetPoint("TOPLEFT", splitter, "TOPRIGHT", gutterBetween, 0)
-	readerInset:SetPoint("BOTTOMLEFT", splitter, "BOTTOMRIGHT", gutterBetween, 0)
+	readerInset:SetPoint("TOPLEFT", splitter, "TOPRIGHT", separatorGap, 0)
+	readerInset:SetPoint("BOTTOMLEFT", splitter, "BOTTOMRIGHT", separatorGap, 0)
+	if Internal and Internal.registerGridTarget then
+		Internal.registerGridTarget("list-inset", listInset)
+		Internal.registerGridTarget("reader-inset", readerInset)
+		Internal.registerGridTarget("body-separator", splitter)
+	end
 
 	frame.listBlock = listInset
 	frame.ListInset = listInset

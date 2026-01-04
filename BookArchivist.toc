@@ -1,7 +1,7 @@
 ## Title: BookArchivist
 ## Notes: Records books/letters read via the default ItemTextFrame and provides a UI to re-read them.
 ## Author: Bettyboom
-## Version: 0.1.0
+## Version: 1.0.0
 ## Interface: 110000
 ## SavedVariablesPerCharacter: BookArchivistDB
 ## AddonCompartmentFunc: BookArchivist_ToggleFromCompartment

@@ -18,10 +18,19 @@ local LIST_WIDTH_DEFAULT = 360
 local LIST_SORT_DEFAULT = "recent"
 local LIST_FILTER_DEFAULTS = {
   hasLocation = false,
-  hasAuthor = false,
   multiPage = false,
   unread = false,
 }
+
+local VALID_SORT_MODES = {
+  recent = true,
+  title = true,
+  zone = true,
+  firstSeen = true,
+  lastSeen = true,
+}
+
+local pruneLegacyAuthor
 
 local function now()
   return timeProvider()
@@ -56,12 +65,12 @@ local function cloneTable(value)
   return copy
 end
 
-local function makeKey(title, author, creator, material, firstPageText)
+local function makeKey(title, creator, material, firstPageText)
   local t = normalizeKeyPart(title)
-  local a = normalizeKeyPart(author ~= "" and author or creator)
+  local c = normalizeKeyPart(creator)
   local m = normalizeKeyPart(material)
   local fp = normalizeKeyPart(firstPageText):sub(1, 80)
-  return table.concat({t, a, m, fp}, "||")
+  return table.concat({t, c, m, fp}, "||")
 end
 
 local function ensureDB()
@@ -79,6 +88,9 @@ local function ensureDB()
   BookArchivistDB.options = BookArchivistDB.options or {}
   if BookArchivistDB.options.debugEnabled == nil then
     BookArchivistDB.options.debugEnabled = false
+  end
+  if BookArchivistDB.options.uiDebug == nil then
+    BookArchivistDB.options.uiDebug = true
   end
   BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
   local uiOpts = BookArchivistDB.options.ui
@@ -109,6 +121,7 @@ local function ensureDB()
   if type(minimap.angle) ~= "number" then
     minimap.angle = minimapDefaults.angle
   end
+  pruneLegacyAuthor(BookArchivistDB)
   return BookArchivistDB
 end
 
@@ -135,7 +148,29 @@ local function ensureListOptions()
       listOpts.filters[key] = defaultValue
     end
   end
+  listOpts.filters.hasAuthor = nil
   return listOpts
+end
+
+pruneLegacyAuthor = function(db)
+  if not db then
+    return
+  end
+  db.migrations = db.migrations or {}
+  if db.migrations.authorPruned then
+    return
+  end
+  if db.books then
+    for _, entry in pairs(db.books) do
+      if type(entry) == "table" then
+        entry.author = nil
+      end
+    end
+  end
+  if db.options and db.options.list and db.options.list.filters then
+    db.options.list.filters.hasAuthor = nil
+  end
+  db.migrations.authorPruned = true
 end
 
 local function removeFromOrder(order, key)
@@ -226,12 +261,17 @@ end
 
 function Core:GetSortMode()
   local listOpts = ensureListOptions()
-  return listOpts.sortMode or LIST_SORT_DEFAULT
+  local mode = listOpts.sortMode or LIST_SORT_DEFAULT
+  if not VALID_SORT_MODES[mode] then
+    mode = LIST_SORT_DEFAULT
+    listOpts.sortMode = mode
+  end
+  return mode
 end
 
 function Core:SetSortMode(mode)
   local listOpts = ensureListOptions()
-  if type(mode) ~= "string" or mode == "" then
+  if type(mode) ~= "string" or not VALID_SORT_MODES[mode] then
     mode = LIST_SORT_DEFAULT
   end
   listOpts.sortMode = mode
@@ -259,7 +299,7 @@ function Core:PersistSession(session)
 
   local pages = session.pages or {}
   local firstText = pages[1] or pages[session.firstPageSeen or 1] or ""
-  local key = makeKey(session.title, session.author, session.creator, session.material, firstText)
+  local key = makeKey(session.title, session.creator, session.material, firstText)
   local entry = BookArchivistDB.books[key]
   local capturedAt = now()
 
@@ -268,7 +308,6 @@ function Core:PersistSession(session)
       key = key,
       title = session.title,
       creator = session.creator,
-      author = session.author,
       material = session.material,
       createdAt = capturedAt,
       firstSeenAt = session.startedAt or capturedAt,
@@ -294,7 +333,6 @@ function Core:PersistSession(session)
 
   entry.title = entry.title ~= "" and entry.title or session.title
   entry.creator = entry.creator ~= "" and entry.creator or session.creator
-  entry.author = entry.author ~= "" and entry.author or session.author
   entry.material = entry.material ~= "" and entry.material or session.material
   entry.source = entry.source or session.source
   if session.location then

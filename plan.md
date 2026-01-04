@@ -1,227 +1,223 @@
-# BookArchivist UI Alignment Fix Plan (Post-Implementation)
+# Implementation Plan — Enforced Container Ownership (Strict Order)
 
-Goal: eliminate pixel-level misalignment and inconsistent padding across header, list, and reader; ensure a stable “grid” so elements line up at all UI scales.
-
----
-
-## 0) What’s visibly wrong in the current screenshot
-
-### Header
-- Search box is not vertically aligned with the title baseline; it floats too high.
-- Sort dropdown (“Recently Read”) sits too low relative to title/search row.
-- “Options” / “Help” buttons are not aligned to the same top/bottom baseline as the header content.
-- Count text (“8 books”) is too detached and doesn’t share a consistent left gutter with the rest.
-
-### Body
-- List inset and reader inset don’t share the same top edge; the list panel starts lower.
-- The “Saved Books” header line and the Books/Locations tabs are not aligned on a single row; “Saved Books” appears as a separate header with tabs floating.
-- Reader placeholder text (“Select a book…”) is not aligned within a defined header/content area and visually collides with the delete button strip.
-- Prev/Next/page label are not aligned to a shared row; they float in the content region.
-
-### Global
-- Inconsistent gutters: left padding differs between list rows, “Saved Books” header, and tabs.
-- Mixed anchoring: some elements are anchored to parent edges, others to siblings with ad-hoc offsets, causing drift when sizes change.
+This plan assumes uidebug stays ON while implementing and you do **not** “fix padding” until Step 8.
 
 ---
 
-## 1) Adopt a single layout grid (the real fix)
+## Step 0 — Pre-flight (1 commit)
+**Goal:** Freeze the current UI so you can safely rebuild without regressions.
 
-### 1.1 Define constants (one source of truth)
-Create `UI_METRICS` and use it everywhere.
-
-**Add to** `ui/BookArchivist_UI_Constants.lua` (or similar):
-- `PAD = 12`
-- `GUTTER = 10`
-- `HEADER_H = 70`
-- `SUBHEADER_H = 34` (for list header row / tabs row)
-- `READER_HEADER_H = 54`
-- `ROW_H = 36`
-- `BTN_H = 22`
-- `BTN_W = 90`
+- Keep `/ba uidebug on` defaulted in dev builds (or persisted option).
+- Add a `UI_METRICS` table if not already present:
+  - `PAD_OUTER`, `PAD_INSET`, `GAP_S`, `GAP_M`, `HEADER_H`, `ROW_H`, `BTN_H`, `RIGHT_W`, `TIP_ROW_H`, `NAV_ROW_H`
+- Add a small helper file (or in `UI_Frame_Builder`) with reusable constructors:
+  - `CreateContainer(name, parent)`
+  - `CreateRow(name, parent, height)`
+  - `ClearAnchors(frame)` (calls `ClearAllPoints()` and optionally resets size)
 
 **Acceptance**
-- No frame sets `SetPoint(..., x, y)` with magic numbers outside these metrics (except rare template quirks).
+- You can toggle uidebug and see container bounds.
+- No functional changes yet.
+
+Files:
+- `ui/BookArchivist_UI_Frame_Builder.lua` (main)
+- optionally `ui/BookArchivist_UI_Metrics.lua`
 
 ---
 
-## 2) Header: rebuild as a 2-row structure (no floating anchors)
+## Step 1 — Hard reset: top-level containers only (HeaderFrame + BodyFrame)
+**Goal:** Only `HeaderFrame` and `BodyFrame` are allowed to anchor to `MainFrame`.
 
-### 2.1 Create `HeaderFrame` with fixed height
-**Structure**
-- `HeaderFrame` (height = `HEADER_H`)
-  - Row 1: Title (left), Search (center), Actions (right)
-  - Row 2: Count (left), Sort+Filters (left/center)
-
-**Implementation**
-- Anchor `HeaderFrame` to main frame top-left/top-right with `PAD`.
-- Place Row 1 elements by anchoring to `HeaderFrame` with explicit vertical centers:
-  - `TitleText:SetPoint("TOPLEFT", HeaderFrame, "TOPLEFT", 0, -4)`
-  - `SearchBox:SetPoint("TOP", HeaderFrame, "TOP", 0, -6)` (then vertically center it via `SetHeight(BTN_H)` and `SetPoint("CENTER", Row1, "CENTER")`)
-  - `OptionsBtn:SetPoint("TOPRIGHT", HeaderFrame, "TOPRIGHT", 0, -4)`
-  - `HelpBtn` anchored directly below Options with `-6` spacing, same right edge.
-
-**Fixes**
-- Stop anchoring the search to the main frame; anchor it to the header row container.
-- Ensure all buttons share identical height (`BTN_H`) and text insets.
+1. In `UI_Frame_Builder`, locate where `HeaderFrame` and `BodyFrame` are created.
+2. Apply:
+   - `HeaderFrame:ClearAllPoints()`
+   - `HeaderFrame:SetPoint("TOPLEFT", MainFrame, "TOPLEFT", PAD_OUTER, -PAD_OUTER)`
+   - `HeaderFrame:SetPoint("TOPRIGHT", MainFrame, "TOPRIGHT", -PAD_OUTER, -PAD_OUTER)`
+   - `HeaderFrame:SetHeight(HEADER_H)`
+3. Apply:
+   - `BodyFrame:ClearAllPoints()`
+   - `BodyFrame:SetPoint("TOPLEFT", HeaderFrame, "BOTTOMLEFT", 0, -GAP_M)`
+   - `BodyFrame:SetPoint("BOTTOMRIGHT", MainFrame, "BOTTOMRIGHT", -PAD_OUTER, PAD_OUTER)`
 
 **Acceptance**
-- Title, search, and Options button share the same top baseline visually.
-- Sort dropdown aligns to count line and does not drift when search width changes.
+- uidebug shows HeaderFrame and BodyFrame aligned and stable.
+- Nothing else anchors to MainFrame after this (audit in code).
 
 ---
 
-## 3) Body: enforce equal top edges and consistent gutters
+## Step 2 — Header rebuild: enforce 3 columns (Left/Center/Right)
+**Goal:** Create `HeaderLeft`, `HeaderCenter`, `HeaderRight` as children of HeaderFrame only.
 
-### 3.1 Create `BodyFrame` and anchor panels to it
-**Structure**
-- `BodyFrame` anchored below `HeaderFrame` with `GUTTER`.
-- Inside `BodyFrame`:
-  - `ListInset`
-  - `ReaderInset`
-  - optional splitter
-
-**Implementation**
-- `BodyFrame:SetPoint("TOPLEFT", HeaderFrame, "BOTTOMLEFT", 0, -GUTTER)`
-- `BodyFrame:SetPoint("BOTTOMRIGHT", MainFrame, "BOTTOMRIGHT", -PAD, PAD)`
+1. Create containers:
+   - `HeaderLeft`, `HeaderCenter`, `HeaderRight`
+2. Define left “safe start” to avoid portrait overlap:
+   - `LEFT_SAFE_X = 54` (or anchor to portrait frame right edge if you have it)
+3. Anchor:
+   - `HeaderRight:SetPoint("TOPRIGHT", HeaderFrame, "TOPRIGHT", 0, 0)`
+   - `HeaderRight:SetPoint("BOTTOMRIGHT", HeaderFrame, "BOTTOMRIGHT", 0, 0)`
+   - `HeaderRight:SetWidth(RIGHT_W)`
+   - `HeaderLeft:SetPoint("TOPLEFT", HeaderFrame, "TOPLEFT", LEFT_SAFE_X, 0)`
+   - `HeaderLeft:SetPoint("BOTTOMLEFT", HeaderFrame, "BOTTOMLEFT", LEFT_SAFE_X, 0)`
+   - `HeaderLeft:SetPoint("RIGHT", HeaderFrame, "LEFT", 0, 0)` **(do not do this)**
+   - Instead: set `HeaderLeft` width later by letting it grow to content; easiest is to anchor `HeaderCenter` between:
+     - `HeaderCenter:SetPoint("TOPLEFT", HeaderLeft, "TOPRIGHT", GAP_M, 0)`
+     - `HeaderCenter:SetPoint("BOTTOMRIGHT", HeaderRight, "BOTTOMLEFT", -GAP_M, 0)`
+   - For `HeaderLeft`, anchor to center:
+     - `HeaderLeft:SetPoint("TOPRIGHT", HeaderCenter, "TOPLEFT", -GAP_M, 0)`
+     - `HeaderLeft:SetPoint("BOTTOMRIGHT", HeaderCenter, "BOTTOMLEFT", -GAP_M, 0)`
 
 **Acceptance**
-- List and reader insets share identical top and bottom edges.
+- The cyan boxes for HeaderLeft/Center/Right share exact top/bottom edges.
+- Search cannot overlap HeaderRight (it’s bounded by HeaderCenter).
 
 ---
 
-## 4) List panel: collapse “Saved Books” header + tabs into ONE subheader row
+## Step 3 — Header rebuild: enforce 2 rows inside each column
+**Goal:** No header widget anchors outside its row.
 
-### 4.1 Single `ListHeaderRow` (height = `SUBHEADER_H`)
-**Structure**
-- `ListHeaderRow` at top of `ListInset`
-  - Left: “Saved Books”
-  - Right: Tabs (Books / Locations), aligned to the same vertical center
+For each column (`HeaderLeft`, `HeaderCenter`, `HeaderRight`):
+1. Create `TopRow` + `BottomRow` with fixed heights:
+   - `TopRow` height: ~32
+   - `BottomRow` height: ~32
+2. Anchor rows:
+   - `TopRow:SetPoint("TOPLEFT", col, "TOPLEFT", 0, 0)`
+   - `TopRow:SetPoint("TOPRIGHT", col, "TOPRIGHT", 0, 0)`
+   - `BottomRow:SetPoint("BOTTOMLEFT", col, "BOTTOMLEFT", 0, 0)`
+   - `BottomRow:SetPoint("BOTTOMRIGHT", col, "BOTTOMRIGHT", 0, 0)`
+   - `TopRow:SetPoint("BOTTOM", BottomRow, "TOP", 0, 0)`
 
-**Implementation**
-- Remove any separate “Saved Books” title anchored outside the inset.
-- Create `ListHeaderRow` as a child of `ListInset`:
-  - `ListHeaderRow:SetPoint("TOPLEFT", ListInset, "TOPLEFT", PAD, -PAD)`
-  - `ListHeaderRow:SetPoint("TOPRIGHT", ListInset, "TOPRIGHT", -PAD, -PAD)`
-  - `ListHeaderRow:SetHeight(SUBHEADER_H)`
-
-**Tabs alignment rule**
-- Tabs must anchor to `ListHeaderRow`’s RIGHT and CENTER, not to the inset or the list scroll frame.
-- Ensure tab button heights are consistent and their text vertical offset is zeroed.
+Then place widgets ONLY within:
+- `HeaderLeftTopRow`: Title
+- `HeaderLeftBottomRow`: Count
+- `HeaderCenterBottomRow`: Search (centered vertically in this row)
+- `HeaderRightTopRow`: Help + Options
+- `HeaderRightBottomRow`: Sort dropdown + filter icons
 
 **Acceptance**
-- “Saved Books” and the Books/Locations tabs live on the same line, centered vertically.
+- The sort dropdown is a child of `HeaderRightBottomRow` (verify in code and visually).
+- No header widget anchors to HeaderFrame directly anymore.
 
 ---
 
-## 5) List content: ensure scroll region starts below header row
+## Step 4 — Body split: create ListInset + ReaderInset (and only then separator)
+**Goal:** List and reader share exact top/bottom edges and live entirely in BodyFrame.
 
-### 5.1 Anchor list scroll frame to `ListHeaderRow`
-- `ListScroll:SetPoint("TOPLEFT", ListHeaderRow, "BOTTOMLEFT", 0, -GUTTER)`
-- `ListScroll:SetPoint("BOTTOMRIGHT", ListInset, "BOTTOMRIGHT", -PAD, PAD)`
+1. Create:
+   - `ListInset` (left)
+   - `ReaderInset` (right)
+   - optional `SplitHandle` (draggable)
+2. Anchor:
+   - `ListInset:SetPoint("TOPLEFT", BodyFrame, "TOPLEFT", 0, 0)`
+   - `ListInset:SetPoint("BOTTOMLEFT", BodyFrame, "BOTTOMLEFT", 0, 0)`
+   - `ReaderInset:SetPoint("TOPRIGHT", BodyFrame, "TOPRIGHT", 0, 0)`
+   - `ReaderInset:SetPoint("BOTTOMRIGHT", BodyFrame, "BOTTOMRIGHT", 0, 0)`
+   - Use either:
+     - fixed `LIST_W` for ListInset and let Reader fill, or
+     - persisted width + clamp
+3. Create `Separator` as child of BodyFrame only:
+   - `Separator:SetPoint("TOP", BodyFrame, "TOP", 0, 0)`
+   - `Separator:SetPoint("BOTTOM", BodyFrame, "BOTTOM", 0, 0)`
+   - Horizontal position is tied to list width boundary.
 
 **Acceptance**
-- First row never overlaps header/tabs.
-- Left padding of row text matches header text padding.
+- Separator starts at BodyFrame top and ends at BodyFrame bottom.
+- Separator never references ListHeaderRow/Tabs.
 
 ---
 
-## 6) Reader panel: introduce a real ReaderHeader (stop placing controls in content)
+## Step 5 — ListInset rebuild: enforce 3 top rows (HeaderRow, TipRow, ScrollRow)
+**Goal:** Stop anchoring tabs/tip/scroll to each other arbitrarily.
 
-### 6.1 Create `ReaderHeader` (height = `READER_HEADER_H`)
-**Structure**
-- `ReaderHeader` at top of `ReaderInset`
-  - Left: Title / placeholder (single line)
-  - Center (optional): Page indicator
-  - Right: Delete button
-  - Bottom of header: Nav row (Prev / Next) OR keep nav row inside header aligned
+Inside `ListInset` create:
+1. `ListHeaderRow` (height `LIST_HEADER_H`)
+2. `ListTipRow` (height `TIP_ROW_H`)
+3. `ListScrollRow` (fills remainder)
 
-**Implementation**
-- `ReaderHeader:SetPoint("TOPLEFT", ReaderInset, "TOPLEFT", PAD, -PAD)`
-- `ReaderHeader:SetPoint("TOPRIGHT", ReaderInset, "TOPRIGHT", -PAD, -PAD)`
-- `ReaderHeader:SetHeight(READER_HEADER_H)`
+Anchor:
+- `ListHeaderRow` top inside inset with `PAD_INSET`
+- `ListTipRow` directly below HeaderRow with `GAP_S`
+- `ListScrollRow` below TipRow with `GAP_S`, down to bottom with `PAD_INSET`
 
-**Controls**
-- Delete:
-  - `DeleteBtn:SetHeight(BTN_H)` and anchor `TOPRIGHT` of `ReaderHeader`.
-- Title/placeholder:
-  - Anchor `LEFT` of `ReaderHeader`, vertically centered, with max width = header width minus delete button width minus gutter.
-- Nav row:
-  - Either:
-    - (A) inside `ReaderHeader` bottom-aligned, OR
-    - (B) a `ReaderNavRow` right under header with fixed height.
-  - In either case: Prev, page label, Next are aligned to the same vertical center and share identical baseline.
+Then:
+- Place “Saved Books” inside ListHeaderRow (left).
+- Create `TabsRail` inside ListHeaderRow (right) with right padding:
+  - `TabsRail` right inset: `PAD_INSET`
+- Anchor tabs ONLY within `TabsRail`.
+- Tip text ONLY inside `ListTipRow`.
+- ScrollFrame ONLY fills `ListScrollRow`.
 
 **Acceptance**
-- Placeholder text never overlaps Delete.
-- Prev/Next/page label sit on one clean row above the scroll content.
+- Tabs cannot collide with separator because TabsRail has explicit right inset.
+- First list row starts below tip row consistently.
 
 ---
 
-## 7) Reader scroll content: start below header/nav, with consistent margins
+## Step 6 — ReaderInset rebuild: enforce 2 rows + scroll (HeaderRow, NavRow, ScrollRow)
+**Goal:** Lock the page label and buttons into stable rows.
 
-### 7.1 Anchor reader scroll frame properly
-- `ReaderScroll:SetPoint("TOPLEFT", ReaderHeader (or ReaderNavRow), "BOTTOMLEFT", 0, -GUTTER)`
-- `ReaderScroll:SetPoint("BOTTOMRIGHT", ReaderInset, "BOTTOMRIGHT", -PAD, PAD)`
+Inside `ReaderInset` create:
+1. `ReaderHeaderRow` (height `READER_HEADER_H`)
+2. `ReaderNavRow` (height `NAV_ROW_H`)
+3. `ReaderScrollRow` (fills remainder)
+
+Place:
+- Title + metadata inside `ReaderHeaderRow` (left).
+- Create `ReaderActionsRail` inside `ReaderHeaderRow` (right, fixed width).
+  - Delete + Next live here.
+- Prev button inside `ReaderNavRow` (left).
+- Page label inside `ReaderNavRow` (center).
+- Reader ScrollFrame fills `ReaderScrollRow`.
 
 **Acceptance**
-- Reader text begins below controls; no floating UI elements inside scroll region.
+- Page label no longer moves when title length changes.
+- No reader control anchors to ReaderScrollRow.
 
 ---
 
-## 8) Normalize template quirks (most common alignment offender)
+## Step 7 — Audit: enforce “no cross-row anchors”
+**Goal:** Ensure ownership is real, not just intended.
 
-### 8.1 Standardize font objects and vertical offsets
-- Use one font object for header titles, one for metadata.
-- Avoid mixing `GameFontNormalLarge` with custom sizes unless you also normalize line height.
-
-**Action**
-- For each `FontString`, explicitly set:
-  - `:SetJustifyV("MIDDLE")`
-  - `:SetJustifyH("LEFT")`
+Do a quick code audit:
+- Grep for `SetPoint(` calls and confirm:
+  - No widget anchors to MainFrame except HeaderFrame/BodyFrame.
+  - No header widgets anchor to HeaderFrame directly (must anchor to their rows).
+  - No list widgets anchor to ListInset directly except the 3 rows.
+  - No reader widgets anchor to ReaderInset directly except the 3 rows.
 
 **Acceptance**
-- No “half-pixel” visual drift between title, count, and list headers.
+- uidebug rectangles show clean stacked rows; no “floating” widgets.
 
 ---
 
-## 9) Add a debug overlay to catch drift fast (temporary dev feature)
+## Step 8 — Only now: apply padding and visual tweaks
+**Goal:** Make it look right without breaking the grid.
 
-### 9.1 Toggleable gridlines
-Add `/ba uigrid` that draws:
-- HeaderFrame bounds
-- BodyFrame bounds
-- ListHeaderRow bounds
-- ReaderHeader bounds
-
-**Implementation**
-- Create thin texture lines (1px) and show/hide.
-- Remove or keep behind a dev flag.
+Allowed tweaks:
+- Add `PAD_INSET` to row contents
+- Add small *bias constants* per rail (e.g., `TAB_Y_BIAS`, `SEARCH_Y_BIAS`) but only at the rail/row level, never per-widget.
+- Ensure list row text has a `RowContent` safe area to avoid scrollbar overlap.
 
 **Acceptance**
-- You can visually verify all top edges and gutters are identical.
+- All tweaks happen by adjusting constants or rail-level bias, not by ad-hoc widget offsets.
 
 ---
 
-## 10) Codex Task Checklist (in strict order)
-
-1. Add `UI_METRICS` constants and replace magic numbers.
-2. Rebuild HeaderFrame as 2-row container; re-anchor search/sort/actions to rows.
-3. Add BodyFrame and re-anchor ListInset + ReaderInset to it (same top/bottom).
-4. Replace “Saved Books” + tabs with single `ListHeaderRow`.
-5. Re-anchor list scroll frame to start below `ListHeaderRow`.
-6. Add `ReaderHeader` (and optional `ReaderNavRow`); move Delete + placeholder + nav into it.
-7. Re-anchor reader scroll frame to start below header/nav.
-8. Normalize font vertical justification.
-9. Add temporary `/ba uigrid` overlay for verification.
+## Step 9 — Remove/disable uidebug by default (keep toggle)
+- Keep the command and DB flag.
+- Default it OFF for releases.
 
 ---
 
-## Definition of Done (Alignment)
+# Deliverables per step (commit boundaries)
 
-- Header: title, search, and Options button share a clean baseline; sort aligns with count row.
-- Body: ListInset and ReaderInset share identical top/bottom edges.
-- List: “Saved Books” and tabs are on the same row; list rows start below them with consistent left padding.
-- Reader: Delete is confined to header; placeholder and nav are aligned and never overlap content.
-- No element uses ad-hoc anchoring to main frame when a row/container exists.
+1. Add helpers + metrics + keep uidebug.
+2. Re-anchor HeaderFrame + BodyFrame only.
+3. Header: 3 columns + 2 rows; move all header widgets into rows.
+4. Body: ListInset + ReaderInset + Separator anchored to BodyFrame.
+5. ListInset: 3 rows; move Saved Books / Tabs / Tip / Scroll into proper rows.
+6. ReaderInset: 3 rows; move header/nav/scroll into proper rows.
+7. Audit pass: remove any remaining cross-row anchors.
+8. Padding pass: tune look using constants only.
+9. Release hygiene: uidebug default off.
 
 ---

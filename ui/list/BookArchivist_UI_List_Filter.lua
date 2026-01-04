@@ -17,7 +17,7 @@ local function matches(self, entry, query)
     return text:find(query, 1, true) ~= nil
   end
 
-  if has(entry.title) or has(entry.creator) or has(entry.author) then
+  if has(entry.title) or has(entry.creator) then
     return true
   end
 

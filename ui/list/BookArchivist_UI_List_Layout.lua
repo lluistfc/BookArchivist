@@ -2,139 +2,182 @@
 local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
-local Metrics = BookArchivist.UI.Metrics or {
+local Metrics = BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics or {
   PAD = 12,
   GUTTER = 10,
-  HEADER_H = 70,
-  SUBHEADER_H = 34,
-  READER_HEADER_H = 54,
-  ROW_H = 36,
+  HEADER_H = 72,
   BTN_H = 22,
-  BTN_W = 90,
+  BTN_W = 100,
+  ROW_H = 36,
+  LIST_HEADER_H = 34,
+  LIST_TOPBAR_H = 28,
+  PAD_OUTER = 12,
+  PAD_INSET = 10,
+  GAP_XS = 4,
+  GAP_S = 6,
+  GAP_M = 10,
+  GAP_L = 14,
+  HEADER_RIGHT_STACK_W = 120,
+  HEADER_RIGHT_GUTTER = 12,
+  SCROLLBAR_GUTTER = 18,
 }
-local Internal = BookArchivist.UI.Internal
+
+local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
 
 local function hasMethod(obj, methodName)
   return obj and type(obj[methodName]) == "function"
 end
 
-local function wireSearchHandlers(listUI, box)
-  if not box then
-    return
-  end
-
-  if box.Instructions then
-    box.Instructions:SetText("Search title, author, or text…")
-  end
-
-  box:SetScript("OnTextChanged", function(input)
-    if input.Instructions then
-      if input:GetText() ~= "" then
-        input.Instructions:Hide()
-      else
-        input.Instructions:Show()
-      end
-    end
-    listUI:UpdateSearchClearButton()
-    listUI:ScheduleSearchRefresh()
-    listUI:DebugPrint("[BookArchivist] search text changed; scheduled refresh")
-  end)
-
-  box:SetScript("OnEnterPressed", function(self)
-    self:ClearFocus()
-  end)
-
-  box:SetScript("OnEscapePressed", function(self)
-    self:SetText("")
-    self:ClearFocus()
-    listUI:RunSearchRefresh()
-  end)
-end
-
-function ListUI:EnsureInfoText()
-  local info = self:GetFrame("infoText")
-  if info and info.GetObjectType and info:GetObjectType() == "FontString" then
-    info:Show()
-    return info
-  end
-
-  local listBlock = self:GetFrame("listBlock")
-  if not hasMethod(listBlock, "CreateFontString") then
-    return nil
-  end
-
-  info = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-  if hasMethod(info, "SetPoint") then
-    info:SetPoint("BOTTOM", listBlock, "BOTTOM", 0, Metrics.PAD)
-  end
-  if hasMethod(info, "SetText") then
-    info:SetText("|cFF00FF00Tip:|r Open books normally - pages save automatically")
-  end
-  self:SetFrame("infoText", info)
-  return info
-end
-
-function ListUI:EnsureListHeader()
-  local listHeader = self:GetFrame("listHeader")
-  if listHeader and hasMethod(listHeader, "SetText") then
-    return listHeader
-  end
-
-  local row = self:GetFrame("listHeaderRow")
-  if not row then
-    row = self:EnsureListHeaderRow()
-  end
-  if not row or not hasMethod(row, "CreateFontString") then
-    return nil
-  end
-
-  listHeader = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  if listHeader and hasMethod(listHeader, "SetPoint") then
-    listHeader:SetPoint("LEFT", row, "LEFT", 0, 0)
-    local tabsAnchor = self:GetFrame("listHeaderTabsAnchor")
-    if tabsAnchor then
-      listHeader:SetPoint("RIGHT", tabsAnchor, "LEFT", -Metrics.GUTTER, 0)
-    else
-      listHeader:SetPoint("RIGHT", row, "RIGHT", -Metrics.PAD, 0)
-    end
-  end
-  if listHeader and hasMethod(listHeader, "SetJustifyV") then
-    listHeader:SetJustifyV("MIDDLE")
-  end
-  if listHeader and hasMethod(listHeader, "SetText") then
-    listHeader:SetText("Saved Books")
-  end
-  return self:SetFrame("listHeader", listHeader)
-end
-
 function ListUI:EnsureListHeaderRow()
   local row = self:GetFrame("listHeaderRow")
-  if row and hasMethod(row, "SetHeight") then
+  if row then
     return row
   end
-
   local listBlock = self:GetFrame("listBlock")
-  if not listBlock or not self.SafeCreateFrame then
+  if not listBlock then
+    self:DebugPrint("[BookArchivist] EnsureListHeaderRow aborted (listBlock missing)")
     return nil
   end
-
   row = self:SafeCreateFrame("Frame", nil, listBlock)
   if not row then
+    self:LogError("Unable to create list header row.")
     return nil
   end
-
-  row:SetPoint("TOPLEFT", listBlock, "TOPLEFT", Metrics.PAD, -Metrics.PAD)
-  row:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
-  row:SetHeight(Metrics.SUBHEADER_H)
+  local inset = Metrics.PAD_INSET or Metrics.PAD or 8
+  row:SetPoint("TOPLEFT", listBlock, "TOPLEFT", inset, -inset)
+  row:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -inset, -inset)
+  row:SetHeight(Metrics.LIST_HEADER_H or (Metrics.BTN_H or 22))
   self:SetFrame("listHeaderRow", row)
   if Internal and Internal.registerGridTarget then
-    Internal.registerGridTarget("list-header", row)
+    Internal.registerGridTarget("list-header-row", row)
   end
   return row
 end
 
-function ListUI:GetListBlock()
-  return self:GetFrame("listBlock")
+function ListUI:EnsureListTipRow()
+  local row = self:GetFrame("listTipRow")
+  if row then
+    return row
+  end
+  local listBlock = self:GetFrame("listBlock")
+  if not listBlock then
+    return nil
+  end
+  local headerRow = self:EnsureListHeaderRow()
+  if not headerRow then
+    return nil
+  end
+  row = self:SafeCreateFrame("Frame", nil, listBlock)
+  if not row then
+    return nil
+  end
+  local gap = Metrics.GAP_XS or 4
+  row:SetPoint("TOPLEFT", headerRow, "BOTTOMLEFT", 0, -gap)
+  row:SetPoint("TOPRIGHT", headerRow, "BOTTOMRIGHT", 0, -gap)
+  row:SetHeight(Metrics.LIST_TIP_H or (Metrics.LIST_INFO_H or 18))
+  self:SetFrame("listTipRow", row)
+  if Internal and Internal.registerGridTarget then
+    Internal.registerGridTarget("list-tip-row", row)
+  end
+  return row
+end
+
+function ListUI:EnsureListHeader()
+  local header = self:GetFrame("listHeader")
+  if header then
+    return header
+  end
+  local headerRow = self:EnsureListHeaderRow()
+  if not headerRow then
+    return nil
+  end
+  header = headerRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  header:SetPoint("LEFT", headerRow, "LEFT", 0, 0)
+  header:SetPoint("TOP", headerRow, "TOP", 0, 0)
+  header:SetPoint("BOTTOM", headerRow, "BOTTOM", 0, 0)
+  header:SetJustifyH("LEFT")
+  header:SetJustifyV("MIDDLE")
+  header:SetText("Saved Books")
+  self:SetFrame("listHeader", header)
+  return header
+end
+
+function ListUI:EnsureInfoText()
+  local info = self:GetFrame("infoText")
+  if info then
+    return info
+  end
+  local tipRow = self:EnsureListTipRow()
+  if not tipRow then
+    self:DebugPrint("[BookArchivist] EnsureInfoText aborted (tip row missing)")
+    return nil
+  end
+  info = tipRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  info:SetJustifyH("LEFT")
+  info:SetJustifyV("MIDDLE")
+  info:SetText("")
+  info:SetPoint("TOPLEFT", tipRow, "TOPLEFT", 0, 0)
+  info:SetPoint("BOTTOMRIGHT", tipRow, "BOTTOMRIGHT", 0, 0)
+  self:SetFrame("infoText", info)
+  return info
+end
+
+local function wireSearchHandlers(self, searchBox)
+  if not (self and searchBox) then
+    return
+  end
+
+  local instructions = searchBox.Instructions
+  if instructions and instructions.SetText then
+    instructions:SetText("Search title or text…")
+  end
+
+  local function syncInstructions(box)
+    if not instructions then
+      return
+    end
+    if (box:GetText() or "") == "" then
+      instructions:Show()
+    else
+      instructions:Hide()
+    end
+  end
+
+  searchBox:SetScript("OnEditFocusGained", function(box)
+    if instructions then
+      instructions:Hide()
+    end
+  end)
+
+  searchBox:SetScript("OnEditFocusLost", function(box)
+    syncInstructions(box)
+  end)
+
+  searchBox:SetScript("OnEscapePressed", function(box)
+    box:SetText("")
+    box:ClearFocus()
+    syncInstructions(box)
+    self:RunSearchRefresh()
+    self:UpdateSearchClearButton()
+  end)
+
+  searchBox:SetScript("OnEnterPressed", function(box)
+    box:ClearFocus()
+  end)
+
+  searchBox:SetScript("OnTextChanged", function(box, userInput)
+    syncInstructions(box)
+    if userInput then
+      if self.ScheduleSearchRefresh then
+        self:ScheduleSearchRefresh()
+      else
+        self:RunSearchRefresh()
+      end
+      self:UpdateSearchClearButton()
+    end
+  end)
+
+  syncInstructions(searchBox)
 end
 
 function ListUI:Create(uiFrame)
@@ -143,41 +186,57 @@ function ListUI:Create(uiFrame)
   end
 
   self:SetUIFrame(uiFrame)
+  if Metrics.ROW_H then
+    self:SetRowHeight(Metrics.ROW_H)
+  end
 
   local header = uiFrame.HeaderFrame
   if not header then
     header = self:SafeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate3")
-    header:SetPoint("TOPLEFT", uiFrame, "TOPLEFT", Metrics.PAD, -Metrics.PAD)
-    header:SetPoint("TOPRIGHT", uiFrame, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
+    header:SetPoint("TOPLEFT", uiFrame, "TOPLEFT", Metrics.PAD_OUTER or Metrics.PAD, -(Metrics.PAD_OUTER or Metrics.PAD))
+    header:SetPoint("TOPRIGHT", uiFrame, "TOPRIGHT", -(Metrics.PAD_OUTER or Metrics.PAD), -(Metrics.PAD_OUTER or Metrics.PAD))
     header:SetHeight(Metrics.HEADER_H)
     uiFrame.HeaderFrame = header
   end
-  local headerRow1 = uiFrame.HeaderRow1 or header
-  local headerRow2 = uiFrame.HeaderRow2 or header
 
-  local titleText = headerRow1:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
-  titleText:SetPoint("LEFT", headerRow1, "LEFT", 0, 0)
-  titleText:SetPoint("RIGHT", headerRow1, "CENTER", -Metrics.GUTTER, 0)
+  local headerLeft = uiFrame.HeaderLeft or header
+  local headerCenter = uiFrame.HeaderCenter or header
+  local headerRight = uiFrame.HeaderRight or header
+  local headerRightTop = uiFrame.HeaderRightTop or headerRight
+  local headerRightBottom = uiFrame.HeaderRightBottom or headerRight
+
+  local titleText = headerLeft:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
+  titleText:SetPoint("TOPLEFT", headerLeft, "TOPLEFT", 0, 0)
+  titleText:SetPoint("TOPRIGHT", headerLeft, "TOPRIGHT", 0, 0)
   titleText:SetJustifyH("LEFT")
-  titleText:SetJustifyV("MIDDLE")
+  titleText:SetJustifyV("TOP")
   titleText:SetText("Book Archivist")
   self:SetFrame("headerTitle", titleText)
 
-  local searchBox = self:SafeCreateFrame("EditBox", "BookArchivistSearchBox", headerRow1, "SearchBoxTemplate")
+  local headerCount = headerLeft:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  headerCount:SetPoint("TOPLEFT", titleText, "BOTTOMLEFT", 0, -(Metrics.GAP_XS or 4))
+  headerCount:SetPoint("RIGHT", headerLeft, "RIGHT", 0, 0)
+  headerCount:SetJustifyH("LEFT")
+  headerCount:SetJustifyV("TOP")
+  headerCount:SetText("Saving every page you read")
+  self:SetFrame("headerCountText", headerCount)
+
+  local searchBox = self:SafeCreateFrame("EditBox", "BookArchivistSearchBox", headerCenter, "SearchBoxTemplate")
   if searchBox then
     self:SetFrame("searchBox", searchBox)
-    searchBox:SetWidth(280)
-    searchBox:SetHeight(Metrics.BTN_H + 6)
-    searchBox:SetPoint("CENTER", headerRow1, "CENTER", 0, 0)
+    searchBox:SetHeight((Metrics.BTN_H or 22) + (Metrics.GAP_S or 0))
+    searchBox:SetPoint("CENTER", headerCenter, "CENTER", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
+    searchBox:SetPoint("LEFT", headerCenter, "LEFT", 0, 0)
+    searchBox:SetPoint("RIGHT", headerCenter, "RIGHT", 0, 0)
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
     wireSearchHandlers(self, searchBox)
   end
 
-  local clearButton = self:SafeCreateFrame("Button", nil, headerRow1, "UIPanelCloseButton")
+  local clearButton = self:SafeCreateFrame("Button", nil, headerCenter, "UIPanelCloseButton")
   if clearButton and searchBox then
     clearButton:SetScale(0.7)
-    clearButton:SetPoint("LEFT", searchBox, "RIGHT", -6, 0)
+    clearButton:SetPoint("LEFT", searchBox, "RIGHT", -(Metrics.GAP_XS or 4), 0)
     clearButton:SetScript("OnClick", function()
       searchBox:SetText("")
       self:RunSearchRefresh()
@@ -187,10 +246,10 @@ function ListUI:Create(uiFrame)
     clearButton:Hide()
   end
 
-  local optionsButton = self:SafeCreateFrame("Button", nil, headerRow1, "UIPanelButtonTemplate")
+  local optionsButton = self:SafeCreateFrame("Button", nil, headerRightTop, "UIPanelButtonTemplate")
   if optionsButton then
     optionsButton:SetSize(Metrics.BTN_W, Metrics.BTN_H)
-    optionsButton:SetPoint("RIGHT", headerRow1, "RIGHT", 0, 0)
+    optionsButton:SetPoint("TOPRIGHT", headerRightTop, "TOPRIGHT", 0, 0)
     optionsButton:SetText("Options")
     optionsButton:SetScript("OnClick", function()
       local addon = self:GetAddon()
@@ -202,10 +261,10 @@ function ListUI:Create(uiFrame)
     end)
   end
 
-  local helpButton = self:SafeCreateFrame("Button", nil, headerRow1, "UIPanelButtonTemplate")
+  local helpButton = self:SafeCreateFrame("Button", nil, headerRightTop, "UIPanelButtonTemplate")
   if helpButton and optionsButton then
     helpButton:SetSize(Metrics.BTN_W - 12, Metrics.BTN_H)
-    helpButton:SetPoint("RIGHT", optionsButton, "LEFT", -Metrics.GUTTER, 0)
+    helpButton:SetPoint("RIGHT", optionsButton, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER), 0)
     helpButton:SetText("Help")
     helpButton:SetScript("OnClick", function()
       local ctx = self:GetContext()
@@ -218,21 +277,18 @@ function ListUI:Create(uiFrame)
     end)
   end
 
-  local headerCount = headerRow2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  headerCount:SetPoint("LEFT", headerRow2, "LEFT", 0, 0)
-  headerCount:SetJustifyH("LEFT")
-  headerCount:SetJustifyV("MIDDLE")
-  headerCount:SetText("Saving every page you read")
-  self:SetFrame("headerCountText", headerCount)
-
-  local sortDropdown = CreateFrame("Frame", "BookArchivistSortDropdown", headerRow2, "UIDropDownMenuTemplate")
+  local sortDropdown = CreateFrame("Frame", "BookArchivistSortDropdown", headerRightBottom, "UIDropDownMenuTemplate")
   sortDropdown:ClearAllPoints()
-  sortDropdown:SetPoint("LEFT", headerCount, "RIGHT", Metrics.GUTTER, -6)
+  sortDropdown:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
+  sortDropdown:SetPoint("CENTER", headerRightBottom, "CENTER", 0, 0)
   self:InitializeSortDropdown(sortDropdown)
+  headerCount:SetPoint("RIGHT", sortDropdown, "LEFT", -(Metrics.GAP_L or Metrics.GAP_M or (Metrics.GUTTER or 10)), 0)
 
-  local filterContainer = CreateFrame("Frame", nil, headerRow2)
-  filterContainer:SetPoint("RIGHT", headerRow2, "RIGHT", 0, 0)
-  filterContainer:SetPoint("BOTTOM", headerRow2, "BOTTOM", 0, 0)
+  local filterContainer = CreateFrame("Frame", nil, headerRightBottom)
+  filterContainer:SetPoint("LEFT", headerRightBottom, "LEFT", 0, 0)
+  filterContainer:SetPoint("RIGHT", sortDropdown, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER * 0.5), 0)
+  filterContainer:SetPoint("TOP", headerRightBottom, "TOP", 0, 0)
+  filterContainer:SetPoint("BOTTOM", headerRightBottom, "BOTTOM", 0, 0)
   filterContainer:SetHeight(Metrics.BTN_H)
   self:SetFrame("filterContainer", filterContainer)
   local lastButton
@@ -240,7 +296,7 @@ function ListUI:Create(uiFrame)
     local button = CreateFrame("Button", nil, filterContainer)
     button:SetSize(Metrics.BTN_H, Metrics.BTN_H)
     if lastButton then
-      button:SetPoint("RIGHT", lastButton, "LEFT", -Metrics.GUTTER * 0.6, 0)
+      button:SetPoint("RIGHT", lastButton, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER * 0.5), 0)
     else
       button:SetPoint("RIGHT", filterContainer, "RIGHT", 0, 0)
     end
@@ -276,25 +332,33 @@ function ListUI:Create(uiFrame)
   local listBlock = uiFrame.listBlock or uiFrame.ListInset
   if not listBlock then
     listBlock = self:SafeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate3")
-    listBlock:SetPoint("TOPLEFT", uiFrame, "TOPLEFT", Metrics.PAD, -Metrics.HEADER_H)
-    listBlock:SetPoint("BOTTOMLEFT", uiFrame, "BOTTOMLEFT", Metrics.PAD, Metrics.PAD)
+    local host = uiFrame.BodyFrame or uiFrame
+    local padInset = Metrics.PAD_INSET or Metrics.PAD or 10
+    listBlock:SetPoint("TOPLEFT", host, "TOPLEFT", padInset, -padInset)
+    listBlock:SetPoint("BOTTOMLEFT", host, "BOTTOMLEFT", padInset, padInset)
     listBlock:SetWidth(380)
     uiFrame.listBlock = listBlock
   end
   self:SetFrame("listBlock", listBlock)
 
   local listHeaderRow = self:EnsureListHeaderRow()
-  local tabsAnchor = self:SafeCreateFrame("Frame", nil, listHeaderRow)
-  tabsAnchor:SetPoint("RIGHT", listHeaderRow, "RIGHT", 0, 0)
-  tabsAnchor:SetPoint("BOTTOM", listHeaderRow, "BOTTOM", 0, 0)
-  tabsAnchor:SetHeight(Metrics.BTN_H)
-  tabsAnchor:SetWidth((Metrics.BTN_W * 2) + Metrics.GUTTER)
-  self:SetFrame("listHeaderTabsAnchor", tabsAnchor)
+  local tabsRail = self:GetFrame("listTabsRail")
+  if not tabsRail then
+    tabsRail = self:SafeCreateFrame("Frame", nil, listHeaderRow)
+    tabsRail:SetPoint("RIGHT", listHeaderRow, "RIGHT", -((Metrics.PAD_INSET or Metrics.PAD) + (Metrics.GAP_S or 6)), 0)
+    tabsRail:SetPoint("BOTTOM", listHeaderRow, "BOTTOM", 0, 0)
+    tabsRail:SetHeight(Metrics.LIST_HEADER_H)
+    tabsRail:SetWidth((Metrics.BTN_W * 2) + (Metrics.GAP_S or Metrics.GUTTER))
+    self:SetFrame("listTabsRail", tabsRail)
+    if Internal and Internal.registerGridTarget then
+      Internal.registerGridTarget("list-tabs-rail", tabsRail)
+    end
+  end
 
-  local locationsModeButton = self:SafeCreateFrame("Button", nil, tabsAnchor, "UIPanelButtonTemplate")
+  local locationsModeButton = self:SafeCreateFrame("Button", nil, tabsRail, "UIPanelButtonTemplate")
   if locationsModeButton then
     locationsModeButton:SetSize(Metrics.BTN_W, Metrics.BTN_H)
-    locationsModeButton:SetPoint("RIGHT", tabsAnchor, "RIGHT", 0, 0)
+    locationsModeButton:SetPoint("RIGHT", tabsRail, "RIGHT", 0, 0)
     locationsModeButton:SetText("Locations")
     locationsModeButton:SetScript("OnClick", function()
       local modes = self:GetListModes()
@@ -303,13 +367,13 @@ function ListUI:Create(uiFrame)
     self:SetFrame("locationsModeButton", locationsModeButton)
   end
 
-  local booksModeButton = self:SafeCreateFrame("Button", nil, tabsAnchor, "UIPanelButtonTemplate")
+  local booksModeButton = self:SafeCreateFrame("Button", nil, tabsRail, "UIPanelButtonTemplate")
   if booksModeButton then
     booksModeButton:SetSize(Metrics.BTN_W - 12, Metrics.BTN_H)
     if locationsModeButton then
-      booksModeButton:SetPoint("RIGHT", locationsModeButton, "LEFT", -Metrics.GUTTER * 0.5, 0)
+      booksModeButton:SetPoint("RIGHT", locationsModeButton, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER * 0.5), 0)
     else
-      booksModeButton:SetPoint("RIGHT", tabsAnchor, "RIGHT", 0, 0)
+      booksModeButton:SetPoint("RIGHT", tabsRail, "RIGHT", 0, 0)
     end
     booksModeButton:SetText("Books")
     booksModeButton:SetScript("OnClick", function()
@@ -320,26 +384,20 @@ function ListUI:Create(uiFrame)
   end
 
   local listHeader = self:EnsureListHeader()
-  if listHeader and tabsAnchor then
+  if listHeader and tabsRail then
     listHeader:ClearAllPoints()
     listHeader:SetPoint("LEFT", listHeaderRow, "LEFT", 0, 0)
-    listHeader:SetPoint("RIGHT", tabsAnchor, "LEFT", -Metrics.GUTTER, 0)
+    listHeader:SetPoint("RIGHT", tabsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
   end
 
-  local breadcrumb = listBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  breadcrumb:SetPoint("TOPLEFT", listHeaderRow, "BOTTOMLEFT", 0, -2)
-  breadcrumb:SetPoint("RIGHT", listBlock, "RIGHT", -Metrics.PAD, 0)
-  breadcrumb:SetJustifyH("LEFT")
-  breadcrumb:SetJustifyV("MIDDLE")
-  breadcrumb:SetWordWrap(false)
-  breadcrumb:SetText("")
-  breadcrumb:Hide()
-  self:SetFrame("locationBreadcrumb", breadcrumb)
+  local tipRow = self:EnsureListTipRow()
+  self:EnsureInfoText()
 
   local listSeparator = listBlock:CreateTexture(nil, "ARTWORK")
   listSeparator:SetHeight(1)
-  listSeparator:SetPoint("TOPLEFT", breadcrumb, "BOTTOMLEFT", -Metrics.PAD * 0.5, -Metrics.GUTTER * 0.4)
-  listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
+  local inset = Metrics.PAD_INSET or Metrics.PAD or 8
+  listSeparator:SetPoint("TOPLEFT", tipRow or listHeaderRow, "BOTTOMLEFT", -(inset * 0.25), -(Metrics.GAP_XS or 4))
+  listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -inset, -inset)
   listSeparator:SetColorTexture(0.25, 0.25, 0.25, 1)
   self:SetFrame("listSeparator", listSeparator)
 
@@ -348,14 +406,18 @@ function ListUI:Create(uiFrame)
     self:LogError("Unable to create list scroll frame.")
     return
   end
-  scrollFrame:SetPoint("TOPLEFT", listHeaderRow, "BOTTOMLEFT", 0, -Metrics.GUTTER)
-  scrollFrame:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -Metrics.PAD, Metrics.PAD)
+  local scrollAnchor = listSeparator or tipRow or listHeaderRow
+  scrollFrame:SetPoint("TOPLEFT", scrollAnchor, "BOTTOMLEFT", 0, -(Metrics.GAP_M or Metrics.GUTTER))
+  scrollFrame:SetPoint("BOTTOMRIGHT", listBlock, "BOTTOMRIGHT", -(Metrics.PAD_INSET or Metrics.PAD), Metrics.PAD_INSET or Metrics.PAD)
   self:SetFrame("scrollFrame", scrollFrame)
+  if Internal and Internal.registerGridTarget then
+    Internal.registerGridTarget("list-scroll", scrollFrame)
+  end
 
   local scrollChild = CreateFrame("Frame", nil, scrollFrame)
   scrollChild:SetSize(336, 1)
   scrollChild:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 0)
-  scrollChild:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", -14, 0)
+  scrollChild:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", -(Metrics.SCROLLBAR_GUTTER or 18), 0)
   scrollFrame:SetScrollChild(scrollChild)
   self:SetFrame("scrollChild", scrollChild)
 
@@ -373,7 +435,6 @@ function ListUI:Create(uiFrame)
     frame:SetVerticalScroll(newScroll)
   end)
 
-  self:EnsureInfoText()
   self:UpdateSearchClearButton()
   self:UpdateSortDropdown()
   self:UpdateCountsDisplay()
@@ -393,33 +454,13 @@ function ListUI:UpdateListModeUI()
     end
   end
 
-  local breadcrumb = self:GetFrame("locationBreadcrumb")
-  if breadcrumb and hasMethod(breadcrumb, "SetText") then
-    local shouldShow = mode == modes.LOCATIONS and self:GetLocationState().root
-    if shouldShow then
-      breadcrumb:SetText("|cFFCCCCCC" .. (self:GetLocationBreadcrumbText() or "") .. "|r")
-      if hasMethod(breadcrumb, "Show") then
-        breadcrumb:Show()
-      end
-    else
-      breadcrumb:SetText("")
-      if hasMethod(breadcrumb, "Hide") then
-        breadcrumb:Hide()
-      end
-    end
-  end
-
   local listSeparator = self:GetFrame("listSeparator")
   local listBlock = self:GetFrame("listBlock")
   if hasMethod(listSeparator, "ClearAllPoints") and hasMethod(listSeparator, "SetPoint") and listBlock then
     listSeparator:ClearAllPoints()
-    local anchorTarget = listHeader
-    if mode == modes.LOCATIONS and breadcrumb and hasMethod(breadcrumb, "IsShown") and breadcrumb:IsShown() then
-      anchorTarget = breadcrumb
-    end
-    anchorTarget = anchorTarget or listBlock
-    listSeparator:SetPoint("TOPLEFT", anchorTarget, "BOTTOMLEFT", -Metrics.PAD * 0.25, -Metrics.GUTTER * 0.5)
-    listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
+    local inset = Metrics.PAD_INSET or Metrics.PAD or 8
+    listSeparator:SetPoint("TOPLEFT", self:GetFrame("listTipRow") or listHeader or listBlock, "BOTTOMLEFT", -(inset * 0.25), -(Metrics.GAP_XS or 4))
+    listSeparator:SetPoint("TOPRIGHT", listBlock, "TOPRIGHT", -inset, -inset)
   end
 
   local booksModeButton = self:GetFrame("booksModeButton")

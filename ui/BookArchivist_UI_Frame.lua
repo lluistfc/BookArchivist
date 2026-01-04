@@ -11,6 +11,21 @@ local FrameUI = addonRoot.UI.Frame
 
 local initializationError
 
+local function syncGridOverlayPreference()
+	if not Internal or not Internal.setGridOverlayVisible then
+		return
+	end
+	local db
+	if addonRoot and addonRoot.GetDB then
+		db = addonRoot:GetDB()
+	elseif BookArchivistDB then
+		db = BookArchivistDB
+	end
+	local opts = db and db.options or nil
+	local wantsDebug = opts and opts.uiDebug and true or false
+	Internal.setGridOverlayVisible(wantsDebug)
+end
+
 local function debugPrint(...)
 	BookArchivist:DebugPrint(...)
 end
@@ -85,6 +100,7 @@ local function setupUI()
 	end
 
 	Internal.setUIFrame(frame)
+	syncGridOverlayPreference()
 	if Internal.updateListModeUI then
 		Internal.updateListModeUI()
 	end
@@ -112,6 +128,7 @@ local function ensureUI()
 			debugPrint("[BookArchivist] ensureUI: repairing missing initialization flag")
 			Internal.setIsInitialized(true)
 		end
+		syncGridOverlayPreference()
 		debugPrint(string.format(
 			"[BookArchivist] ensureUI: already initialized (isInitialized=%s needsRefresh=%s)",
 			tostring(Internal.getIsInitialized()),
@@ -135,6 +152,7 @@ local function ensureUI()
 
 	initializationError = nil
 	Internal.setIsInitialized(true)
+	syncGridOverlayPreference()
 	debugPrint("[BookArchivist] ensureUI: initialized via setup (needsRefresh=" .. tostring(Internal.getNeedsRefresh()) .. ")")
 	if Internal.getNeedsRefresh() and Internal.flushPendingRefresh then
 		Internal.flushPendingRefresh()
