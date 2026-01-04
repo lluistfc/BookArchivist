@@ -273,3 +273,109 @@ local function formatLocationLine(loc)
 end
 Internal.formatLocationLine = formatLocationLine
 
+local gridOverlay = {
+	targets = {},
+	outlines = {},
+	visible = false,
+}
+
+local function createGridOutline(frame)
+	if not frame or not frame.CreateTexture then
+		return nil
+	end
+	local color = { 0, 0.85, 1, 0.6 }
+	local thickness = 1
+	local segments = {}
+	local function addSegment()
+		local tex = frame:CreateTexture(nil, "OVERLAY", nil, 7)
+		tex:SetColorTexture(color[1], color[2], color[3], color[4])
+		tex:Hide()
+		table.insert(segments, tex)
+		return tex
+	end
+	local top = addSegment()
+	top:SetPoint("TOPLEFT", frame, "TOPLEFT", -1, 1)
+	top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 1, 1)
+	top:SetHeight(thickness)
+	local bottom = addSegment()
+	bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -1, -1)
+	bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 1, -1)
+	bottom:SetHeight(thickness)
+	local left = addSegment()
+	left:SetPoint("TOPLEFT", frame, "TOPLEFT", -1, 1)
+	left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -1, -1)
+	left:SetWidth(thickness)
+	local right = addSegment()
+	right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 1, 1)
+	right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 1, -1)
+	right:SetWidth(thickness)
+	return { frame = frame, segments = segments }
+end
+
+local function ensureGridOutline(name)
+	local target = gridOverlay.targets[name]
+	if not target then
+		return nil
+	end
+	local outline = gridOverlay.outlines[name]
+	if outline and outline.frame ~= target then
+		for _, tex in ipairs(outline.segments) do
+			tex:Hide()
+			ex:SetParent(nil)
+		end
+		outline = nil
+	end
+	if not outline then
+		outline = createGridOutline(target)
+		gridOverlay.outlines[name] = outline
+	end
+	return outline
+end
+
+local function applyGridVisibility(name, visible)
+	local outline = visible and ensureGridOutline(name) or gridOverlay.outlines[name]
+	if not outline then
+		return
+	end
+	for _, tex in ipairs(outline.segments) do
+		if visible then
+			tex:Show()
+		else
+			tex:Hide()
+		end
+	end
+end
+
+function Internal.registerGridTarget(name, frame)
+	if not name or not frame then
+		return
+	end
+	gridOverlay.targets[name] = frame
+	if gridOverlay.visible then
+		applyGridVisibility(name, true)
+	else
+		local outline = gridOverlay.outlines[name]
+		if outline then
+			for _, tex in ipairs(outline.segments) do
+				tex:Hide()
+			end
+		end
+	end
+end
+
+function Internal.setGridOverlayVisible(state)
+	gridOverlay.visible = state and true or false
+	for name in pairs(gridOverlay.targets) do
+		applyGridVisibility(name, gridOverlay.visible)
+	end
+end
+
+function Internal.toggleGridOverlay()
+	Internal.setGridOverlayVisible(not gridOverlay.visible)
+	return gridOverlay.visible
+end
+
+function Internal.getGridOverlayVisible()
+	return gridOverlay.visible
+end
+

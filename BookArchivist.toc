@@ -11,6 +11,7 @@ core/BookArchivist_Location.lua
 core/BookArchivist_Capture.lua
 core/BookArchivist_Minimap.lua
 core/BookArchivist.lua
+ui/BookArchivist_UI_Metrics.lua
 ui/list/BookArchivist_UI_List.lua
 ui/list/BookArchivist_UI_List_Layout.lua
 ui/list/BookArchivist_UI_List_Filter.lua

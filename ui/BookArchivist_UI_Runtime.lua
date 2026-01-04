@@ -6,6 +6,14 @@ end
 
 local Internal = addonRoot.UI.Internal
 
+local function trim(msg)
+	if type(msg) ~= "string" then
+		return ""
+	end
+	local cleaned = msg:match("^%s*(.-)%s*$")
+	return cleaned or ""
+end
+
 local function call(fn)
 	if type(fn) == "function" then
 		return fn()
@@ -141,9 +149,26 @@ addonRoot.ToggleUI = toggleUI
 SLASH_BOOKARCHIVIST1 = "/ba"
 SLASH_BOOKARCHIVIST2 = "/bookarchivist"
 SlashCmdList = SlashCmdList or {}
-SlashCmdList["BOOKARCHIVIST"] = function()
-	local ok, err = pcall(toggleUI)
-	if not ok and Internal.logError then
+SlashCmdList["BOOKARCHIVIST"] = function(msg)
+	local command = trim(msg):lower()
+	if command == "uigrid" then
+		local ok = ensureUI()
+		if not ok then
+			return
+		end
+		if Internal.toggleGridOverlay then
+			local state = Internal.toggleGridOverlay()
+			local statusText = state and "Alignment grid enabled." or "Alignment grid hidden."
+			if Internal.chatMessage then
+				Internal.chatMessage("|cFF00FF00BookArchivist:|r " .. statusText)
+			elseif print then
+				print("[BookArchivist] " .. statusText)
+			end
+		end
+		return
+	end
+	local okCall, err = pcall(toggleUI)
+	if not okCall and Internal.logError then
 		Internal.logError(tostring(err))
 	end
 end

@@ -7,19 +7,27 @@ BookArchivist.UI = BookArchivist.UI or {}
 
 local FrameUI = BookArchivist.UI.Frame or {}
 BookArchivist.UI.Frame = FrameUI
+local Internal = BookArchivist.UI.Internal
+
+local Metrics = BookArchivist.UI.Metrics or {
+	PAD = 12,
+	GUTTER = 10,
+	HEADER_H = 70,
+	SUBHEADER_H = 34,
+	READER_HEADER_H = 54,
+	ROW_H = 36,
+	BTN_H = 22,
+	BTN_W = 90,
+}
 
 local DEFAULT_WIDTH = 900
 local DEFAULT_HEIGHT = 600
 local DEFAULT_PORTRAIT = "Interface\\Icons\\INV_Misc_Book_09"
 local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"
 local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
-local HEADER_TOP_OFFSET = -32
-local HEADER_LEFT_OFFSET = 56
-local HEADER_RIGHT_OFFSET = -34
-local HEADER_HEIGHT = 78
-local CONTENT_BOTTOM_OFFSET = 38
 local MIN_LIST_WIDTH = 260
 local MIN_READER_WIDTH = 320
+local HEADER_ROW_GAP = math.max(4, math.floor((Metrics.GUTTER or 10) * 0.5))
 
 local function configureDrag(frame)
 	frame:SetMovable(true)
@@ -127,19 +135,38 @@ local function createHeaderBar(frame, safeCreateFrame)
 	if not header then
 		return nil
 	end
-	header:SetPoint("TOPLEFT", frame, "TOPLEFT", HEADER_LEFT_OFFSET, HEADER_TOP_OFFSET)
-	header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", HEADER_RIGHT_OFFSET, HEADER_TOP_OFFSET)
-	header:SetHeight(HEADER_HEIGHT)
+	header:SetPoint("TOPLEFT", frame, "TOPLEFT", Metrics.PAD, -Metrics.PAD)
+	header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
+	header:SetHeight(Metrics.HEADER_H)
 	header.TitleRegion = header:CreateTexture(nil, "BACKGROUND", nil, -1)
 	header.TitleRegion:SetAllPoints(true)
 	header.TitleRegion:SetColorTexture(0, 0, 0, 0.45)
+	local usableHeight = Metrics.HEADER_H - (Metrics.PAD * 2) - HEADER_ROW_GAP
+	local row1Height = math.max(24, math.floor(usableHeight * 0.55))
+	local row2Height = math.max(22, usableHeight - row1Height)
+	local row1 = safeCreateFrame("Frame", nil, header)
+	row1:SetPoint("TOPLEFT", header, "TOPLEFT", Metrics.PAD, -Metrics.PAD)
+	row1:SetPoint("TOPRIGHT", header, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
+	row1:SetHeight(row1Height)
+	header.Row1 = row1
+	local row2 = safeCreateFrame("Frame", nil, header)
+	row2:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", Metrics.PAD, Metrics.PAD)
+	row2:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", -Metrics.PAD, Metrics.PAD)
+	row2:SetPoint("TOPLEFT", row1, "BOTTOMLEFT", 0, -HEADER_ROW_GAP)
+	row2:SetHeight(row2Height)
+	header.Row2 = row2
 	frame.HeaderFrame = header
+	frame.HeaderRow1 = row1
+	frame.HeaderRow2 = row2
+	if Internal and Internal.registerGridTarget then
+		Internal.registerGridTarget("header", header)
+	end
 	return header
 end
 
-local function clampListWidth(content, width)
-	local totalWidth = content:GetWidth() or (DEFAULT_WIDTH - (HEADER_LEFT_OFFSET + math.abs(HEADER_RIGHT_OFFSET)))
-	local maxWidth = math.max(MIN_LIST_WIDTH, totalWidth - MIN_READER_WIDTH)
+local function clampListWidth(container, width)
+	local available = (container and container:GetWidth()) or (DEFAULT_WIDTH - (Metrics.PAD * 2))
+	local maxWidth = math.max(MIN_LIST_WIDTH, available - MIN_READER_WIDTH - HEADER_ROW_GAP)
 	return math.max(MIN_LIST_WIDTH, math.min(width, maxWidth))
 end
 
@@ -164,40 +191,44 @@ end
 
 local function createContentLayout(frame, safeCreateFrame, opts)
 	local header = frame.HeaderFrame or createHeaderBar(frame, safeCreateFrame)
-	local content = safeCreateFrame("Frame", nil, frame)
-	if not content then
+	local body = safeCreateFrame("Frame", nil, frame)
+	if not body then
 		return nil
 	end
-	content:SetPoint("TOPLEFT", header or frame, "BOTTOMLEFT", 0, -12)
-	content:SetPoint("TOPRIGHT", header or frame, "BOTTOMRIGHT", 0, -12)
-	content:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", HEADER_LEFT_OFFSET, CONTENT_BOTTOM_OFFSET)
-	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", HEADER_RIGHT_OFFSET, CONTENT_BOTTOM_OFFSET)
-	frame.ContentFrame = content
+	body:SetPoint("TOPLEFT", header or frame, "BOTTOMLEFT", 0, -Metrics.GUTTER)
+	body:SetPoint("TOPRIGHT", header or frame, "BOTTOMRIGHT", 0, -Metrics.GUTTER)
+	body:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", Metrics.PAD, Metrics.PAD)
+	body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -Metrics.PAD, Metrics.PAD)
+	frame.ContentFrame = body
+	frame.BodyFrame = body
+	if Internal and Internal.registerGridTarget then
+		Internal.registerGridTarget("body", body)
+	end
 
-	local listInset = safeCreateFrame("Frame", nil, content, "InsetFrameTemplate3")
-	local readerInset = safeCreateFrame("Frame", nil, content, "InsetFrameTemplate3")
+	local listInset = safeCreateFrame("Frame", nil, body, "InsetFrameTemplate3")
+	local readerInset = safeCreateFrame("Frame", nil, body, "InsetFrameTemplate3")
 	if not listInset or not readerInset then
 		return nil
 	end
 
 	local initialWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
-	listInset:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
-	listInset:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, 0)
-	listInset:SetWidth(initialWidth)
-	readerInset:SetPoint("TOPRIGHT", content, "TOPRIGHT", 0, 0)
-	readerInset:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
+	local gutterBetween = math.max(6, Metrics.GUTTER)
+	listInset:SetPoint("TOPLEFT", body, "TOPLEFT", 0, 0)
+	listInset:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", 0, 0)
+	readerInset:SetPoint("TOPRIGHT", body, "TOPRIGHT", 0, 0)
+	readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", 0, 0)
 
-	local splitter = safeCreateFrame("Frame", nil, content)
+	local splitter = safeCreateFrame("Frame", nil, body)
 	splitter:SetPoint("TOPLEFT", listInset, "TOPRIGHT", 0, 0)
 	splitter:SetPoint("BOTTOMLEFT", listInset, "BOTTOMRIGHT", 0, 0)
-	splitter:SetWidth(10)
+	splitter:SetWidth(math.max(8, math.floor(gutterBetween * 0.6)))
 	splitter:EnableMouse(true)
 	splitter:RegisterForDrag("LeftButton")
 	configureSplitter(splitter)
 	frame.SplitterFrame = splitter
 
-	readerInset:SetPoint("TOPLEFT", splitter, "TOPRIGHT", 6, 0)
-	readerInset:SetPoint("BOTTOMLEFT", splitter, "BOTTOMRIGHT", 6, 0)
+	readerInset:SetPoint("TOPLEFT", splitter, "TOPRIGHT", gutterBetween, 0)
+	readerInset:SetPoint("BOTTOMLEFT", splitter, "BOTTOMRIGHT", gutterBetween, 0)
 
 	frame.listBlock = listInset
 	frame.ListInset = listInset
@@ -205,11 +236,11 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 	frame.ReaderInset = readerInset
 
 	local layoutState = {
-		currentWidth = clampListWidth(content, initialWidth),
+		currentWidth = clampListWidth(body, initialWidth),
 	}
 
 	local function applyWidth(width, skipPersist)
-		layoutState.currentWidth = clampListWidth(content, width)
+		layoutState.currentWidth = clampListWidth(body, width)
 		listInset:SetWidth(layoutState.currentWidth)
 		frame.currentListWidth = layoutState.currentWidth
 		if not skipPersist and opts.onListWidthChanged then
@@ -219,7 +250,7 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 
 	applyWidth(initialWidth, true)
 
-	content:SetScript("OnSizeChanged", function()
+	body:SetScript("OnSizeChanged", function()
 		applyWidth(layoutState.currentWidth, true)
 	end)
 
@@ -239,9 +270,9 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 			if GetCursorPosition then
 				cursorX = select(1, GetCursorPosition()) / scale
 			end
-			local contentLeft = content:GetLeft()
-			if contentLeft then
-				local desired = cursorX - contentLeft
+			local bodyLeft = body:GetLeft()
+			if bodyLeft then
+				local desired = cursorX - bodyLeft
 				applyWidth(desired, true)
 			end
 		end)

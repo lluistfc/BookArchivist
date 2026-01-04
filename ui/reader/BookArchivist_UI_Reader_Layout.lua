@@ -4,6 +4,18 @@ if not ReaderUI then
 	return
 end
 
+local Metrics = BookArchivist.UI.Metrics or {
+	PAD = 12,
+	GUTTER = 10,
+	HEADER_H = 70,
+	SUBHEADER_H = 34,
+	READER_HEADER_H = 54,
+	ROW_H = 36,
+	BTN_H = 22,
+	BTN_W = 90,
+}
+local Internal = BookArchivist.UI.Internal
+
 local rememberWidget = ReaderUI.__rememberWidget
 local getWidget = ReaderUI.__getWidget
 local getAddon = ReaderUI.__getAddon
@@ -119,7 +131,7 @@ local function configureDeleteButton(button)
 	if not button then
 		return
 	end
-	button:SetSize(100, 22)
+	button:SetSize(Metrics.BTN_W + 20, Metrics.BTN_H)
 	button:SetText("Delete")
 	button:SetNormalFontObject("GameFontNormal")
 	button:Disable()
@@ -225,9 +237,9 @@ local function anchorDeleteButton(button, parent)
 	if not button or not parent then
 		return
 	end
-	button:SetSize(120, 24)
+	button:SetSize(Metrics.BTN_W + 20, Metrics.BTN_H)
 	button:ClearAllPoints()
-	button:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -12, -8)
+	button:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
 	local levelSource = (parent.GetFrameLevel and parent:GetFrameLevel()) or 0
 	button:SetFrameLevel(math.min(levelSource + 25, 128))
 	local strataSource
@@ -286,56 +298,67 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 
 	state.uiFrame = uiFrame
 	local parent = anchorFrame or uiFrame
-	local readerBlock = safeCreateFrame and safeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate")
+	local readerBlock = uiFrame.ReaderInset or uiFrame.readerBlock
+	if not readerBlock and safeCreateFrame then
+		readerBlock = safeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate")
+		readerBlock:SetPoint("TOPLEFT", parent, "TOPRIGHT", 4, 0)
+		readerBlock:SetPoint("BOTTOMRIGHT", uiFrame, "BOTTOMRIGHT", -6, 4)
+		uiFrame.readerBlock = readerBlock
+	end
 	if not readerBlock then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
 			BookArchivist.UI.Internal.logError("Unable to create reader panel.")
 		end
 		return
 	end
-	readerBlock:SetPoint("TOPLEFT", parent, "TOPRIGHT", 4, 0)
-	readerBlock:SetPoint("BOTTOMRIGHT", uiFrame, "BOTTOMRIGHT", -6, 4)
-	uiFrame.readerBlock = readerBlock
 	state.readerBlock = readerBlock
 
-	local bookTitle = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	local readerHeader = safeCreateFrame and safeCreateFrame("Frame", nil, readerBlock)
+	if not readerHeader then
+		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
+			BookArchivist.UI.Internal.logError("Unable to create reader header.")
+		end
+		return
+	end
+	readerHeader:SetPoint("TOPLEFT", readerBlock, "TOPLEFT", Metrics.PAD, -Metrics.PAD)
+	readerHeader:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -Metrics.PAD, -Metrics.PAD)
+	readerHeader:SetHeight(Metrics.READER_HEADER_H)
+	if rememberWidget then
+		rememberWidget("readerHeader", readerHeader)
+	end
+	state.readerHeader = readerHeader
+	if Internal and Internal.registerGridTarget then
+		Internal.registerGridTarget("reader-header", readerHeader)
+	end
+
+	local bookTitle = readerHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	state.bookTitle = bookTitle
 	if rememberWidget then
 		rememberWidget("bookTitle", bookTitle)
 	end
-	bookTitle:SetPoint("TOPLEFT", readerBlock, "TOPLEFT", 12, -12)
-	bookTitle:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -160, -12)
 	bookTitle:SetJustifyH("LEFT")
+	bookTitle:SetJustifyV("MIDDLE")
 	bookTitle:SetText("Select a book from the list")
 	bookTitle:SetTextColor(1, 0.82, 0)
 	uiFrame.bookTitle = bookTitle
 
-	local metaDisplay = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	state.metaDisplay = metaDisplay
-	if rememberWidget then
-		rememberWidget("meta", metaDisplay)
+	local navRow = safeCreateFrame and safeCreateFrame("Frame", nil, readerHeader)
+	if navRow then
+		navRow:SetPoint("BOTTOMLEFT", readerHeader, "BOTTOMLEFT", 0, 0)
+		navRow:SetPoint("BOTTOMRIGHT", readerHeader, "BOTTOMRIGHT", 0, 0)
+		navRow:SetHeight(Metrics.BTN_H + 4)
+		if rememberWidget then
+			rememberWidget("readerNavRow", navRow)
+		end
 	end
-	metaDisplay:SetPoint("TOPLEFT", bookTitle, "BOTTOMLEFT", 0, -6)
-	metaDisplay:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -12, -6)
-	metaDisplay:SetJustifyH("LEFT")
-	metaDisplay:SetSpacing(1.5)
-	metaDisplay:SetWordWrap(true)
-	metaDisplay:SetText("")
-	uiFrame.meta = metaDisplay
+	bookTitle:ClearAllPoints()
+	bookTitle:SetPoint("TOPLEFT", readerHeader, "TOPLEFT", 0, 0)
+	bookTitle:SetPoint("BOTTOMRIGHT", (navRow or readerHeader), "TOPRIGHT", -(Metrics.BTN_W + (Metrics.GUTTER * 3)), -Metrics.GUTTER * 0.25)
 
-	local pageControls = CreateFrame("Frame", nil, readerBlock)
-	pageControls:SetPoint("TOPLEFT", metaDisplay, "BOTTOMLEFT", -2, -8)
-	pageControls:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -12, -8)
-	pageControls:SetHeight(32)
-	if rememberWidget then
-		rememberWidget("pageControls", pageControls)
-	end
-	state.pageControls = pageControls
-
-	local prevButton = safeCreateFrame and safeCreateFrame("Button", nil, pageControls, "UIPanelButtonTemplate")
+	local prevButton = safeCreateFrame and safeCreateFrame("Button", nil, navRow or readerHeader, "UIPanelButtonTemplate")
 	if prevButton then
-		prevButton:SetSize(70, 22)
-		prevButton:SetPoint("LEFT", pageControls, "LEFT", 0, 0)
+		prevButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
+		prevButton:SetPoint("LEFT", navRow or readerHeader, "LEFT", 0, 0)
 		prevButton:SetText("< Prev")
 		prevButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
@@ -348,10 +371,10 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.prevButton = prevButton
 
-	local nextButton = safeCreateFrame and safeCreateFrame("Button", nil, pageControls, "UIPanelButtonTemplate")
+	local nextButton = safeCreateFrame and safeCreateFrame("Button", nil, navRow or readerHeader, "UIPanelButtonTemplate")
 	if nextButton then
-		nextButton:SetSize(70, 22)
-		nextButton:SetPoint("RIGHT", pageControls, "RIGHT", 0, 0)
+		nextButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
+		nextButton:SetPoint("RIGHT", navRow or readerHeader, "RIGHT", 0, 0)
 		nextButton:SetText("Next >")
 		nextButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
@@ -364,18 +387,35 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.nextButton = nextButton
 
-	local pageIndicator = pageControls:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	pageIndicator:SetPoint("CENTER", pageControls, "CENTER", 0, 0)
+	local pageIndicatorParent = navRow or readerHeader
+	local pageIndicator = pageIndicatorParent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	pageIndicator:SetPoint("CENTER", pageIndicatorParent, "CENTER", 0, 0)
+	pageIndicator:SetJustifyH("CENTER")
+	pageIndicator:SetJustifyV("MIDDLE")
 	pageIndicator:SetText("Page 1 / 1")
 	state.pageIndicator = pageIndicator
 	if rememberWidget then
 		rememberWidget("pageIndicator", pageIndicator)
 	end
 
+	local metaDisplay = readerBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	state.metaDisplay = metaDisplay
+	if rememberWidget then
+		rememberWidget("meta", metaDisplay)
+	end
+	metaDisplay:SetPoint("TOPLEFT", readerHeader, "BOTTOMLEFT", 0, -Metrics.GUTTER)
+	metaDisplay:SetPoint("RIGHT", readerBlock, "RIGHT", -Metrics.PAD, 0)
+	metaDisplay:SetJustifyH("LEFT")
+	metaDisplay:SetJustifyV("TOP")
+	metaDisplay:SetSpacing(1.5)
+	metaDisplay:SetWordWrap(true)
+	metaDisplay:SetText("")
+	uiFrame.meta = metaDisplay
+
 	local divider = readerBlock:CreateTexture(nil, "ARTWORK")
 	divider:SetHeight(1)
-	divider:SetPoint("TOPLEFT", pageControls, "BOTTOMLEFT", -4, -6)
-	divider:SetPoint("TOPRIGHT", pageControls, "BOTTOMRIGHT", 4, -6)
+	divider:SetPoint("TOPLEFT", metaDisplay, "BOTTOMLEFT", -Metrics.PAD * 0.25, -Metrics.GUTTER * 0.5)
+	divider:SetPoint("TOPRIGHT", readerBlock, "TOPRIGHT", -Metrics.PAD, -Metrics.GUTTER * 0.5)
 	divider:SetColorTexture(0.25, 0.25, 0.25, 0.5)
 
 	local textScroll = safeCreateFrame and safeCreateFrame("ScrollFrame", "BookArchivistTextScroll", readerBlock, "UIPanelScrollFrameTemplate")
@@ -389,8 +429,8 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		rememberWidget("textScroll", textScroll)
 	end
 	state.textScroll = textScroll
-	textScroll:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", 4, -6)
-	textScroll:SetPoint("BOTTOMRIGHT", readerBlock, "BOTTOMRIGHT", -28, 52)
+	textScroll:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", Metrics.PAD * 0.25, -Metrics.GUTTER)
+	textScroll:SetPoint("BOTTOMRIGHT", readerBlock, "BOTTOMRIGHT", -Metrics.PAD, Metrics.PAD)
 	uiFrame.textScroll = textScroll
 
 	local textChild = CreateFrame("Frame", nil, textScroll)
@@ -407,7 +447,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		rememberWidget("textPlain", textPlain)
 	end
 	state.textPlain = textPlain
-	textPlain:SetPoint("TOPLEFT", 6, -6)
+	textPlain:SetPoint("TOPLEFT", textChild, "TOPLEFT", Metrics.PAD * 0.5, -Metrics.PAD * 0.5)
 	textPlain:SetJustifyH("LEFT")
 	textPlain:SetJustifyV("TOP")
 	textPlain:SetSpacing(3.5)
@@ -422,8 +462,8 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		if rememberWidget then
 			rememberWidget("htmlText", htmlFrame)
 		end
-		htmlFrame:SetPoint("TOPLEFT", 6, -6)
-		htmlFrame:SetPoint("TOPRIGHT", -12, -6)
+		htmlFrame:SetPoint("TOPLEFT", textChild, "TOPLEFT", Metrics.PAD * 0.5, -Metrics.PAD * 0.5)
+		htmlFrame:SetPoint("TOPRIGHT", textChild, "TOPRIGHT", -Metrics.PAD * 0.5, -Metrics.PAD * 0.5)
 		local bodyFont = GameFontNormal or "GameFontNormal"
 		local headingFont = GameFontNormalLarge or bodyFont
 		local subHeadingFont = GameFontHighlight or bodyFont
@@ -444,7 +484,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	local deleteButton = ensureDeleteButton(readerBlock)
+	local deleteButton = ensureDeleteButton(readerHeader)
 	if not deleteButton then
 		deleteDebug("ReaderUI:Create deleteButton creation failed; logging error")
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
@@ -459,8 +499,9 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.countText = countText
 	countText:ClearAllPoints()
-	countText:SetPoint("BOTTOMRIGHT", readerBlock, "BOTTOMRIGHT", -12, 14)
+	countText:SetPoint("BOTTOMRIGHT", readerBlock, "BOTTOMRIGHT", -Metrics.PAD, Metrics.PAD)
 	countText:SetJustifyH("RIGHT")
+	countText:SetJustifyV("MIDDLE")
 	countText:SetText("|cFF888888Books saved as you read them in-game|r")
 	uiFrame.countText = countText
 
