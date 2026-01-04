@@ -43,6 +43,9 @@ local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
 local MIN_LIST_WIDTH = 260
 local MIN_READER_WIDTH = 320
 local HEADER_ROW_GAP = math.max(4, math.floor((Metrics.GUTTER or 10) * 0.5))
+local headerRowGapY = Metrics.GAP_XS or 0
+local headerTopRowHeight = math.max(34, (Metrics.BTN_H or 22) + (Metrics.GAP_S or 6))
+local headerBottomRowHeight = math.max(32, (Metrics.BTN_H or 22) + (Metrics.GAP_S or 6))
 
 --[[
 Layout invariants (Plan v4)
@@ -64,6 +67,26 @@ local function resolveSafeCreateFrame(override)
 		return CreateFrame
 	end
 	return nil
+end
+
+local function createColumnRows(column, safeCreateFrame)
+	if not column then
+		return nil, nil
+	end
+	local top = safeCreateFrame("Frame", nil, column)
+	local bottom = safeCreateFrame("Frame", nil, column)
+	if not top or not bottom then
+		return column, column
+	end
+	top:SetPoint("TOPLEFT", column, "TOPLEFT", 0, 0)
+	top:SetPoint("TOPRIGHT", column, "TOPRIGHT", 0, 0)
+	top:SetHeight(headerTopRowHeight)
+	bottom:SetPoint("BOTTOMLEFT", column, "BOTTOMLEFT", 0, 0)
+	bottom:SetPoint("BOTTOMRIGHT", column, "BOTTOMRIGHT", 0, 0)
+	bottom:SetHeight(headerBottomRowHeight)
+	top:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT", 0, headerRowGapY)
+	top:SetPoint("BOTTOMRIGHT", bottom, "TOPRIGHT", 0, headerRowGapY)
+	return top, bottom
 end
 
 local function ClearAnchors(frame, resetSize)
