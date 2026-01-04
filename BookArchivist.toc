@@ -20,6 +20,7 @@ ui/list/BookArchivist_UI_List_Rows.lua
 ui/reader/BookArchivist_UI_Reader.lua
 ui/reader/BookArchivist_UI_Reader_ArtifactAtlas.lua
 ui/reader/BookArchivist_UI_Reader_HTML.lua
+ui/reader/BookArchivist_UI_Reader_Rich_Parse.lua
 ui/reader/BookArchivist_UI_Reader_Rich.lua
 ui/reader/BookArchivist_UI_Reader_Delete.lua
 ui/reader/BookArchivist_UI_Reader_Layout.lua

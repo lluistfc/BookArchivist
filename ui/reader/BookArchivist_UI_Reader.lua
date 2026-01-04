@@ -115,7 +115,7 @@ local function resetScrollToTop(scroll)
   end
 end
 
-function updateReaderHeight(height)
+local function updateReaderHeight(height)
   if not state.textChild then
     state.textChild = getWidget("textChild")
   end
