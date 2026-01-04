@@ -486,7 +486,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	textScroll:ClearAllPoints()
 	local scrollBar = textScroll.ScrollBar or _G[(textScroll:GetName() or "") .. "ScrollBar"]
 	local sbW = (scrollBar and scrollBar.GetWidth and scrollBar:GetWidth()) or 16
-	local gutter = Metrics.SCROLLBAR_GUTTER or math.ceil(sbW + 10)
+	local gutter = Metrics.SCROLLBAR_GUTTER or math.ceil(sbW + 6)
 	textScroll:SetPoint("TOPLEFT", readerScrollRow or readerBlock, "TOPLEFT", innerPad, -innerPad)
 	textScroll:SetPoint("BOTTOMRIGHT", readerScrollRow or readerBlock, "BOTTOMRIGHT", -innerPad, innerPad)
 	uiFrame.textScroll = textScroll
@@ -545,18 +545,24 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			rememberWidget("htmlText", htmlFrame)
 		end
 		htmlFrame:ClearAllPoints()
-		htmlFrame:SetPoint("TOPLEFT", textChild, "TOPLEFT", textPad, -textPad)
-		htmlFrame:SetPoint("TOPRIGHT", textChild, "TOPRIGHT", -textPad, -textPad)
-		local bodyFont = GameFontNormal or "GameFontNormal"
-		local headingFont = GameFontNormalLarge or bodyFont
-		local subHeadingFont = GameFontHighlight or bodyFont
+		local htmlPad = textPad + 6
+		htmlFrame:SetPoint("TOPLEFT", textChild, "TOPLEFT", htmlPad, -htmlPad)
+		htmlFrame:SetPoint("TOPRIGHT", textChild, "TOPRIGHT", -htmlPad, -htmlPad)
+		htmlFrame:SetPoint("BOTTOMLEFT", textChild, "BOTTOMLEFT", htmlPad, htmlPad)
+		htmlFrame:SetPoint("BOTTOMRIGHT", textChild, "BOTTOMRIGHT", -htmlPad, htmlPad)
+		local bodyFont = GameFontHighlight or GameFontNormal or "GameFontHighlight"
+		local headingFont = GameFontNormalHuge or GameFontNormalLarge or bodyFont
+		local subHeadingFont = GameFontNormalLarge or bodyFont
 		applyHTMLFont(htmlFrame, "p", bodyFont)
 		applyHTMLFont(htmlFrame, "li", bodyFont)
 		applyHTMLFont(htmlFrame, "h1", headingFont)
 		applyHTMLFont(htmlFrame, "h2", subHeadingFont)
 		applyHTMLFont(htmlFrame, "h3", subHeadingFont)
+		applyHTMLSpacing(htmlFrame, "h1", 2)
+		applyHTMLSpacing(htmlFrame, "h2", 2)
+		applyHTMLSpacing(htmlFrame, "h3", 2)
 		applyHTMLSpacing(htmlFrame, "p", 2)
-		applyHTMLSpacing(htmlFrame, "li", 2)
+		applyHTMLSpacing(htmlFrame, "li", 1)
 		htmlFrame:Hide()
 		uiFrame.htmlText = htmlFrame
 	else
