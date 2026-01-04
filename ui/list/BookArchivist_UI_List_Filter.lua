@@ -3,11 +3,17 @@ local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
 local function matches(self, entry, query)
+  local passesFilters = true
+  if self.GetListMode then
+    passesFilters = self:EntryMatchesFilters(entry)
+  end
+
   if query == "" then
-    if self.GetListMode then
-      return self:EntryMatchesFilters(entry)
-    end
-    return true
+    return passesFilters
+  end
+
+  if not passesFilters then
+    return false
   end
 
   query = query:lower()
@@ -24,14 +30,11 @@ local function matches(self, entry, query)
   if entry.pages then
     for _, page in pairs(entry.pages) do
       if has(page) then
-        return self:EntryMatchesFilters(entry)
+        return true
       end
     end
   end
 
-  if self.GetListMode then
-    return self:EntryMatchesFilters(entry)
-  end
   return false
 end
 
