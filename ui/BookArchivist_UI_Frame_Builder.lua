@@ -32,6 +32,20 @@ function FrameUI:Create(opts)
 		return nil, "Unable to create BookArchivist frame."
 	end
 
+	if type(UISpecialFrames) == "table" and frame.GetName then
+		local name = frame:GetName()
+		local alreadyRegistered = false
+		for i = 1, #UISpecialFrames do
+			if UISpecialFrames[i] == name then
+				alreadyRegistered = true
+				break
+			end
+		end
+		if not alreadyRegistered then
+			table.insert(UISpecialFrames, name)
+		end
+	end
+
 	frame:SetSize(opts.width or FrameUI.DEFAULT_WIDTH, opts.height or FrameUI.DEFAULT_HEIGHT)
 	frame:SetPoint(
 		opts.anchorPoint or "CENTER",

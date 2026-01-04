@@ -25,10 +25,23 @@ Key runtime flow:
 - `core/BookArchivist_Minimap.lua` — minimap persistence (angle/state) centralized here.
 - `ui/BookArchivist_UI.lua` — shared UI state & `BookArchivist.UI.Internal` helpers (selection, list mode, widget registry).
 - `ui/BookArchivist_UI_Core.lua` — binds list + reader modules to injected helpers; safe wrappers/logging.
-- `ui/BookArchivist_UI_Frame.lua` + `ui/BookArchivist_UI_Frame_Builder.lua` — build/manage main frame and panes.
+- `ui/BookArchivist_UI_Frame_Layout.lua` + `ui/BookArchivist_UI_Frame_Chrome.lua` — frame body layout/splitter and frame chrome (dragging, portrait, title, options).
+- `ui/BookArchivist_UI_Frame_Builder.lua` — thin orchestrator that wires `Frame` helpers together.
+- `ui/BookArchivist_UI_Frame.lua` — top-level frame entry that calls into the builder.
 - `ui/BookArchivist_UI_Runtime.lua` — orchestration, `/ba` commands, safe refresh sequencing.
-- `ui/list/*` — list layout/filtering/location tree/rows.
-- `ui/reader/*` — reader rendering, metadata, delete behavior.
+- `ui/list/BookArchivist_UI_List.lua` — list controller, modes, wiring into Internal selection.
+- `ui/list/BookArchivist_UI_List_Layout.lua` — list header/search/pagination/scroll layout.
+- `ui/list/BookArchivist_UI_List_Tabs.lua` — list `Books/Locations` tabs, tab parent/rail helpers.
+- `ui/list/BookArchivist_UI_List_Filter.lua` — filter state and controls.
+- `ui/list/BookArchivist_UI_List_Location.lua` — location tree mode and rows.
+- `ui/list/BookArchivist_UI_List_Rows.lua` — row creation, pooling, and update.
+- `ui/reader/BookArchivist_UI_Reader.lua` — reader controller: selection, metadata lines, render pipeline choice.
+- `ui/reader/BookArchivist_UI_Reader_HTML.lua` — shared HTML detection/stripping/normalization helpers.
+- `ui/reader/BookArchivist_UI_Reader_ArtifactAtlas.lua` — local artifact book atlas data and lookup.
+- `ui/reader/BookArchivist_UI_Reader_Rich_Parse.lua` — HTML → block parsing for the rich renderer.
+- `ui/reader/BookArchivist_UI_Reader_Rich.lua` — rich reader: block layout engine and pools.
+- `ui/reader/BookArchivist_UI_Reader_Delete.lua` — delete button behavior and confirmation flow.
+- `ui/reader/BookArchivist_UI_Reader_Layout.lua` — reader header/nav/scroll/text layout.
 - `ui/minimap/*` — minimap button UI (persistence stays in core minimap module).
 - `ui/options/*` — Settings panel + Blizzard Settings integration. :contentReference[oaicite:3]{index=3}
 
