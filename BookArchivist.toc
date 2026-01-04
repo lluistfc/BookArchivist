@@ -27,6 +27,8 @@ ui/minimap/BookArchivist_UI_Minimap.lua
 ui/options/BookArchivist_UI_Options.lua
 ui/BookArchivist_UI.lua
 ui/BookArchivist_UI_Core.lua
+ui/BookArchivist_UI_Frame_Layout.lua
+ui/BookArchivist_UI_Frame_Chrome.lua
 ui/BookArchivist_UI_Frame_Builder.lua
 ui/BookArchivist_UI_Frame.lua
 ui/BookArchivist_UI_Runtime.lua
