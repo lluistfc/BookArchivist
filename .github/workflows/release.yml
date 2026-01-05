@@ -1,0 +1,23 @@
+name: Release Addon to CurseForge
+
+on:
+  push:
+    tags:
+      - "v*" # Run when pushing a version tag like v1.0.3
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required so the packager can generate changelogs
+
+      - name: Package and upload via BigWigs packager
+        uses: BigWigsMods/packager@v2
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          # Optional: also publish GitHub release notes if desired
+          # GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
