@@ -185,14 +185,23 @@ function OptionsUI:Sync()
     local current = BookArchivist:GetLanguage()
     UIDropDownMenu_SetSelectedValue(optionsPanel.languageDropdown, current)
     local L2 = BookArchivist and BookArchivist.L or L
-    local label
+    local labelKey
     if current == "esES" or current == "esMX" then
-	      label = (L2 and L2["LANGUAGE_NAME_SPANISH"]) or "Spanish"
-    elseif current == "caES" then
-	      label = (L2 and L2["LANGUAGE_NAME_CATALAN"]) or "Catalan"
-    else
-	      label = (L2 and L2["LANGUAGE_NAME_ENGLISH"]) or "English"
-    end
+        labelKey = "LANGUAGE_NAME_SPANISH"
+      elseif current == "caES" then
+        labelKey = "LANGUAGE_NAME_CATALAN"
+      elseif current == "deDE" then
+        labelKey = "LANGUAGE_NAME_GERMAN"
+      elseif current == "frFR" then
+        labelKey = "LANGUAGE_NAME_FRENCH"
+      elseif current == "itIT" then
+        labelKey = "LANGUAGE_NAME_ITALIAN"
+      elseif current == "ptBR" or current == "ptPT" then
+        labelKey = "LANGUAGE_NAME_PORTUGUESE"
+      else
+        labelKey = "LANGUAGE_NAME_ENGLISH"
+      end
+    local label = (L2 and L2[labelKey]) or labelKey or "English"
     UIDropDownMenu_SetText(optionsPanel.languageDropdown, label)
   end
 end
@@ -277,10 +286,14 @@ function OptionsUI:Ensure()
       end
 
       local items = {
-	    { value = "enUS", labelKey = "LANGUAGE_NAME_ENGLISH" },
-	    { value = "esES", labelKey = "LANGUAGE_NAME_SPANISH" },
-	    { value = "caES", labelKey = "LANGUAGE_NAME_CATALAN" },
-	}
+      { value = "enUS", labelKey = "LANGUAGE_NAME_ENGLISH" },
+      { value = "esES", labelKey = "LANGUAGE_NAME_SPANISH" },
+      { value = "caES", labelKey = "LANGUAGE_NAME_CATALAN" },
+      { value = "deDE", labelKey = "LANGUAGE_NAME_GERMAN" },
+      { value = "frFR", labelKey = "LANGUAGE_NAME_FRENCH" },
+      { value = "itIT", labelKey = "LANGUAGE_NAME_ITALIAN" },
+      { value = "ptBR", labelKey = "LANGUAGE_NAME_PORTUGUESE" },
+  }
 
       for _, opt in ipairs(items) do
         local info = UIDropDownMenu_CreateInfo()

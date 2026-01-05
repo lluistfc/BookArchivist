@@ -115,4 +115,8 @@ Locales.enUS = {
   ["LANGUAGE_NAME_ENGLISH"] = "English",
   ["LANGUAGE_NAME_SPANISH"] = "Spanish",
   ["LANGUAGE_NAME_CATALAN"] = "Catalan",
+  ["LANGUAGE_NAME_GERMAN"] = "German",
+  ["LANGUAGE_NAME_FRENCH"] = "French",
+  ["LANGUAGE_NAME_ITALIAN"] = "Italian",
+  ["LANGUAGE_NAME_PORTUGUESE"] = "Portuguese",
 }

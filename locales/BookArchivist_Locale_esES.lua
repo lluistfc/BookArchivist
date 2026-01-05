@@ -115,4 +115,8 @@ Locales.esES = {
   ["LANGUAGE_NAME_ENGLISH"] = "Inglés",
   ["LANGUAGE_NAME_SPANISH"] = "Español",
   ["LANGUAGE_NAME_CATALAN"] = "Catalán",
+  ["LANGUAGE_NAME_GERMAN"] = "Alemán",
+  ["LANGUAGE_NAME_FRENCH"] = "Francés",
+  ["LANGUAGE_NAME_ITALIAN"] = "Italiano",
+  ["LANGUAGE_NAME_PORTUGUESE"] = "Portugués",
 }

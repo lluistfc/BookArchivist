@@ -41,6 +41,10 @@ local SUPPORTED_LANGUAGES = {
   enUS = true,
   esES = true,
   caES = true,
+  deDE = true,
+  frFR = true,
+  itIT = true,
+  ptBR = true,
 }
 
 local function normalizeLanguageTag(tag)
@@ -50,6 +54,8 @@ local function normalizeLanguageTag(tag)
   end
   if tag == "esMX" then
     return "esES"
+  elseif tag == "ptPT" then
+    return "ptBR"
   end
   return "enUS"
 end

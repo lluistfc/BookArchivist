@@ -10,6 +10,10 @@ local SUPPORTED_LOCALES = {
   enUS = "enUS",
   esES = "esES",
   caES = "caES",
+  deDE = "deDE",
+  frFR = "frFR",
+  itIT = "itIT",
+  ptBR = "ptBR",
 }
 
 local function normalizeLocale(tag)
@@ -19,6 +23,8 @@ local function normalizeLocale(tag)
   end
   if tag == "esMX" then
     return "esES"
+  elseif tag == "ptPT" then
+    return "ptBR"
   end
   return "enUS"
 end

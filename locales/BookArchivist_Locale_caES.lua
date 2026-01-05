@@ -114,5 +114,9 @@ Locales.caES = {
   ["LANGUAGE_LABEL"] = "Idioma",
   ["LANGUAGE_NAME_ENGLISH"] = "Anglès",
   ["LANGUAGE_NAME_SPANISH"] = "Espanyol",
-  ["LANGUAGE_NAME_CATALAN"] = "Català",
+    ["LANGUAGE_NAME_CATALAN"] = "Català",
+    ["LANGUAGE_NAME_GERMAN"] = "Alemany",
+    ["LANGUAGE_NAME_FRENCH"] = "Francès",
+    ["LANGUAGE_NAME_ITALIAN"] = "Italià",
+    ["LANGUAGE_NAME_PORTUGUESE"] = "Portuguès",
 }
