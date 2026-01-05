@@ -62,6 +62,7 @@ Locales.frFR = {
   ["READER_FAVORITE_REMOVE"] = "Retirer des favoris",
   ["CATEGORY_ALL"] = "Tous les livres",
   ["CATEGORY_FAVORITES"] = "Favoris",
+  ["CATEGORY_RECENT"] = "Récemment lus",
   ["SORT_GROUP_CATEGORY"] = "Vue",
   ["SORT_GROUP_ORDER"] = "Trier par",
 

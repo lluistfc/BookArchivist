@@ -17,7 +17,7 @@ BookArchivist.Core = Core
 local BookId = BookArchivist.BookId
 
 local LIST_WIDTH_DEFAULT = 360
-local LIST_SORT_DEFAULT = "recent"
+local LIST_SORT_DEFAULT = "lastSeen"
 local LIST_PAGE_SIZE_DEFAULT = 25
 local LIST_PAGE_SIZES = {
   [10] = true,
@@ -33,7 +33,6 @@ local LIST_FILTER_DEFAULTS = {
 }
 
 local VALID_SORT_MODES = {
-  recent = true,
   title = true,
   zone = true,
   firstSeen = true,
@@ -158,6 +157,14 @@ local function ensureDB()
     end
   end
 
+  -- Recently read (Step 4): ensure per-character MRU container exists.
+  BookArchivistDB.recent = BookArchivistDB.recent or {}
+  local recent = BookArchivistDB.recent
+  if type(recent.cap) ~= "number" or recent.cap <= 0 then
+    recent.cap = 50
+  end
+  recent.list = recent.list or {}
+
   local minimapDefaults = {
     angle = 200,
   }
@@ -281,6 +288,9 @@ function Core:Delete(key)
 		db.booksById[key] = nil
 	end
   removeFromOrder(db.order, key)
+  if db.recent and type(db.recent.list) == "table" then
+    removeFromOrder(db.recent.list, key)
+  end
 end
 
 function Core:GetOptions()
@@ -363,7 +373,15 @@ function Core:GetSortMode()
   local listOpts = ensureListOptions()
   local mode = listOpts.sortMode or LIST_SORT_DEFAULT
   if not VALID_SORT_MODES[mode] then
-    mode = LIST_SORT_DEFAULT
+    -- Gracefully remap the legacy "recent" sort mode (which used the
+    -- capture order) to the new default instead of leaving an invalid
+    -- value in SavedVariables.
+    if mode == "recent" then
+      mode = LIST_SORT_DEFAULT
+    end
+    if not VALID_SORT_MODES[mode] then
+      mode = LIST_SORT_DEFAULT
+    end
     listOpts.sortMode = mode
   end
   return mode

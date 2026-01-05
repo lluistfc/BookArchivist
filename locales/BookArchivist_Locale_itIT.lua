@@ -62,6 +62,7 @@ Locales.itIT = {
   ["READER_FAVORITE_REMOVE"] = "Rimuovi dai preferiti",
   ["CATEGORY_ALL"] = "Tutti i libri",
   ["CATEGORY_FAVORITES"] = "Preferiti",
+  ["CATEGORY_RECENT"] = "Letti di recente",
   ["SORT_GROUP_CATEGORY"] = "Vista",
   ["SORT_GROUP_ORDER"] = "Ordina per",
 

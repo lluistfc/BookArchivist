@@ -490,6 +490,10 @@ function ReaderUI:RenderSelected()
     return
   end
 
+  if addon.Recent and addon.Recent.MarkOpened and key then
+    addon.Recent:MarkOpened(key)
+  end
+
   bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
   bookTitle:SetTextColor(1, 0.82, 0)
 

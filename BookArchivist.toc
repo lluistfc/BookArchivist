@@ -12,6 +12,7 @@ core/BookArchivist_Migrations.lua
 core/BookArchivist_DB.lua
 core/BookArchivist_Favorites.lua
 core/BookArchivist_Core.lua
+core/BookArchivist_Recent.lua
 core/BookArchivist_Location.lua
 core/BookArchivist_Capture.lua
 core/BookArchivist_Minimap.lua

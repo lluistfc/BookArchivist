@@ -62,6 +62,7 @@ Locales.deDE = {
   ["READER_FAVORITE_REMOVE"] = "Aus Favoriten entfernen",
   ["CATEGORY_ALL"] = "Alle Bücher",
   ["CATEGORY_FAVORITES"] = "Favoriten",
+  ["CATEGORY_RECENT"] = "Kürzlich gelesen",
   ["SORT_GROUP_CATEGORY"] = "Ansicht",
   ["SORT_GROUP_ORDER"] = "Sortieren nach",
 

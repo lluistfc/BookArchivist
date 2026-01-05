@@ -64,8 +64,9 @@ Locales.enUS = {
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Add to Favorites",
   ["READER_FAVORITE_REMOVE"] = "Remove from Favorites",
-	["CATEGORY_ALL"] = "All books",
-	["CATEGORY_FAVORITES"] = "Favorites",
+  ["CATEGORY_ALL"] = "All books",
+  ["CATEGORY_FAVORITES"] = "Favorites",
+  ["CATEGORY_RECENT"] = "Recently read",
 
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Enable verbose diagnostics to troubleshoot refresh issues.",

@@ -72,7 +72,17 @@ function ListUI:RebuildFiltered()
     books = db.books or {}
   end
   local order = db.order or {}
-  self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d)", #order))
+
+  local categoryId = (self.GetCategoryId and self:GetCategoryId()) or "__all__"
+  local isRecentView = (categoryId == "__recent__")
+  local baseKeys
+  if isRecentView and addon.Recent and addon.Recent.GetList then
+    baseKeys = addon.Recent:GetList()
+  else
+    baseKeys = order
+  end
+
+  self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d, category=%s)", #baseKeys, tostring(categoryId)))
   local query = self:GetSearchQuery()
   local previousQuery = self.__state.pagination.lastQuery
   self.__state.pagination.lastQuery = query
@@ -83,7 +93,7 @@ function ListUI:RebuildFiltered()
   local selectedKey = self:GetSelectedKey()
   local selectionStillValid = false
 
-  for _, key in ipairs(order) do
+  for _, key in ipairs(baseKeys) do
       local entry = books[key]
     if entry and matches(self, entry, query) then
       table.insert(filtered, key)
@@ -93,7 +103,7 @@ function ListUI:RebuildFiltered()
     end
   end
 
-  self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #order))
+	self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #baseKeys))
 
   local pageCount = self:GetPageCount(#filtered)
   self.__state.pagination.total = #filtered

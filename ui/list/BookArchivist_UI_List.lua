@@ -23,7 +23,6 @@ local PAGE_SIZES = { 10, 25, 50, 100 }
 local PAGE_SIZE_DEFAULT = 25
 
 local SORT_OPTIONS = {
-  { value = "recent", labelKey = "SORT_RECENT" },
   { value = "title", labelKey = "SORT_TITLE" },
   { value = "zone", labelKey = "SORT_ZONE" },
   { value = "firstSeen", labelKey = "SORT_FIRST_SEEN" },
@@ -445,6 +444,14 @@ function ListUI:InitializeSortDropdown(dropdown)
       infoFav.checked = (currentCategory == "__favorites__")
       UIDropDownMenu_AddButton(infoFav)
 
+			local infoRecent = UIDropDownMenu_CreateInfo()
+			infoRecent.text = t("CATEGORY_RECENT")
+			infoRecent.func = function()
+				ListUI:SetCategoryId("__recent__")
+			end
+			infoRecent.checked = (currentCategory == "__recent__")
+			UIDropDownMenu_AddButton(infoRecent)
+
       local sep = UIDropDownMenu_CreateInfo()
       sep.disabled = true
       sep.notCheckable = true
@@ -611,16 +618,17 @@ end
 
 function ListUI:ApplySort(filteredKeys, db)
   local mode = self:GetSortMode()
-  local isFavoritesView = (self.GetCategoryId and self:GetCategoryId() == "__favorites__")
-  if mode == "recent" and not isFavoritesView then
+  local categoryId = (self.GetCategoryId and self:GetCategoryId()) or "__all__"
+  local isFavoritesView = (categoryId == "__favorites__")
+  local isRecentView = (categoryId == "__recent__")
+
+  -- In the Recently Read virtual category, ordering is driven by the
+  -- MRU list managed by the Recent service; skip additional sorting.
+  if isRecentView then
+		self:UpdateSortDropdown()
     return
   end
   local effectiveMode = mode
-  if isFavoritesView and mode == "recent" then
-    -- In Favorites view, treat the implicit "recent" mode as a proper
-    -- last-seen sort so ordering is deterministic.
-    effectiveMode = "lastSeen"
-  end
   local comparator = self:GetSortComparator(effectiveMode, db)
   if comparator then
     table.sort(filteredKeys, comparator)
