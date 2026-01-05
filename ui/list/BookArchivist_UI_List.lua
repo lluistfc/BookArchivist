@@ -5,6 +5,11 @@ BookArchivist.UI = BookArchivist.UI or {}
 local ListUI = {}
 BookArchivist.UI.List = ListUI
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+  return (L and L[key]) or key
+end
+
 local Metrics = BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics or {}
 
 local DEFAULT_LIST_MODES = {
@@ -18,11 +23,11 @@ local PAGE_SIZES = { 10, 25, 50, 100 }
 local PAGE_SIZE_DEFAULT = 25
 
 local SORT_OPTIONS = {
-  { value = "recent", label = "Recently Read" },
-  { value = "title", label = "Title (A–Z)" },
-  { value = "zone", label = "Zone" },
-  { value = "firstSeen", label = "First Seen" },
-  { value = "lastSeen", label = "Last Seen" },
+  { value = "recent", labelKey = "SORT_RECENT" },
+  { value = "title", labelKey = "SORT_TITLE" },
+  { value = "zone", labelKey = "SORT_ZONE" },
+  { value = "firstSeen", labelKey = "SORT_FIRST_SEEN" },
+  { value = "lastSeen", labelKey = "SORT_LAST_SEEN" },
 }
 
 local QUICK_FILTERS = {}
@@ -171,7 +176,11 @@ function ListUI:ModeToTabId(mode)
 end
 
 function ListUI:GetSortOptions()
-  return SORT_OPTIONS
+  local opts = {}
+  for i, opt in ipairs(SORT_OPTIONS) do
+    opts[i] = { value = opt.value, label = t(opt.labelKey) }
+  end
+  return opts
 end
 
 function ListUI:GetSortMode()
@@ -360,13 +369,13 @@ function ListUI:InitializeSortDropdown(dropdown)
   end
 
   UIDropDownMenu_SetWidth(dropdown, 160)
-  UIDropDownMenu_SetText(dropdown, "Sorting...")
+	  UIDropDownMenu_SetText(dropdown, t("SORT_DROPDOWN_PLACEHOLDER"))
 
   UIDropDownMenu_Initialize(dropdown, function(self)
     local current = ListUI:GetSortMode()
     for _, option in ipairs(SORT_OPTIONS) do
       local info = UIDropDownMenu_CreateInfo()
-      info.text = option.label
+      info.text = t(option.labelKey)
       info.value = option.value
       info.func = function()
         ListUI:SetSortMode(option.value)
@@ -392,11 +401,11 @@ function ListUI:UpdateSortDropdown()
   local label = nil
   for _, option in ipairs(SORT_OPTIONS) do
     if option.value == current then
-      label = option.label
+      label = t(option.labelKey)
       break
     end
   end
-  UIDropDownMenu_SetText(dropdown, label or "Sorting...")
+	UIDropDownMenu_SetText(dropdown, label or t("SORT_DROPDOWN_PLACEHOLDER"))
 end
 
 function ListUI:GetRowHeight()
@@ -424,7 +433,7 @@ function ListUI:FormatRowMetadata(entry)
   end
 
   if #parts == 0 then
-    return "Stored automatically when you read" -- fallback
+	    return t("BOOK_META_FALLBACK") -- fallback
   end
   return table.concat(parts, "  |cFF666666•|r  ")
 end
@@ -525,11 +534,12 @@ function ListUI:UpdateCountsDisplay()
   if mode == modes.BOOKS then
     local filtered = #self:GetFilteredKeys()
     if total == 0 then
-      headerCount:SetText("No books captured yet")
+        headerCount:SetText(t("BOOK_LIST_EMPTY_HEADER"))
     elseif filtered == total then
-      headerCount:SetText(string.format("|cFFFFD100%d|r book%s", total, total ~= 1 and "s" or ""))
+        local key = (total == 1) and "COUNT_BOOK_SINGULAR" or "COUNT_BOOK_PLURAL"
+        headerCount:SetText(string.format("|cFFFFD100" .. t(key) .. "|r", total))
     else
-      headerCount:SetText(string.format("|cFFFFD100%d|r / %d books", filtered, total))
+        headerCount:SetText(string.format("|cFFFFD100" .. t("COUNT_BOOKS_FILTERED_FORMAT") .. "|r", filtered, total))
     end
     return
   end
@@ -537,15 +547,17 @@ function ListUI:UpdateCountsDisplay()
   local state = self:GetLocationState()
   local node = state.activeNode or state.root
   if not node then
-    headerCount:SetText("Browse locations")
+	    headerCount:SetText(t("LOCATIONS_BROWSE_HEADER"))
     return
   end
   local locationBooks = node.totalBooks or (node.books and #node.books) or 0
   local childCount = node.childNames and #node.childNames or 0
   if childCount > 0 then
-    headerCount:SetText(string.format("|cFFFFD100%d|r location%s", childCount, childCount ~= 1 and "s" or ""))
+      local key = (childCount == 1) and "COUNT_LOCATION_SINGULAR" or "COUNT_LOCATION_PLURAL"
+      headerCount:SetText(string.format("|cFFFFD100" .. t(key) .. "|r", childCount))
   else
-    headerCount:SetText(string.format("|cFFFFD100%d|r book%s here", locationBooks, locationBooks ~= 1 and "s" or ""))
+      local key = (locationBooks == 1) and "COUNT_BOOKS_HERE_SINGULAR" or "COUNT_BOOKS_HERE_PLURAL"
+      headerCount:SetText(string.format("|cFFFFD100" .. t(key) .. "|r", locationBooks))
   end
 end
 
@@ -764,13 +776,13 @@ function ListUI:UpdatePaginationUI(total, pageCount)
   end
   if pageLabel and pageLabel.SetText then
     if total == 0 then
-      pageLabel:SetText("No results")
+	      pageLabel:SetText(t("PAGINATION_EMPTY_RESULTS"))
     else
-      pageLabel:SetText(string.format("Page %d / %d", page, pageCount))
+	      pageLabel:SetText(string.format(t("PAGINATION_PAGE_FORMAT"), page, pageCount))
     end
   end
   if dropdown and UIDropDownMenu_SetText then
-    UIDropDownMenu_SetText(dropdown, string.format("%d / page", self:GetPageSize()))
+	    UIDropDownMenu_SetText(dropdown, string.format(t("PAGINATION_PAGE_SIZE_FORMAT"), self:GetPageSize()))
   end
 end
 

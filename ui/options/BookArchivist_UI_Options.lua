@@ -10,6 +10,11 @@ BookArchivist.UI = BookArchivist.UI or {}
 local OptionsUI = BookArchivist.UI.Options or {}
 BookArchivist.UI.Options = OptionsUI
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+  return (L and L[key]) or key
+end
+
 local createFrame = BookArchivist.__createFrame or CreateFrame or function()
   local dummy = {}
   function dummy:RegisterEvent() end
@@ -139,11 +144,26 @@ function OptionsUI:Sync()
   if not optionsPanel or not optionsPanel.debugCheckbox or not optionsPanel.uiDebugCheckbox then
     return
   end
+
+  -- Refresh static labels with the active locale so language
+  -- changes are reflected without requiring a reload.
+  optionsPanel.name = t("ADDON_TITLE")
+  if optionsPanel.titleText and optionsPanel.titleText.SetText then
+	optionsPanel.titleText:SetText(t("OPTIONS_TITLE"))
+	end
+  if optionsPanel.subtitleText and optionsPanel.subtitleText.SetText then
+	optionsPanel.subtitleText:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
+	end
+
   local enabled = false
   if BookArchivist and type(BookArchivist.IsDebugEnabled) == "function" then
     enabled = BookArchivist:IsDebugEnabled() and true or false
   end
   optionsPanel.debugCheckbox:SetChecked(enabled)
+  if optionsPanel.debugCheckbox.Text and optionsPanel.debugCheckbox.Text.SetText then
+	optionsPanel.debugCheckbox.Text:SetText(t("OPTIONS_DEBUG_LOGGING_LABEL"))
+	end
+  optionsPanel.debugCheckbox.tooltipText = t("OPTIONS_DEBUG_LOGGING_TOOLTIP")
 
   local uiDebugEnabled = false
   if BookArchivist and type(BookArchivist.IsUIDebugEnabled) == "function" then
@@ -152,6 +172,38 @@ function OptionsUI:Sync()
     uiDebugEnabled = BookArchivistDB.options.uiDebug and true or false
   end
   optionsPanel.uiDebugCheckbox:SetChecked(uiDebugEnabled)
+  if optionsPanel.uiDebugCheckbox.Text and optionsPanel.uiDebugCheckbox.Text.SetText then
+	optionsPanel.uiDebugCheckbox.Text:SetText(t("OPTIONS_UI_DEBUG_LABEL"))
+	end
+  optionsPanel.uiDebugCheckbox.tooltipText = t("OPTIONS_UI_DEBUG_TOOLTIP")
+
+  if optionsPanel.langLabel and optionsPanel.langLabel.SetText then
+	optionsPanel.langLabel:SetText(t("LANGUAGE_LABEL"))
+	end
+
+  if optionsPanel.languageDropdown and UIDropDownMenu_SetSelectedValue and BookArchivist and BookArchivist.GetLanguage then
+    local current = BookArchivist:GetLanguage()
+    UIDropDownMenu_SetSelectedValue(optionsPanel.languageDropdown, current)
+    local L2 = BookArchivist and BookArchivist.L or L
+    local labelKey
+    if current == "esES" or current == "esMX" then
+        labelKey = "LANGUAGE_NAME_SPANISH"
+      elseif current == "caES" then
+        labelKey = "LANGUAGE_NAME_CATALAN"
+      elseif current == "deDE" then
+        labelKey = "LANGUAGE_NAME_GERMAN"
+      elseif current == "frFR" then
+        labelKey = "LANGUAGE_NAME_FRENCH"
+      elseif current == "itIT" then
+        labelKey = "LANGUAGE_NAME_ITALIAN"
+      elseif current == "ptBR" or current == "ptPT" then
+        labelKey = "LANGUAGE_NAME_PORTUGUESE"
+      else
+        labelKey = "LANGUAGE_NAME_ENGLISH"
+      end
+    local label = (L2 and L2[labelKey]) or labelKey or "English"
+    UIDropDownMenu_SetText(optionsPanel.languageDropdown, label)
+  end
 end
 
 function OptionsUI:Ensure()
@@ -168,7 +220,7 @@ function OptionsUI:Ensure()
     parent = rawget(_G, "UIParent")
   end
   optionsPanel = createFrame("Frame", "BookArchivistOptionsPanel", parent)
-  optionsPanel.name = "Book Archivist"
+	optionsPanel.name = t("ADDON_TITLE")
 
   local logo = optionsPanel:CreateTexture(nil, "ARTWORK")
   logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo.png")
@@ -177,16 +229,18 @@ function OptionsUI:Ensure()
 
   local title = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
   title:SetPoint("TOP", logo, "BOTTOM", 0, -8)
-  title:SetText("Book Archivist")
+	title:SetText(t("OPTIONS_TITLE"))
+  optionsPanel.titleText = title
 
   local subtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   subtitle:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 16, -220)
-  subtitle:SetText("Enable verbose diagnostics to troubleshoot refresh issues.")
+	subtitle:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
+  optionsPanel.subtitleText = subtitle
 
   local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
   checkbox:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -12)
-  checkbox.Text:SetText("Enable debug logging")
-  checkbox.tooltipText = "Shows extra BookArchivist information in chat for troubleshooting."
+  checkbox.Text:SetText(t("OPTIONS_DEBUG_LOGGING_LABEL"))
+  checkbox.tooltipText = t("OPTIONS_DEBUG_LOGGING_TOOLTIP")
   checkbox:SetScript("OnClick", function(self)
     if BookArchivist and type(BookArchivist.SetDebugEnabled) == "function" then
       BookArchivist:SetDebugEnabled(self:GetChecked())
@@ -197,8 +251,8 @@ function OptionsUI:Ensure()
 
   local uiDebugCheckbox = createFrame("CheckButton", "BookArchivistUIDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
   uiDebugCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -8)
-  uiDebugCheckbox.Text:SetText("Show UI debug grid")
-  uiDebugCheckbox.tooltipText = "Highlights layout bounds for troubleshooting. Same as /ba uidebug on/off."
+  uiDebugCheckbox.Text:SetText(t("OPTIONS_UI_DEBUG_LABEL"))
+  uiDebugCheckbox.tooltipText = t("OPTIONS_UI_DEBUG_TOOLTIP")
   uiDebugCheckbox:SetScript("OnClick", function(self)
     local state = self:GetChecked()
     if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
@@ -214,6 +268,49 @@ function OptionsUI:Ensure()
   end)
 
   optionsPanel.uiDebugCheckbox = uiDebugCheckbox
+
+  local langLabel = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  langLabel:SetPoint("TOPLEFT", uiDebugCheckbox, "BOTTOMLEFT", 0, -16)
+	langLabel:SetText(t("LANGUAGE_LABEL"))
+  optionsPanel.langLabel = langLabel
+
+  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", optionsPanel, "UIDropDownMenuTemplate")
+  if dropdown then
+    dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", -16, -4)
+    UIDropDownMenu_SetWidth(dropdown, 160)
+
+    UIDropDownMenu_Initialize(dropdown, function(frame, level)
+      local current = "enUS"
+      if BookArchivist and BookArchivist.GetLanguage then
+        current = BookArchivist:GetLanguage()
+      end
+
+      local items = {
+      { value = "enUS", labelKey = "LANGUAGE_NAME_ENGLISH" },
+      { value = "esES", labelKey = "LANGUAGE_NAME_SPANISH" },
+      { value = "caES", labelKey = "LANGUAGE_NAME_CATALAN" },
+      { value = "deDE", labelKey = "LANGUAGE_NAME_GERMAN" },
+      { value = "frFR", labelKey = "LANGUAGE_NAME_FRENCH" },
+      { value = "itIT", labelKey = "LANGUAGE_NAME_ITALIAN" },
+      { value = "ptBR", labelKey = "LANGUAGE_NAME_PORTUGUESE" },
+  }
+
+      for _, opt in ipairs(items) do
+        local info = UIDropDownMenu_CreateInfo()
+	        info.text = t(opt.labelKey)
+        info.value = opt.value
+        info.func = function()
+          if BookArchivist and BookArchivist.SetLanguage then
+            BookArchivist:SetLanguage(opt.value)
+          end
+        end
+        info.checked = (opt.value == current)
+        UIDropDownMenu_AddButton(info, level)
+      end
+    end)
+
+    optionsPanel.languageDropdown = dropdown
+  end
   optionsPanel.refresh = function()
     OptionsUI:Sync()
   end

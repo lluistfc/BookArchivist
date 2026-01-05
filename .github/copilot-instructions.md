@@ -23,6 +23,7 @@ Key runtime flow:
 - `core/BookArchivist_Capture.lua` — ItemText capture sessions, incremental persistence.
 - `core/BookArchivist_Location.lua` — provenance (zone chain, mob names) for breadcrumbs.
 - `core/BookArchivist_Minimap.lua` — minimap persistence (angle/state) centralized here.
+- `core/BookArchivist_Locale.lua` — locale selection, fallback, and `BookArchivist.L` dispatcher (uses dictionaries from `locales/`).
 - `ui/BookArchivist_UI.lua` — shared UI state & `BookArchivist.UI.Internal` helpers (selection, list mode, widget registry).
 - `ui/BookArchivist_UI_Core.lua` — binds list + reader modules to injected helpers; safe wrappers/logging.
 - `ui/BookArchivist_UI_Frame_Layout.lua` + `ui/BookArchivist_UI_Frame_Chrome.lua` — frame body layout/splitter and frame chrome (dragging, portrait, title, options).
@@ -44,6 +45,7 @@ Key runtime flow:
 - `ui/reader/BookArchivist_UI_Reader_Layout.lua` — reader header/nav/scroll/text layout.
 - `ui/minimap/*` — minimap button UI (persistence stays in core minimap module).
 - `ui/options/*` — Settings panel + Blizzard Settings integration. :contentReference[oaicite:3]{index=3}
+- `locales/BookArchivist_Locale_*.lua` — per-locale translation dictionaries keyed by game locale tag (e.g. `enUS`, `esES`, `caES`).
 
 ---
 

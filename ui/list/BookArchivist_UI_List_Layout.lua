@@ -24,6 +24,11 @@ local Metrics = BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics 
 
 local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+  return (L and L[key]) or key
+end
+
 local function ClearAnchors(frame)
   if frame and frame.ClearAllPoints then
     frame:ClearAllPoints()
@@ -139,7 +144,7 @@ function ListUI:EnsureListHeader()
   header:SetPoint("BOTTOM", headerRow, "BOTTOM", 0, 0)
   header:SetJustifyH("LEFT")
   header:SetJustifyV("MIDDLE")
-  header:SetText("Saved Books")
+	header:SetText(t("BOOK_LIST_HEADER"))
   header:Hide() -- hidden because tabs replace the header label
   self:SetFrame("listHeader", header)
   return header
@@ -220,7 +225,7 @@ function ListUI:EnsurePaginationControls()
   local prev = self:SafeCreateFrame("Button", "BookArchivistListPrevPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if prev then
     prev:SetSize(60, btnH)
-    prev:SetText("< Prev")
+	    prev:SetText(t("PAGINATION_PREV"))
     prev:SetScript("OnClick", function()
       self:PrevPage()
     end)
@@ -230,7 +235,7 @@ function ListUI:EnsurePaginationControls()
   local nextBtn = self:SafeCreateFrame("Button", "BookArchivistListNextPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if nextBtn then
     nextBtn:SetSize(60, btnH)
-    nextBtn:SetText("Next >")
+	    nextBtn:SetText(t("PAGINATION_NEXT"))
     nextBtn:SetScript("OnClick", function()
       self:NextPage()
     end)
@@ -242,7 +247,7 @@ function ListUI:EnsurePaginationControls()
   pageLabel:SetJustifyH("CENTER")
   pageLabel:SetJustifyV("MIDDLE")
   pageLabel:SetHeight(btnH)
-  pageLabel:SetText("Page 1 / 1")
+	pageLabel:SetText(t("PAGINATION_PAGE_SINGLE"))
   if prev and nextBtn then
     pageLabel:ClearAllPoints()
     pageLabel:SetPoint("CENTER", pageLabelHost, "CENTER", 0, 0)
@@ -262,11 +267,11 @@ function ListUI:EnsurePaginationControls()
     dropdown:SetPoint("CENTER", dropdownHost, "CENTER", 0, 0)
     UIDropDownMenu_SetWidth(dropdown, 110)
     UIDropDownMenu_JustifyText(dropdown, "LEFT")
-    UIDropDownMenu_SetText(dropdown, string.format("%d / page", self:GetPageSize()))
+	    UIDropDownMenu_SetText(dropdown, string.format(t("PAGINATION_PAGE_SIZE_FORMAT"), self:GetPageSize()))
     UIDropDownMenu_Initialize(dropdown, function(frame, level)
       for _, size in ipairs(self:GetPageSizes()) do
         local info = UIDropDownMenu_CreateInfo()
-        info.text = string.format("%d / page", size)
+	        info.text = string.format(t("PAGINATION_PAGE_SIZE_FORMAT"), size)
         info.func = function()
           self:SetPageSize(size)
         end
@@ -287,7 +292,7 @@ local function wireSearchHandlers(self, searchBox)
 
   local instructions = searchBox.Instructions
   if instructions and instructions.SetText then
-    instructions:SetText("Search title or text…")
+		instructions:SetText(t("BOOK_SEARCH_PLACEHOLDER"))
   end
 
   local function syncInstructions(box)
@@ -377,7 +382,7 @@ function ListUI:Create(uiFrame)
     titleText:SetPoint("BOTTOMRIGHT", titleHost, "BOTTOMRIGHT", 0, 0)
     titleText:SetJustifyH("LEFT")
     titleText:SetJustifyV("MIDDLE")
-    titleText:SetText("Book Archivist")
+	    titleText:SetText(t("ADDON_TITLE"))
     self:SetFrame("headerTitle", titleText)
   else
     self:LogError("Unable to create header title text (HeaderLeftTop missing?)")
@@ -393,7 +398,7 @@ function ListUI:Create(uiFrame)
     headerCount:SetPoint("BOTTOMRIGHT", countHost, "BOTTOMRIGHT", 0, 0)
     headerCount:SetJustifyH("LEFT")
     headerCount:SetJustifyV("MIDDLE")
-    headerCount:SetText("Saving every page you read")
+	    headerCount:SetText(t("BOOK_LIST_SUBHEADER"))
     self:SetFrame("headerCountText", headerCount)
   else
     self:LogError("Unable to create header count text (HeaderLeftBottom missing?)")
@@ -428,7 +433,7 @@ function ListUI:Create(uiFrame)
   if optionsButton then
     optionsButton:SetSize(Metrics.BTN_W, Metrics.BTN_H)
     optionsButton:SetPoint("TOPRIGHT", headerRightTop, "TOPRIGHT", 0, 0)
-    optionsButton:SetText("Options")
+	    optionsButton:SetText(t("HEADER_BUTTON_OPTIONS"))
     optionsButton:SetScript("OnClick", function()
       local addon = self:GetAddon()
       if addon and addon.OpenOptionsPanel then
@@ -437,22 +442,24 @@ function ListUI:Create(uiFrame)
         BookArchivist:OpenOptionsPanel()
       end
     end)
+    self:SetFrame("optionsButton", optionsButton)
   end
 
   local helpButton = self:SafeCreateFrame("Button", nil, headerRightTop, "UIPanelButtonTemplate")
   if helpButton and optionsButton then
     helpButton:SetSize(Metrics.BTN_W - 12, Metrics.BTN_H)
     helpButton:SetPoint("RIGHT", optionsButton, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER), 0)
-    helpButton:SetText("Help")
+	    helpButton:SetText(t("HEADER_BUTTON_HELP"))
     helpButton:SetScript("OnClick", function()
       local ctx = self:GetContext()
-      local message = "Use the search, filters, and sort menu to find any saved book instantly."
+	      local message = t("HEADER_HELP_CHAT")
       if ctx and ctx.chatMessage then
         ctx.chatMessage("|cFF00FF00BookArchivist:|r " .. message)
       elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
         DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00BookArchivist:|r " .. message)
       end
     end)
+    self:SetFrame("helpButton", helpButton)
   end
 
   local sortDropdown = CreateFrame("Frame", "BookArchivistSortDropdown", headerRightBottom, "UIDropDownMenuTemplate")
@@ -521,7 +528,7 @@ function ListUI:Create(uiFrame)
 
   local noResults = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   noResults:SetPoint("CENTER", scrollFrame, "CENTER", 0, 0)
-  noResults:SetText("|cFF999999No matches. Clear filters or search.|r")
+	noResults:SetText("|cFF999999" .. t("LIST_EMPTY_SEARCH") .. "|r")
   noResults:Hide()
   self:SetFrame("noResultsText", noResults)
 

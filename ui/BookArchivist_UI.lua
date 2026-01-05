@@ -249,7 +249,8 @@ Internal.flushPendingRefresh = flushPendingRefresh
 
 local function formatZoneText(chain)
 	if not chain or #chain == 0 then
-		return "Unknown Zone"
+		local L = BookArchivist and BookArchivist.L or {}
+		return (L and L["LOCATION_UNKNOWN_ZONE"]) or "Unknown Zone"
 	end
 	return table.concat(chain, " > ")
 end
@@ -265,11 +266,15 @@ local function formatLocationLine(loc)
 	end
 
 	if loc.context == "loot" then
-		local mob = loc.mobName or "Unknown Mob"
-		return string.format("|cFFFFD100Looted:|r %s > %s", zoneText, mob)
+		local L = BookArchivist and BookArchivist.L or {}
+		local mob = loc.mobName or ((L and L["LOCATION_UNKNOWN_MOB"]) or "Unknown Mob")
+		local label = (L and L["LOCATION_LOOTED_LABEL"]) or "Looted:"
+		return string.format("|cFFFFD100%s|r %s > %s", label, zoneText, mob)
 	end
 
-	return string.format("|cFFFFD100Location:|r %s", zoneText)
+	local L = BookArchivist and BookArchivist.L or {}
+	local label = (L and L["LOCATION_LOCATION_LABEL"]) or "Location:"
+	return string.format("|cFFFFD100%s|r %s", label, zoneText)
 end
 Internal.formatLocationLine = formatLocationLine
 

@@ -11,6 +11,14 @@ core/BookArchivist_Location.lua
 core/BookArchivist_Capture.lua
 core/BookArchivist_Minimap.lua
 core/BookArchivist.lua
+locales/BookArchivist_Locale_enUS.lua
+locales/BookArchivist_Locale_esES.lua
+locales/BookArchivist_Locale_caES.lua
+locales/BookArchivist_Locale_deDE.lua
+locales/BookArchivist_Locale_frFR.lua
+locales/BookArchivist_Locale_itIT.lua
+locales/BookArchivist_Locale_ptBR.lua
+core/BookArchivist_Locale.lua
 ui/BookArchivist_UI_Metrics.lua
 ui/list/BookArchivist_UI_List.lua
 ui/list/BookArchivist_UI_List_Layout.lua

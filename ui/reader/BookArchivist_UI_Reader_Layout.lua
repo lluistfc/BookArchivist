@@ -16,6 +16,11 @@ local Metrics = BookArchivist.UI.Metrics or {
 }
 local Internal = BookArchivist.UI.Internal
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+	return (L and L[key]) or key
+end
+
 local rememberWidget = ReaderUI.__rememberWidget
 local getWidget = ReaderUI.__getWidget
 local getAddon = ReaderUI.__getAddon
@@ -141,7 +146,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	bookTitle:SetJustifyH("LEFT")
 	bookTitle:SetJustifyV("MIDDLE")
-	bookTitle:SetText("Select a book from the list")
+	bookTitle:SetText(t("READER_EMPTY_PROMPT"))
 	bookTitle:SetTextColor(1, 0.82, 0)
 	uiFrame.bookTitle = bookTitle
 	bookTitle:ClearAllPoints()
@@ -192,7 +197,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	if prevButton then
 		prevButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
 		prevButton:SetPoint("LEFT", readerNavRow or readerHeaderRow, "LEFT", 0, 0)
-		prevButton:SetText("< Prev")
+		prevButton:SetText(t("PAGINATION_PREV"))
 		prevButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
 				ReaderUI:ChangePage(-1)
@@ -208,7 +213,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	if nextButton then
 		nextButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
 		nextButton:SetPoint("RIGHT", readerNavRow or readerHeaderRow, "RIGHT", 0, 0)
-		nextButton:SetText("Next >")
+		nextButton:SetText(t("PAGINATION_NEXT"))
 		nextButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
 				ReaderUI:ChangePage(1)
@@ -225,7 +230,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	pageIndicator:SetPoint("CENTER", pageIndicatorParent, "CENTER", 0, 0)
 	pageIndicator:SetJustifyH("CENTER")
 	pageIndicator:SetJustifyV("MIDDLE")
-	pageIndicator:SetText("Page 1 / 1")
+	pageIndicator:SetText(t("PAGINATION_PAGE_SINGLE"))
 	state.pageIndicator = pageIndicator
 	if rememberWidget then
 		rememberWidget("pageIndicator", pageIndicator)
