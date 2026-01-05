@@ -17,6 +17,7 @@ Locales.frFR = {
   ["BOOK_LIST_HEADER"] = "Livres enregistrés",
   ["BOOK_LIST_SUBHEADER"] = "Chaque page que vous lisez",
   ["BOOK_SEARCH_PLACEHOLDER"] = "Rechercher par titre ou texte…",
+  ["BOOK_SEARCH_TOOLTIP"] = "La recherche trouve les livres où tous vos mots apparaissent dans le titre ou le texte. Elle ne nécessite pas la phrase exacte.",
 
   -- Pagination / sort
   ["PAGINATION_PREV"] = "< Préc.",
@@ -118,6 +119,8 @@ Locales.frFR = {
   ["BOOK_UNTITLED"] = "(Sans titre)",
   ["BOOK_UNKNOWN"] = "Livre inconnu",
   ["BOOK_MISSING_DATA"] = "Données manquantes",
+	["MATCH_TITLE"] = "TITRE",
+	["MATCH_TEXT"] = "TEXTE",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Langue",

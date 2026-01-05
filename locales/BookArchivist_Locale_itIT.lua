@@ -17,6 +17,7 @@ Locales.itIT = {
   ["BOOK_LIST_HEADER"] = "Libri salvati",
   ["BOOK_LIST_SUBHEADER"] = "Ogni pagina che leggi",
   ["BOOK_SEARCH_PLACEHOLDER"] = "Cerca per titolo o testo…",
+  ["BOOK_SEARCH_TOOLTIP"] = "La ricerca trova libri in cui tutte le tue parole compaiono nel titolo o nel testo. Non richiede la frase esatta.",
 
   -- Pagination / sort
   ["PAGINATION_PREV"] = "< Prec.",
@@ -118,6 +119,8 @@ Locales.itIT = {
   ["BOOK_UNTITLED"] = "(Senza titolo)",
   ["BOOK_UNKNOWN"] = "Libro sconosciuto",
   ["BOOK_MISSING_DATA"] = "Dati mancanti",
+	["MATCH_TITLE"] = "TITOLO",
+	["MATCH_TEXT"] = "TESTO",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Lingua",

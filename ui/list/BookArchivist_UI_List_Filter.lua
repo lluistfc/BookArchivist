@@ -18,12 +18,12 @@ local function matches(self, entry, tokens)
 
 	local haystack = entry.searchText or ""
 	haystack = haystack:lower()
-	for i = 1, #tokens do
-		local token = tokens[i]
-		if token ~= "" and not haystack:find(token, 1, true) then
-			return false
-		end
-	end
+  for i = 1, #tokens do
+    local token = tokens[i]
+    if token ~= "" and not haystack:find(token, 1, true) then
+      return false
+    end
+  end
 
   return true
 end
@@ -78,6 +78,9 @@ function ListUI:RebuildFiltered()
   for token in query:lower():gmatch("%S+") do
 		table.insert(tokens, token)
 	end
+	if self.ClearSearchMatchKinds then
+		self:ClearSearchMatchKinds()
+	end
   local previousQuery = self.__state.pagination.lastQuery
   self.__state.pagination.lastQuery = query
   if previousQuery ~= query then
@@ -93,6 +96,28 @@ function ListUI:RebuildFiltered()
       table.insert(filtered, key)
       if key == selectedKey then
         selectionStillValid = true
+      end
+      if self.SetSearchMatchKind and #tokens > 0 then
+        local titleHaystack = tostring(entry.title or ""):lower()
+        local anyTitle = false
+        local anyText = false
+        for i = 1, #tokens do
+          local token = tokens[i]
+          if token ~= "" then
+            if titleHaystack:find(token, 1, true) then
+              anyTitle = true
+            end
+            if (entry.searchText or ""):lower():find(token, 1, true) and not titleHaystack:find(token, 1, true) then
+              anyText = true
+            end
+          end
+        end
+        if anyTitle then
+          self:SetSearchMatchKind(key, "title")
+        end
+        if anyText or (not anyTitle) then
+          self:SetSearchMatchKind(key, "content")
+        end
       end
     end
   end

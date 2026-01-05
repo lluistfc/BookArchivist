@@ -17,6 +17,7 @@ Locales.enUS = {
   ["BOOK_LIST_HEADER"] = "Saved Books",
   ["BOOK_LIST_SUBHEADER"] = "Saving every page you read",
   ["BOOK_SEARCH_PLACEHOLDER"] = "Search title or text…",
+  ["BOOK_SEARCH_TOOLTIP"] = "Search finds books where all your words appear somewhere in the title or text. It does not require the exact phrase.",
 
   -- Pagination / sort
   ["PAGINATION_PREV"] = "< Prev",
@@ -123,6 +124,10 @@ Locales.enUS = {
   ["BOOK_UNKNOWN"] = "Unknown Book",
   ["BOOK_MISSING_DATA"] = "Missing data",
 	["TOOLTIP_ARCHIVED"] = "Book Archivist: Archived",
+  ["SEARCH_MATCH_TITLE"] = "Title match",
+  ["SEARCH_MATCH_CONTENT"] = "Text match",
+  ["MATCH_TITLE"] = "TITLE",
+  ["MATCH_TEXT"] = "TEXT",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Language",

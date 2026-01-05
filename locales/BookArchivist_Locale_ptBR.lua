@@ -17,6 +17,7 @@ Locales.ptBR = {
   ["BOOK_LIST_HEADER"] = "Livros salvos",
   ["BOOK_LIST_SUBHEADER"] = "Cada página que você lê",
   ["BOOK_SEARCH_PLACEHOLDER"] = "Buscar por título ou texto…",
+  ["BOOK_SEARCH_TOOLTIP"] = "A busca encontra livros em que todas as suas palavras aparecem no título ou no texto. Ela não exige a frase exata.",
 
   -- Pagination / sort
   ["PAGINATION_PREV"] = "< Anterior",
@@ -118,6 +119,8 @@ Locales.ptBR = {
   ["BOOK_UNTITLED"] = "(Sem título)",
   ["BOOK_UNKNOWN"] = "Livro desconhecido",
   ["BOOK_MISSING_DATA"] = "Dados ausentes",
+	["MATCH_TITLE"] = "TÍTULO",
+	["MATCH_TEXT"] = "TEXTO",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Idioma",

@@ -29,6 +29,14 @@ local function t(key)
   return (L and L[key]) or key
 end
 
+local function getSearchTooltipText()
+  local text = L and L["BOOK_SEARCH_TOOLTIP"]
+  if text and text ~= "" then
+    return text
+  end
+  return "Search matches all words anywhere in the title or text.\nIt does not require the exact phrase."
+end
+
 local function ClearAnchors(frame)
   if frame and frame.ClearAllPoints then
     frame:ClearAllPoints()
@@ -337,6 +345,20 @@ local function wireSearchHandlers(self, searchBox)
         self:RunSearchRefresh()
       end
       self:UpdateSearchClearButton()
+    end
+  end)
+
+  searchBox:SetScript("OnEnter", function(box)
+    if not GameTooltip or not GameTooltip.SetOwner then
+      return
+    end
+    GameTooltip:SetOwner(box, "ANCHOR_BOTTOMLEFT")
+    GameTooltip:SetText(getSearchTooltipText(), 1, 1, 1, 1, true)
+  end)
+
+  searchBox:SetScript("OnLeave", function()
+    if GameTooltip and GameTooltip.Hide then
+      GameTooltip:Hide()
     end
   end)
 

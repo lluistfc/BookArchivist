@@ -17,6 +17,7 @@ Locales.deDE = {
   ["BOOK_LIST_HEADER"] = "Gespeicherte Bücher",
   ["BOOK_LIST_SUBHEADER"] = "Jede Seite, die du liest",
   ["BOOK_SEARCH_PLACEHOLDER"] = "Titel oder Text suchen…",
+  ["BOOK_SEARCH_TOOLTIP"] = "Die Suche findet Bücher, in denen alle deine Wörter im Titel oder Text vorkommen. Die exakte Wortfolge ist nicht erforderlich.",
 
   -- Pagination / sort
   ["PAGINATION_PREV"] = "< Zurück",
@@ -118,6 +119,8 @@ Locales.deDE = {
   ["BOOK_UNTITLED"] = "(Ohne Titel)",
   ["BOOK_UNKNOWN"] = "Unbekanntes Buch",
   ["BOOK_MISSING_DATA"] = "Fehlende Daten",
+	["MATCH_TITLE"] = "TITEL",
+	["MATCH_TEXT"] = "TEXT",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Sprache",

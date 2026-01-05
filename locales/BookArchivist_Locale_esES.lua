@@ -17,6 +17,7 @@ Locales.esES = {
   ["BOOK_LIST_HEADER"] = "Libros guardados",
   ["BOOK_LIST_SUBHEADER"] = "Guardando cada página que lees",
   ["BOOK_SEARCH_PLACEHOLDER"] = "Buscar por título o texto…",
+  ["BOOK_SEARCH_TOOLTIP"] = "La búsqueda encuentra libros donde todas tus palabras aparecen en el título o en el texto. No requiere la frase exacta.",
 
   -- Pagination / sort
   ["PAGINATION_PREV"] = "< Anterior",
@@ -118,6 +119,8 @@ Locales.esES = {
   ["BOOK_UNTITLED"] = "(Sin título)",
   ["BOOK_UNKNOWN"] = "Libro desconocido",
   ["BOOK_MISSING_DATA"] = "Datos faltantes",
+	["MATCH_TITLE"] = "TÍTULO",
+	["MATCH_TEXT"] = "TEXTO",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Idioma",

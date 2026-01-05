@@ -889,6 +889,36 @@ function ListUI:GetSearchText()
   return box:GetText() or ""
 end
 
+function ListUI:ClearSearchMatchKinds()
+  local search = self.__state.search or {}
+  self.__state.search = search
+  search.matchFlags = {}
+end
+
+function ListUI:SetSearchMatchKind(key, kind)
+  if not key or not kind then
+    return
+  end
+  local search = self.__state.search or {}
+  self.__state.search = search
+  search.matchFlags = search.matchFlags or {}
+  local flags = search.matchFlags[key] or {}
+  if kind == "title" then
+    flags.title = true
+  elseif kind == "content" then
+    flags.text = true
+  end
+  search.matchFlags[key] = flags
+end
+
+function ListUI:GetSearchMatchKind(key)
+  local search = self.__state.search
+  if not search or not search.matchFlags then
+    return nil
+  end
+  return search.matchFlags[key]
+end
+
 function ListUI:ClearSearch()
   local box = self:GetFrame("searchBox") or self:GetWidget("searchBox")
   if box and box.SetText then

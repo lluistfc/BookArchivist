@@ -17,6 +17,7 @@ Locales.caES = {
   ["BOOK_LIST_HEADER"] = "Llibres desats",
   ["BOOK_LIST_SUBHEADER"] = "Desant cada pàgina que llegeixes",
   ["BOOK_SEARCH_PLACEHOLDER"] = "Cerca per títol o text…",
+  ["BOOK_SEARCH_TOOLTIP"] = "La cerca troba llibres on totes les paraules apareixen al títol o al text. No requereix la frase exacta.",
 
   -- Pagination / sort
   ["PAGINATION_PREV"] = "< Anterior",
@@ -118,6 +119,8 @@ Locales.caES = {
   ["BOOK_UNTITLED"] = "(Sense títol)",
   ["BOOK_UNKNOWN"] = "Llibre desconegut",
   ["BOOK_MISSING_DATA"] = "Falten dades",
+	["MATCH_TITLE"] = "TÍTOL",
+	["MATCH_TEXT"] = "TEXT",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Idioma",

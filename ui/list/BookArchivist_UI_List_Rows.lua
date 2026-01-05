@@ -9,6 +9,9 @@ local ROW_PAD_T = Metrics.ROW_PAD_T or 6
 local SCROLLBAR_GUTTER = Metrics.SCROLLBAR_GUTTER or 18
 local ROW_HILITE_INSET = Metrics.ROW_HILITE_INSET or 2
 local ROW_EDGE_W = Metrics.ROW_EDGE_W or 3
+local BADGE_COL_W = Metrics.SEARCH_BADGE_COL_W or 52
+local BADGE_H = Metrics.SEARCH_BADGE_H or 16
+local BADGE_GAP_Y = Metrics.SEARCH_BADGE_GAP_Y or 2
 
 local BACK_ICON_TAG = "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:14:14:0:0|t"
 
@@ -19,6 +22,13 @@ end
 
 local function hasMethod(obj, methodName)
   return obj and type(obj[methodName]) == "function"
+end
+
+local function getMatchBadgeTexts()
+  local Ltbl = BookArchivist and BookArchivist.L or {}
+  local title = (Ltbl and Ltbl["MATCH_TITLE"]) or "TITLE"
+  local text = (Ltbl and Ltbl["MATCH_TEXT"]) or "TEXT"
+  return title, text
 end
 
 local function syncRowFavorite(button, entry)
@@ -41,10 +51,75 @@ local function resetButton(button)
   if button.selected then button.selected:Hide() end
   if button.selectedEdge then button.selectedEdge:Hide() end
   if button.favoriteStar then button.favoriteStar:Hide() end
+  if button.badgeTitle then button.badgeTitle:Hide() end
+  if button.badgeText then button.badgeText:Hide() end
+end
+
+local function syncMatchBadges(self, button, key)
+  if not button or not self or not self.GetSearchMatchKind then
+    return
+  end
+  if self.GetSearchQuery and self:GetSearchQuery() == "" then
+    if button.badgeTitle then button.badgeTitle:Hide() end
+    if button.badgeText then button.badgeText:Hide() end
+    return
+  end
+  local flags = self:GetSearchMatchKind(key)
+  if not flags then
+    if button.badgeTitle then button.badgeTitle:Hide() end
+    if button.badgeText then button.badgeText:Hide() end
+    return
+  end
+  local titleLabel, textLabel = getMatchBadgeTexts()
+  local hasTitle = flags.title and true or false
+  local hasText = flags.text and true or false
+  if not hasTitle and not hasText then
+    if button.badgeTitle then button.badgeTitle:Hide() end
+    if button.badgeText then button.badgeText:Hide() end
+    return
+  end
+  local container = button.badgeContainer
+  if not container then return end
+  if hasTitle and hasText then
+    button.badgeTitle:Show()
+    button.badgeText:Show()
+    button.badgeTitle:ClearAllPoints()
+    button.badgeText:ClearAllPoints()
+    button.badgeTitle:SetPoint("TOP", container, "TOP", 0, - (ROW_PAD_T or 4))
+    button.badgeText:SetPoint("TOP", button.badgeTitle, "BOTTOM", 0, -BADGE_GAP_Y)
+    button.badgeTitle.text:SetText(titleLabel)
+    button.badgeText.text:SetText(textLabel)
+  elseif hasTitle then
+    button.badgeTitle:Show()
+    button.badgeText:Hide()
+    button.badgeTitle:ClearAllPoints()
+    button.badgeTitle:SetPoint("CENTER", container, "CENTER", 0, 0)
+    button.badgeTitle.text:SetText(titleLabel)
+  elseif hasText then
+    button.badgeTitle:Hide()
+    button.badgeText:Show()
+    button.badgeText:ClearAllPoints()
+    button.badgeText:SetPoint("CENTER", container, "CENTER", 0, 0)
+    button.badgeText.text:SetText(textLabel)
+  end
 end
 
 local function getScrollChild(self)
   return self:GetFrame("scrollChild") or self:GetWidget("scrollChild")
+end
+
+local function setRowContentAnchors(button, useBadgeColumn)
+  local rowContent = button and button.content
+  if not rowContent then
+    return
+  end
+  rowContent:ClearAllPoints()
+  if useBadgeColumn and button.badgeContainer then
+    rowContent:SetPoint("TOPLEFT", button.badgeContainer, "TOPRIGHT", (Metrics.GAP_S or 4), -ROW_PAD_T)
+  else
+    rowContent:SetPoint("TOPLEFT", button, "TOPLEFT", ROW_PAD_L, -ROW_PAD_T)
+  end
+  rowContent:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -(ROW_PAD_R + SCROLLBAR_GUTTER), ROW_PAD_T)
 end
 
 local function handleRowClick(self, button, mouseButton)
@@ -119,10 +194,14 @@ local function createRowButton(self)
   button.selectedEdge:SetColorTexture(1, 0.82, 0, 1)
   button.selectedEdge:Hide()
 
+  local badgeContainer = CreateFrame("Frame", nil, button)
+  badgeContainer:SetPoint("LEFT", button, "LEFT", ROW_PAD_L, 0)
+  badgeContainer:SetSize(BADGE_COL_W, rowHeight)
+  button.badgeContainer = badgeContainer
+
   local rowContent = CreateFrame("Frame", nil, button)
-  rowContent:SetPoint("TOPLEFT", button, "TOPLEFT", ROW_PAD_L, -ROW_PAD_T)
-  rowContent:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -(ROW_PAD_R + SCROLLBAR_GUTTER), ROW_PAD_T)
   button.content = rowContent
+  setRowContentAnchors(button, false)
 
 	-- Favorite star indicator (books list only). This reuses the same
 	-- auction house "favorite" atlas as the reader header star.
@@ -155,6 +234,39 @@ local function createRowButton(self)
   button.metaText:SetTextColor(0.75, 0.75, 0.75)
   button.metaText:SetWordWrap(false)
   button.metaText:SetMaxLines(1)
+
+  -- Match badges column (TITLE/TEXT) replacing any old page icon.
+  local badgeTitle = CreateFrame("Frame", nil, badgeContainer)
+  badgeTitle:SetSize(BADGE_COL_W, BADGE_H)
+  badgeTitle:Hide()
+  local btBg = badgeTitle:CreateTexture(nil, "BACKGROUND")
+  btBg:SetAllPoints(true)
+  btBg:SetColorTexture(0.4, 0.3, 0, 0.8)
+  local btBorder = badgeTitle:CreateTexture(nil, "BORDER")
+  btBorder:SetPoint("TOPLEFT", -1, 1)
+  btBorder:SetPoint("BOTTOMRIGHT", 1, -1)
+  btBorder:SetColorTexture(0, 0, 0, 1)
+  local btText = badgeTitle:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  btText:SetPoint("CENTER")
+  btText:SetTextColor(1, 0.9, 0.3)
+  badgeTitle.text = btText
+  button.badgeTitle = badgeTitle
+
+  local badgeText = CreateFrame("Frame", nil, badgeContainer)
+  badgeText:SetSize(BADGE_COL_W, BADGE_H)
+  badgeText:Hide()
+  local bxBg = badgeText:CreateTexture(nil, "BACKGROUND")
+  bxBg:SetAllPoints(true)
+  bxBg:SetColorTexture(0, 0.2, 0.4, 0.8)
+  local bxBorder = badgeText:CreateTexture(nil, "BORDER")
+  bxBorder:SetPoint("TOPLEFT", -1, 1)
+  bxBorder:SetPoint("BOTTOMRIGHT", 1, -1)
+  bxBorder:SetColorTexture(0, 0, 0, 1)
+  local bxText = badgeText:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  bxText:SetPoint("CENTER")
+  bxText:SetTextColor(0.8, 0.9, 1)
+  badgeText.text = bxText
+  button.badgeText = badgeText
 
   button:SetScript("OnClick", function(btn, mouseButton)
     if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON then
@@ -263,10 +375,12 @@ function ListUI:UpdateList()
     end
 
     local layoutIndex = 0
+    local hasSearch = self.GetSearchQuery and (self:GetSearchQuery() ~= "") or false
     for i = startIndex, endIndex do
       layoutIndex = layoutIndex + 1
       local button = acquireButton(self)
       button:SetPoint("TOPLEFT", 0, -(layoutIndex-1) * rowHeight)
+      setRowContentAnchors(button, hasSearch)
 
       local key = filtered[i]
       if key then
@@ -280,8 +394,11 @@ function ListUI:UpdateList()
         if entry then
           button.bookKey = key
           button.itemKind = "book"
-          button.titleText:SetText(entry.title or "(Untitled)")
-          button.metaText:SetText(self:FormatRowMetadata(entry))
+			local title = entry.title or "(Untitled)"
+			local meta = self:FormatRowMetadata(entry)
+			button.titleText:SetText(title)
+			button.metaText:SetText(meta)
+			syncMatchBadges(self, button, key)
 	      syncRowFavorite(button, entry)
 
           if key == self:GetSelectedKey() then
@@ -335,6 +452,8 @@ function ListUI:UpdateList()
     local row = rows[i]
     local button = acquireButton(self)
     button:SetPoint("TOPLEFT", 0, -(i-1) * rowHeight)
+    local hasSearch = self.GetSearchQuery and (self:GetSearchQuery() ~= "") or false
+    setRowContentAnchors(button, hasSearch)
     button.itemKind = row.kind
 
     if row.kind == "back" then
@@ -382,8 +501,11 @@ function ListUI:UpdateList()
 	      end
 	      local entry = key and books and books[key]
       if entry then
-          button.titleText:SetText(entry.title or t("BOOK_UNTITLED"))
-        button.metaText:SetText(self:FormatRowMetadata(entry))
+			local title = entry.title or t("BOOK_UNTITLED")
+			local meta = self:FormatRowMetadata(entry)
+			button.titleText:SetText(title)
+			button.metaText:SetText(meta)
+			syncMatchBadges(self, button, key)
       else
           button.titleText:SetText(string.format("|cFFFFD100%s|r", t("BOOK_UNKNOWN")))
           button.metaText:SetText("|cFF999999" .. t("BOOK_MISSING_DATA") .. "|r")
