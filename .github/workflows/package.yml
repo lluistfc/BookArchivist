@@ -1,5 +1,8 @@
 name: Package CurseForge ZIP
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
