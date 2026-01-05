@@ -145,8 +145,8 @@ function OptionsUI:Ensure()
 	optionsPanel.name = t("ADDON_TITLE")
 
   local logo = optionsPanel:CreateTexture(nil, "ARTWORK")
-  logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo.png")
-  logo:SetSize(128, 128)
+  logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png")
+  logo:SetSize(64, 64)
   logo:SetPoint("TOP", optionsPanel, "TOP", 0, -32)
 
   local title = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
