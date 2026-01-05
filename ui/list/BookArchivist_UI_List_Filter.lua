@@ -2,13 +2,13 @@
 local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
-local function matches(self, entry, query)
+local function matches(self, entry, tokens)
   local passesFilters = true
   if self.GetListMode then
     passesFilters = self:EntryMatchesFilters(entry)
   end
 
-  if query == "" then
+  if not tokens or #tokens == 0 then
     return passesFilters
   end
 
@@ -16,26 +16,16 @@ local function matches(self, entry, query)
     return false
   end
 
-  query = query:lower()
+	local haystack = entry.searchText or ""
+	haystack = haystack:lower()
+	for i = 1, #tokens do
+		local token = tokens[i]
+		if token ~= "" and not haystack:find(token, 1, true) then
+			return false
+		end
+	end
 
-  local function has(text)
-    text = (text or ""):lower()
-    return text:find(query, 1, true) ~= nil
-  end
-
-  if has(entry.title) or has(entry.creator) then
-    return true
-  end
-
-  if entry.pages then
-    for _, page in pairs(entry.pages) do
-      if has(page) then
-        return true
-      end
-    end
-  end
-
-  return false
+  return true
 end
 
 local function trim(text)
@@ -84,6 +74,10 @@ function ListUI:RebuildFiltered()
 
   self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d, category=%s)", #baseKeys, tostring(categoryId)))
   local query = self:GetSearchQuery()
+  local tokens = {}
+  for token in query:lower():gmatch("%S+") do
+		table.insert(tokens, token)
+	end
   local previousQuery = self.__state.pagination.lastQuery
   self.__state.pagination.lastQuery = query
   if previousQuery ~= query then
@@ -95,7 +89,7 @@ function ListUI:RebuildFiltered()
 
   for _, key in ipairs(baseKeys) do
       local entry = books[key]
-    if entry and matches(self, entry, query) then
+    if entry and matches(self, entry, tokens) then
       table.insert(filtered, key)
       if key == selectedKey then
         selectionStillValid = true

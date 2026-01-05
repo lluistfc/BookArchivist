@@ -86,6 +86,63 @@ local function normalizeKeyPart(s)
   return s
 end
 
+-- Step 6 – Search Optimization
+-- Normalize free-text fields for search and build a cached searchText
+-- blob per entry so we don't have to concatenate title/pages on every
+-- query. We intentionally include the full pages set for best match
+-- completeness.
+
+local function normalizeSearchText(text)
+  text = tostring(text or "")
+  text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+  text = text:gsub("^%s+", ""):gsub("%s+$", "")
+  text = text:gsub("%s+", " ")
+  return text:lower()
+end
+
+local function buildSearchText(title, pages)
+  local out = normalizeSearchText(title or "")
+  if type(pages) == "table" then
+    local first = (out ~= "") and ("\n" .. out) or ""
+    -- Preserve deterministic output by iterating page numbers in
+    -- ascending order when possible.
+    local indices = {}
+    for pageNum in pairs(pages) do
+      if type(pageNum) == "number" then
+        table.insert(indices, pageNum)
+      end
+    end
+    table.sort(indices)
+    if #indices == 0 then
+      -- Fallback to generic pairs order when pages are keyed
+      -- unusually; this keeps search behavior correct even if
+      -- ordering is undefined.
+      for _, text in pairs(pages) do
+        local norm = normalizeSearchText(text)
+        if norm ~= "" then
+          if out ~= "" then
+            out = out .. "\n" .. norm
+          else
+            out = norm
+          end
+        end
+      end
+    else
+      for _, pageNum in ipairs(indices) do
+        local norm = normalizeSearchText(pages[pageNum])
+        if norm ~= "" then
+          if out ~= "" then
+            out = out .. "\n" .. norm
+          else
+            out = norm
+          end
+        end
+      end
+    end
+  end
+  return out
+end
+
 local function cloneTable(value)
   if type(value) ~= "table" then
     return value
@@ -203,6 +260,14 @@ local function ensureDB()
       entry.isFavorite = false
     end
   end
+
+	-- Step 6 – backfill searchText so existing entries can use the
+	-- optimized search path without changing user-visible results.
+	for bookId, entry in pairs(BookArchivistDB.booksById or {}) do
+		if type(entry) == "table" and entry.searchText == nil then
+			entry.searchText = buildSearchText(entry.title, entry.pages)
+		end
+	end
 
   BookArchivistDB.uiState = BookArchivistDB.uiState or {}
   local uiState = BookArchivistDB.uiState
@@ -572,6 +637,7 @@ function Core:PersistSession(session)
     entry.location = cloneTable(session.location)
   end
 
+	entry.searchText = buildSearchText(entry.title, entry.pages)
 	self:IndexTitleForBook(entry.title or session.title, bookId)
 	self:TouchOrder(bookId)
   return entry
@@ -632,6 +698,7 @@ function Core:InjectEntry(entry, opts)
 	db.booksById = db.booksById or {}
 	db.booksById[entry.key] = entry
   entry.pages = entry.pages or {}
+	entry.searchText = entry.searchText or buildSearchText(entry.title, entry.pages)
 
   if opts.append then
     self:AppendOrder(entry.key)
