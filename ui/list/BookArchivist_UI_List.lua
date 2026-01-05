@@ -401,15 +401,6 @@ function ListUI:UpdateFilterButtons()
       end
     end
   end
-
-  -- Keep the category dropdown label in sync with the current
-  -- virtual category selection.
-  local dropdown = self:GetFrame("categoryDropdown")
-  if dropdown and type(UIDropDownMenu_SetText) == "function" then
-    local currentId = (self.GetCategoryId and self:GetCategoryId()) or "__all__"
-    local labelKey = (currentId == "__favorites__") and "CATEGORY_FAVORITES" or "CATEGORY_ALL"
-    UIDropDownMenu_SetText(dropdown, t(labelKey))
-  end
 end
 
 function ListUI:InitializeSortDropdown(dropdown)
@@ -421,7 +412,51 @@ function ListUI:InitializeSortDropdown(dropdown)
 	  UIDropDownMenu_SetText(dropdown, t("SORT_DROPDOWN_PLACEHOLDER"))
 
   UIDropDownMenu_Initialize(dropdown, function(self)
-    local current = ListUI:GetSortMode()
+    local currentSort = ListUI:GetSortMode()
+    local currentCategory = (ListUI.GetCategoryId and ListUI:GetCategoryId()) or "__all__"
+
+    -- Inject virtual category choices at the top of the sort menu so
+    -- users can switch between All and Favorites from a single
+    -- selector. Use title-style rows to visually separate the
+    -- category group from the sort group.
+    if ListUI.IsVirtualCategoriesEnabled and ListUI:IsVirtualCategoriesEnabled() then
+      local headerCategories = UIDropDownMenu_CreateInfo()
+      headerCategories.isTitle = true
+      headerCategories.notCheckable = true
+      headerCategories.text = t("SORT_GROUP_CATEGORY")
+      UIDropDownMenu_AddButton(headerCategories)
+
+      local infoAll = UIDropDownMenu_CreateInfo()
+      infoAll.text = t("CATEGORY_ALL")
+      infoAll.func = function()
+        ListUI:SetCategoryId("__all__")
+      end
+      infoAll.checked = (currentCategory == "__all__")
+      UIDropDownMenu_AddButton(infoAll)
+
+      local infoFav = UIDropDownMenu_CreateInfo()
+      infoFav.text = t("CATEGORY_FAVORITES")
+      infoFav.func = function()
+        ListUI:SetCategoryId("__favorites__")
+      end
+      infoFav.checked = (currentCategory == "__favorites__")
+      UIDropDownMenu_AddButton(infoFav)
+
+      local sep = UIDropDownMenu_CreateInfo()
+      sep.disabled = true
+      sep.notCheckable = true
+      sep.text = " "
+      UIDropDownMenu_AddButton(sep)
+    end
+
+    local current = currentSort
+
+    local headerSort = UIDropDownMenu_CreateInfo()
+    headerSort.isTitle = true
+    headerSort.notCheckable = true
+    headerSort.text = t("SORT_GROUP_ORDER")
+    UIDropDownMenu_AddButton(headerSort)
+
     for _, option in ipairs(SORT_OPTIONS) do
       local info = UIDropDownMenu_CreateInfo()
       info.text = t(option.labelKey)
@@ -432,7 +467,7 @@ function ListUI:InitializeSortDropdown(dropdown)
         ListUI:RebuildFiltered()
         ListUI:UpdateList()
       end
-      info.checked = current == option.value
+      info.checked = (current == option.value)
       UIDropDownMenu_AddButton(info)
     end
   end)

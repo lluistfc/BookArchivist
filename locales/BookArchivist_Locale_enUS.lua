@@ -26,6 +26,10 @@ Locales.enUS = {
   ["PAGINATION_PAGE_SIZE_FORMAT"] = "%d / page",
   ["SORT_DROPDOWN_PLACEHOLDER"] = "Sorting...",
 
+  -- Sort dropdown grouping labels
+  ["SORT_GROUP_CATEGORY"] = "View",
+  ["SORT_GROUP_ORDER"] = "Sort by",
+
   -- Sort option labels
   ["SORT_RECENT"] = "Recently Read",
   ["SORT_TITLE"] = "Title (A–Z)",

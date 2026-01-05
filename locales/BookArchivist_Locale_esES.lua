@@ -57,6 +57,14 @@ Locales.esES = {
   ["READER_DELETE_CONFIRM"] = "¿Eliminar '%s'? Esta acción no se puede deshacer.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Libro eliminado del archivo.|r",
 
+  -- Favorites
+  ["READER_FAVORITE_ADD"] = "Añadir a Favoritos",
+  ["READER_FAVORITE_REMOVE"] = "Quitar de Favoritos",
+  ["CATEGORY_ALL"] = "Todos los libros",
+  ["CATEGORY_FAVORITES"] = "Favoritos",
+  ["SORT_GROUP_CATEGORY"] = "Vista",
+  ["SORT_GROUP_ORDER"] = "Ordenar por",
+
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Activa diagnósticos detallados para solucionar problemas de actualización.",
   ["OPTIONS_DEBUG_LOGGING_LABEL"] = "Activar registro de depuración",

@@ -57,6 +57,14 @@ Locales.itIT = {
   ["READER_DELETE_CONFIRM"] = "Eliminare '%s'? Questa azione non può essere annullata.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Libro eliminato dall'archivio.|r",
 
+  -- Favorites
+  ["READER_FAVORITE_ADD"] = "Aggiungi ai preferiti",
+  ["READER_FAVORITE_REMOVE"] = "Rimuovi dai preferiti",
+  ["CATEGORY_ALL"] = "Tutti i libri",
+  ["CATEGORY_FAVORITES"] = "Preferiti",
+  ["SORT_GROUP_CATEGORY"] = "Vista",
+  ["SORT_GROUP_ORDER"] = "Ordina per",
+
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Abilita diagnostica dettagliata per risolvere problemi di aggiornamento.",
   ["OPTIONS_DEBUG_LOGGING_LABEL"] = "Abilita log di debug",

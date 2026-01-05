@@ -57,6 +57,14 @@ Locales.deDE = {
   ["READER_DELETE_CONFIRM"] = "'%s' löschen? Dies kann nicht rückgängig gemacht werden.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Buch aus dem Archiv gelöscht.|r",
 
+  -- Favorites
+  ["READER_FAVORITE_ADD"] = "Zu Favoriten hinzufügen",
+  ["READER_FAVORITE_REMOVE"] = "Aus Favoriten entfernen",
+  ["CATEGORY_ALL"] = "Alle Bücher",
+  ["CATEGORY_FAVORITES"] = "Favoriten",
+  ["SORT_GROUP_CATEGORY"] = "Ansicht",
+  ["SORT_GROUP_ORDER"] = "Sortieren nach",
+
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Aktiviere ausführliche Diagnosen, um Aktualisierungsprobleme zu untersuchen.",
   ["OPTIONS_DEBUG_LOGGING_LABEL"] = "Debug-Protokollierung aktivieren",

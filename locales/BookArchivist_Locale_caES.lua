@@ -57,6 +57,14 @@ Locales.caES = {
   ["READER_DELETE_CONFIRM"] = "Vols eliminar '%s'? Aquesta acció no es pot desfer.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Llibre eliminat de l'arxiu.|r",
 
+  -- Favorites
+  ["READER_FAVORITE_ADD"] = "Afegeix als preferits",
+  ["READER_FAVORITE_REMOVE"] = "Treu dels preferits",
+  ["CATEGORY_ALL"] = "Tots els llibres",
+  ["CATEGORY_FAVORITES"] = "Preferits",
+  ["SORT_GROUP_CATEGORY"] = "Vista",
+  ["SORT_GROUP_ORDER"] = "Ordena per",
+
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Activa diagnòstics detallats per solucionar problemes d'actualització.",
   ["OPTIONS_DEBUG_LOGGING_LABEL"] = "Activa el registre de depuració",

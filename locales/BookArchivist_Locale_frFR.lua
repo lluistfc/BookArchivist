@@ -57,6 +57,14 @@ Locales.frFR = {
   ["READER_DELETE_CONFIRM"] = "Supprimer '%s' ? Cette action est irréversible.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Livre supprimé de l'archive.|r",
 
+  -- Favorites
+  ["READER_FAVORITE_ADD"] = "Ajouter aux favoris",
+  ["READER_FAVORITE_REMOVE"] = "Retirer des favoris",
+  ["CATEGORY_ALL"] = "Tous les livres",
+  ["CATEGORY_FAVORITES"] = "Favoris",
+  ["SORT_GROUP_CATEGORY"] = "Vue",
+  ["SORT_GROUP_ORDER"] = "Trier par",
+
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Active des diagnostics détaillés pour résoudre les problèmes de rafraîchissement.",
   ["OPTIONS_DEBUG_LOGGING_LABEL"] = "Activer le journal de débogage",

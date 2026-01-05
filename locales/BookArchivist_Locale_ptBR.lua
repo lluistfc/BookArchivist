@@ -57,6 +57,14 @@ Locales.ptBR = {
   ["READER_DELETE_CONFIRM"] = "Excluir '%s'? Esta ação não pode ser desfeita.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Livro removido do arquivo.|r",
 
+  -- Favorites
+  ["READER_FAVORITE_ADD"] = "Adicionar aos Favoritos",
+  ["READER_FAVORITE_REMOVE"] = "Remover dos Favoritos",
+  ["CATEGORY_ALL"] = "Todos os livros",
+  ["CATEGORY_FAVORITES"] = "Favoritos",
+  ["SORT_GROUP_CATEGORY"] = "Visualização",
+  ["SORT_GROUP_ORDER"] = "Ordenar por",
+
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Ative diagnósticos detalhados para resolver problemas de atualização.",
   ["OPTIONS_DEBUG_LOGGING_LABEL"] = "Ativar registro de depuração",
