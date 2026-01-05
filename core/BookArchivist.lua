@@ -10,6 +10,7 @@ local Core = BookArchivist.Core
 local Capture = BookArchivist.Capture
 local Location = BookArchivist.Location
 local MinimapModule = BookArchivist.Minimap
+local TooltipModule = BookArchivist.Tooltip
 
 local function callInternalDebug(method, ...)
   local ui = BookArchivist.UI
@@ -86,6 +87,9 @@ local function handleAddonLoaded(name)
   if MinimapModule and MinimapModule.Initialize then
     MinimapModule:Initialize()
   end
+  if TooltipModule and TooltipModule.Initialize then
+		TooltipModule:Initialize()
+	end
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -151,6 +155,43 @@ function BookArchivist:IsUIDebugEnabled()
   return opts.uiDebug and true or false
 end
 
+function BookArchivist:IsTooltipEnabled()
+  if Core and Core.IsTooltipEnabled then
+    return Core:IsTooltipEnabled()
+  end
+  local db = self:GetDB() or {}
+  local opts = db.options or {}
+  local tooltipOpts = opts.tooltip
+  if tooltipOpts == nil then
+    return true
+  end
+  if type(tooltipOpts) == "table" then
+    if tooltipOpts.enabled == nil then
+      tooltipOpts.enabled = true
+    end
+    return tooltipOpts.enabled and true or false
+  end
+  if type(tooltipOpts) == "boolean" then
+    return tooltipOpts and true or false
+  end
+  return true
+end
+
+function BookArchivist:SetTooltipEnabled(state)
+  if Core and Core.SetTooltipEnabled then
+    Core:SetTooltipEnabled(state)
+  else
+    local db = self:GetDB() or {}
+    db.options = db.options or {}
+    db.options.tooltip = db.options.tooltip or {}
+    if type(db.options.tooltip) ~= "table" then
+      db.options.tooltip = { enabled = state and true or false }
+    else
+      db.options.tooltip.enabled = state and true or false
+    end
+  end
+end
+
 function BookArchivist:SetUIDebugEnabled(state)
   if Core and Core.SetUIDebugEnabled then
     Core:SetUIDebugEnabled(state)
@@ -198,7 +239,7 @@ function BookArchivist:GetListSortMode()
   if Core and Core.GetSortMode then
     return Core:GetSortMode()
   end
-  return "recent"
+	return "lastSeen"
 end
 
 function BookArchivist:SetListSortMode(mode)

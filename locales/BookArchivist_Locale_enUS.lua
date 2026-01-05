@@ -74,6 +74,8 @@ Locales.enUS = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Shows extra BookArchivist information in chat for troubleshooting.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "Show UI debug grid",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Highlights layout bounds for troubleshooting. Same as /ba uidebug on/off.",
+	["OPTIONS_TOOLTIP_LABEL"] = "Show tooltip 'Archived' tag",
+	["OPTIONS_TOOLTIP_TOOLTIP"] = "When enabled, readable items whose text has been saved for this character will show an extra 'Book Archivist: Archived' line in their tooltip.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Unknown Zone",
@@ -120,6 +122,7 @@ Locales.enUS = {
   ["BOOK_UNTITLED"] = "(Untitled)",
   ["BOOK_UNKNOWN"] = "Unknown Book",
   ["BOOK_MISSING_DATA"] = "Missing data",
+	["TOOLTIP_ARCHIVED"] = "Book Archivist: Archived",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Language",

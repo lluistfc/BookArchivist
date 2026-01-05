@@ -136,6 +136,7 @@ local function ensureDB()
     local gameLocale = (type(GetLocale) == "function" and GetLocale()) or "enUS"
     BookArchivistDB.options.language = normalizeLanguageTag(gameLocale)
   end
+  BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or { enabled = true }
   BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
   local uiOpts = BookArchivistDB.options.ui
   if type(uiOpts.listWidth) ~= "number" then
@@ -164,6 +165,24 @@ local function ensureDB()
     recent.cap = 50
   end
   recent.list = recent.list or {}
+
+  BookArchivistDB.indexes = BookArchivistDB.indexes or {}
+  BookArchivistDB.indexes.objectToBookId = BookArchivistDB.indexes.objectToBookId or {}
+  BookArchivistDB.indexes.itemToBookIds = BookArchivistDB.indexes.itemToBookIds or {}
+  BookArchivistDB.indexes.titleToBookIds = BookArchivistDB.indexes.titleToBookIds or {}
+  if not BookArchivistDB.indexes._titleIndexBackfilled then
+    local titleIndex = BookArchivistDB.indexes.titleToBookIds
+    for bookId, entry in pairs(BookArchivistDB.booksById or {}) do
+      if type(entry) == "table" and entry.title and entry.title ~= "" then
+        local key = normalizeKeyPart(entry.title)
+        if key ~= "" then
+          titleIndex[key] = titleIndex[key] or {}
+          titleIndex[key][bookId] = true
+        end
+      end
+    end
+    BookArchivistDB.indexes._titleIndexBackfilled = true
+  end
 
   local minimapDefaults = {
     angle = 200,
@@ -333,6 +352,34 @@ end
 function Core:SetDebugEnabled(state)
   local opts = self:GetOptions()
   opts.debugEnabled = state and true or false
+end
+
+function Core:IsTooltipEnabled()
+  local opts = self:GetOptions()
+  local tooltipOpts = opts.tooltip
+  if tooltipOpts == nil then
+    return true
+  end
+  if type(tooltipOpts) == "table" then
+    if tooltipOpts.enabled == nil then
+      tooltipOpts.enabled = true
+    end
+    return tooltipOpts.enabled and true or false
+  end
+  if type(tooltipOpts) == "boolean" then
+    return tooltipOpts and true or false
+  end
+  return true
+end
+
+function Core:SetTooltipEnabled(state)
+  local opts = self:GetOptions()
+  opts.tooltip = opts.tooltip or {}
+  if type(opts.tooltip) ~= "table" then
+    opts.tooltip = { enabled = state and true or false }
+  else
+    opts.tooltip.enabled = state and true or false
+  end
 end
 
 function Core:IsUIDebugEnabled()
@@ -525,8 +572,56 @@ function Core:PersistSession(session)
     entry.location = cloneTable(session.location)
   end
 
+	self:IndexTitleForBook(entry.title or session.title, bookId)
 	self:TouchOrder(bookId)
   return entry
+end
+
+function Core:IndexItemForBook(itemID, bookId)
+  if not itemID or not bookId then
+    return
+  end
+  local db = ensureDB()
+  db.indexes = db.indexes or {}
+  db.indexes.itemToBookIds = db.indexes.itemToBookIds or {}
+  local map = db.indexes.itemToBookIds
+  local id = tonumber(itemID) or itemID
+  if not id then
+    return
+  end
+  map[id] = map[id] or {}
+  map[id][bookId] = true
+end
+
+function Core:IndexObjectForBook(objectID, bookId)
+  if not objectID or not bookId then
+    return
+  end
+  local db = ensureDB()
+  db.indexes = db.indexes or {}
+  db.indexes.objectToBookId = db.indexes.objectToBookId or {}
+  local index = db.indexes.objectToBookId
+  local id = tonumber(objectID) or objectID
+  if not id then
+    return
+  end
+  index[id] = bookId
+end
+
+function Core:IndexTitleForBook(title, bookId)
+  if not title or title == "" or not bookId then
+    return
+  end
+  local db = ensureDB()
+  db.indexes = db.indexes or {}
+  db.indexes.titleToBookIds = db.indexes.titleToBookIds or {}
+  local key = normalizeKeyPart(title)
+  if key == "" then
+    return
+  end
+  local map = db.indexes.titleToBookIds
+  map[key] = map[key] or {}
+  map[key][bookId] = true
 end
 
 function Core:InjectEntry(entry, opts)

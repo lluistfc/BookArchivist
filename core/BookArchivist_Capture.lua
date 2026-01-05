@@ -192,6 +192,13 @@ function Capture:OnReady()
   -- Persist incrementally so we don't lose data if the close event is skipped by other UIs.
   if Core and Core.PersistSession then
     local persisted = Core:PersistSession(activeSession)
+		if persisted and activeSession.itemID and Core.IndexItemForBook then
+			Core:IndexItemForBook(activeSession.itemID, persisted.id or persisted.key)
+    end
+    local src = activeSession.source or {}
+    if persisted and src.objectID and src.objectType == "GameObject" and Core.IndexObjectForBook then
+      Core:IndexObjectForBook(src.objectID, persisted.id or persisted.key)
+		end
     if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
       BookArchivist.RefreshUI()
     end
@@ -202,7 +209,14 @@ function Capture:OnClosed()
   if not session then return end
   ensureSessionLocation(session)
   if Core and Core.PersistSession then
-    Core:PersistSession(session)
+    local persisted = Core:PersistSession(session)
+		if persisted and session.itemID and Core.IndexItemForBook then
+			Core:IndexItemForBook(session.itemID, persisted.id or persisted.key)
+    end
+    local src = session.source or {}
+    if persisted and src.objectID and src.objectType == "GameObject" and Core.IndexObjectForBook then
+      Core:IndexObjectForBook(src.objectID, persisted.id or persisted.key)
+		end
   end
   session = nil
 end

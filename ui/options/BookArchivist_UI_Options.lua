@@ -101,6 +101,18 @@ function OptionsUI:Sync()
 	end
   optionsPanel.uiDebugCheckbox.tooltipText = t("OPTIONS_UI_DEBUG_TOOLTIP")
 
+  local tooltipEnabled = true
+  if BookArchivist and type(BookArchivist.IsTooltipEnabled) == "function" then
+    tooltipEnabled = BookArchivist:IsTooltipEnabled() and true or false
+  end
+  if optionsPanel.tooltipCheckbox then
+    optionsPanel.tooltipCheckbox:SetChecked(tooltipEnabled)
+    if optionsPanel.tooltipCheckbox.Text and optionsPanel.tooltipCheckbox.Text.SetText then
+      optionsPanel.tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
+    end
+    optionsPanel.tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
+  end
+
   if optionsPanel.langLabel and optionsPanel.langLabel.SetText then
 	optionsPanel.langLabel:SetText(t("LANGUAGE_LABEL"))
 	end
@@ -191,8 +203,21 @@ function OptionsUI:Ensure()
 
   optionsPanel.uiDebugCheckbox = uiDebugCheckbox
 
+  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
+  tooltipCheckbox:SetPoint("TOPLEFT", uiDebugCheckbox, "BOTTOMLEFT", 0, -8)
+  tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
+  tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
+  tooltipCheckbox:SetScript("OnClick", function(self)
+    local state = self:GetChecked()
+    if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
+      BookArchivist:SetTooltipEnabled(state)
+    end
+  end)
+
+  optionsPanel.tooltipCheckbox = tooltipCheckbox
+
   local langLabel = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  langLabel:SetPoint("TOPLEFT", uiDebugCheckbox, "BOTTOMLEFT", 0, -16)
+  langLabel:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -16)
 	langLabel:SetText(t("LANGUAGE_LABEL"))
   optionsPanel.langLabel = langLabel
 
