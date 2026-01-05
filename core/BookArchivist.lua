@@ -220,6 +220,26 @@ function BookArchivist:SetListFilter(filterKey, state)
   end
 end
 
+function BookArchivist:IsVirtualCategoriesEnabled()
+  if Core and Core.IsVirtualCategoriesEnabled then
+    return Core:IsVirtualCategoriesEnabled()
+  end
+  return true
+end
+
+function BookArchivist:GetLastCategoryId()
+  if Core and Core.GetLastCategoryId then
+    return Core:GetLastCategoryId()
+  end
+  return "__all__"
+end
+
+function BookArchivist:SetLastCategoryId(categoryId)
+  if Core and Core.SetLastCategoryId then
+    Core:SetLastCategoryId(categoryId)
+  end
+end
+
 function BookArchivist:GetLanguage()
   if Core and Core.GetLanguage then
     return Core:GetLanguage()

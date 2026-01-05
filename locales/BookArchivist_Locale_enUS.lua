@@ -57,6 +57,12 @@ Locales.enUS = {
   ["READER_DELETE_CONFIRM"] = "Delete '%s'? This cannot be undone.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Book deleted from archive.|r",
 
+  -- Favorites
+  ["READER_FAVORITE_ADD"] = "Add to Favorites",
+  ["READER_FAVORITE_REMOVE"] = "Remove from Favorites",
+	["CATEGORY_ALL"] = "All books",
+	["CATEGORY_FAVORITES"] = "Favorites",
+
   -- Options panel
   ["OPTIONS_SUBTITLE_DEBUG"] = "Enable verbose diagnostics to troubleshoot refresh issues.",
   ["OPTIONS_DEBUG_LOGGING_LABEL"] = "Enable debug logging",

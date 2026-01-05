@@ -182,6 +182,26 @@ local function initializeModules()
 					addon:SetListFilter(filterKey, state)
 				end
 			end,
+			getCategoryId = function()
+				local addon = Internal.getAddon()
+				if addon and addon.GetLastCategoryId then
+					return addon:GetLastCategoryId()
+				end
+				return "__all__"
+			end,
+			setCategoryId = function(categoryId)
+				local addon = Internal.getAddon()
+				if addon and addon.SetLastCategoryId then
+					addon:SetLastCategoryId(categoryId)
+				end
+			end,
+			isVirtualCategoriesEnabled = function()
+				local addon = Internal.getAddon()
+				if addon and addon.IsVirtualCategoriesEnabled then
+					return addon:IsVirtualCategoriesEnabled()
+				end
+				return true
+			end,
 		}
 		ListUI:Init(listModuleContext)
 	end

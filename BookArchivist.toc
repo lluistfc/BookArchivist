@@ -10,6 +10,7 @@
 core/BookArchivist_BookId.lua
 core/BookArchivist_Migrations.lua
 core/BookArchivist_DB.lua
+core/BookArchivist_Favorites.lua
 core/BookArchivist_Core.lua
 core/BookArchivist_Location.lua
 core/BookArchivist_Capture.lua
@@ -47,4 +48,3 @@ ui/BookArchivist_UI_Frame_Builder.lua
 ui/BookArchivist_UI_Frame.lua
 ui/BookArchivist_UI_Runtime.lua
 BookArchivist_logo_64x64.png
-BookArchivist_logo.png

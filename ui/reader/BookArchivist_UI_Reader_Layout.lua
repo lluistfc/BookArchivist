@@ -34,6 +34,24 @@ end
 local unsupportedHTMLFontTags = {}
 local unsupportedHTMLSpacingTags = {}
 
+local function syncFavoriteVisual(button, isFavorite)
+	if not button then
+		return
+	end
+	local isFav = isFavorite and true or false
+	if button.starOn and button.starOff then
+		button.starOn:SetShown(isFav)
+		button.starOff:SetShown(not isFav)
+	end
+	if button.SetChecked then
+		button:SetChecked(isFav)
+	end
+end
+
+-- Expose for ReaderUI:RenderSelected so the reader controller can
+-- drive the same visual treatment when selection changes.
+ReaderUI.__syncFavoriteVisual = syncFavoriteVisual
+
 local function resolveFontObject(font)
 	if type(font) == "string" then
 		local globalFonts = _G or {}
@@ -364,6 +382,83 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		deleteDebug("ReaderUI:Create deleteButton creation failed; logging error")
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
 			BookArchivist.UI.Internal.logError("BookArchivist delete button failed to initialize.")
+		end
+	end
+
+	-- Favorites toggle lives in the reader header actions rail, to the
+	-- left of the delete button when available.
+	if actionsRail and safeCreateFrame then
+		local favoriteBtn = state.favoriteButton
+		if not favoriteBtn or not (favoriteBtn.IsObjectType and favoriteBtn:IsObjectType("Button")) then
+			favoriteBtn = safeCreateFrame("Button", "BookArchivistFavoriteButton", actionsRail)
+			state.favoriteButton = favoriteBtn
+			if rememberWidget then
+				rememberWidget("favoriteBtn", favoriteBtn)
+			end
+			-- Replace the default checkbox textures with a star-style favorite
+			-- icon, similar to the mounts/collections UIs.
+			local size = Metrics.BTN_H or 22
+			if favoriteBtn.SetSize then
+				favoriteBtn:SetSize(size, size)
+			end
+			local starOff = favoriteBtn:CreateTexture(nil, "ARTWORK")
+			starOff:SetAllPoints()
+			if starOff.SetAtlas then
+				-- Golden star atlas used broadly in the default UI; when
+				-- unavailable this call simply leaves the texture empty.
+				starOff:SetAtlas("auctionhouse-icon-favorite", true)
+			end
+			starOff:SetDesaturated(true)
+			starOff:SetAlpha(0.35)
+			local starOn = favoriteBtn:CreateTexture(nil, "OVERLAY")
+			starOn:SetAllPoints()
+			if starOn.SetAtlas then
+				starOn:SetAtlas("auctionhouse-icon-favorite", true)
+			end
+			starOn:SetDesaturated(false)
+			starOn:SetAlpha(1)
+			favoriteBtn.starOff = starOff
+			favoriteBtn.starOn = starOn
+			syncFavoriteVisual(favoriteBtn, false)
+			favoriteBtn:SetMotionScriptsWhileDisabled(true)
+			favoriteBtn:SetScript("OnEnter", function(self)
+				if not GameTooltip then return end
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+				local addon = getAddon and getAddon()
+				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
+				local isFav = false
+				if addon and addon.Favorites and key and addon.Favorites.IsFavorite then
+					isFav = addon.Favorites:IsFavorite(key)
+				end
+				if isFav then
+					GameTooltip:SetText(t("READER_FAVORITE_REMOVE"), 1, 1, 1)
+				else
+					GameTooltip:SetText(t("READER_FAVORITE_ADD"), 1, 1, 1)
+				end
+				GameTooltip:Show()
+			end)
+			favoriteBtn:SetScript("OnLeave", function()
+				if GameTooltip then GameTooltip:Hide() end
+			end)
+			favoriteBtn:SetScript("OnClick", function(self)
+				local addon = getAddon and getAddon()
+				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
+				if not (addon and addon.Favorites and addon.Favorites.Toggle and key) then
+					syncFavoriteVisual(self, false)
+					return
+				end
+				addon.Favorites:Toggle(key)
+				local isFav = addon.Favorites:IsFavorite(key)
+				syncFavoriteVisual(self, isFav)
+			end)
+		end
+		if favoriteBtn then
+			favoriteBtn:ClearAllPoints()
+			if deleteButton then
+				favoriteBtn:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			else
+				favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
 		end
 	end
 

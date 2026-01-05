@@ -29,6 +29,7 @@ local LIST_FILTER_DEFAULTS = {
   hasLocation = false,
   multiPage = false,
   unread = false,
+  favoritesOnly = false,
 }
 
 local VALID_SORT_MODES = {
@@ -141,6 +142,9 @@ local function ensureDB()
   if type(uiOpts.listWidth) ~= "number" then
     uiOpts.listWidth = LIST_WIDTH_DEFAULT
   end
+  if uiOpts.virtualCategoriesEnabled == nil then
+    uiOpts.virtualCategoriesEnabled = true
+  end
 
   BookArchivistDB.options.list = BookArchivistDB.options.list or {}
   local listOpts = BookArchivistDB.options.list
@@ -165,6 +169,21 @@ local function ensureDB()
   if type(minimap.angle) ~= "number" then
     minimap.angle = minimapDefaults.angle
   end
+
+  -- Favorites & virtual categories (Step 3): backfill default
+  -- flags on existing entries and ensure ui options table exists.
+  for bookId, entry in pairs(BookArchivistDB.booksById or {}) do
+    if type(entry) == "table" and entry.isFavorite == nil then
+      entry.isFavorite = false
+    end
+  end
+
+  BookArchivistDB.uiState = BookArchivistDB.uiState or {}
+  local uiState = BookArchivistDB.uiState
+  if type(uiState.lastCategoryId) ~= "string" or uiState.lastCategoryId == "" then
+    uiState.lastCategoryId = "__all__"
+  end
+
   pruneLegacyAuthor(BookArchivistDB)
   return BookArchivistDB
 end
@@ -332,6 +351,14 @@ function Core:SetListWidth(width)
   end
 end
 
+function Core:IsVirtualCategoriesEnabled()
+  local uiOpts = ensureUIOptions()
+  if uiOpts.virtualCategoriesEnabled == nil then
+    uiOpts.virtualCategoriesEnabled = true
+  end
+  return uiOpts.virtualCategoriesEnabled and true or false
+end
+
 function Core:GetSortMode()
   local listOpts = ensureListOptions()
   local mode = listOpts.sortMode or LIST_SORT_DEFAULT
@@ -364,6 +391,16 @@ function Core:SetListFilter(filterKey, state)
     return
   end
   listOpts.filters[filterKey] = state and true or false
+
+  -- Keep virtual category state in sync with the favorites-only
+  -- filter so category-aware UIs can treat it as a view selector.
+  if filterKey == "favoritesOnly" then
+    if state then
+      self:SetLastCategoryId("__favorites__")
+    else
+      self:SetLastCategoryId("__all__")
+    end
+  end
 end
 
 local function normalizePageSize(size)
@@ -383,6 +420,34 @@ end
 function Core:SetListPageSize(size)
   local listOpts = ensureListOptions()
   listOpts.pageSize = normalizePageSize(size)
+end
+
+function Core:GetLastCategoryId()
+  local db = ensureDB()
+  db.uiState = db.uiState or {}
+  local id = db.uiState.lastCategoryId
+  if type(id) ~= "string" or id == "" then
+    id = "__all__"
+    db.uiState.lastCategoryId = id
+  end
+  return id
+end
+
+function Core:SetLastCategoryId(categoryId)
+  local db = ensureDB()
+  db.uiState = db.uiState or {}
+  local id = (type(categoryId) == "string" and categoryId ~= "") and categoryId or "__all__"
+  db.uiState.lastCategoryId = id
+
+  -- Mirror category choice into the favorites-only list filter so the
+  -- list builder can continue to rely on filters for actual selection.
+  local listOpts = ensureListOptions()
+  listOpts.filters = listOpts.filters or {}
+  if id == "__favorites__" then
+    listOpts.filters.favoritesOnly = true
+  else
+    listOpts.filters.favoritesOnly = false
+  end
 end
 
 function Core:PersistSession(session)

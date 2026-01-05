@@ -30,7 +30,9 @@ local SORT_OPTIONS = {
   { value = "lastSeen", labelKey = "SORT_LAST_SEEN" },
 }
 
-local QUICK_FILTERS = {}
+local QUICK_FILTERS = {
+  { key = "favoritesOnly" },
+}
 
 local state = ListUI.__state or {}
 ListUI.__state = state
@@ -205,6 +207,44 @@ function ListUI:GetQuickFilters()
   return QUICK_FILTERS
 end
 
+function ListUI:IsVirtualCategoriesEnabled()
+  local ctx = self:GetContext()
+  if ctx and ctx.isVirtualCategoriesEnabled then
+    return ctx.isVirtualCategoriesEnabled() and true or false
+  end
+  return true
+end
+
+function ListUI:GetCategoryId()
+  local ctx = self:GetContext()
+  if ctx and ctx.getCategoryId then
+    local id = ctx.getCategoryId()
+    if type(id) == "string" and id ~= "" then
+      return id
+    end
+  end
+  return "__all__"
+end
+
+function ListUI:SetCategoryId(categoryId)
+  local ctx = self:GetContext()
+  if ctx and ctx.setCategoryId then
+    ctx.setCategoryId(categoryId)
+  end
+  if self.UpdateFilterButtons then
+    self:UpdateFilterButtons()
+  end
+  if self.RebuildFiltered then
+    self:RebuildFiltered()
+  end
+  if self.UpdateList then
+    self:UpdateList()
+  end
+  if self.UpdateCountsDisplay then
+    self:UpdateCountsDisplay()
+  end
+end
+
 local function normalizePageSize(size)
   size = tonumber(size)
   for _, allowed in ipairs(PAGE_SIZES) do
@@ -361,6 +401,15 @@ function ListUI:UpdateFilterButtons()
       end
     end
   end
+
+  -- Keep the category dropdown label in sync with the current
+  -- virtual category selection.
+  local dropdown = self:GetFrame("categoryDropdown")
+  if dropdown and type(UIDropDownMenu_SetText) == "function" then
+    local currentId = (self.GetCategoryId and self:GetCategoryId()) or "__all__"
+    local labelKey = (currentId == "__favorites__") and "CATEGORY_FAVORITES" or "CATEGORY_ALL"
+    UIDropDownMenu_SetText(dropdown, t(labelKey))
+  end
 end
 
 function ListUI:InitializeSortDropdown(dropdown)
@@ -452,6 +501,9 @@ function ListUI:EntryMatchesFilters(entry)
   if filters.unread and not entryIsUnread(entry) then
     return false
   end
+	if filters.favoritesOnly and not (entry and entry.isFavorite) then
+		return false
+	end
   return true
 end
 
@@ -521,10 +573,17 @@ end
 
 function ListUI:ApplySort(filteredKeys, db)
   local mode = self:GetSortMode()
-  if mode == "recent" then
+  local isFavoritesView = (self.GetCategoryId and self:GetCategoryId() == "__favorites__")
+  if mode == "recent" and not isFavoritesView then
     return
   end
-  local comparator = self:GetSortComparator(mode, db)
+  local effectiveMode = mode
+  if isFavoritesView and mode == "recent" then
+    -- In Favorites view, treat the implicit "recent" mode as a proper
+    -- last-seen sort so ordering is deterministic.
+    effectiveMode = "lastSeen"
+  end
+  local comparator = self:GetSortComparator(effectiveMode, db)
   if comparator then
     table.sort(filteredKeys, comparator)
   end

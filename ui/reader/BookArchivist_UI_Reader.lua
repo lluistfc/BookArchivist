@@ -560,5 +560,19 @@ function ReaderUI:RenderSelected()
     state.countText:SetText(table.concat(details, "  |cFF666666•|r  "))
   end
 
+	-- Sync favorites toggle state for the newly selected entry.
+	local favoriteBtn = state.favoriteButton or getWidget("favoriteBtn")
+  if favoriteBtn then
+    local addon = getAddon()
+    local isFav = false
+    if addon and addon.Favorites and addon.Favorites.IsFavorite and key then
+      isFav = addon.Favorites:IsFavorite(key)
+    end
+    if ReaderUI.__syncFavoriteVisual then
+      ReaderUI.__syncFavoriteVisual(favoriteBtn, isFav)
+    elseif favoriteBtn.SetChecked then
+      favoriteBtn:SetChecked(isFav)
+    end
+  end
     self:UpdatePageControlsDisplay(totalPages)
 end

@@ -172,6 +172,39 @@ function ListUI:EnsureInfoText()
     info:SetPoint("BOTTOMRIGHT", tipRow, "BOTTOMRIGHT", 0, 0)
   end
   self:SetFrame("infoText", info)
+
+  -- Virtual category selector (All / Favorites) anchored in the tip row,
+  -- to the left of the pagination controls.
+  if paginationFrame and self.IsVirtualCategoriesEnabled and self:IsVirtualCategoriesEnabled() then
+    local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistCategoryDropdown", tipRow, "UIDropDownMenuTemplate")
+    if dropdown then
+      dropdown:ClearAllPoints()
+      dropdown:SetPoint("RIGHT", paginationFrame, "LEFT", -(Metrics.GAP_S or Metrics.GAP_XS or 4), 0)
+      UIDropDownMenu_SetWidth(dropdown, 140)
+      UIDropDownMenu_JustifyText(dropdown, "LEFT")
+      UIDropDownMenu_Initialize(dropdown, function(frame, level)
+        local function addCategory(id, labelKey)
+          local info = UIDropDownMenu_CreateInfo()
+          info.text = t(labelKey)
+          info.value = id
+          info.func = function()
+            self:SetCategoryId(id)
+          end
+          info.checked = (self:GetCategoryId() == id)
+          UIDropDownMenu_AddButton(info, level)
+        end
+        addCategory("__all__", "CATEGORY_ALL")
+        addCategory("__favorites__", "CATEGORY_FAVORITES")
+      end)
+
+      -- Keep initial label in sync with persisted category.
+      local currentId = self:GetCategoryId()
+      local currentLabelKey = (currentId == "__favorites__") and "CATEGORY_FAVORITES" or "CATEGORY_ALL"
+      UIDropDownMenu_SetText(dropdown, t(currentLabelKey))
+
+      self:SetFrame("categoryDropdown", dropdown)
+    end
+  end
   return info
 end
 
