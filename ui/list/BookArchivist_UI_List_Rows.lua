@@ -69,6 +69,10 @@ local function handleRowClick(self, button, mouseButton)
   end
 
   if button.bookKey then
+	if mouseButton == "RightButton" and self.ShowBookContextMenu then
+		self:ShowBookContextMenu(button, button.bookKey)
+		return
+	end
     self:SetSelectedKey(button.bookKey)
     self:NotifySelectionChanged()
     self:UpdateList()

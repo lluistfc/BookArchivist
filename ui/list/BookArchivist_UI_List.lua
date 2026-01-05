@@ -237,6 +237,9 @@ function ListUI:SetCategoryId(categoryId)
   if self.RebuildFiltered then
     self:RebuildFiltered()
   end
+  if self.RebuildLocationTree then
+	self:RebuildLocationTree()
+  end
   if self.UpdateList then
     self:UpdateList()
   end
@@ -805,6 +808,61 @@ function ListUI:NotifySelectionChanged()
   local ctx = self:GetContext()
   if ctx and ctx.onSelectionChanged then
     ctx.onSelectionChanged()
+  end
+end
+
+function ListUI:ShowBookContextMenu(anchorButton, bookKey)
+  if not anchorButton or not bookKey then
+    return
+  end
+  local addon = self:GetAddon()
+  if not addon or not addon.Favorites or not addon.Favorites.IsFavorite then
+    return
+  end
+  local isFav = addon.Favorites:IsFavorite(bookKey)
+  local menuFrame = self.GetLocationMenuFrame and self:GetLocationMenuFrame() or nil
+  if not menuFrame then
+    return
+  end
+  local label = isFav and t("READER_FAVORITE_REMOVE") or t("READER_FAVORITE_ADD")
+  local menu = {
+    { text = label, notCheckable = true, func = function()
+      if isFav and addon.Favorites.Set then
+        addon.Favorites:Set(bookKey, false)
+      else
+        addon.Favorites:Set(bookKey, true)
+      end
+      if type(addon.RefreshUI) == "function" then
+        addon:RefreshUI()
+      end
+    end },
+  }
+  if type(EasyMenu) == "function" then
+	EasyMenu(menu, menuFrame, anchorButton, 0, 0, "MENU")
+	return
+  end
+
+  -- Manual dropdown construction if EasyMenu helper is unavailable but
+  -- the underlying UIDropDownMenu API exists.
+  if type(UIDropDownMenu_Initialize) == "function" and type(ToggleDropDownMenu) == "function" and type(UIDropDownMenu_CreateInfo) == "function" and type(UIDropDownMenu_AddButton) == "function" then
+	UIDropDownMenu_Initialize(menuFrame, function(_, level)
+		level = level or 1
+		for _, item in ipairs(menu) do
+			local info = UIDropDownMenu_CreateInfo()
+			for k, v in pairs(item) do
+				info[k] = v
+			end
+			UIDropDownMenu_AddButton(info, level)
+		end
+	end, "MENU")
+	ToggleDropDownMenu(1, nil, menuFrame, anchorButton, 0, 0)
+	return
+  end
+
+  -- Final fallback: perform the action immediately.
+  local first = menu[1]
+  if first and type(first.func) == "function" then
+	first.func()
   end
 end
 

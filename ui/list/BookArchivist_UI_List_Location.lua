@@ -7,6 +7,16 @@ local function t(key)
   return (L and L[key]) or key
 end
 
+local function shouldIncludeEntry(self, entry)
+  if not entry then
+    return false
+  end
+  if self and self.EntryMatchesFilters then
+    return self:EntryMatchesFilters(entry)
+  end
+  return true
+end
+
 local function normalizeLocationLabel(label)
   if not label or label == "" then
     return "Unknown Location"
@@ -14,7 +24,7 @@ local function normalizeLocationLabel(label)
   return label
 end
 
-local function buildLocationTreeFromDB(db)
+local function buildLocationTreeFromDB(self, db)
   local root = {
     name = "__ROOT__",
     depth = 0,
@@ -35,7 +45,7 @@ local function buildLocationTreeFromDB(db)
   end
   for _, key in ipairs(order) do
 	local entry = books[key]
-    if entry then
+    if shouldIncludeEntry(self, entry) then
       local chain = entry.location and entry.location.zoneChain
       if not chain or #chain == 0 then
         local fallback = entry.location and entry.location.zoneText
@@ -208,7 +218,7 @@ function ListUI:RebuildLocationTree()
   end
 
   local db = addon:GetDB()
-  state.root = buildLocationTreeFromDB(db)
+  state.root = buildLocationTreeFromDB(self, db)
   ensureLocationPathValid(state)
   rebuildLocationRows(state)
 end
