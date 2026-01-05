@@ -21,6 +21,14 @@ local function hasMethod(obj, methodName)
   return obj and type(obj[methodName]) == "function"
 end
 
+local function syncRowFavorite(button, entry)
+	if not button or not button.favoriteStar then
+		return
+	end
+	local isFav = entry and entry.isFavorite and true or false
+	button.favoriteStar:SetShown(isFav)
+end
+
 local function resetButton(button)
   button:Hide()
   button:ClearAllPoints()
@@ -32,6 +40,7 @@ local function resetButton(button)
   if button.metaText then button.metaText:SetText("") end
   if button.selected then button.selected:Hide() end
   if button.selectedEdge then button.selectedEdge:Hide() end
+  if button.favoriteStar then button.favoriteStar:Hide() end
 end
 
 local function getScrollChild(self)
@@ -111,9 +120,25 @@ local function createRowButton(self)
   rowContent:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -(ROW_PAD_R + SCROLLBAR_GUTTER), ROW_PAD_T)
   button.content = rowContent
 
+	-- Favorite star indicator (books list only). This reuses the same
+	-- auction house "favorite" atlas as the reader header star.
+  local favoriteStar = rowContent:CreateTexture(nil, "OVERLAY")
+  local baseSize = self:GetRowHeight() or 36
+  local starSize = Metrics.ROW_FAVORITE_SIZE or math.floor(baseSize / 3)
+  favoriteStar:SetSize(starSize, starSize)
+	favoriteStar:SetPoint("TOPRIGHT", rowContent, "TOPRIGHT", 0, 0)
+  if favoriteStar.SetAtlas then
+    -- Do not pass useAtlasSize=true so our SetSize() is respected.
+    favoriteStar:SetAtlas("auctionhouse-icon-favorite")
+  end
+	favoriteStar:SetDesaturated(false)
+	favoriteStar:SetAlpha(1)
+	favoriteStar:Hide()
+	button.favoriteStar = favoriteStar
+
   button.titleText = rowContent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   button.titleText:SetPoint("TOPLEFT", rowContent, "TOPLEFT", 0, 0)
-  button.titleText:SetPoint("TOPRIGHT", rowContent, "TOPRIGHT", 0, 0)
+  button.titleText:SetPoint("TOPRIGHT", favoriteStar, "LEFT", -(Metrics.GAP_XS or 4), 0)
   button.titleText:SetJustifyH("LEFT")
   button.titleText:SetJustifyV("TOP")
   button.titleText:SetWordWrap(false)
@@ -253,6 +278,7 @@ function ListUI:UpdateList()
           button.itemKind = "book"
           button.titleText:SetText(entry.title or "(Untitled)")
           button.metaText:SetText(self:FormatRowMetadata(entry))
+	      syncRowFavorite(button, entry)
 
           if key == self:GetSelectedKey() then
             button.selected:Show()
@@ -261,6 +287,8 @@ function ListUI:UpdateList()
             button.selected:Hide()
             button.selectedEdge:Hide()
           end
+        else
+	      syncRowFavorite(button, nil)
         end
       end
     end
@@ -313,6 +341,7 @@ function ListUI:UpdateList()
 	      button.metaText:SetText("|cFF999999" .. t("LOCATION_BACK_SUBTITLE") .. "|r")
       button.selected:Hide()
       button.selectedEdge:Hide()
+      syncRowFavorite(button, nil)
     elseif row.kind == "location" then
       button.locationName = row.name
       button.bookKey = nil
@@ -335,12 +364,19 @@ function ListUI:UpdateList()
       button.metaText:SetText("|cFF999999" .. detail .. "|r")
       button.selected:Hide()
       button.selectedEdge:Hide()
+      syncRowFavorite(button, nil)
     elseif row.kind == "book" then
       local key = row.key
       button.bookKey = key
       button.locationName = nil
       button.nodeRef = nil
-      local entry = key and db.books and db.books[key]
+	      local books
+	      if db and db.booksById and next(db.booksById) ~= nil then
+		  books = db.booksById
+	      else
+		  books = db and db.books or nil
+	      end
+	      local entry = key and books and books[key]
       if entry then
           button.titleText:SetText(entry.title or t("BOOK_UNTITLED"))
         button.metaText:SetText(self:FormatRowMetadata(entry))
@@ -348,6 +384,7 @@ function ListUI:UpdateList()
           button.titleText:SetText(string.format("|cFFFFD100%s|r", t("BOOK_UNKNOWN")))
           button.metaText:SetText("|cFF999999" .. t("BOOK_MISSING_DATA") .. "|r")
       end
+      syncRowFavorite(button, entry)
       if key == self:GetSelectedKey() then
         button.selected:Show()
         button.selectedEdge:Show()
@@ -360,6 +397,7 @@ function ListUI:UpdateList()
       button.metaText:SetText("")
       button.selected:Hide()
       button.selectedEdge:Hide()
+      syncRowFavorite(button, nil)
     end
   end
 
