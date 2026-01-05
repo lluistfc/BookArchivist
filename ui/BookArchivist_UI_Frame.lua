@@ -194,6 +194,12 @@ local function rebuildUIForLanguageChange()
 		if listPageLabel and listPageLabel.SetText then
 			listPageLabel:SetText(t("PAGINATION_PAGE_SINGLE"))
 		end
+
+		-- Update sort dropdown label.
+		local sortDropdown = ListUI:GetFrame("sortDropdown")
+		if sortDropdown and UIDropDownMenu_SetText then
+			ListUI:UpdateSortDropdown()
+		end
 	end
 
 	-- Update reader navigation labels if the reader UI exists.
@@ -220,6 +226,12 @@ local function rebuildUIForLanguageChange()
 			if bookTitle and bookTitle.SetText then
 				bookTitle:SetText(t("READER_EMPTY_PROMPT"))
 			end
+		end
+
+		-- Update reader delete button text.
+		local deleteBtn = rstate.deleteButton or (ReaderUI.__getWidget and ReaderUI.__getWidget("deleteBtn"))
+		if deleteBtn and deleteBtn.SetText then
+			deleteBtn:SetText(t("READER_DELETE_BUTTON"))
 		end
 	end
 

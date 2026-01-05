@@ -369,7 +369,7 @@ function ListUI:InitializeSortDropdown(dropdown)
   end
 
   UIDropDownMenu_SetWidth(dropdown, 160)
-  UIDropDownMenu_SetText(dropdown, t("Sorting..."))
+	  UIDropDownMenu_SetText(dropdown, t("SORT_DROPDOWN_PLACEHOLDER"))
 
   UIDropDownMenu_Initialize(dropdown, function(self)
     local current = ListUI:GetSortMode()

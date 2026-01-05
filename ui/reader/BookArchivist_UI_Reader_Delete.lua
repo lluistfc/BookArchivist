@@ -5,8 +5,8 @@ BookArchivist.UI = BookArchivist.UI or {}
 local ReaderUI = BookArchivist.UI.Reader or {}
 BookArchivist.UI.Reader = ReaderUI
 
-local L = BookArchivist and BookArchivist.L or {}
 local function t(key)
+	local L = BookArchivist and BookArchivist.L or {}
 	return (L and L[key]) or key
 end
 
@@ -40,6 +40,9 @@ if not StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE then
 		timeout = 0,
 		preferredIndex = 3,
 	}
+else
+	-- Ensure popup text is refreshed to the active locale on reload.
+	StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE.text = t("READER_DELETE_CONFIRM")
 end
 
 local tableUnpack = table and table.unpack or nil

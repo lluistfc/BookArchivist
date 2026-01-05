@@ -290,7 +290,6 @@ function OptionsUI:Ensure()
           if BookArchivist and BookArchivist.SetLanguage then
             BookArchivist:SetLanguage(opt.value)
           end
-          UIDropDownMenu_SetSelectedValue(dropdown, opt.value)
         end
         info.checked = (opt.value == current)
         UIDropDownMenu_AddButton(info, level)
