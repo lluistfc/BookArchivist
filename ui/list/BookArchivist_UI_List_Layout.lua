@@ -484,9 +484,39 @@ function ListUI:Create(uiFrame)
     self:SetFrame("helpButton", helpButton)
   end
 
+  local resumeButton = self:SafeCreateFrame("Button", nil, headerRightBottom, "UIPanelButtonTemplate")
+  if resumeButton then
+    resumeButton:SetSize(Metrics.BTN_W, Metrics.BTN_H)
+    resumeButton:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
+      resumeButton:SetText(t("RESUME_LAST_BOOK"))
+    resumeButton:SetScript("OnClick", function()
+  	        local addon = self.GetAddon and self:GetAddon()
+        if not addon or not addon.GetLastBookId then
+          return
+        end
+        local lastId = addon:GetLastBookId()
+        if not lastId then
+          return
+        end
+        if self.SetSelectedKey then
+          self:SetSelectedKey(lastId)
+        end
+        if self.NotifySelectionChanged then
+          self:NotifySelectionChanged()
+        end
+    end)
+    self:SetFrame("resumeButton", resumeButton)
+    resumeButton:Hide()
+  end
+
   local sortDropdown = CreateFrame("Frame", "BookArchivistSortDropdown", headerRightBottom, "UIDropDownMenuTemplate")
   sortDropdown:ClearAllPoints()
-  sortDropdown:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
+  local resumeBtn = self:GetFrame("resumeButton")
+  if resumeBtn then
+    sortDropdown:SetPoint("RIGHT", resumeBtn, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER or 6), 0)
+  else
+    sortDropdown:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
+  end
   sortDropdown:SetPoint("CENTER", headerRightBottom, "CENTER", 0, 0)
   self:InitializeSortDropdown(sortDropdown)
 
@@ -565,6 +595,9 @@ function ListUI:Create(uiFrame)
   self:UpdateSearchClearButton()
   self:UpdateSortDropdown()
   self:UpdateCountsDisplay()
+  if self.UpdateResumeButton then
+    self:UpdateResumeButton()
+  end
   self:DebugPrint("[BookArchivist] ListUI created")
 end
 

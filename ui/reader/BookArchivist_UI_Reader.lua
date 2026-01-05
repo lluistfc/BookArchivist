@@ -239,6 +239,10 @@ local function clampPageIndex(order, index)
   return index
 end
 
+local function shouldResumeLastPage(addon)
+	return addon and addon.IsResumeLastPageEnabled and addon:IsResumeLastPageEnabled()
+end
+
   local function renderBookContent(text)
   text = text or ""
   local richIsHTML = ReaderUI.IsHTMLContent
@@ -490,6 +494,10 @@ function ReaderUI:RenderSelected()
     return
   end
 
+  if addon.SetLastBookId and key then
+    addon:SetLastBookId(key)
+  end
+
   if addon.Recent and addon.Recent.MarkOpened and key then
     addon.Recent:MarkOpened(key)
   end
@@ -520,15 +528,26 @@ function ReaderUI:RenderSelected()
   local previousKey = state.currentEntryKey
   state.currentEntryKey = key
   state.pageOrder = buildPageOrder(entry)
+  local totalPages = #state.pageOrder
   if previousKey ~= key then
-    state.currentPageIndex = 1
-  end
-    local totalPages = #state.pageOrder
-    if totalPages > 0 then
-      state.currentPageIndex = clampPageIndex(state.pageOrder, state.currentPageIndex)
+    if shouldResumeLastPage(addon) and type(entry.lastPageNum) == "number" and totalPages > 0 then
+      local targetIndex
+      for i, pageNum in ipairs(state.pageOrder) do
+        if pageNum == entry.lastPageNum then
+          targetIndex = i
+          break
+        end
+      end
+      state.currentPageIndex = targetIndex or 1
     else
       state.currentPageIndex = 1
     end
+  end
+  if totalPages > 0 then
+    state.currentPageIndex = clampPageIndex(state.pageOrder, state.currentPageIndex)
+  else
+    state.currentPageIndex = 1
+  end
 
     local pageText
     if totalPages == 0 then
@@ -537,6 +556,15 @@ function ReaderUI:RenderSelected()
       local pageIndex = state.currentPageIndex
       local pageNum = state.pageOrder[pageIndex]
       pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
+      if shouldResumeLastPage(addon) then
+	      if pageNum then
+		      entry.lastPageNum = pageNum
+	      else
+		      entry.lastPageNum = nil
+	      end
+      else
+	      entry.lastPageNum = nil
+      end
       if pageText == "" then
 	        pageText = t("READER_NO_CONTENT")
       end

@@ -38,6 +38,8 @@ Locales.ptBR = {
   ["HEADER_BUTTON_OPTIONS"] = "Opções",
   ["HEADER_BUTTON_HELP"] = "Ajuda",
   ["HEADER_HELP_CHAT"] = "Use busca, filtros e ordenação para encontrar qualquer livro salvo instantaneamente.",
+	["RESUME_LAST_BOOK"] = "Retomar último livro",
+  ["RESUME_LAST_BOOK"] = "Retomar último livro",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Selecione um livro na lista",
@@ -73,6 +75,8 @@ Locales.ptBR = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Mostra informações adicionais do BookArchivist no chat para diagnóstico.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "Mostrar grade de depuração da interface",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Destaca os limites do layout. Igual a /ba uidebug on/off.",
+	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Retomar na última página",
+	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quando ativado, reabrir um livro salvo leva à última página visualizada em vez de começar sempre na página 1.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconhecida",

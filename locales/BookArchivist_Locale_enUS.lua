@@ -42,6 +42,8 @@ Locales.enUS = {
   ["HEADER_BUTTON_OPTIONS"] = "Options",
   ["HEADER_BUTTON_HELP"] = "Help",
   ["HEADER_HELP_CHAT"] = "Use the search, filters, and sort menu to find any saved book instantly.",
+  ["RESUME_LAST_BOOK"] = "Resume last book",
+  ["RESUME_LAST_BOOK"] = "Resume last book",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Select a book from the list",
@@ -75,6 +77,8 @@ Locales.enUS = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Shows extra BookArchivist information in chat for troubleshooting.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "Show UI debug grid",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Highlights layout bounds for troubleshooting. Same as /ba uidebug on/off.",
+	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Resume on last page",
+	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "When enabled, reopening a saved book returns to the last page you viewed instead of always starting at page 1.",
 	["OPTIONS_TOOLTIP_LABEL"] = "Show tooltip 'Archived' tag",
 	["OPTIONS_TOOLTIP_TOOLTIP"] = "When enabled, readable items whose text has been saved for this character will show an extra 'Book Archivist: Archived' line in their tooltip.",
 

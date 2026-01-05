@@ -38,6 +38,8 @@ Locales.itIT = {
   ["HEADER_BUTTON_OPTIONS"] = "Opzioni",
   ["HEADER_BUTTON_HELP"] = "Aiuto",
   ["HEADER_HELP_CHAT"] = "Usa ricerca, filtri e ordinamento per trovare subito qualsiasi libro salvato.",
+	["RESUME_LAST_BOOK"] = "Riprendi ultimo libro",
+  ["RESUME_LAST_BOOK"] = "Riprendi ultimo libro",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Seleziona un libro dall'elenco",
@@ -73,6 +75,8 @@ Locales.itIT = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Mostra informazioni aggiuntive di BookArchivist in chat per la diagnosi.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "Mostra griglia di debug UI",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Evidenzia i limiti del layout. Uguale a /ba uidebug on/off.",
+	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Riprendi all'ultima pagina",
+	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Se abilitato, riaprire un libro salvato ti riporta all'ultima pagina visualizzata invece di iniziare sempre dalla pagina 1.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona sconosciuta",

@@ -38,6 +38,8 @@ Locales.esES = {
   ["HEADER_BUTTON_OPTIONS"] = "Opciones",
   ["HEADER_BUTTON_HELP"] = "Ayuda",
   ["HEADER_HELP_CHAT"] = "Usa la búsqueda, los filtros y el menú de ordenación para encontrar cualquier libro guardado al instante.",
+  ["RESUME_LAST_BOOK"] = "Reanudar último libro",
+  ["RESUME_LAST_BOOK"] = "Reanudar último libro",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Selecciona un libro de la lista",
@@ -73,6 +75,8 @@ Locales.esES = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Muestra información adicional de BookArchivist en el chat para diagnosticar problemas.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "Mostrar cuadrícula de depuración de la interfaz",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Resalta los límites de diseño para diagnosticar problemas. Igual que /ba uidebug on/off.",
+	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reanudar en la última página",
+	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si está activado, al volver a abrir un libro guardado se irá a la última página que viste en lugar de empezar siempre en la página 1.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconocida",

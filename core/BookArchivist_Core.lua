@@ -269,10 +269,16 @@ local function ensureDB()
 		end
 	end
 
+  -- Step 7 – UI state container (per-character, non-breaking).
   BookArchivistDB.uiState = BookArchivistDB.uiState or {}
   local uiState = BookArchivistDB.uiState
   if type(uiState.lastCategoryId) ~= "string" or uiState.lastCategoryId == "" then
     uiState.lastCategoryId = "__all__"
+  end
+  -- Defensive: drop a stale lastBookId reference if the entry no
+  -- longer exists in the current booksById map.
+  if uiState.lastBookId and not BookArchivistDB.booksById[uiState.lastBookId] then
+    uiState.lastBookId = nil
   end
 
   pruneLegacyAuthor(BookArchivistDB)
@@ -285,6 +291,12 @@ local function ensureUIOptions()
   local uiOpts = db.options.ui
   if type(uiOpts.listWidth) ~= "number" then
     uiOpts.listWidth = LIST_WIDTH_DEFAULT
+  end
+  if uiOpts.virtualCategoriesEnabled == nil then
+    uiOpts.virtualCategoriesEnabled = true
+  end
+  if uiOpts.resumeLastPage == nil then
+    uiOpts.resumeLastPage = true
   end
   return uiOpts
 end
@@ -374,6 +386,10 @@ function Core:Delete(key)
   removeFromOrder(db.order, key)
   if db.recent and type(db.recent.list) == "table" then
     removeFromOrder(db.recent.list, key)
+  end
+  -- Clear resume pointer if it referenced the deleted entry.
+  if db.uiState and db.uiState.lastBookId == key then
+    db.uiState.lastBookId = nil
   end
 end
 
@@ -481,6 +497,19 @@ function Core:IsVirtualCategoriesEnabled()
   return uiOpts.virtualCategoriesEnabled and true or false
 end
 
+function Core:IsResumeLastPageEnabled()
+  local uiOpts = ensureUIOptions()
+  if uiOpts.resumeLastPage == nil then
+    uiOpts.resumeLastPage = true
+  end
+  return uiOpts.resumeLastPage and true or false
+end
+
+function Core:SetResumeLastPageEnabled(state)
+  local uiOpts = ensureUIOptions()
+  uiOpts.resumeLastPage = state and true or false
+end
+
 function Core:GetSortMode()
   local listOpts = ensureListOptions()
   local mode = listOpts.sortMode or LIST_SORT_DEFAULT
@@ -550,6 +579,34 @@ end
 function Core:SetListPageSize(size)
   local listOpts = ensureListOptions()
   listOpts.pageSize = normalizePageSize(size)
+end
+
+function Core:GetLastBookId()
+  local db = ensureDB()
+  db.uiState = db.uiState or {}
+  local id = db.uiState.lastBookId
+  if type(id) ~= "string" or id == "" then
+    return nil
+  end
+  if not (db.booksById and db.booksById[id]) then
+    db.uiState.lastBookId = nil
+    return nil
+  end
+  return id
+end
+
+function Core:SetLastBookId(bookId)
+  local db = ensureDB()
+  db.uiState = db.uiState or {}
+  if type(bookId) ~= "string" or bookId == "" then
+    db.uiState.lastBookId = nil
+    return
+  end
+  if db.booksById and db.booksById[bookId] then
+    db.uiState.lastBookId = bookId
+  else
+    db.uiState.lastBookId = nil
+  end
 end
 
 function Core:GetLastCategoryId()

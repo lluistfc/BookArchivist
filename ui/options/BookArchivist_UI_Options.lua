@@ -113,6 +113,18 @@ function OptionsUI:Sync()
     optionsPanel.tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
   end
 
+  local resumeEnabled = true
+  if BookArchivist and type(BookArchivist.IsResumeLastPageEnabled) == "function" then
+	  resumeEnabled = BookArchivist:IsResumeLastPageEnabled() and true or false
+  end
+  if optionsPanel.resumePageCheckbox then
+	  optionsPanel.resumePageCheckbox:SetChecked(resumeEnabled)
+	  if optionsPanel.resumePageCheckbox.Text and optionsPanel.resumePageCheckbox.Text.SetText then
+		  optionsPanel.resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
+	  end
+	  optionsPanel.resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
+  end
+
   if optionsPanel.langLabel and optionsPanel.langLabel.SetText then
 	optionsPanel.langLabel:SetText(t("LANGUAGE_LABEL"))
 	end
@@ -216,8 +228,21 @@ function OptionsUI:Ensure()
 
   optionsPanel.tooltipCheckbox = tooltipCheckbox
 
+  local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
+  resumePageCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -8)
+  resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
+  resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
+  resumePageCheckbox:SetScript("OnClick", function(self)
+	  local state = self:GetChecked()
+	  if BookArchivist and type(BookArchivist.SetResumeLastPageEnabled) == "function" then
+		  BookArchivist:SetResumeLastPageEnabled(state)
+	  end
+  end)
+
+  optionsPanel.resumePageCheckbox = resumePageCheckbox
+
   local langLabel = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  langLabel:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -16)
+  langLabel:SetPoint("TOPLEFT", resumePageCheckbox, "BOTTOMLEFT", 0, -16)
 	langLabel:SetText(t("LANGUAGE_LABEL"))
   optionsPanel.langLabel = langLabel
 

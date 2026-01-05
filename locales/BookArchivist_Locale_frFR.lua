@@ -38,6 +38,8 @@ Locales.frFR = {
   ["HEADER_BUTTON_OPTIONS"] = "Options",
   ["HEADER_BUTTON_HELP"] = "Aide",
   ["HEADER_HELP_CHAT"] = "Utilisez la recherche, les filtres et le tri pour retrouver n'importe quel livre enregistré instantanément.",
+  ["RESUME_LAST_BOOK"] = "Reprendre le dernier livre",
+  ["RESUME_LAST_BOOK"] = "Reprendre le dernier livre",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Sélectionnez un livre dans la liste",
@@ -73,6 +75,8 @@ Locales.frFR = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Affiche des informations supplémentaires de BookArchivist dans le chat pour le diagnostic.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "Afficher la grille de débogage de l'interface",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Met en évidence les limites de mise en page. Identique à /ba uidebug on/off.",
+	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprendre à la dernière page",
+	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si cette option est activée, rouvrir un livre enregistré revient à la dernière page lue au lieu de toujours commencer à la page 1.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zone inconnue",

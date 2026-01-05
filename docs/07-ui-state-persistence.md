@@ -65,5 +65,17 @@ end
 - `/reload` restores last category & resume book.
 - Different characters keep independent state.
 
+## Optional: resume on last page
+
+Additional, non-breaking state can be tracked per entry to remember which page the player last viewed:
+
+- Per-entry field: `booksById[bookId].lastPageNum` (numeric page key from `entry.pages`).
+- Per-character option: `db.options.ui.resumeLastPage` (boolean, default `true`).
+
+Behavior when `resumeLastPage` is enabled:
+- When the reader renders a page for a given book, it updates `entry.lastPageNum` to the current page.
+- When reopening that book, the reader looks for `lastPageNum` in the sorted `pageOrder` and, if found, starts on that page instead of page 1.
+- When disabled, books always open on page 1 and any stored `lastPageNum` is ignored.
+
 ## Rollback
 - Fields remain; harmless.

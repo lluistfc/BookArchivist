@@ -677,6 +677,30 @@ function ListUI:UpdateCountsDisplay()
   end
 end
 
+function ListUI:UpdateResumeButton()
+  local button = self:GetFrame("resumeButton")
+  if not button then
+    return
+  end
+  local addon = self:GetAddon()
+  if not addon or not addon.GetLastBookId or not addon.GetDB then
+    button:Hide()
+    return
+  end
+  local lastId = addon:GetLastBookId()
+  if not lastId then
+    button:Hide()
+    return
+  end
+  local db = addon:GetDB() or {}
+  local books = (db.booksById and next(db.booksById) ~= nil) and db.booksById or db.books
+  if not (books and books[lastId]) then
+    button:Hide()
+    return
+  end
+  button:Show()
+end
+
 function ListUI:GetLocationState()
   return self.__state.location
 end
@@ -816,6 +840,9 @@ function ListUI:NotifySelectionChanged()
   local ctx = self:GetContext()
   if ctx and ctx.onSelectionChanged then
     ctx.onSelectionChanged()
+  end
+  if self.UpdateResumeButton then
+    self:UpdateResumeButton()
   end
 end
 

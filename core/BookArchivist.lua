@@ -209,6 +209,20 @@ function BookArchivist:SetUIDebugEnabled(state)
   syncOptionsUI()
 end
 
+function BookArchivist:IsResumeLastPageEnabled()
+  if Core and Core.IsResumeLastPageEnabled then
+    return Core:IsResumeLastPageEnabled()
+  end
+  return true
+end
+
+function BookArchivist:SetResumeLastPageEnabled(state)
+  if Core and Core.SetResumeLastPageEnabled then
+    Core:SetResumeLastPageEnabled(state)
+  end
+  syncOptionsUI()
+end
+
 function BookArchivist:GetListWidth()
   if Core and Core.GetListWidth then
     return Core:GetListWidth()
@@ -278,6 +292,19 @@ end
 function BookArchivist:SetLastCategoryId(categoryId)
   if Core and Core.SetLastCategoryId then
     Core:SetLastCategoryId(categoryId)
+  end
+end
+
+function BookArchivist:GetLastBookId()
+  if Core and Core.GetLastBookId then
+    return Core:GetLastBookId()
+  end
+  return nil
+end
+
+function BookArchivist:SetLastBookId(bookId)
+  if Core and Core.SetLastBookId then
+    Core:SetLastBookId(bookId)
   end
 end
 

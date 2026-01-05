@@ -38,6 +38,8 @@ Locales.deDE = {
   ["HEADER_BUTTON_OPTIONS"] = "Optionen",
   ["HEADER_BUTTON_HELP"] = "Hilfe",
   ["HEADER_HELP_CHAT"] = "Nutze Suche, Filter und Sortierung, um jedes gespeicherte Buch sofort zu finden.",
+  ["RESUME_LAST_BOOK"] = "Letztes Buch fortsetzen",
+  ["RESUME_LAST_BOOK"] = "Letztes Buch fortsetzen",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Wähle ein Buch aus der Liste",
@@ -73,6 +75,8 @@ Locales.deDE = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Zeigt zusätzliche BookArchivist-Informationen im Chat zur Fehleranalyse.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "UI-Raster anzeigen",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Hebt Layoutgrenzen zur Fehleranalyse hervor. Entspricht /ba uidebug on/off.",
+	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Auf letzter Seite fortsetzen",
+	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Wenn aktiviert, springt das erneute Öffnen eines gespeicherten Buches zur zuletzt angesehenen Seite, anstatt immer bei Seite 1 zu beginnen.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Unbekannte Zone",

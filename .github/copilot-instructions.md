@@ -112,6 +112,7 @@ Recommended constants (use/extend existing):
 
 - `Core` key generation and schema changes can orphan existing entries. If you change keying or schema, provide a migration path or compatibility shim. :contentReference[oaicite:7]{index=7}
 - Keep minimap persistence in `core/BookArchivist_Minimap.lua`.
+ - Per-book reading state such as `lastPageNum` should live on `booksById[bookId]` entries and be treated as optional, non-breaking data.
 
 ---
 

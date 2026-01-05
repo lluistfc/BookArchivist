@@ -38,6 +38,8 @@ Locales.caES = {
   ["HEADER_BUTTON_OPTIONS"] = "Opcions",
   ["HEADER_BUTTON_HELP"] = "Ajuda",
   ["HEADER_HELP_CHAT"] = "Utilitza la cerca, els filtres i el menú d'ordenació per trobar qualsevol llibre desat a l'instant.",
+  ["RESUME_LAST_BOOK"] = "Reprèn l'últim llibre",
+  ["RESUME_LAST_BOOK"] = "Reprèn l'últim llibre",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Selecciona un llibre de la llista",
@@ -73,6 +75,8 @@ Locales.caES = {
   ["OPTIONS_DEBUG_LOGGING_TOOLTIP"] = "Mostra informació addicional de BookArchivist al xat per diagnosticar problemes.",
   ["OPTIONS_UI_DEBUG_LABEL"] = "Mostra la quadrícula de depuració de la interfície",
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Ressalta els límits de disseny per diagnosticar problemes. Igual que /ba uidebug on/off.",
+	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprèn a l'última pàgina",
+	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quan està activat, en tornar a obrir un llibre desat s'anirà a l'última pàgina que vas veure en lloc de començar sempre a la pàgina 1.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconeguda",
