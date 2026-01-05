@@ -40,11 +40,18 @@ jobs:
           unzip -l "$ZIP" | grep -E " ${ADDON_NAME}/BookArchivist\.toc$" >/dev/null \
             || (echo "ERROR: Missing ${ADDON_NAME}/BookArchivist.toc in zip" && unzip -l "$ZIP" && exit 1)
 
+      - name: Prepare folder artifact (no nested zip)
+        run: |
+          set -euo pipefail
+          rm -rf artifact
+          mkdir -p artifact
+          unzip dist/BookArchivist.zip -d artifact
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: curseforge-zip
-          path: dist/BookArchivist.zip
+          path: artifact/BookArchivist
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
