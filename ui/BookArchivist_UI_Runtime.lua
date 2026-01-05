@@ -212,9 +212,10 @@ SlashCmdList["BOOKARCHIVISTLIST"] = function()
 	end
 	local db = addon:GetDB()
 	local order = db.order or {}
+	local books = db and (db.booksById or db.books) or {}
 	print(string.format("[BookArchivist] %d book(s) in archive", #order))
 	for i, key in ipairs(order) do
-		local entry = db.books and db.books[key]
+		local entry = books[key]
 		local pageCount = 0
 		if entry and entry.pages then
 			for _ in pairs(entry.pages) do
@@ -222,6 +223,40 @@ SlashCmdList["BOOKARCHIVISTLIST"] = function()
 			end
 		end
 		print(string.format(" #%d key='%s' pages=%d title='%s'", i, tostring(key), pageCount, entry and entry.title or ""))
+	end
+end
+
+SLASH_BOOKARCHIVISTDB1 = "/badb"
+SlashCmdList["BOOKARCHIVISTDB"] = function()
+	local addon = call(Internal.getAddon)
+	if not addon or not addon.GetDB then
+		if Internal.logError then
+			Internal.logError("BookArchivist not ready.")
+		end
+		return
+	end
+	local db = addon:GetDB()
+	if not db then
+		print("[BookArchivist] DB missing")
+		return
+	end
+	local legacyBooks = db.legacy and db.legacy.books or db.books or {}
+	local newBooks = db.booksById or {}
+	local order = db.order or {}
+	local dbVersion = tostring(db.dbVersion or "?")
+	print(string.format("[BookArchivist] DB debug: dbVersion=%s legacyBooks=%d booksById=%d order=%d", dbVersion, legacyBooks and (#{legacyBooks} or 0) or 0, newBooks and (#{newBooks} or 0) or 0, #order))
+
+	local shown = 0
+	for i, key in ipairs(order) do
+		local entry = newBooks[key]
+		print(string.format(" #%d id='%s' title='%s'", i, tostring(key), entry and entry.title or ""))
+		shown = shown + 1
+		if shown >= 10 then
+			break
+		end
+	end
+	if shown == 0 then
+		print("[BookArchivist] No ordered books to display.")
 	end
 end
 

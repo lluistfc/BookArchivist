@@ -455,10 +455,19 @@ function ListUI:EntryMatchesFilters(entry)
   return true
 end
 
+local function getBooksTable(db)
+  if not db then return nil end
+  if db.booksById and next(db.booksById) ~= nil then
+    return db.booksById
+  end
+  return db.books
+end
+
 local function alphaComparator(db, selector)
   return function(aKey, bKey)
-    local aEntry = db.books[aKey] or {}
-    local bEntry = db.books[bKey] or {}
+    local books = getBooksTable(db) or {}
+    local aEntry = books[aKey] or {}
+    local bEntry = books[bKey] or {}
     local aVal = normalizeTextValue(selector(aEntry) or "")
     local bVal = normalizeTextValue(selector(bEntry) or "")
     if aVal == bVal then
@@ -470,8 +479,9 @@ end
 
 local function numericComparator(db, selector, desc)
   return function(aKey, bKey)
-    local aEntry = db.books[aKey] or {}
-    local bEntry = db.books[bKey] or {}
+    local books = getBooksTable(db) or {}
+    local aEntry = books[aKey] or {}
+    local bEntry = books[bKey] or {}
     local aVal = selector(aEntry) or 0
     local bVal = selector(bEntry) or 0
     if aVal == bVal then
@@ -485,7 +495,8 @@ local function numericComparator(db, selector, desc)
 end
 
 function ListUI:GetSortComparator(mode, db)
-  if not db or not db.books then
+  local books = getBooksTable(db)
+  if not books then
     return nil
   end
   if mode == "title" then

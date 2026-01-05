@@ -14,6 +14,8 @@ end
 local Core = {}
 BookArchivist.Core = Core
 
+local BookId = BookArchivist.BookId
+
 local LIST_WIDTH_DEFAULT = 360
 local LIST_SORT_DEFAULT = "recent"
 local LIST_PAGE_SIZE_DEFAULT = 25
@@ -104,20 +106,28 @@ local function makeKey(title, creator, material, firstPageText)
 end
 
 local function ensureDB()
-  if not BookArchivistDB or type(BookArchivistDB) ~= "table" then
+	-- Always resolve the DB module at call time so load order
+	-- issues don't prevent migrations from running.
+	local DBModule = BookArchivist.DB
+  if DBModule and type(DBModule.Init) == "function" then
+    DBModule:Init()
+  elseif not BookArchivistDB or type(BookArchivistDB) ~= "table" then
     BookArchivistDB = {
       version = 1,
       createdAt = now(),
-      books = {},
       order = {},
       options = {},
+      booksById = {},
+      indexes = {
+        objectToBookId = {},
+      },
     }
   end
-  BookArchivistDB.books = BookArchivistDB.books or {}
+  BookArchivistDB.booksById = BookArchivistDB.booksById or {}
   BookArchivistDB.order = BookArchivistDB.order or {}
   BookArchivistDB.options = BookArchivistDB.options or {}
   if BookArchivistDB.options.debugEnabled == nil then
-    BookArchivistDB.options.debugEnabled = false
+	BookArchivistDB.options.debugEnabled = false
   end
   if BookArchivistDB.options.uiDebug == nil then
     BookArchivistDB.options.uiDebug = false
@@ -247,8 +257,10 @@ end
 function Core:Delete(key)
   if not key then return end
   local db = ensureDB()
-  if not db.books[key] then return end
-  db.books[key] = nil
+  if db.booksById and not db.booksById[key] then return end
+	if db.booksById then
+		db.booksById[key] = nil
+	end
   removeFromOrder(db.order, key)
 end
 
@@ -256,7 +268,7 @@ function Core:GetOptions()
   local db = ensureDB()
   db.options = db.options or {}
   if db.options.debugEnabled == nil then
-    db.options.debugEnabled = false
+	db.options.debugEnabled = false
   end
   return db.options
 end
@@ -375,17 +387,28 @@ end
 
 function Core:PersistSession(session)
   if not session then return end
-  ensureDB()
+  local db = ensureDB()
 
   local pages = session.pages or {}
   local firstText = pages[1] or pages[session.firstPageSeen or 1] or ""
-  local key = makeKey(session.title, session.creator, session.material, firstText)
-  local entry = BookArchivistDB.books[key]
+  local bookId
+  if BookId and type(BookId.MakeBookIdV2) == "function" then
+    bookId = BookId.MakeBookIdV2({
+      title = session.title,
+      pages = pages,
+      source = session.source,
+    })
+  end
+  bookId = bookId or makeKey(session.title, session.creator, session.material, firstText)
+
+  db.booksById = db.booksById or {}
+  local entry = db.booksById[bookId]
   local capturedAt = now()
 
   if not entry then
     entry = {
-      key = key,
+	  id = bookId,
+	  key = bookId,
       title = session.title,
       creator = session.creator,
       material = session.material,
@@ -397,7 +420,7 @@ function Core:PersistSession(session)
       pages = {},
       location = cloneTable(session.location),
     }
-    BookArchivistDB.books[key] = entry
+  	db.booksById[bookId] = entry
   else
     entry.lastSeenAt = capturedAt
     entry.seenCount = (entry.seenCount or 0) + 1
@@ -419,7 +442,7 @@ function Core:PersistSession(session)
     entry.location = cloneTable(session.location)
   end
 
-  self:TouchOrder(key)
+	self:TouchOrder(bookId)
   return entry
 end
 
@@ -427,7 +450,9 @@ function Core:InjectEntry(entry, opts)
   if not entry or not entry.key then return end
   opts = opts or {}
   ensureDB()
-  BookArchivistDB.books[entry.key] = entry
+	local db = BookArchivistDB
+	db.booksById = db.booksById or {}
+	db.booksById[entry.key] = entry
   entry.pages = entry.pages or {}
 
   if opts.append then

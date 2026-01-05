@@ -241,7 +241,13 @@ function ListUI:UpdateList()
 
       local key = filtered[i]
       if key then
-        local entry = db.books[key]
+    local books
+    if db and db.booksById and next(db.booksById) ~= nil then
+      books = db.booksById
+    else
+      books = db and db.books or {}
+    end
+    local entry = books[key]
         if entry then
           button.bookKey = key
           button.itemKind = "book"

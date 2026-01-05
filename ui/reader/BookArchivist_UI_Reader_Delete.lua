@@ -120,7 +120,13 @@ local function configureDeleteButton(button)
 		local key = getSelectedKey and getSelectedKey()
 		if key then
 			local db = addon.GetDB and addon:GetDB()
-			local entry = db and db.books and db.books[key]
+			local books
+			if db and db.booksById and next(db.booksById) ~= nil then
+				books = db.booksById
+			else
+				books = db and db.books or nil
+			end
+			local entry = books and books[key]
 			local title = entry and entry.title or key
 			if StaticPopup_Show and popupRegistry and popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE then
 				StaticPopup_Show("BOOKARCHIVIST_CONFIRM_DELETE", title, nil, {

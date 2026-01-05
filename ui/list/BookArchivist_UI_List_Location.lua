@@ -22,13 +22,19 @@ local function buildLocationTreeFromDB(db)
     childNames = {},
   }
 
-  if not db or not db.books then
+  if not db or not (db.booksById or db.books) then
     return root
   end
 
   local order = db.order or {}
+  local books
+  if db.booksById and next(db.booksById) ~= nil then
+    books = db.booksById
+  else
+    books = db.books or {}
+  end
   for _, key in ipairs(order) do
-    local entry = db.books[key]
+	local entry = books[key]
     if entry then
       local chain = entry.location and entry.location.zoneChain
       if not chain or #chain == 0 then
@@ -257,13 +263,14 @@ end
 function ListUI:OpenMostRecentFromNode(node)
   local addon = self:GetAddon()
   local db = addon and addon:GetDB()
-  if not db or not db.books then
+  if not db or not (db.booksById or db.books) then
     return
   end
+  local books = (db.booksById or db.books) or {}
   local latestKey
   local latestTs = -1
   for _, key in ipairs(self:GetBooksForNode(node)) do
-    local entry = db.books[key]
+	local entry = books[key]
     local ts = entry and entry.lastSeenAt or 0
     if ts > latestTs then
       latestTs = ts

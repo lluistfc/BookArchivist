@@ -465,7 +465,13 @@ function ReaderUI:RenderSelected()
   local db = addon:GetDB()
 
   local key = getSelectedKey()
-  local entry = key and db.books[key] or nil
+  local books
+  if db and db.booksById and next(db.booksById) ~= nil then
+    books = db.booksById
+  else
+    books = db and db.books or nil
+  end
+  local entry = key and books and books[key] or nil
   if not entry then
     debugPrint("[BookArchivist] renderSelected: no entry for key", tostring(key))
 		bookTitle:SetText(t("READER_EMPTY_PROMPT"))

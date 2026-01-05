@@ -65,7 +65,12 @@ function ListUI:RebuildFiltered()
     self:LogError("BookArchivist DB missing during rebuildFiltered")
     return
   end
-
+  local books
+  if db.booksById and next(db.booksById) ~= nil then
+    books = db.booksById
+  else
+    books = db.books or {}
+  end
   local order = db.order or {}
   self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d)", #order))
   local query = self:GetSearchQuery()
@@ -79,7 +84,7 @@ function ListUI:RebuildFiltered()
   local selectionStillValid = false
 
   for _, key in ipairs(order) do
-    local entry = db.books[key]
+      local entry = books[key]
     if entry and matches(self, entry, query) then
       table.insert(filtered, key)
       if key == selectedKey then
