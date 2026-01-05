@@ -24,9 +24,9 @@ local chatMessage = ReaderUI.__chatMessage
 local state = ReaderUI.__state or {}
 ReaderUI.__state = state
 
-StaticPopupDialogs = StaticPopupDialogs or {}
-if not StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE then
-	StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE = {
+local popupRegistry = type(StaticPopupDialogs) == "table" and StaticPopupDialogs or nil
+if popupRegistry and not popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE then
+	popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE = {
 		text = t("READER_DELETE_CONFIRM"),
 		button1 = YES,
 		button2 = NO,
@@ -40,9 +40,9 @@ if not StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE then
 		timeout = 0,
 		preferredIndex = 3,
 	}
-else
+elseif popupRegistry and popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE then
 	-- Ensure popup text is refreshed to the active locale on reload.
-	StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE.text = t("READER_DELETE_CONFIRM")
+	popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE.text = t("READER_DELETE_CONFIRM")
 end
 
 local tableUnpack = table and table.unpack or nil
@@ -122,7 +122,7 @@ local function configureDeleteButton(button)
 			local db = addon.GetDB and addon:GetDB()
 			local entry = db and db.books and db.books[key]
 			local title = entry and entry.title or key
-			if StaticPopup_Show then
+			if StaticPopup_Show and popupRegistry and popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE then
 				StaticPopup_Show("BOOKARCHIVIST_CONFIRM_DELETE", title, nil, {
 					onAccept = function()
 						addon:Delete(key)

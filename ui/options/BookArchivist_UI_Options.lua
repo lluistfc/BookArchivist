@@ -24,44 +24,11 @@ end
 
 local optionsPanel
 local optionsCategory
-local settingsPanelHooked = false
-local interfaceOptionsHooked = false
-local gameMenuHooked = false
-local shouldHideGameMenuOnClose = false
-
-local function resetGameMenuFlagSoon()
-  if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" then
-    return
-  end
-  C_Timer.After(1.0, function()
-    shouldHideGameMenuOnClose = false
-  end)
-end
 
 local function ensureSettingsUILoaded()
-  if type(C_AddOns) ~= "table" then
-    return
-  end
-  local isLoaded = C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("Blizzard_Settings")
-  if not isLoaded and C_AddOns.LoadAddOn then
-    pcall(C_AddOns.LoadAddOn, "Blizzard_Settings")
-  end
-end
-
-local function hideGameMenuFrame()
-  if type(_G) ~= "table" then
-    return
-  end
-  local gameMenu = rawget(_G, "GameMenuFrame")
-  if not gameMenu then
-    return
-  end
-  local hideUIPanel = rawget(_G, "HideUIPanel")
-  if type(hideUIPanel) == "function" then
-    hideUIPanel(gameMenu)
-  elseif gameMenu.Hide then
-    gameMenu:Hide()
-  end
+  -- Do not programmatically load Blizzard_Settings; letting Blizzard
+  -- manage loading avoids tainting its secure logout/quit flow.
+  return
 end
 
 local function registerOptionsPanel(panel)
@@ -95,50 +62,7 @@ local function registerOptionsPanel(panel)
   end
 end
 
-local function handleOptionsPanelClosed()
-  if not shouldHideGameMenuOnClose then
-    return
-  end
-  hideGameMenuFrame()
-  resetGameMenuFlagSoon()
-end
-
-local function ensureOptionsCloseHooks()
-  if type(_G) ~= "table" then
-    return
-  end
-
-  local settingsFrame = rawget(_G, "SettingsPanel")
-  if settingsFrame and settingsFrame.HookScript and not settingsPanelHooked then
-    settingsFrame:HookScript("OnHide", handleOptionsPanelClosed)
-    settingsPanelHooked = true
-  end
-
-  local interfaceFrame = rawget(_G, "InterfaceOptionsFrame")
-  if interfaceFrame and interfaceFrame.HookScript and not interfaceOptionsHooked then
-    interfaceFrame:HookScript("OnHide", handleOptionsPanelClosed)
-    interfaceOptionsHooked = true
-  end
-end
-
-local function ensureGameMenuHook()
-  if type(_G) ~= "table" or gameMenuHooked then
-    return
-  end
-  local gameMenu = rawget(_G, "GameMenuFrame")
-  if not gameMenu or not gameMenu.HookScript then
-    return
-  end
-  gameMenu:HookScript("OnShow", function()
-    if not shouldHideGameMenuOnClose then
-      return
-    end
-    shouldHideGameMenuOnClose = false
-    hideGameMenuFrame()
-    resetGameMenuFlagSoon()
-  end)
-  gameMenuHooked = true
-end
+-- No hooks into Blizzard Settings or Game Menu to avoid taint.
 
 function OptionsUI:Sync()
   if not optionsPanel or not optionsPanel.debugCheckbox or not optionsPanel.uiDebugCheckbox then
@@ -209,8 +133,6 @@ end
 function OptionsUI:Ensure()
   if optionsPanel or not createFrame then
     self:Sync()
-    ensureOptionsCloseHooks()
-    ensureGameMenuHook()
     return optionsPanel
   end
 
@@ -317,8 +239,6 @@ function OptionsUI:Ensure()
   self:Sync()
 
   registerOptionsPanel(optionsPanel)
-  ensureOptionsCloseHooks()
-  ensureGameMenuHook()
   return optionsPanel
 end
 
@@ -327,13 +247,6 @@ function OptionsUI:Open()
   local panel = self:Ensure()
   if not panel then
     return
-  end
-
-  local gameMenu
-  local wasGameMenuVisible = false
-  if type(_G) == "table" then
-    gameMenu = rawget(_G, "GameMenuFrame")
-    wasGameMenuVisible = gameMenu and gameMenu:IsShown() and true or false
   end
 
   local openedPanel = false
@@ -351,14 +264,6 @@ function OptionsUI:Open()
       openLegacy(panel)
       openedPanel = true
     end
-  end
-
-  if openedPanel then
-    shouldHideGameMenuOnClose = not wasGameMenuVisible
-    if shouldHideGameMenuOnClose then
-      hideGameMenuFrame()
-    end
-    ensureOptionsCloseHooks()
   end
 end
 
