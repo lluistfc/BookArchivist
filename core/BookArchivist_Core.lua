@@ -37,6 +37,23 @@ local VALID_SORT_MODES = {
   lastSeen = true,
 }
 
+local SUPPORTED_LANGUAGES = {
+  enUS = true,
+  esES = true,
+  caES = true,
+}
+
+local function normalizeLanguageTag(tag)
+  tag = tostring(tag or "")
+  if SUPPORTED_LANGUAGES[tag] then
+    return tag
+  end
+  if tag == "esMX" then
+    return "esES"
+  end
+  return "enUS"
+end
+
 local pruneLegacyAuthor
 
 local function now()
@@ -98,6 +115,10 @@ local function ensureDB()
   end
   if BookArchivistDB.options.uiDebug == nil then
     BookArchivistDB.options.uiDebug = false
+  end
+  if type(BookArchivistDB.options.language) ~= "string" or BookArchivistDB.options.language == "" then
+    local gameLocale = (type(GetLocale) == "function" and GetLocale()) or "enUS"
+    BookArchivistDB.options.language = normalizeLanguageTag(gameLocale)
   end
   BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
   local uiOpts = BookArchivistDB.options.ui
@@ -232,6 +253,20 @@ function Core:GetOptions()
     db.options.debugEnabled = false
   end
   return db.options
+end
+
+function Core:GetLanguage()
+  local opts = self:GetOptions()
+  if type(opts.language) ~= "string" or opts.language == "" then
+    local gameLocale = (type(GetLocale) == "function" and GetLocale()) or "enUS"
+    opts.language = normalizeLanguageTag(gameLocale)
+  end
+  return normalizeLanguageTag(opts.language)
+end
+
+function Core:SetLanguage(lang)
+  local opts = self:GetOptions()
+  opts.language = normalizeLanguageTag(lang)
 end
 
 function Core:GetMinimapButtonOptions()

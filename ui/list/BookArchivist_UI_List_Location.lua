@@ -2,6 +2,11 @@
 local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+  return (L and L[key]) or key
+end
+
 local function normalizeLocationLabel(label)
   if not label or label == "" then
     return "Unknown Location"
@@ -163,7 +168,7 @@ function ListUI:GetLocationBreadcrumbText()
   local state = getLocationState(self)
   local path = state.path or {}
   if #path == 0 then
-    return "All locations"
+    return t("LOCATIONS_BREADCRUMB_ROOT")
   end
   return table.concat(path, " > ")
 end

@@ -5,6 +5,11 @@ BookArchivist.UI = BookArchivist.UI or {}
 local ReaderUI = BookArchivist.UI.Reader or {}
 BookArchivist.UI.Reader = ReaderUI
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+	return (L and L[key]) or key
+end
+
 local Metrics = BookArchivist.UI.Metrics or {
 	BTN_H = 22,
 	BTN_W = 90,
@@ -22,7 +27,7 @@ ReaderUI.__state = state
 StaticPopupDialogs = StaticPopupDialogs or {}
 if not StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE then
 	StaticPopupDialogs.BOOKARCHIVIST_CONFIRM_DELETE = {
-		text = "Delete '%s'? This cannot be undone.",
+		text = t("READER_DELETE_CONFIRM"),
 		button1 = YES,
 		button2 = NO,
 		OnAccept = function(_, data)
@@ -81,7 +86,7 @@ local function configureDeleteButton(button)
 		return
 	end
 	button:SetSize(Metrics.BTN_W + 20, Metrics.BTN_H)
-	button:SetText("Delete")
+	button:SetText(t("READER_DELETE_BUTTON"))
 	button:SetNormalFontObject("GameFontNormal")
 	button:Disable()
 	button:SetMotionScriptsWhileDisabled(true)
@@ -91,11 +96,11 @@ local function configureDeleteButton(button)
 		end
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 		if self:IsEnabled() then
-			GameTooltip:SetText("Delete this book", 1, 1, 1)
-			GameTooltip:AddLine("This will permanently remove the book from your archive.", 1, 0.82, 0, true)
+			GameTooltip:SetText(t("READER_DELETE_TOOLTIP_ENABLED_TITLE"), 1, 1, 1)
+			GameTooltip:AddLine(t("READER_DELETE_TOOLTIP_ENABLED_BODY"), 1, 0.82, 0, true)
 		else
-			GameTooltip:SetText("Select a saved book", 1, 0.9, 0)
-			GameTooltip:AddLine("Choose a book from the list to enable deletion.", 0.9, 0.9, 0.9, true)
+			GameTooltip:SetText(t("READER_DELETE_TOOLTIP_DISABLED_TITLE"), 1, 0.9, 0)
+			GameTooltip:AddLine(t("READER_DELETE_TOOLTIP_DISABLED_BODY"), 0.9, 0.9, 0.9, true)
 		end
 		GameTooltip:Show()
 	end)
@@ -125,7 +130,7 @@ local function configureDeleteButton(button)
 							ReaderUI:RenderSelected()
 						end
 						if chatMessage then
-							chatMessage("|cFFFF0000Book deleted from archive.|r")
+							chatMessage(t("READER_DELETE_CHAT_SUCCESS"))
 						end
 					end,
 				})
@@ -138,7 +143,7 @@ local function configureDeleteButton(button)
 					ReaderUI:RenderSelected()
 				end
 				if chatMessage then
-					chatMessage("|cFFFF0000Book deleted from archive.|r")
+					chatMessage(t("READER_DELETE_CHAT_SUCCESS"))
 				end
 			end
 		end

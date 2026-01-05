@@ -12,6 +12,11 @@ local ROW_EDGE_W = Metrics.ROW_EDGE_W or 3
 
 local BACK_ICON_TAG = "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:14:14:0:0|t"
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+  return (L and L[key]) or key
+end
+
 local function hasMethod(obj, methodName)
   return obj and type(obj[methodName]) == "function"
 end
@@ -258,9 +263,9 @@ function ListUI:UpdateList()
     if noResults then
       if total == 0 then
         if self:GetSearchQuery() ~= "" or self:HasActiveFilters() then
-          noResults:SetText("|cFF999999No matches. Clear filters or search.|r")
+	          noResults:SetText("|cFF999999" .. t("LIST_EMPTY_SEARCH") .. "|r")
         else
-          noResults:SetText("|cFF999999No books saved yet. Read any in-game book to capture it.|r")
+	          noResults:SetText("|cFF999999" .. t("LIST_EMPTY_NO_BOOKS") .. "|r")
         end
         noResults:Show()
       else
@@ -298,8 +303,8 @@ function ListUI:UpdateList()
       button.locationName = nil
       button.bookKey = nil
       button.nodeRef = nil
-      button.titleText:SetText(BACK_ICON_TAG .. " Back")
-      button.metaText:SetText("|cFF999999Up one level|r")
+	      button.titleText:SetText(BACK_ICON_TAG .. " " .. t("LOCATION_BACK_TITLE"))
+	      button.metaText:SetText("|cFF999999" .. t("LOCATION_BACK_SUBTITLE") .. "|r")
       button.selected:Hide()
       button.selectedEdge:Hide()
     elseif row.kind == "location" then
@@ -312,11 +317,13 @@ function ListUI:UpdateList()
       local totalBooks = childNode and childNode.totalBooks or bookCount
       local detail
       if childCount > 0 then
-        detail = string.format("%d sub-location%s", childCount, childCount ~= 1 and "s" or "")
+          local key = (childCount == 1) and "COUNT_SUBLOCATION_SINGULAR" or "COUNT_SUBLOCATION_PLURAL"
+          detail = string.format(t(key), childCount)
       elseif bookCount > 0 or totalBooks > 0 then
-        detail = string.format("%d book%s", totalBooks, totalBooks ~= 1 and "s" or "")
+          local key = (totalBooks == 1) and "COUNT_BOOK_SINGULAR" or "COUNT_BOOK_PLURAL"
+          detail = string.format(t(key), totalBooks)
       else
-        detail = "Empty location"
+          detail = t("LOCATION_EMPTY")
       end
       button.titleText:SetText(string.format("|cFFFFD100%s|r", row.name))
       button.metaText:SetText("|cFF999999" .. detail .. "|r")
@@ -329,11 +336,11 @@ function ListUI:UpdateList()
       button.nodeRef = nil
       local entry = key and db.books and db.books[key]
       if entry then
-        button.titleText:SetText(entry.title or "(Untitled)")
+          button.titleText:SetText(entry.title or t("BOOK_UNTITLED"))
         button.metaText:SetText(self:FormatRowMetadata(entry))
       else
-        button.titleText:SetText("|cFFFFD100Unknown Book|r")
-        button.metaText:SetText("|cFF999999Missing data|r")
+          button.titleText:SetText(string.format("|cFFFFD100%s|r", t("BOOK_UNKNOWN")))
+          button.metaText:SetText("|cFF999999" .. t("BOOK_MISSING_DATA") .. "|r")
       end
       if key == self:GetSelectedKey() then
         button.selected:Show()
@@ -352,15 +359,17 @@ function ListUI:UpdateList()
 
   local infoMessage
   if not activeNode or (total == 0 and (#(state.path or {}) == 0)) then
-    infoMessage = "|cFF888888No saved locations yet|r"
+	    infoMessage = "|cFF888888" .. t("LOCATIONS_EMPTY") .. "|r"
   else
     local hasChildren = activeNode.childNames and #activeNode.childNames > 0
     if hasChildren then
       local count = #activeNode.childNames
-      infoMessage = string.format("|cFFFFD100%d|r location%s", count, count ~= 1 and "s" or "")
+        local key = (count == 1) and "COUNT_LOCATION_SINGULAR" or "COUNT_LOCATION_PLURAL"
+        infoMessage = string.format("|cFFFFD100" .. t(key) .. "|r", count)
     else
       local count = activeNode.books and #activeNode.books or 0
-      infoMessage = string.format("|cFFFFD100%d|r book%s in this location", count, count ~= 1 and "s" or "")
+        local key = (count == 1) and "COUNT_BOOKS_IN_LOCATION_SINGULAR" or "COUNT_BOOKS_IN_LOCATION_PLURAL"
+        infoMessage = string.format("|cFFFFD100" .. t(key) .. "|r", count)
     end
   end
 
@@ -371,7 +380,7 @@ function ListUI:UpdateList()
     if crumbText and detailText then
       info:SetText(string.format("%s  |cFF666666•|r  %s", crumbText, detailText))
     else
-      info:SetText(detailText or crumbText or "|cFF888888Browse saved locations|r")
+	      info:SetText(detailText or crumbText or ("|cFF888888" .. t("LOCATIONS_BROWSE_SAVED") .. "|r"))
     end
     local tipRow = self:GetFrame("listTipRow") or self:EnsureListTipRow()
     if tipRow then
@@ -385,7 +394,7 @@ function ListUI:UpdateList()
   local noResults = self:GetFrame("noResultsText")
   if noResults then
     if total == 0 then
-      noResults:SetText("|cFF999999No locations or books available here.|r")
+	      noResults:SetText("|cFF999999" .. t("LOCATIONS_NO_RESULTS") .. "|r")
       noResults:Show()
     else
       noResults:Hide()

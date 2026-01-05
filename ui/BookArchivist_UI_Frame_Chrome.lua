@@ -8,6 +8,11 @@ local FrameUI = BookArchivist.UI.Frame or {}
 BookArchivist.UI.Frame = FrameUI
 local Internal = BookArchivist.UI.Internal
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+	return (L and L[key]) or key
+end
+
 local Metrics = BookArchivist.UI.Metrics or {
 	PAD_OUTER = 12,
 	PAD_INSET = 10,
@@ -46,8 +51,8 @@ local ClearAnchors = FrameUI.ClearAnchors or function(frame, resetSize)
 end
 
 local DEFAULT_PORTRAIT = FrameUI.DEFAULT_PORTRAIT or "Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png"
-local OPTIONS_TOOLTIP_TITLE = "Book Archivist Options"
-local OPTIONS_TOOLTIP_DESC = "Open the settings panel"
+local OPTIONS_TOOLTIP_TITLE = t("Book Archivist Options")
+local OPTIONS_TOOLTIP_DESC = t("Open the settings panel")
 
 local function configureDrag(frame)
 	frame:SetMovable(true)
@@ -69,7 +74,7 @@ end
 
 local function configureTitle(frame, title)
 	if frame.TitleText then
-		frame.TitleText:SetText(title or "Book Archivist")
+		frame.TitleText:SetText(title or t("Book Archivist"))
 	end
 end
 

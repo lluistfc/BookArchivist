@@ -82,7 +82,9 @@ local function buildZoneData()
   end
 
   if #chain == 0 then
-    chain = { "Unknown Zone" }
+    local L = BookArchivist and BookArchivist.L or {}
+    local unknown = (L and L["Unknown Zone"]) or "Unknown Zone"
+    chain = { unknown }
   end
 
   local zoneText = table.concat(chain, " > ")
@@ -189,7 +191,9 @@ function Location:OnLootOpened()
         mobName = resolveGuidName(guid)
       end
       if not mobName then
-        mobName = self.lastUnitName or "Unknown Mob"
+      local L = BookArchivist and BookArchivist.L or {}
+      local fallback = (L and L["Unknown Mob"]) or "Unknown Mob"
+      mobName = self.lastUnitName or fallback
       end
       storeLootDescriptor(itemID, {
         zoneChain = zoneData.zoneChain,
@@ -230,7 +234,8 @@ end
 
 function Location:FormatZoneText(zoneChain)
   if not zoneChain or #zoneChain == 0 then
-    return "Unknown Zone"
+		local L = BookArchivist and BookArchivist.L or {}
+		return (L and L["Unknown Zone"]) or "Unknown Zone"
   end
   return table.concat(zoneChain, " > ")
 end

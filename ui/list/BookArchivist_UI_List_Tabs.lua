@@ -17,6 +17,11 @@ local Metrics = BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics 
 
 local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+  return (L and L[key]) or key
+end
+
 -- Prefer templates that are loaded early and include a Text region.
 local TAB_TEMPLATES = {
   "CharacterFrameTabButtonTemplate",
@@ -161,12 +166,12 @@ function ListUI:EnsureListTabs(tabParent, tabsRail)
   end
 
   tab1:SetID(1)
-  tab1:SetText("Books")
+	tab1:SetText(t("BOOKS_TAB"))
   if PanelTemplates_TabResize and tab1.Text then
     PanelTemplates_TabResize(tab1, 0)
   end
   tab2:SetID(2)
-  tab2:SetText("Locations")
+	tab2:SetText(t("LOCATIONS_TAB"))
   if PanelTemplates_TabResize and tab2.Text then
     PanelTemplates_TabResize(tab2, 0)
   end

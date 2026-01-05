@@ -220,6 +220,26 @@ function BookArchivist:SetListFilter(filterKey, state)
   end
 end
 
+function BookArchivist:GetLanguage()
+  if Core and Core.GetLanguage then
+    return Core:GetLanguage()
+  end
+  return "enUS"
+end
+
+function BookArchivist:SetLanguage(lang)
+  if Core and Core.SetLanguage then
+    Core:SetLanguage(lang)
+  end
+  local internal = self.UI and self.UI.Internal
+  if internal and internal.rebuildUIForLanguageChange then
+    internal.rebuildUIForLanguageChange()
+  elseif type(self.RefreshUI) == "function" then
+    self:RefreshUI()
+  end
+  syncOptionsUI()
+end
+
 function BookArchivist:OpenOptionsPanel()
   local optionsUI = getOptionsUI()
   if optionsUI and optionsUI.Open then

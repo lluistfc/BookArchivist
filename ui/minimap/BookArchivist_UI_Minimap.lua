@@ -124,10 +124,11 @@ end
 local function handleEnter(self)
   if not GameTooltip then return end
   GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-  GameTooltip:SetText("Book Archivist", 1, 0.82, 0)
-  GameTooltip:AddLine("Left-click: Open library", 0.9, 0.9, 0.9)
-  GameTooltip:AddLine("Right-click: Open options", 0.9, 0.9, 0.9)
-  GameTooltip:AddLine("Drag: Move button", 0.9, 0.9, 0.9)
+  local L = BookArchivist and BookArchivist.L or {}
+  GameTooltip:SetText((L and L["ADDON_TITLE"]) or "Book Archivist", 1, 0.82, 0)
+  GameTooltip:AddLine((L and L["MINIMAP_TIP_LEFT"]) or "Left-click: Open library", 0.9, 0.9, 0.9)
+  GameTooltip:AddLine((L and L["MINIMAP_TIP_RIGHT"]) or "Right-click: Open options", 0.9, 0.9, 0.9)
+  GameTooltip:AddLine((L and L["MINIMAP_TIP_DRAG"]) or "Drag: Move button", 0.9, 0.9, 0.9)
   GameTooltip:Show()
 end
 

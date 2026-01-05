@@ -52,7 +52,7 @@ local function buildFrame(safeCreateFrame)
 		safeCreateFrame = safeCreateFrame,
 		listUI = ListUI,
 		readerUI = ReaderUI,
-		title = "Book Archivist",
+		title = (BookArchivist and BookArchivist.L and BookArchivist.L["ADDON_TITLE"]) or "Book Archivist",
 		getPreferredListWidth = function()
 			if addonRoot and addonRoot.GetListWidth then
 				return addonRoot:GetListWidth()
@@ -120,6 +120,122 @@ local function setupUI()
 end
 
 Internal.setupUI = setupUI
+
+-- Applies the current language to existing UI without tearing down frames.
+-- This avoids re-creating named frames (which can fail in WoW) while still
+-- forcing a full refresh of dynamic strings.
+local function rebuildUIForLanguageChange()
+	if not Internal.getUIFrame then
+		return
+	end
+
+	local ui = Internal.getUIFrame()
+	if not ui then
+		-- UI not yet created; future setup will use the new locale.
+		return
+	end
+
+	local L = BookArchivist and BookArchivist.L or {}
+	local function t(key)
+		return (L and L[key]) or key
+	end
+
+	-- Update the main frame title.
+	local title = t("ADDON_TITLE")
+	if FrameUI and FrameUI.ConfigureTitle then
+		FrameUI.ConfigureTitle(ui, title)
+	elseif ui.TitleText and ui.TitleText.SetText then
+		ui.TitleText:SetText(title)
+	end
+
+	-- Update list header title if the list UI has been created.
+	if ListUI and ListUI.GetFrame then
+		local headerTitle = ListUI:GetFrame("headerTitle")
+		if headerTitle and headerTitle.SetText then
+			headerTitle:SetText(title)
+		end
+
+		-- Update list tabs text.
+		local booksTab = ListUI:GetFrame("booksTabButton")
+		if booksTab and booksTab.SetText then
+			booksTab:SetText(t("BOOKS_TAB"))
+			if booksTab.Text and PanelTemplates_TabResize then
+				PanelTemplates_TabResize(booksTab, 0)
+			end
+		end
+		local locationsTab = ListUI:GetFrame("locationsTabButton")
+		if locationsTab and locationsTab.SetText then
+			locationsTab:SetText(t("LOCATIONS_TAB"))
+			if locationsTab.Text and PanelTemplates_TabResize then
+				PanelTemplates_TabResize(locationsTab, 0)
+			end
+		end
+
+		-- Update header buttons (Help/Options).
+		local optionsButton = ListUI:GetFrame("optionsButton")
+		if optionsButton and optionsButton.SetText then
+			optionsButton:SetText(t("HEADER_BUTTON_OPTIONS"))
+		end
+		local helpButton = ListUI:GetFrame("helpButton")
+		if helpButton and helpButton.SetText then
+			helpButton:SetText(t("HEADER_BUTTON_HELP"))
+		end
+
+		-- Update list pagination button labels.
+		local listPrev = ListUI:GetFrame("pagePrevButton")
+		local listNext = ListUI:GetFrame("pageNextButton")
+		local listPageLabel = ListUI:GetFrame("pageLabel")
+		if listPrev and listPrev.SetText then
+			listPrev:SetText(t("PAGINATION_PREV"))
+		end
+		if listNext and listNext.SetText then
+			listNext:SetText(t("PAGINATION_NEXT"))
+		end
+		if listPageLabel and listPageLabel.SetText then
+			listPageLabel:SetText(t("PAGINATION_PAGE_SINGLE"))
+		end
+	end
+
+	-- Update reader navigation labels if the reader UI exists.
+	if ReaderUI and ReaderUI.__state then
+		local rstate = ReaderUI.__state
+		local prev = rstate.prevButton or (ReaderUI.__getWidget and ReaderUI.__getWidget("prevButton"))
+		local nextBtn = rstate.nextButton or (ReaderUI.__getWidget and ReaderUI.__getWidget("nextButton"))
+		local pageIndicator = rstate.pageIndicator or (ReaderUI.__getWidget and ReaderUI.__getWidget("pageIndicator"))
+		if prev and prev.SetText then
+			prev:SetText(t("PAGINATION_PREV"))
+		end
+		if nextBtn and nextBtn.SetText then
+			nextBtn:SetText(t("PAGINATION_NEXT"))
+		end
+		if pageIndicator and pageIndicator.SetText then
+			pageIndicator:SetText(t("PAGINATION_PAGE_SINGLE"))
+		end
+
+		-- If no book is selected, ensure the empty prompt is localized.
+		local getSelectedKeyFn = ReaderUI.__getSelectedKey
+		local selectedKey = getSelectedKeyFn and getSelectedKeyFn() or nil
+		if not selectedKey then
+			local bookTitle = rstate.bookTitle or (ReaderUI.__getWidget and ReaderUI.__getWidget("bookTitle"))
+			if bookTitle and bookTitle.SetText then
+				bookTitle:SetText(t("READER_EMPTY_PROMPT"))
+			end
+		end
+	end
+
+	-- Schedule and flush a full UI refresh so that all
+	-- dynamically formatted labels pick up the new locale.
+	if Internal.requestFullRefresh then
+		Internal.requestFullRefresh()
+	elseif Internal.setNeedsRefresh then
+		Internal.setNeedsRefresh(true)
+	end
+	if Internal.flushPendingRefresh then
+		Internal.flushPendingRefresh()
+	end
+end
+
+Internal.rebuildUIForLanguageChange = rebuildUIForLanguageChange
 
 local function ensureUI()
 	local ui = Internal.getUIFrame()

@@ -5,6 +5,11 @@ BookArchivist.UI = BookArchivist.UI or {}
 local ReaderUI = {}
 BookArchivist.UI.Reader = ReaderUI
 
+local L = BookArchivist and BookArchivist.L or {}
+local function t(key)
+  return (L and L[key]) or key
+end
+
 local ctx
 local state = ReaderUI.__state or {}
 ReaderUI.__state = state
@@ -395,7 +400,7 @@ function ReaderUI:UpdatePageControlsDisplay(totalPages)
 
   if indicator then
     local displayIndex = totalPages == 0 and 0 or currentIndex
-    indicator:SetText(string.format("Page %d / %d", displayIndex, totalPages))
+	    indicator:SetText(string.format(t("PAGINATION_PAGE_FORMAT"), displayIndex, totalPages))
   end
 
   if prevButton then
@@ -463,14 +468,14 @@ function ReaderUI:RenderSelected()
   local entry = key and db.books[key] or nil
   if not entry then
     debugPrint("[BookArchivist] renderSelected: no entry for key", tostring(key))
-    bookTitle:SetText("Select a book from the list")
+		bookTitle:SetText(t("READER_EMPTY_PROMPT"))
     bookTitle:SetTextColor(0.5, 0.5, 0.5)
     metaDisplay:SetText("")
     renderBookContent("")
     local deleteButton = getDeleteButton()
     if deleteButton then deleteButton:Disable() end
     if state.countText then
-      state.countText:SetText("|cFF888888Books saved as you read them in-game|r")
+	      state.countText:SetText(t("READER_FOOTER_HINT"))
     end
     state.currentEntryKey = nil
     state.pageOrder = {}
@@ -479,25 +484,25 @@ function ReaderUI:RenderSelected()
     return
   end
 
-  bookTitle:SetText(entry.title or "(Untitled Book)")
+  bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
   bookTitle:SetTextColor(1, 0.82, 0)
 
   local meta = {}
   if entry.creator and entry.creator ~= "" then
-    table.insert(meta, "|cFFFFD100Creator:|r " .. entry.creator)
+	    table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_CREATOR"), entry.creator))
   end
   if entry.material and entry.material ~= "" then
-    table.insert(meta, "|cFFFFD100Material:|r " .. entry.material)
+	    table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_MATERIAL"), entry.material))
   end
   if entry.lastSeenAt then
-    table.insert(meta, "|cFFFFD100Last viewed:|r " .. fmtTime(entry.lastSeenAt))
+	    table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_LAST_VIEWED"), fmtTime(entry.lastSeenAt)))
   end
   local locationLine = formatLocationLine(entry.location)
   if locationLine then
     table.insert(meta, locationLine)
   end
   if #meta == 0 then
-    metaDisplay:SetText("|cFF888888Captured automatically from ItemText.|r")
+	    metaDisplay:SetText(string.format("|cFF888888%s|r", t("READER_META_CAPTURED_AUTOMATICALLY")))
   else
     metaDisplay:SetText(table.concat(meta, "\n"))
   end
@@ -517,13 +522,13 @@ function ReaderUI:RenderSelected()
 
     local pageText
     if totalPages == 0 then
-      pageText = "|cFF888888No content available|r"
+	      pageText = t("READER_NO_CONTENT")
     else
       local pageIndex = state.currentPageIndex
       local pageNum = state.pageOrder[pageIndex]
       pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
       if pageText == "" then
-        pageText = "|cFF888888No content available|r"
+	        pageText = t("READER_NO_CONTENT")
       end
     end
 
@@ -541,9 +546,10 @@ function ReaderUI:RenderSelected()
   end
   if state.countText then
     local details = {}
-    table.insert(details, string.format("|cFFFFD100%d|r page%s", pageCount, pageCount ~= 1 and "s" or ""))
+	    local keyPages = (pageCount == 1) and "READER_PAGE_COUNT_SINGULAR" or "READER_PAGE_COUNT_PLURAL"
+	    table.insert(details, string.format("|cFFFFD100" .. t(keyPages) .. "|r", pageCount))
     if entry.lastSeenAt then
-      table.insert(details, "Last viewed " .. fmtTime(entry.lastSeenAt))
+	      table.insert(details, string.format(t("READER_LAST_VIEWED_AT_FORMAT"), fmtTime(entry.lastSeenAt)))
     end
     state.countText:SetText(table.concat(details, "  |cFF666666•|r  "))
   end
