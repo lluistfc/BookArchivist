@@ -25,7 +25,6 @@ end
 local optionsPanel
 local optionsCategory
 
-local IMPORT_PASTE_RENDER_LIMIT = 16000        -- chars kept visible in EditBox
 local IMPORT_MAX_PAYLOAD_CHARS  = 5*1024*1024  -- hard cap: 5 MB
 
 local function trim(msg)
@@ -427,16 +426,12 @@ function OptionsUI:Ensure()
   -- Export column
   local exportLabel = exportColumn:CreateFontString(nil, "ARTWORK", "GameFontNormal")
   exportLabel:SetPoint("TOPLEFT", exportColumn, "TOPLEFT", 0, 0)
-  -- Use a short column label; fall back to plain text if not localized
-  if L and L.OPTIONS_EXPORT_LABEL then
-    exportLabel:SetText(L.OPTIONS_EXPORT_LABEL)
-  else
-    exportLabel:SetText("Export")
-  end
+  exportLabel:SetText(t("OPTIONS_EXPORT_LABEL"))
   optionsPanel.exportLabel = exportLabel
 
-  local exportScroll
-  local exportBox
+  local exportCopyScroll
+  local exportCopyBox
+  local exportStatus
 
   local exportButton = createFrame("Button", "BookArchivistExportButton", exportColumn, "UIPanelButtonTemplate")
   exportButton:SetSize(160, 22)
@@ -447,6 +442,12 @@ function OptionsUI:Ensure()
       if print then
         print("[BookArchivist] Export unavailable")
       end
+      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
+        optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_UNAVAILABLE"))
+        if optionsPanel.exportStatus.SetTextColor then
+          optionsPanel.exportStatus:SetTextColor(1, 0.2, 0.2)
+        end
+      end
       return
     end
     local payload, err = BookArchivist:ExportLibrary()
@@ -454,86 +455,114 @@ function OptionsUI:Ensure()
       if print then
         print("[BookArchivist] Export failed: " .. tostring(err))
       end
+      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
+        optionsPanel.exportStatus:SetText(string.format(t("OPTIONS_EXPORT_STATUS_FAILED"), tostring(err)))
+        if optionsPanel.exportStatus.SetTextColor then
+          optionsPanel.exportStatus:SetTextColor(1, 0.2, 0.2)
+        end
+      end
       return
     end
-    if exportScroll then
-      exportScroll:Show()
-    else
-      exportBox:Show()
+    optionsPanel.lastExportPayload = payload
+    if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
+      optionsPanel.exportStatus:SetText(string.format(t("OPTIONS_EXPORT_STATUS_READY"), #payload))
+      if optionsPanel.exportStatus.SetTextColor then
+        optionsPanel.exportStatus:SetTextColor(0.6, 1, 0.6)
+      end
     end
-    if #payload > IMPORT_PASTE_RENDER_LIMIT then
-      optionsPanel.lastExportPayload = payload
-      exportBox:SetText(("Payload generated (%d chars). Use Copy."):format(#payload))
-    else
-      optionsPanel.lastExportPayload = nil
-      exportBox:SetText(payload)
-    end
-    if exportBox.SetCursorPosition then
-      exportBox:SetCursorPosition(0)
-    end
-    exportBox:SetFocus()
-    exportBox:HighlightText()
   end)
   optionsPanel.exportButton = exportButton
 
   local exportCopyButton = createFrame("Button", "BookArchivistExportCopyButton", exportColumn, "UIPanelButtonTemplate")
   exportCopyButton:SetSize(80, 22)
   exportCopyButton:SetPoint("LEFT", exportButton, "RIGHT", 4, 0)
-  exportCopyButton:SetText(t("OPTIONS_EXPORT_BUTTON_COPY") or "Copy")
+  exportCopyButton:SetText(t("OPTIONS_EXPORT_BUTTON_COPY"))
   exportCopyButton:SetScript("OnClick", function()
-    if not optionsPanel.lastExportPayload or optionsPanel.lastExportPayload == "" then
+    local text = optionsPanel.lastExportPayload or ""
+    if text == "" then
       if print then
         print("[BookArchivist] Nothing to copy yet")
       end
+      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
+        optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_NOTHING_TO_COPY"))
+        if optionsPanel.exportStatus.SetTextColor then
+          optionsPanel.exportStatus:SetTextColor(1, 0.9, 0.4)
+        end
+      end
       return
     end
-    if exportScroll then
-      exportScroll:Show()
-    else
-      exportBox:Show()
+    if optionsPanel.exportCopyBox then
+      optionsPanel.exportCopyBox:Show()
+      optionsPanel.exportCopyBox:SetText(text)
+      if optionsPanel.exportCopyBox.SetCursorPosition then
+        optionsPanel.exportCopyBox:SetCursorPosition(0)
+      end
+      optionsPanel.exportCopyBox:SetFocus()
+      optionsPanel.exportCopyBox:HighlightText()
+      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
+        optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_COPY_HINT"))
+        if optionsPanel.exportStatus.SetTextColor then
+          optionsPanel.exportStatus:SetTextColor(0.9, 0.9, 0.9)
+        end
+      end
     end
-    exportBox:SetText(optionsPanel.lastExportPayload)
-    if exportBox.SetCursorPosition then
-      exportBox:SetCursorPosition(0)
-    end
-    exportBox:SetFocus()
-    exportBox:HighlightText()
   end)
   optionsPanel.exportCopyButton = exportCopyButton
-
-  exportScroll = CreateFrame and CreateFrame("ScrollFrame", "BookArchivistExportScrollFrame", exportColumn, "InputScrollFrameTemplate")
-  if exportScroll and exportScroll.EditBox then
-    exportScroll:SetPoint("TOPLEFT", exportButton, "BOTTOMLEFT", 0, -6)
-    exportScroll:SetPoint("TOPRIGHT", exportColumn, "TOPRIGHT", -6, 0)
-    exportScroll:SetHeight(80)
-    if exportScroll.SetAlpha then
-      exportScroll:SetAlpha(1)
-    end
-    exportBox = exportScroll.EditBox
-    exportBox:SetAutoFocus(false)
-    exportBox:SetMultiLine(true)
-    exportBox:SetFontObject("GameFontHighlightSmall")
-    exportBox:SetMaxLetters(0)
-    exportBox.cursorOffset = 0
-    exportBox:SetText("")
-    StylePayloadEditBox(exportBox, true)
-    exportScroll:Show()
-  else
-    -- Fallback: simple multi-line edit box without a scrollbar.
-    exportBox = createFrame("EditBox", "BookArchivistExportEditBox", exportColumn, "InputBoxTemplate")
-    exportBox:ClearAllPoints()
-    exportBox:SetPoint("TOPLEFT", exportButton, "BOTTOMLEFT", 0, -6)
-    exportBox:SetPoint("TOPRIGHT", exportColumn, "TOPRIGHT", -6, 0)
-    exportBox:SetHeight(80)
-    exportBox:SetAutoFocus(false)
-    exportBox:SetMultiLine(true)
-    exportBox:SetFontObject("GameFontHighlightSmall")
-    exportBox:SetMaxLetters(0)
-    StylePayloadEditBox(exportBox, true)
-    exportBox:Hide()
+  -- Export status line: communicates current export state.
+  exportStatus = exportColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  exportStatus:SetPoint("TOPLEFT", exportButton, "BOTTOMLEFT", 0, -4)
+  exportStatus:SetPoint("RIGHT", exportColumn, "RIGHT", 0, 0)
+  exportStatus:SetJustifyH("LEFT")
+  exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_DEFAULT"))
+  if exportStatus.SetTextColor then
+    exportStatus:SetTextColor(0.8, 0.8, 0.8)
   end
-  optionsPanel.exportScroll = exportScroll
-  optionsPanel.exportBox = exportBox
+  optionsPanel.exportStatus = exportStatus
+  -- Hidden multiline copy-catcher edit box: keeps the full
+  -- BDB1 export (including newlines) so copy/paste works
+  -- correctly, without rendering a giant visible textarea.
+  exportCopyScroll = CreateFrame and CreateFrame("ScrollFrame", "BookArchivistExportCopyScrollFrame", optionsPanel, "InputScrollFrameTemplate")
+  if exportCopyScroll and exportCopyScroll.EditBox then
+    exportCopyScroll:ClearAllPoints()
+    exportCopyScroll:SetPoint("TOPLEFT", optionsPanel, "BOTTOMLEFT", 0, -100)
+    exportCopyScroll:SetSize(1, 1)
+    if exportCopyScroll.SetAlpha then
+      exportCopyScroll:SetAlpha(0)
+    end
+    exportCopyBox = exportCopyScroll.EditBox
+    exportCopyBox:SetAutoFocus(false)
+    if exportCopyBox.SetMultiLine then
+      exportCopyBox:SetMultiLine(true)
+    end
+    if exportCopyBox.SetMaxBytes then
+      exportCopyBox:SetMaxBytes(0)
+    end
+    exportCopyBox:SetFontObject("GameFontHighlightSmall")
+    exportCopyBox:SetMaxLetters(0)
+    exportCopyBox.cursorOffset = 0
+    StylePayloadEditBox(exportCopyBox, false)
+  else
+    -- Fallback for environments without InputScrollFrameTemplate:
+    -- still prefer multiline so newlines are preserved.
+    exportCopyBox = createFrame("EditBox", "BookArchivistExportCopyBox", exportColumn, "InputBoxTemplate")
+    exportCopyBox:ClearAllPoints()
+    exportCopyBox:SetPoint("TOPLEFT", exportStatus, "BOTTOMLEFT", 0, -4)
+    exportCopyBox:SetPoint("TOPRIGHT", exportColumn, "TOPRIGHT", -6, 0)
+    exportCopyBox:SetHeight(40)
+    exportCopyBox:SetAutoFocus(false)
+    if exportCopyBox.SetMultiLine then
+      exportCopyBox:SetMultiLine(true)
+    end
+    if exportCopyBox.SetMaxBytes then
+      exportCopyBox:SetMaxBytes(0)
+    end
+    exportCopyBox:SetFontObject("GameFontHighlightSmall")
+    exportCopyBox:SetMaxLetters(0)
+    exportCopyBox.cursorOffset = 0
+    StylePayloadEditBox(exportCopyBox, false)
+    exportCopyBox:Hide()
+  end
+  optionsPanel.exportCopyBox = exportCopyBox
 
   -- Import column
   local importLabel = importColumn:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -541,27 +570,74 @@ function OptionsUI:Ensure()
   importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
   optionsPanel.importLabel = importLabel
 
+  local importHelp = importColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  importHelp:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -4)
+  importHelp:SetPoint("RIGHT", importColumn, "RIGHT", 0, 0)
+  importHelp:SetJustifyH("LEFT")
+  importHelp:SetText(t("OPTIONS_IMPORT_HELP"))
+  optionsPanel.importHelp = importHelp
+
   local importScroll
   local importBox
 
   local importButton = createFrame("Button", "BookArchivistImportButton", importColumn, "UIPanelButtonTemplate")
   importButton:SetSize(160, 22)
-  importButton:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -4)
+  importButton:SetPoint("TOPLEFT", importHelp, "BOTTOMLEFT", 0, -4)
   importButton:SetText(t("OPTIONS_IMPORT_BUTTON"))
   local function GetImportPayload()
+    -- 1) Prefer an explicit pending payload captured from the
+    --    import box (including placeholder-visible mode).
     if optionsPanel.pendingImportVisibleIsPlaceholder then
-      return optionsPanel.pendingImportPayload or ""
-    end
-    if optionsPanel.pendingImportPayload then
+      if optionsPanel.pendingImportPayload and optionsPanel.pendingImportPayload ~= "" then
+        return optionsPanel.pendingImportPayload
+      end
+    elseif optionsPanel.pendingImportPayload and optionsPanel.pendingImportPayload ~= "" then
       return optionsPanel.pendingImportPayload
     end
-    return importBox and (importBox:GetText() or "") or ""
+
+    -- 2) If there is no explicit import text but we
+    --    have a payload from this session's Export, allow Import
+    --    to consume that directly so users don't need to paste at
+    --    all for local transfers.
+    if optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= "" then
+      return optionsPanel.lastExportPayload
+    end
+
+    return ""
   end
 
   local importStatus = importColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  importStatus:SetPoint("LEFT", importButton, "RIGHT", 8, 0)
-  importStatus:SetText("")
+  importStatus:SetPoint("TOPLEFT", importButton, "BOTTOMLEFT", 0, -4)
+  importStatus:SetPoint("RIGHT", importColumn, "RIGHT", 0, 0)
+  importStatus:SetJustifyH("LEFT")
+  importStatus:SetText(t("OPTIONS_IMPORT_STATUS_DEFAULT"))
+  if importStatus.SetTextColor then
+    importStatus:SetTextColor(0.8, 0.8, 0.8)
+  end
   optionsPanel.importStatus = importStatus
+
+  local importPasteButton = createFrame("Button", "BookArchivistImportPasteButton", importColumn, "UIPanelButtonTemplate")
+  importPasteButton:SetSize(120, 22)
+  importPasteButton:SetPoint("LEFT", importButton, "RIGHT", 4, 0)
+  importPasteButton:SetText(t("OPTIONS_IMPORT_BUTTON_CAPTURE"))
+  importPasteButton:SetScript("OnClick", function()
+    optionsPanel.pendingImportPayload = nil
+    optionsPanel.pendingImportVisibleIsPlaceholder = false
+    optionsPanel.importPasteBuffer = {}
+    optionsPanel.importBufferLen = 0
+    optionsPanel.importIsPasting = false
+    optionsPanel.importLastCharElapsed = 0
+    if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+      optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_PASTE_HINT"))
+      if optionsPanel.importStatus.SetTextColor then
+        optionsPanel.importStatus:SetTextColor(0.9, 0.9, 0.9)
+      end
+    end
+    if optionsPanel.importBox and optionsPanel.importBox.SetFocus then
+      optionsPanel.importBox:SetFocus()
+    end
+  end)
+  optionsPanel.importPasteButton = importPasteButton
 
   importButton:SetScript("OnClick", function()
     local worker = optionsPanel.importWorker
@@ -583,19 +659,44 @@ function OptionsUI:Ensure()
     importButton:Disable()
     if optionsPanel.exportButton then optionsPanel.exportButton:Disable() end
     if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Disable() end
-    importStatus:SetText("")
+    if importStatus.SetText then
+      importStatus:SetText(t("OPTIONS_IMPORT_STATUS_PREPARING"))
+      if importStatus.SetTextColor then
+        importStatus:SetTextColor(1, 0.9, 0.4)
+      end
+    end
 
     local ok = worker:Start(raw, {
       onProgress = function(label, pct)
         if not importStatus or not importStatus.SetText then return end
         local pctNum = math.floor((pct or 0) * 100)
-        importStatus:SetText(string.format("%s: %d%%", tostring(label or ""), pctNum))
+        local phase = tostring(label or "")
+        if phase == "Decoded" then
+          phase = t("OPTIONS_IMPORT_STATUS_PHASE_DECODE")
+        elseif phase == "Parsed" then
+          phase = t("OPTIONS_IMPORT_STATUS_PHASE_PARSED")
+        elseif phase == "Merging" then
+          phase = t("OPTIONS_IMPORT_STATUS_PHASE_MERGE")
+        elseif phase == "Building search" then
+          phase = t("OPTIONS_IMPORT_STATUS_PHASE_SEARCH")
+        elseif phase == "Indexing titles" then
+          phase = t("OPTIONS_IMPORT_STATUS_PHASE_TITLES")
+        end
+        importStatus:SetText(string.format("%s: %d%%", phase, pctNum))
+        if importStatus.SetTextColor then
+          importStatus:SetTextColor(1, 0.9, 0.4)
+        end
       end,
       onDone = function(summary)
         importButton:Enable()
         if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
         if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
-        importStatus:SetText("")
+        if importStatus.SetText then
+          importStatus:SetText(summary or t("OPTIONS_IMPORT_STATUS_COMPLETE"))
+          if importStatus.SetTextColor then
+            importStatus:SetTextColor(0.6, 1, 0.6)
+          end
+        end
         if print then
           print("[BookArchivist] " .. (summary or "Import complete"))
         end
@@ -609,7 +710,12 @@ function OptionsUI:Ensure()
         importButton:Enable()
         if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
         if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
-        importStatus:SetText("")
+        if importStatus.SetText then
+          importStatus:SetText(string.format(t("OPTIONS_IMPORT_STATUS_FAILED"), tostring(err)))
+          if importStatus.SetTextColor then
+            importStatus:SetTextColor(1, 0.2, 0.2)
+          end
+        end
         if print then
           print("[BookArchivist] Import failed: " .. tostring(err))
         end
@@ -627,65 +733,167 @@ function OptionsUI:Ensure()
   end)
   optionsPanel.importButton = importButton
 
-  importScroll = CreateFrame and CreateFrame("ScrollFrame", "BookArchivistImportScrollFrame", importColumn, "InputScrollFrameTemplate")
-  if importScroll and importScroll.EditBox then
-    importScroll:SetPoint("TOPLEFT", importButton, "BOTTOMLEFT", 0, -6)
-    importScroll:SetPoint("TOPRIGHT", importColumn, "TOPRIGHT", -6, 0)
-    importScroll:SetHeight(80)
-    if importScroll.SetAlpha then
-      importScroll:SetAlpha(1)
-    end
-    importBox = importScroll.EditBox
-    importBox:SetAutoFocus(false)
-    importBox:SetMultiLine(true)
-    importBox:SetFontObject("GameFontHighlightSmall")
-    importBox:SetMaxLetters(0)
-    importBox.cursorOffset = 0
-    StylePayloadEditBox(importBox, false)
-    local function SetImportPlaceholder(box, msg)
-      optionsPanel.pendingImportVisibleIsPlaceholder = true
-      box:SetText(msg)
-      box:HighlightText(0, 0)
-      if box.SetCursorPosition then
-        box:SetCursorPosition(0)
-      end
-    end
-
-    importBox:SetScript("OnTextChanged", function(self, userInput)
-      if not userInput then return end
-      local text = self:GetText() or ""
-
-      if #text == 0 then
-        optionsPanel.pendingImportPayload = nil
-        optionsPanel.pendingImportVisibleIsPlaceholder = false
-        return
-      end
-
-      if #text > IMPORT_MAX_PAYLOAD_CHARS then
-        optionsPanel.pendingImportPayload = nil
-        SetImportPlaceholder(self, "Payload too large. Aborting.")
-        return
-      end
-
-      optionsPanel.pendingImportPayload = text
-      optionsPanel.pendingImportVisibleIsPlaceholder = false
-
-      if #text > IMPORT_PASTE_RENDER_LIMIT then
-        SetImportPlaceholder(self, ("Payload received (%d chars). Click Import."):format(#text))
-      end
-    end)
-  else
-    importBox = createFrame("EditBox", "BookArchivistImportEditBox", importColumn, "InputBoxTemplate")
-    importBox:ClearAllPoints()
-    importBox:SetPoint("TOPLEFT", importButton, "BOTTOMLEFT", 0, -6)
-    importBox:SetPoint("TOPRIGHT", importColumn, "TOPRIGHT", -6, 0)
-    importBox:SetHeight(80)
-    importBox:SetAutoFocus(false)
-    importBox:SetMultiLine(true)
-    importBox:SetFontObject("GameFontHighlightSmall")
-    importBox:SetMaxLetters(0)
-    StylePayloadEditBox(importBox, false)
+  -- Hidden paste-catcher edit box: no visible textarea in the UI.
+  importScroll = nil
+  importBox = createFrame("EditBox", "BookArchivistImportPasteBox", optionsPanel, "InputBoxTemplate")
+  importBox:ClearAllPoints()
+  importBox:SetPoint("TOPLEFT", optionsPanel, "BOTTOMLEFT", 0, -100)
+  importBox:SetWidth(1)
+  importBox:SetHeight(1)
+  importBox:SetAutoFocus(false)
+  if importBox.SetMultiLine then
+    importBox:SetMultiLine(false)
   end
+  if importBox.SetMaxBytes then
+    importBox:SetMaxBytes(1)
+  end
+  importBox:SetFontObject("GameFontHighlightSmall")
+  importBox:SetMaxLetters(0)
+  importBox.cursorOffset = 0
+  if importBox.SetAlpha then
+    importBox:SetAlpha(0)
+  end
+  StylePayloadEditBox(importBox, false)
+
+  -- Paste-catcher state: collect characters via OnChar into a
+  -- Lua buffer and rebuild the full string off-screen after the
+  -- paste finishes, as described in docs/import-export.md.
+  optionsPanel.importPasteBuffer = optionsPanel.importPasteBuffer or {}
+  optionsPanel.importIsPasting = false
+  optionsPanel.importLastCharElapsed = 0
+  optionsPanel.importBufferLen = optionsPanel.importBufferLen or 0
+
+  local pasteWatcher = optionsPanel.importPasteWatcher
+  if not pasteWatcher then
+    pasteWatcher = createFrame("Frame", nil, optionsPanel)
+    optionsPanel.importPasteWatcher = pasteWatcher
+  end
+
+  pasteWatcher:Hide()
+  pasteWatcher:SetScript("OnUpdate", function(_, elapsed)
+    if not optionsPanel.importIsPasting then
+      return
+    end
+
+    optionsPanel.importLastCharElapsed = (optionsPanel.importLastCharElapsed or 0) + elapsed
+
+    -- If no new chars for ~0.2s, assume the paste finished and
+    -- rebuild the real string off-screen.
+    if optionsPanel.importLastCharElapsed > 0.2 then
+      optionsPanel.importIsPasting = false
+      if pasteWatcher.Hide then
+        pasteWatcher:Hide()
+      end
+
+      local function RebuildAndProcess()
+        local buf = optionsPanel.importPasteBuffer or {}
+        local text = table.concat(buf)
+
+        optionsPanel.importPasteBuffer = {}
+        optionsPanel.importBufferLen = 0
+
+        if #text == 0 then
+          optionsPanel.pendingImportPayload = nil
+          optionsPanel.pendingImportVisibleIsPlaceholder = false
+          if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+            optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_DEFAULT"))
+          end
+          return
+        end
+
+        if #text > IMPORT_MAX_PAYLOAD_CHARS then
+          optionsPanel.pendingImportPayload = nil
+          optionsPanel.pendingImportVisibleIsPlaceholder = false
+          if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+            optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_TOO_LARGE"))
+          end
+          return
+        end
+
+        local payload
+
+        if optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= "" then
+          -- Same-session fast path (Export -> Copy -> Capture
+          -- Paste on this client): if we still have a canonical
+          -- export string in memory, trust it and ignore any
+          -- mutations introduced by the copy/paste path.
+          payload = optionsPanel.lastExportPayload
+        else
+          -- Cross-client path: require the pasted text to at
+          -- least resemble a BDB export before treating it as an
+          -- import payload. This avoids confusing errors when
+          -- the clipboard still holds unrelated text (e.g., a
+          -- single character or chat line).
+          local hasBDBMarker = type(text) == "string" and (
+            text:find("BDB1|S|", 1, true) or text:find("BDB1|C|", 1, true)
+          )
+
+          if not hasBDBMarker then
+            optionsPanel.pendingImportPayload = nil
+            optionsPanel.pendingImportVisibleIsPlaceholder = false
+            if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+              optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"))
+            end
+            return
+          end
+
+          payload = text
+        end
+
+        optionsPanel.pendingImportPayload = payload
+        optionsPanel.pendingImportVisibleIsPlaceholder = true
+
+        if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+          optionsPanel.importStatus:SetText(string.format(t("OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"), #payload))
+        end
+
+        if optionsPanel.importBox and optionsPanel.importBox.SetText then
+          optionsPanel.importBox:SetText("")
+          if optionsPanel.importBox.SetCursorPosition then
+            optionsPanel.importBox:SetCursorPosition(0)
+          end
+        end
+      end
+
+      local hasTimer = type(C_Timer) == "table" and type(C_Timer.After) == "function"
+      if hasTimer then
+        C_Timer.After(0, RebuildAndProcess)
+      else
+        RebuildAndProcess()
+      end
+    end
+  end)
+
+  importBox:SetScript("OnChar", function(_, char)
+    optionsPanel.importIsPasting = true
+    optionsPanel.importLastCharElapsed = 0
+
+    local buf = optionsPanel.importPasteBuffer
+    buf[#buf + 1] = char
+    optionsPanel.importBufferLen = (optionsPanel.importBufferLen or 0) + #char
+
+    if optionsPanel.importBufferLen > IMPORT_MAX_PAYLOAD_CHARS then
+      -- Enforce the cap during paste to avoid ever building an
+      -- enormous string only to throw it away afterwards.
+      optionsPanel.importIsPasting = false
+      optionsPanel.importPasteBuffer = {}
+      optionsPanel.importBufferLen = 0
+      if optionsPanel.importPasteWatcher and optionsPanel.importPasteWatcher.Hide then
+        optionsPanel.importPasteWatcher:Hide()
+      end
+      optionsPanel.pendingImportPayload = nil
+      optionsPanel.pendingImportVisibleIsPlaceholder = false
+      if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+        optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_TOO_LARGE"))
+      end
+      return
+    end
+
+    if optionsPanel.importPasteWatcher and optionsPanel.importPasteWatcher.Show then
+      optionsPanel.importPasteWatcher:Show()
+    end
+  end)
+
   optionsPanel.importScroll = importScroll
   optionsPanel.importBox = importBox
   optionsPanel.importWorker = optionsPanel.importWorker or (BookArchivist.ImportWorker and BookArchivist.ImportWorker:New(optionsPanel))

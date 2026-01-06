@@ -213,17 +213,18 @@ function ImportWorker:_Step(_elapsed)
       end
       return
     elseif self.phase == "decode" then
-      local Base64 = BookArchivist and BookArchivist.Base64
-      if not (Base64 and Base64.Decode) then
-        return self:_Fail("Decode unavailable")
+      local raw = self.rawPayload or ""
+      local Core = BookArchivist and BookArchivist.Core
+      if not Core or not Core._DecodeBDB1Envelope then
+        return self:_Fail("Decode helper unavailable")
+      end
+      local serialized, headerSchema, err = Core._DecodeBDB1Envelope(raw)
+      if not serialized then
+        return self:_Fail(err or "Decode failed")
       end
 
-      local decoded, err = Base64.Decode(self.rawPayload or "")
-      if not decoded then
-        return self:_Fail("Decode failed: " .. tostring(err))
-      end
-
-      self.decoded = decoded
+      self.decoded = serialized
+      self._headerSchema = headerSchema
       self.phase = "deserialize"
       self:_Progress("Decoded", 0)
       -- continue loop with new phase
