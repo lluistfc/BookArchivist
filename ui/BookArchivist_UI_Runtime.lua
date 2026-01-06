@@ -1,4 +1,5 @@
 ---@diagnostic disable: undefined-global, undefined-field
+
 local addonRoot = BookArchivist
 if not addonRoot or not addonRoot.UI or not addonRoot.UI.Internal then
 	return

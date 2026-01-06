@@ -77,6 +77,10 @@ Locales.deDE = {
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Hebt Layoutgrenzen zur Fehleranalyse hervor. Entspricht /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Auf letzter Seite fortsetzen",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Wenn aktiviert, springt das erneute Öffnen eines gespeicherten Buches zur zuletzt angesehenen Seite, anstatt immer bei Seite 1 zu beginnen.",
+  ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Export / Import",
+  ["OPTIONS_EXPORT_BUTTON"] = "Exportzeichenkette erzeugen",
+  ["OPTIONS_IMPORT_LABEL"] = "Zeichenkette importieren",
+  ["OPTIONS_IMPORT_BUTTON"] = "Importieren",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Unbekannte Zone",

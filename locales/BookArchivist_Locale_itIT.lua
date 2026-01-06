@@ -77,6 +77,10 @@ Locales.itIT = {
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Evidenzia i limiti del layout. Uguale a /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Riprendi all'ultima pagina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Se abilitato, riaprire un libro salvato ti riporta all'ultima pagina visualizzata invece di iniziare sempre dalla pagina 1.",
+  ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Esporta / Importa",
+  ["OPTIONS_EXPORT_BUTTON"] = "Genera stringa di esportazione",
+  ["OPTIONS_IMPORT_LABEL"] = "Stringa da importare",
+  ["OPTIONS_IMPORT_BUTTON"] = "Importa",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona sconosciuta",

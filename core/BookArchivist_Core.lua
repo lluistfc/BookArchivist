@@ -15,6 +15,8 @@ local Core = {}
 BookArchivist.Core = Core
 
 local BookId = BookArchivist.BookId
+local Serialize = BookArchivist.Serialize
+local Base64 = BookArchivist.Base64
 
 local LIST_WIDTH_DEFAULT = 360
 local LIST_SORT_DEFAULT = "lastSeen"
@@ -579,6 +581,197 @@ end
 function Core:SetListPageSize(size)
   local listOpts = ensureListOptions()
   listOpts.pageSize = normalizePageSize(size)
+end
+
+-- Step 8 – Export / Import helpers
+
+function Core:BuildExportPayload()
+  local db = ensureDB()
+  local name, realm
+  if type(UnitName) == "function" then
+    name = UnitName("player")
+  end
+  if type(GetRealmName) == "function" then
+    realm = GetRealmName()
+  end
+  return {
+    schemaVersion = 1,
+    exportedAt = now(),
+    character = {
+      name = name or "?",
+      realm = realm or "?",
+    },
+    booksById = db.booksById or {},
+    order = db.order or {},
+  }
+end
+
+function Core:ExportToString()
+  if not (Serialize and Serialize.SerializeTable) then
+    return nil, "serializer unavailable"
+  end
+  if not (Base64 and Base64.Encode) then
+    return nil, "base64 encoder unavailable"
+  end
+  local payload = self:BuildExportPayload()
+  local serialized, err = Serialize.SerializeTable(payload)
+  if not serialized then
+    return nil, err or "serialization failed"
+  end
+  local encoded = Base64.Encode(serialized)
+  return encoded, nil
+end
+
+local function ensureImportedEntryDerivedFields(entry)
+  if not entry then return end
+  if entry.isFavorite == nil then
+    entry.isFavorite = false
+  else
+    entry.isFavorite = entry.isFavorite and true or false
+  end
+  entry.searchText = buildSearchText(entry.title, entry.pages)
+end
+
+local function mergeImportedEntry(self, existing, incoming, bookId)
+  if not incoming or type(incoming) ~= "table" then
+    return false
+  end
+  if not existing then
+    return false
+  end
+
+  if type(incoming.seenCount) == "number" then
+    existing.seenCount = (existing.seenCount or 0) + incoming.seenCount
+  end
+  if type(incoming.firstSeenAt) == "number" then
+    if not existing.firstSeenAt or incoming.firstSeenAt < existing.firstSeenAt then
+      existing.firstSeenAt = incoming.firstSeenAt
+    end
+  end
+  if type(incoming.lastSeenAt) == "number" then
+    if not existing.lastSeenAt or incoming.lastSeenAt > existing.lastSeenAt then
+      existing.lastSeenAt = incoming.lastSeenAt
+    end
+  end
+  if type(incoming.lastReadAt) == "number" then
+    if not existing.lastReadAt or incoming.lastReadAt > existing.lastReadAt then
+      existing.lastReadAt = incoming.lastReadAt
+    end
+  end
+  if incoming.isFavorite then
+    existing.isFavorite = true
+  end
+
+  if incoming.title and incoming.title ~= "" then
+    if not existing.title or existing.title == "" then
+      existing.title = incoming.title
+    elseif existing.title ~= incoming.title then
+      existing.legacy = existing.legacy or {}
+      existing.legacy.importConflict = true
+    end
+  end
+
+  if type(incoming.pages) == "table" then
+    existing.pages = existing.pages or {}
+    for pageNum, text in pairs(incoming.pages) do
+      if existing.pages[pageNum] == nil then
+        existing.pages[pageNum] = text
+      elseif text and text ~= "" and existing.pages[pageNum] ~= text then
+        existing.legacy = existing.legacy or {}
+        existing.legacy.importConflict = true
+      end
+    end
+  end
+
+  ensureImportedEntryDerivedFields(existing)
+  if self and self.IndexTitleForBook then
+    self:IndexTitleForBook(existing.title or incoming.title, bookId)
+  end
+  return true
+end
+
+function Core:ImportFromString(encoded, opts)
+  opts = opts or {}
+  local dryRun = opts.dry and true or false
+  if type(encoded) ~= "string" or encoded == "" then
+    return nil, "empty payload"
+  end
+  if not (Serialize and Serialize.DeserializeTable) then
+    return nil, "serializer unavailable"
+  end
+  if not (Base64 and Base64.Decode) then
+    return nil, "base64 decoder unavailable"
+  end
+
+  local decoded, derr = Base64.Decode(encoded)
+  if not decoded then
+    return nil, derr or "base64 decode failed"
+  end
+  local payload, perr = Serialize.DeserializeTable(decoded)
+  if not payload then
+    return nil, perr or "deserialize failed"
+  end
+  if type(payload) ~= "table" then
+    return nil, "payload must be a table"
+  end
+  if payload.schemaVersion ~= 1 then
+    return nil, "unsupported schemaVersion"
+  end
+  if type(payload.booksById) ~= "table" then
+    return nil, "payload missing booksById"
+  end
+
+  local db = ensureDB()
+  db.booksById = db.booksById or {}
+  db.order = db.order or {}
+
+  local targetBooks = db.booksById
+  local targetOrder = db.order
+  if dryRun then
+    targetBooks = cloneTable(targetBooks)
+    local copyOrder = {}
+    for i, id in ipairs(db.order) do
+      copyOrder[i] = id
+    end
+    targetOrder = copyOrder
+  end
+
+  local orderSet = {}
+  for _, id in ipairs(targetOrder) do
+    orderSet[id] = true
+  end
+
+  local newCount, mergedCount = 0, 0
+
+  for bookId, inEntry in pairs(payload.booksById) do
+    if type(bookId) == "string" and type(inEntry) == "table" then
+      local existing = targetBooks[bookId]
+      if not existing then
+        local cloned = cloneTable(inEntry)
+        ensureImportedEntryDerivedFields(cloned)
+        targetBooks[bookId] = cloned
+        if (not dryRun) and self and self.IndexTitleForBook then
+          self:IndexTitleForBook(cloned.title, bookId)
+        end
+        newCount = newCount + 1
+      else
+        if mergeImportedEntry(self, existing, inEntry, bookId) then
+          mergedCount = mergedCount + 1
+        end
+      end
+      if not orderSet[bookId] then
+        table.insert(targetOrder, bookId)
+        orderSet[bookId] = true
+      end
+    end
+  end
+
+  -- Let the Recent module sanitize its MRU list after new keys.
+  if (not dryRun) and BookArchivist and BookArchivist.Recent and BookArchivist.Recent.GetList then
+    pcall(BookArchivist.Recent.GetList, BookArchivist.Recent)
+  end
+
+  return { new = newCount, merged = mergedCount }, nil
 end
 
 function Core:GetLastBookId()

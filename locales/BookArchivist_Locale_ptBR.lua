@@ -77,6 +77,10 @@ Locales.ptBR = {
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Destaca os limites do layout. Igual a /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Retomar na última página",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quando ativado, reabrir um livro salvo leva à última página visualizada em vez de começar sempre na página 1.",
+  ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exportar / Importar",
+  ["OPTIONS_EXPORT_BUTTON"] = "Gerar string de exportação",
+  ["OPTIONS_IMPORT_LABEL"] = "String para importar",
+  ["OPTIONS_IMPORT_BUTTON"] = "Importar",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconhecida",

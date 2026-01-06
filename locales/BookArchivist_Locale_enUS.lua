@@ -79,6 +79,10 @@ Locales.enUS = {
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Highlights layout bounds for troubleshooting. Same as /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Resume on last page",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "When enabled, reopening a saved book returns to the last page you viewed instead of always starting at page 1.",
+  ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Export / Import",
+  ["OPTIONS_EXPORT_BUTTON"] = "Generate export string",
+  ["OPTIONS_IMPORT_LABEL"] = "Import string",
+  ["OPTIONS_IMPORT_BUTTON"] = "Import",
 	["OPTIONS_TOOLTIP_LABEL"] = "Show tooltip 'Archived' tag",
 	["OPTIONS_TOOLTIP_TOOLTIP"] = "When enabled, readable items whose text has been saved for this character will show an extra 'Book Archivist: Archived' line in their tooltip.",
 

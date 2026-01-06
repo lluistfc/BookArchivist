@@ -77,6 +77,10 @@ Locales.esES = {
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Resalta los límites de diseño para diagnosticar problemas. Igual que /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reanudar en la última página",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si está activado, al volver a abrir un libro guardado se irá a la última página que viste en lugar de empezar siempre en la página 1.",
+  ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exportar / Importar",
+  ["OPTIONS_EXPORT_BUTTON"] = "Generar cadena de exportación",
+  ["OPTIONS_IMPORT_LABEL"] = "Cadena para importar",
+  ["OPTIONS_IMPORT_BUTTON"] = "Importar",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconocida",

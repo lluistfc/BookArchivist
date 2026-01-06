@@ -46,26 +46,32 @@ Create `Core/Base64.lua` (or embed a tiny encoder/decoder):
 - `Encode(str) -> str`
 - `Decode(str) -> str|nil`
 
-### 3) Implement `/ba export`
+### 3) UI wiring: Export text area
 Behavior:
-1. Build payload table
-2. Serialize to string
-3. Base64 encode
-4. Show in modal edit box for copy
+1. Add an "Export / Import" section to the options panel.
+2. Add a button "Generate export string" that:
+  - Builds the payload table
+  - Serializes it to a string
+  - Base64 encodes the result
+  - Fills a multi-line, copyable text area and focuses + selects it.
+3. Keep the export text area hidden until the first successful export.
 
-### 4) Implement `/ba import <payload>`
+### 4) UI wiring: Import text area
 Behavior:
-1. Base64 decode
-2. Deserialize table
-3. Validate:
-   - schemaVersion supported
-   - booksById is table
-4. Merge into current `db.booksById`
-5. Update `db.order` by appending new ids
-6. Ensure derived fields:
-   - `searchText` exists (Step 6)
-   - `isFavorite` default exists (Step 3)
-   - `recent` integrity (Step 4)
+1. Add a multi-line "Import string" text area to the options panel.
+2. Add an "Import" button that:
+  - Reads the text box contents
+  - Base64 decodes
+  - Deserializes the table
+  - Validates:
+    - schemaVersion supported
+    - booksById is table
+  - Merges into the current `db.booksById`
+  - Updates `db.order` by appending new ids
+  - Ensures derived fields:
+    - `searchText` exists (Step 6)
+    - `isFavorite` default exists (Step 3)
+    - `recent` integrity (Step 4)
 
 ### 5) Merge rules (deterministic)
 For each imported entry `inE`:
@@ -83,12 +89,14 @@ After import:
 - print summary: `Imported X new books, merged Y existing books`
 
 ### 7) Safety: optional dry-run mode
-If you want:
-- `/ba import --dry <payload>` prints counts only
+If you want an advanced/debug path, you can keep a non-UI entry point that:
+- Accepts a payload string and a `dry` flag
+- Runs the same decode/deserialize/validate/merge logic against a copy of the DB
+- Returns counts only: `new`, `merged`
 
 ## Acceptance criteria
 - Export/import roundtrip results in identical library for the same character.
 - Import to another character merges without duplicates and without wiping local data.
 
 ## Rollback
-- Remove slash commands; data remains.
+- Remove the Export / Import section from the options panel; data remains.

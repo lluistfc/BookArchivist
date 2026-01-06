@@ -25,6 +25,52 @@ end
 local optionsPanel
 local optionsCategory
 
+local function trim(msg)
+  if type(msg) ~= "string" then
+    return ""
+  end
+  local cleaned = msg:match("^%s*(.-)%s*$")
+  return cleaned or ""
+end
+
+-- Ensure payload edit boxes (export/import) are readable in this panel
+local function StylePayloadEditBox(editBox, isReadOnly)
+  if not editBox then return end
+
+  if editBox.SetFontObject then
+    editBox:SetFontObject("ChatFontNormal")
+  end
+  if editBox.SetTextInsets then
+    editBox:SetTextInsets(6, 6, 6, 6)
+  end
+  if editBox.SetTextColor then
+    editBox:SetTextColor(1, 1, 1, 1)
+  end
+  if editBox.SetHighlightColor then
+    editBox:SetHighlightColor(0.25, 0.5, 1, 0.5)
+  end
+  if editBox.SetCursorColor then
+    editBox:SetCursorColor(1, 1, 1, 1)
+  end
+  if editBox.SetAlpha then
+    editBox:SetAlpha(1)
+  end
+
+  if isReadOnly then
+    editBox:SetScript("OnTextChanged", function(self, userInput)
+      if userInput then
+        self:HighlightText()
+      end
+    end)
+    editBox:SetScript("OnKeyDown", function(self)
+      self:HighlightText()
+    end)
+    editBox:SetScript("OnChar", function(self)
+      self:HighlightText()
+    end)
+  end
+end
+
 local function ensureSettingsUILoaded()
   -- Do not programmatically load Blizzard_Settings; letting Blizzard
   -- manage loading avoids tainting its secure logout/quit flow.
@@ -129,6 +175,19 @@ function OptionsUI:Sync()
 	optionsPanel.langLabel:SetText(t("LANGUAGE_LABEL"))
 	end
 
+  if optionsPanel.exportLabel and optionsPanel.exportLabel.SetText then
+    optionsPanel.exportLabel:SetText(t("OPTIONS_EXPORT_IMPORT_LABEL"))
+  end
+  if optionsPanel.exportButton and optionsPanel.exportButton.SetText then
+    optionsPanel.exportButton:SetText(t("OPTIONS_EXPORT_BUTTON"))
+  end
+  if optionsPanel.importLabel and optionsPanel.importLabel.SetText then
+    optionsPanel.importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
+  end
+  if optionsPanel.importButton and optionsPanel.importButton.SetText then
+    optionsPanel.importButton:SetText(t("OPTIONS_IMPORT_BUTTON"))
+  end
+
   if optionsPanel.languageDropdown and UIDropDownMenu_SetSelectedValue and BookArchivist and BookArchivist.GetLanguage then
     local current = BookArchivist:GetLanguage()
     UIDropDownMenu_SetSelectedValue(optionsPanel.languageDropdown, current)
@@ -179,9 +238,23 @@ function OptionsUI:Ensure()
   optionsPanel.titleText = title
 
   local subtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  subtitle:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 16, -220)
 	subtitle:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
   optionsPanel.subtitleText = subtitle
+
+  -- Left content column anchor (matches Blizzard option panel left margin)
+  local contentLeft = createFrame("Frame", nil, optionsPanel)
+  contentLeft:SetSize(1, 1)
+  contentLeft:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 16, -120)
+  optionsPanel.contentLeft = contentLeft
+
+  -- Right content boundary (matches Settings panel padding)
+  local contentRight = createFrame("Frame", nil, optionsPanel)
+  contentRight:SetSize(1, 1)
+  contentRight:SetPoint("TOPRIGHT", optionsPanel, "TOPRIGHT", -16, -120)
+  optionsPanel.contentRight = contentRight
+
+  subtitle:ClearAllPoints()
+  subtitle:SetPoint("TOPLEFT", contentLeft, "TOPLEFT", 0, 0)
 
   local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
   checkbox:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -12)
@@ -248,7 +321,8 @@ function OptionsUI:Ensure()
 
   local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", optionsPanel, "UIDropDownMenuTemplate")
   if dropdown then
-    dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", -16, -4)
+    -- Align language dropdown with the main content column
+    dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -4)
     UIDropDownMenu_SetWidth(dropdown, 160)
 
     UIDropDownMenu_Initialize(dropdown, function(frame, level)
@@ -283,6 +357,219 @@ function OptionsUI:Ensure()
 
     optionsPanel.languageDropdown = dropdown
   end
+
+  -- Prefer anchoring export/import to the visible dropdown button when available
+  local dropdownButton
+  if dropdown and dropdown.GetName then
+    local name = dropdown:GetName()
+    if name and _G then
+      dropdownButton = _G[name .. "Button"]
+    end
+  end
+
+  -- Export / Import section container (two columns)
+  local exportImportContainer = createFrame("Frame", "BookArchivistExportImportContainer", optionsPanel)
+  exportImportContainer:ClearAllPoints()
+  -- Align with the left content column under the language row, with extra spacing as a new section
+  exportImportContainer:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -36)
+  -- Clamp to the panel's content width so it never drifts or overflows
+  exportImportContainer:SetPoint("TOPRIGHT", optionsPanel.contentRight, "TOPLEFT", 0, -36)
+  exportImportContainer:SetHeight(120)
+  optionsPanel.exportImportContainer = exportImportContainer
+
+  local COLUMN_GAP = 24
+
+  local exportColumn = createFrame("Frame", "BookArchivistExportColumn", exportImportContainer)
+  exportColumn:ClearAllPoints()
+  exportColumn:SetPoint("TOPLEFT", exportImportContainer, "TOPLEFT", 0, 0)
+  exportColumn:SetPoint("BOTTOMLEFT", exportImportContainer, "BOTTOMLEFT", 0, 0)
+  optionsPanel.exportColumn = exportColumn
+
+  local importColumn = createFrame("Frame", "BookArchivistImportColumn", exportImportContainer)
+  importColumn:ClearAllPoints()
+  importColumn:SetPoint("TOPRIGHT", exportImportContainer, "TOPRIGHT", 0, 0)
+  importColumn:SetPoint("BOTTOMRIGHT", exportImportContainer, "BOTTOMRIGHT", 0, 0)
+  optionsPanel.importColumn = importColumn
+
+  local function LayoutExportImport()
+    local w = exportImportContainer:GetWidth()
+    if not w or w <= 0 then return end
+
+    local colW = math.floor((w - COLUMN_GAP) / 2)
+    if colW < 140 then
+      colW = 140
+    end
+
+    exportColumn:SetWidth(colW)
+    importColumn:SetWidth(colW)
+
+    -- Ensure columns sit inside the container with a fixed gap
+    exportColumn:ClearAllPoints()
+    exportColumn:SetPoint("TOPLEFT", exportImportContainer, "TOPLEFT", 0, 0)
+    exportColumn:SetPoint("BOTTOMLEFT", exportImportContainer, "BOTTOMLEFT", 0, 0)
+
+    importColumn:ClearAllPoints()
+    importColumn:SetPoint("TOPLEFT", exportColumn, "TOPRIGHT", COLUMN_GAP, 0)
+    importColumn:SetPoint("BOTTOMLEFT", exportColumn, "BOTTOMRIGHT", COLUMN_GAP, 0)
+  end
+
+  exportImportContainer:HookScript("OnShow", LayoutExportImport)
+  exportImportContainer:HookScript("OnSizeChanged", LayoutExportImport)
+  LayoutExportImport()
+
+  -- Export column
+  local exportLabel = exportColumn:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+  exportLabel:SetPoint("TOPLEFT", exportColumn, "TOPLEFT", 0, 0)
+  -- Use a short column label; fall back to plain text if not localized
+  if L and L.OPTIONS_EXPORT_LABEL then
+    exportLabel:SetText(L.OPTIONS_EXPORT_LABEL)
+  else
+    exportLabel:SetText("Export")
+  end
+  optionsPanel.exportLabel = exportLabel
+
+  local exportScroll
+  local exportBox
+
+  local exportButton = createFrame("Button", "BookArchivistExportButton", exportColumn, "UIPanelButtonTemplate")
+  exportButton:SetSize(160, 22)
+  exportButton:SetPoint("TOPLEFT", exportLabel, "BOTTOMLEFT", 0, -4)
+  exportButton:SetText(t("OPTIONS_EXPORT_BUTTON"))
+  exportButton:SetScript("OnClick", function()
+    if not BookArchivist or type(BookArchivist.ExportLibrary) ~= "function" then
+      if print then
+        print("[BookArchivist] Export unavailable")
+      end
+      return
+    end
+    local payload, err = BookArchivist:ExportLibrary()
+    if not payload then
+      if print then
+        print("[BookArchivist] Export failed: " .. tostring(err))
+      end
+      return
+    end
+    if exportScroll then
+      exportScroll:Show()
+    else
+      exportBox:Show()
+    end
+    exportBox:SetText(payload)
+    if exportBox.SetCursorPosition then
+      exportBox:SetCursorPosition(0)
+    end
+    exportBox:SetFocus()
+    exportBox:HighlightText()
+  end)
+  optionsPanel.exportButton = exportButton
+
+  exportScroll = CreateFrame and CreateFrame("ScrollFrame", "BookArchivistExportScrollFrame", exportColumn, "InputScrollFrameTemplate")
+  if exportScroll and exportScroll.EditBox then
+    exportScroll:SetPoint("TOPLEFT", exportButton, "BOTTOMLEFT", 0, -6)
+    exportScroll:SetPoint("TOPRIGHT", exportColumn, "TOPRIGHT", -6, 0)
+    exportScroll:SetHeight(80)
+    if exportScroll.SetAlpha then
+      exportScroll:SetAlpha(1)
+    end
+    exportBox = exportScroll.EditBox
+    exportBox:SetAutoFocus(false)
+    exportBox:SetMultiLine(true)
+    exportBox:SetFontObject("GameFontHighlightSmall")
+    exportBox:SetMaxLetters(0)
+    exportBox.cursorOffset = 0
+    exportBox:SetText("")
+    StylePayloadEditBox(exportBox, true)
+    exportScroll:Show()
+  else
+    -- Fallback: simple multi-line edit box without a scrollbar.
+    exportBox = createFrame("EditBox", "BookArchivistExportEditBox", exportColumn, "InputBoxTemplate")
+    exportBox:ClearAllPoints()
+    exportBox:SetPoint("TOPLEFT", exportButton, "BOTTOMLEFT", 0, -6)
+    exportBox:SetPoint("TOPRIGHT", exportColumn, "TOPRIGHT", -6, 0)
+    exportBox:SetHeight(80)
+    exportBox:SetAutoFocus(false)
+    exportBox:SetMultiLine(true)
+    exportBox:SetFontObject("GameFontHighlightSmall")
+    exportBox:SetMaxLetters(0)
+    StylePayloadEditBox(exportBox, true)
+    exportBox:Hide()
+  end
+  optionsPanel.exportScroll = exportScroll
+  optionsPanel.exportBox = exportBox
+
+  -- Import column
+  local importLabel = importColumn:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+  importLabel:SetPoint("TOPLEFT", importColumn, "TOPLEFT", 0, 0)
+  importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
+  optionsPanel.importLabel = importLabel
+
+  local importScroll
+  local importBox
+
+  local importButton = createFrame("Button", "BookArchivistImportButton", importColumn, "UIPanelButtonTemplate")
+  importButton:SetSize(160, 22)
+  importButton:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -4)
+  importButton:SetText(t("OPTIONS_IMPORT_BUTTON"))
+  importButton:SetScript("OnClick", function()
+    if not BookArchivist or type(BookArchivist.ImportLibrary) ~= "function" then
+      if print then
+        print("[BookArchivist] Import unavailable")
+      end
+      return
+    end
+    local text = trim(importBox:GetText() or "")
+    if text == "" then
+      if print then
+        print("[BookArchivist] Import payload missing")
+      end
+      return
+    end
+    local result, err = BookArchivist:ImportLibrary(text, { dry = false })
+    if not result then
+      if print then
+        print("[BookArchivist] Import failed: " .. tostring(err))
+      end
+      return
+    end
+    local summary = string.format("Imported %d new book(s), merged %d existing.", result.new or 0, result.merged or 0)
+    if print then
+      print("[BookArchivist] " .. summary)
+    end
+    if type(BookArchivist.RefreshUI) == "function" then
+      BookArchivist:RefreshUI()
+    end
+  end)
+  optionsPanel.importButton = importButton
+
+  importScroll = CreateFrame and CreateFrame("ScrollFrame", "BookArchivistImportScrollFrame", importColumn, "InputScrollFrameTemplate")
+  if importScroll and importScroll.EditBox then
+    importScroll:SetPoint("TOPLEFT", importButton, "BOTTOMLEFT", 0, -6)
+    importScroll:SetPoint("TOPRIGHT", importColumn, "TOPRIGHT", -6, 0)
+    importScroll:SetHeight(80)
+    if importScroll.SetAlpha then
+      importScroll:SetAlpha(1)
+    end
+    importBox = importScroll.EditBox
+    importBox:SetAutoFocus(false)
+    importBox:SetMultiLine(true)
+    importBox:SetFontObject("GameFontHighlightSmall")
+    importBox:SetMaxLetters(0)
+    importBox.cursorOffset = 0
+    StylePayloadEditBox(importBox, false)
+  else
+    importBox = createFrame("EditBox", "BookArchivistImportEditBox", importColumn, "InputBoxTemplate")
+    importBox:ClearAllPoints()
+    importBox:SetPoint("TOPLEFT", importButton, "BOTTOMLEFT", 0, -6)
+    importBox:SetPoint("TOPRIGHT", importColumn, "TOPRIGHT", -6, 0)
+    importBox:SetHeight(80)
+    importBox:SetAutoFocus(false)
+    importBox:SetMultiLine(true)
+    importBox:SetFontObject("GameFontHighlightSmall")
+    importBox:SetMaxLetters(0)
+    StylePayloadEditBox(importBox, false)
+  end
+  optionsPanel.importScroll = importScroll
+  optionsPanel.importBox = importBox
   optionsPanel.refresh = function()
     OptionsUI:Sync()
   end

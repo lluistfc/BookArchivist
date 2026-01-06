@@ -77,6 +77,10 @@ Locales.frFR = {
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Met en évidence les limites de mise en page. Identique à /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprendre à la dernière page",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si cette option est activée, rouvrir un livre enregistré revient à la dernière page lue au lieu de toujours commencer à la page 1.",
+  ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exporter / Importer",
+  ["OPTIONS_EXPORT_BUTTON"] = "Générer la chaîne d'export",
+  ["OPTIONS_IMPORT_LABEL"] = "Chaîne à importer",
+  ["OPTIONS_IMPORT_BUTTON"] = "Importer",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zone inconnue",

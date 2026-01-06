@@ -77,6 +77,10 @@ Locales.caES = {
   ["OPTIONS_UI_DEBUG_TOOLTIP"] = "Ressalta els límits de disseny per diagnosticar problemes. Igual que /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprèn a l'última pàgina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quan està activat, en tornar a obrir un llibre desat s'anirà a l'última pàgina que vas veure en lloc de començar sempre a la pàgina 1.",
+  ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exporta / Importa",
+  ["OPTIONS_EXPORT_BUTTON"] = "Genera cadena d'exportació",
+  ["OPTIONS_IMPORT_LABEL"] = "Cadena per importar",
+  ["OPTIONS_IMPORT_BUTTON"] = "Importa",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconeguda",

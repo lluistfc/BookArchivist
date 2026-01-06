@@ -262,6 +262,20 @@ function BookArchivist:SetListSortMode(mode)
   end
 end
 
+function BookArchivist:ExportLibrary()
+  if Core and Core.ExportToString then
+    return Core:ExportToString()
+  end
+  return nil, "export unavailable"
+end
+
+function BookArchivist:ImportLibrary(encoded, opts)
+  if Core and Core.ImportFromString then
+    return Core:ImportFromString(encoded, opts)
+  end
+  return nil, "import unavailable"
+end
+
 function BookArchivist:GetListFilters()
   if Core and Core.GetListFilters then
     return Core:GetListFilters()
