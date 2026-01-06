@@ -17,13 +17,22 @@ Key runtime flow:
 
 ## Repository map (where to change what)
 
-- `BookArchivist.toc` — load order and SavedVariables declaration. :contentReference[oaicite:2]{index=2}
+- `BookArchivist.toc` — load order, SavedVariables declaration, and addon metadata (version, title, notes). :contentReference[oaicite:2]{index=2}
 - `core/BookArchivist.lua` — addon bootstrap, event wiring, high-level helpers (`RefreshUI`, `ToggleUI`).
-- `core/BookArchivist_Core.lua` — SavedVariables schema, keying, ordering, persistence helpers.
+- `core/BookArchivist_DB.lua` — DB initialization entrypoint; runs migrations and ensures `BookArchivistDB` has a current `dbVersion`.
+- `core/BookArchivist_Migrations.lua` — centralized `BookArchivistDB` migration dispatcher (BookId v2, legacy snapshot, index backfill).
+- `core/BookArchivist_BookId.lua` — stable book ID generation helpers (v2 IDs used by `booksById`).
+- `core/BookArchivist_Core.lua` — SavedVariables schema defaults, keying, ordering, list options, search-text caching, export/import helpers.
 - `core/BookArchivist_Capture.lua` — ItemText capture sessions, incremental persistence.
+- `core/BookArchivist_Favorites.lua` — per-book favorite state on top of `booksById` (used by virtual categories and stars in UI).
+- `core/BookArchivist_Recent.lua` — per-character MRU of recently read books (`recent.list`, `lastReadAt`).
+- `core/BookArchivist_Tooltip.lua` — GameTooltip integration; shows when an item/object/title has archived text for the current character.
 - `core/BookArchivist_Location.lua` — provenance (zone chain, mob names) for breadcrumbs.
 - `core/BookArchivist_Minimap.lua` — minimap persistence (angle/state) centralized here.
 - `core/BookArchivist_Locale.lua` — locale selection, fallback, and `BookArchivist.L` dispatcher (uses dictionaries from `locales/`).
+- `core/BookArchivist_Base64.lua` — Base64 helpers used by export/import.
+- `core/BookArchivist_Serialize.lua` — table serialization helpers used by export/import.
+- `core/BookArchivist_ImportWorker.lua` — staged import pipeline (parse, merge, finalize) used by Core’s import helpers.
 - `ui/BookArchivist_UI.lua` — shared UI state & `BookArchivist.UI.Internal` helpers (selection, list mode, widget registry).
 - `ui/BookArchivist_UI_Core.lua` — binds list + reader modules to injected helpers; safe wrappers/logging.
 - `ui/BookArchivist_UI_Frame_Layout.lua` + `ui/BookArchivist_UI_Frame_Chrome.lua` — frame body layout/splitter and frame chrome (dragging, portrait, title, options).
@@ -44,8 +53,9 @@ Key runtime flow:
 - `ui/reader/BookArchivist_UI_Reader_Delete.lua` — delete button behavior and confirmation flow.
 - `ui/reader/BookArchivist_UI_Reader_Layout.lua` — reader header/nav/scroll/text layout.
 - `ui/minimap/*` — minimap button UI (persistence stays in core minimap module).
-- `ui/options/*` — Settings panel + Blizzard Settings integration. :contentReference[oaicite:3]{index=3}
+- `ui/options/*` — Settings panel + Blizzard Settings integration (favorites, recent, tooltip, search, UI state). :contentReference[oaicite:3]{index=3}
 - `locales/BookArchivist_Locale_*.lua` — per-locale translation dictionaries keyed by game locale tag (e.g. `enUS`, `esES`, `caES`).
+ - `docs/*.md` — internal design notes for DB versioning, BookId v2, favorites/virtual categories, recently-read, tooltip integration, search optimization, UI state, export/import, and list modularization.
 
 ---
 
@@ -110,9 +120,16 @@ Recommended constants (use/extend existing):
 
 ## SavedVariables and migrations
 
-- `Core` key generation and schema changes can orphan existing entries. If you change keying or schema, provide a migration path or compatibility shim. :contentReference[oaicite:7]{index=7}
+- `BookArchivistDB` now uses `dbVersion` for schema migrations and `version` as a legacy marker; do not overload these.
+- DB initialization flows through `core/BookArchivist_DB.lua`, which calls into `BookArchivist.Migrations` to apply `v1`, `v2`, etc. Keep new migrations additive and idempotent.
+- `core/BookArchivist_Migrations.lua` owns the BookId v2 migration: it snapshots legacy `books`/`order`, builds `booksById` with stable IDs, rewrites `order`, and backfills basic indexes.
+- `Core` key generation and schema changes can orphan existing entries. If you change keying or schema, add an explicit migration (or compatibility shim) instead of mutating `BookArchivistDB` ad-hoc. :contentReference[oaicite:7]{index=7}
 - Keep minimap persistence in `core/BookArchivist_Minimap.lua`.
- - Per-book reading state such as `lastPageNum` should live on `booksById[bookId]` entries and be treated as optional, non-breaking data.
+ - Per-book reading state such as `lastPageNum` and `lastReadAt` should live on `booksById[bookId]` entries and be treated as optional, non-breaking data.
+- Favorites state (`isFavorite`) is per-book and lives on `booksById[bookId]`; use `core/BookArchivist_Favorites.lua` helpers instead of rolling your own.
+- Recently-read (`BookArchivistDB.recent`) is managed by `core/BookArchivist_Recent.lua`; treat it as an MRU cache that can be safely rebuilt.
+- Tooltip-related indexes (`indexes.itemToBookIds`, `indexes.titleToBookIds`, `indexes.objectToBookId`) must remain in sync with `booksById`. Prefer calling Core helpers that already backfill/maintain these when adding new entries.
+- UI state such as `uiState.lastBookId` and `uiState.lastCategoryId` is per-character and optional; changes here should be non-breaking and default-safe.
 
 ---
 
@@ -131,6 +148,13 @@ Automation:
 
 Important:
 - GitHub Actions workflows must live under `.github/workflows/` (plural).
+
+Release discipline:
+- When cutting a new release tag (e.g., `v1.0.3`), always:
+  - Update `CHANGELOG.md` with a section for that version, summarizing changes since the previous tag.
+  - Update `README.md` if user-facing behavior, features, or usage have changed.
+  - Only bump the version in `BookArchivist.toc` once the changelog and README are accurate and you intend to publish a build.
+  - Generate a `CURSE_FORGE_RELEASE_CHANGELOG` file in the repo root with a short, non-technical summary of the changes in that version, suitable for display on the addon’s public CurseForge page.
 
 ---
 
@@ -155,6 +179,7 @@ If you make significant changes, update `.github/copilot-instructions.md` in the
 - Changes to refresh pipeline architecture or injected UI module contracts.
 - Major UI layout architecture changes (new header blocks/rails, new metrics scheme).
 - Changes to packaging/release automation or required zip structure.
+ - Any feature work that would meaningfully change how contributors should navigate the repo (new core modules, new UI subsystems, new long-lived docs like design notes or migration guides).
 
 Update process:
 - Keep instructions concise.

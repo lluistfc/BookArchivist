@@ -14,6 +14,7 @@ core/BookArchivist_Favorites.lua
 core/BookArchivist_Serialize.lua
 core/BookArchivist_Base64.lua
 core/BookArchivist_Core.lua
+core/BookArchivist_ImportWorker.lua
 core/BookArchivist_Recent.lua
 core/BookArchivist_Tooltip.lua
 core/BookArchivist_Location.lua

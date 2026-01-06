@@ -145,6 +145,10 @@ local function buildSearchText(title, pages)
   return out
 end
 
+function Core:BuildSearchText(title, pages)
+	return buildSearchText(title, pages)
+end
+
 local function cloneTable(value)
   if type(value) ~= "table" then
     return value

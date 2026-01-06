@@ -25,6 +25,9 @@ end
 local optionsPanel
 local optionsCategory
 
+local IMPORT_PASTE_RENDER_LIMIT = 16000        -- chars kept visible in EditBox
+local IMPORT_MAX_PAYLOAD_CHARS  = 5*1024*1024  -- hard cap: 5 MB
+
 local function trim(msg)
   if type(msg) ~= "string" then
     return ""
@@ -226,6 +229,10 @@ function OptionsUI:Ensure()
   end
   optionsPanel = createFrame("Frame", "BookArchivistOptionsPanel", parent)
 	optionsPanel.name = t("ADDON_TITLE")
+
+  optionsPanel.pendingImportPayload = optionsPanel.pendingImportPayload or nil
+  optionsPanel.pendingImportVisibleIsPlaceholder = false
+  optionsPanel.lastExportPayload = optionsPanel.lastExportPayload or nil
 
   local logo = optionsPanel:CreateTexture(nil, "ARTWORK")
   logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png")
@@ -454,7 +461,13 @@ function OptionsUI:Ensure()
     else
       exportBox:Show()
     end
-    exportBox:SetText(payload)
+    if #payload > IMPORT_PASTE_RENDER_LIMIT then
+      optionsPanel.lastExportPayload = payload
+      exportBox:SetText(("Payload generated (%d chars). Use Copy."):format(#payload))
+    else
+      optionsPanel.lastExportPayload = nil
+      exportBox:SetText(payload)
+    end
     if exportBox.SetCursorPosition then
       exportBox:SetCursorPosition(0)
     end
@@ -462,6 +475,31 @@ function OptionsUI:Ensure()
     exportBox:HighlightText()
   end)
   optionsPanel.exportButton = exportButton
+
+  local exportCopyButton = createFrame("Button", "BookArchivistExportCopyButton", exportColumn, "UIPanelButtonTemplate")
+  exportCopyButton:SetSize(80, 22)
+  exportCopyButton:SetPoint("LEFT", exportButton, "RIGHT", 4, 0)
+  exportCopyButton:SetText(t("OPTIONS_EXPORT_BUTTON_COPY") or "Copy")
+  exportCopyButton:SetScript("OnClick", function()
+    if not optionsPanel.lastExportPayload or optionsPanel.lastExportPayload == "" then
+      if print then
+        print("[BookArchivist] Nothing to copy yet")
+      end
+      return
+    end
+    if exportScroll then
+      exportScroll:Show()
+    else
+      exportBox:Show()
+    end
+    exportBox:SetText(optionsPanel.lastExportPayload)
+    if exportBox.SetCursorPosition then
+      exportBox:SetCursorPosition(0)
+    end
+    exportBox:SetFocus()
+    exportBox:HighlightText()
+  end)
+  optionsPanel.exportCopyButton = exportCopyButton
 
   exportScroll = CreateFrame and CreateFrame("ScrollFrame", "BookArchivistExportScrollFrame", exportColumn, "InputScrollFrameTemplate")
   if exportScroll and exportScroll.EditBox then
@@ -510,33 +548,81 @@ function OptionsUI:Ensure()
   importButton:SetSize(160, 22)
   importButton:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -4)
   importButton:SetText(t("OPTIONS_IMPORT_BUTTON"))
+  local function GetImportPayload()
+    if optionsPanel.pendingImportVisibleIsPlaceholder then
+      return optionsPanel.pendingImportPayload or ""
+    end
+    if optionsPanel.pendingImportPayload then
+      return optionsPanel.pendingImportPayload
+    end
+    return importBox and (importBox:GetText() or "") or ""
+  end
+
+  local importStatus = importColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  importStatus:SetPoint("LEFT", importButton, "RIGHT", 8, 0)
+  importStatus:SetText("")
+  optionsPanel.importStatus = importStatus
+
   importButton:SetScript("OnClick", function()
-    if not BookArchivist or type(BookArchivist.ImportLibrary) ~= "function" then
+    local worker = optionsPanel.importWorker
+    if not (BookArchivist and BookArchivist.ImportWorker and worker) then
       if print then
         print("[BookArchivist] Import unavailable")
       end
       return
     end
-    local text = trim(importBox:GetText() or "")
-    if text == "" then
+
+    local raw = trim(GetImportPayload())
+    if raw == "" then
       if print then
         print("[BookArchivist] Import payload missing")
       end
       return
     end
-    local result, err = BookArchivist:ImportLibrary(text, { dry = false })
-    if not result then
+
+    importButton:Disable()
+    if optionsPanel.exportButton then optionsPanel.exportButton:Disable() end
+    if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Disable() end
+    importStatus:SetText("")
+
+    local ok = worker:Start(raw, {
+      onProgress = function(label, pct)
+        if not importStatus or not importStatus.SetText then return end
+        local pctNum = math.floor((pct or 0) * 100)
+        importStatus:SetText(string.format("%s: %d%%", tostring(label or ""), pctNum))
+      end,
+      onDone = function(summary)
+        importButton:Enable()
+        if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
+        if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
+        importStatus:SetText("")
+        if print then
+          print("[BookArchivist] " .. (summary or "Import complete"))
+        end
+        if BookArchivist.UI and BookArchivist.UI.Refresh then
+          BookArchivist.UI:Refresh()
+        elseif BookArchivist.RefreshUI then
+          BookArchivist:RefreshUI()
+        end
+      end,
+      onError = function(err)
+        importButton:Enable()
+        if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
+        if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
+        importStatus:SetText("")
+        if print then
+          print("[BookArchivist] Import failed: " .. tostring(err))
+        end
+      end,
+    })
+
+    if not ok then
+      importButton:Enable()
+      if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
+      if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
       if print then
-        print("[BookArchivist] Import failed: " .. tostring(err))
+        print("[BookArchivist] Import already in progress")
       end
-      return
-    end
-    local summary = string.format("Imported %d new book(s), merged %d existing.", result.new or 0, result.merged or 0)
-    if print then
-      print("[BookArchivist] " .. summary)
-    end
-    if type(BookArchivist.RefreshUI) == "function" then
-      BookArchivist:RefreshUI()
     end
   end)
   optionsPanel.importButton = importButton
@@ -556,6 +642,38 @@ function OptionsUI:Ensure()
     importBox:SetMaxLetters(0)
     importBox.cursorOffset = 0
     StylePayloadEditBox(importBox, false)
+    local function SetImportPlaceholder(box, msg)
+      optionsPanel.pendingImportVisibleIsPlaceholder = true
+      box:SetText(msg)
+      box:HighlightText(0, 0)
+      if box.SetCursorPosition then
+        box:SetCursorPosition(0)
+      end
+    end
+
+    importBox:SetScript("OnTextChanged", function(self, userInput)
+      if not userInput then return end
+      local text = self:GetText() or ""
+
+      if #text == 0 then
+        optionsPanel.pendingImportPayload = nil
+        optionsPanel.pendingImportVisibleIsPlaceholder = false
+        return
+      end
+
+      if #text > IMPORT_MAX_PAYLOAD_CHARS then
+        optionsPanel.pendingImportPayload = nil
+        SetImportPlaceholder(self, "Payload too large. Aborting.")
+        return
+      end
+
+      optionsPanel.pendingImportPayload = text
+      optionsPanel.pendingImportVisibleIsPlaceholder = false
+
+      if #text > IMPORT_PASTE_RENDER_LIMIT then
+        SetImportPlaceholder(self, ("Payload received (%d chars). Click Import."):format(#text))
+      end
+    end)
   else
     importBox = createFrame("EditBox", "BookArchivistImportEditBox", importColumn, "InputBoxTemplate")
     importBox:ClearAllPoints()
@@ -570,6 +688,7 @@ function OptionsUI:Ensure()
   end
   optionsPanel.importScroll = importScroll
   optionsPanel.importBox = importBox
+  optionsPanel.importWorker = optionsPanel.importWorker or (BookArchivist.ImportWorker and BookArchivist.ImportWorker:New(optionsPanel))
   optionsPanel.refresh = function()
     OptionsUI:Sync()
   end
