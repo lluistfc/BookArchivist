@@ -111,6 +111,10 @@ Locales.deDE = {
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Keine Importdaten zum Verarbeiten vorhanden.",
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Import läuft bereits.",
   ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importiert: %d neu, %d zusammengeführt",
+	["OPTIONS_TOOLTIP_LABEL"] = "'Archiviert'-Tag im Tooltip anzeigen",
+	["OPTIONS_TOOLTIP_TOOLTIP"] = "Wenn aktiviert, zeigen lesbare Gegenstände, deren Text für diesen Charakter gespeichert wurde, eine zusätzliche Zeile 'Book Archivist: Archiviert' in ihrem Tooltip.",
+  ["OPTIONS_DEBUG_LABEL"] = "Debug-Modus",
+  ["OPTIONS_DEBUG_TOOLTIP"] = "Wenn aktiviert, wird unter dem Importfeld ein Debug-Protokoll mit detaillierten Diagnoseinformationen zur Fehleranalyse angezeigt.",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Unbekannte Zone",

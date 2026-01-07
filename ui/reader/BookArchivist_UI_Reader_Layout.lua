@@ -417,36 +417,13 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			shareButton:SetScript("OnClick", function()
 				local addon = getAddon and getAddon()
 				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
-				if not (addon and key) then 
-					print("|cFFFF0000[BookArchivist]|r No book selected.")
-					return
-				end
 				
-				-- Generate export for single book
-				local exportStr, err
-				if addon.ExportBook and type(addon.ExportBook) == "function" then
-					exportStr, err = addon:ExportBook(key)
-				elseif addon.Export and type(addon.Export) == "function" then
-					-- Fallback to full export if ExportBook doesn't exist
-					exportStr, err = addon:Export()
-				end
-				
-				if exportStr and exportStr ~= "" then
-					-- Store for quick access
-					if addon then
-						addon.__lastExportPayload = exportStr
-					end
-					
-					-- Show copy frame
-					if ReaderUI.ShowSharePopup then
-						ReaderUI:ShowSharePopup(exportStr)
-					else
-						-- Fallback: print to chat
-						print("|cFFFFD700[BookArchivist]|r Export string ready (" .. #exportStr .. " chars). Use Ctrl+C to copy.")
-					end
+				-- Delegate to Share module
+				local ReaderShare = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
+				if ReaderShare and ReaderShare.ShareCurrentBook then
+					ReaderShare:ShareCurrentBook(addon, key)
 				else
-					local errMsg = err or "unknown error"
-					print("|cFFFF0000[BookArchivist]|r Failed to generate export string: " .. tostring(errMsg))
+					print("|cFFFF0000[BookArchivist]|r Share module not loaded.")
 				end
 			end)
 		end

@@ -110,8 +110,10 @@ Locales.itIT = {
   ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importazione non disponibile.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Nessun dato di importazione da elaborare.",
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Importazione già in corso.",
-  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importati: %d nuovi, %d uniti",
-
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importati: %d nuovi, %d uniti",	["OPTIONS_TOOLTIP_LABEL"] = "Mostra etichetta 'Archiviato' nel tooltip",
+	["OPTIONS_TOOLTIP_TOOLTIP"] = "Quando abilitato, gli oggetti leggibili il cui testo è stato salvato per questo personaggio mostreranno una riga aggiuntiva 'Book Archivist: Archiviato' nel loro tooltip.",
+  ["OPTIONS_DEBUG_LABEL"] = "Modalità debug",
+  ["OPTIONS_DEBUG_TOOLTIP"] = "Quando abilitato, mostra un log di debug sotto la casella di importazione con diagnostiche dettagliate per la risoluzione dei problemi.",
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona sconosciuta",
   ["LOCATION_UNKNOWN_MOB"] = "Nemico sconosciuto",

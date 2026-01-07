@@ -82,10 +82,8 @@ end
 local function registerOptionsPanel(panel)
   if not panel then return end
   local settingsAPI
-  local addCategoryFn
   if type(_G) == "table" then
     settingsAPI = rawget(_G, "Settings")
-    addCategoryFn = rawget(_G, "InterfaceOptions_AddCategory")
   end
 
   if type(settingsAPI) == "table" then
@@ -104,16 +102,12 @@ local function registerOptionsPanel(panel)
       optionsCategory = category
     end
   end
-
-  if type(addCategoryFn) == "function" then
-    addCategoryFn(panel)
-  end
 end
 
 -- No hooks into Blizzard Settings or Game Menu to avoid taint.
 
 function OptionsUI:Sync()
-  if not optionsPanel or not optionsPanel.debugCheckbox or not optionsPanel.uiDebugCheckbox then
+  if not optionsPanel or not optionsPanel.debugCheckbox then
     return
   end
 
@@ -133,21 +127,19 @@ function OptionsUI:Sync()
   end
   optionsPanel.debugCheckbox:SetChecked(enabled)
   if optionsPanel.debugCheckbox.Text and optionsPanel.debugCheckbox.Text.SetText then
-	optionsPanel.debugCheckbox.Text:SetText(t("OPTIONS_DEBUG_LOGGING_LABEL"))
+	optionsPanel.debugCheckbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
 	end
-  optionsPanel.debugCheckbox.tooltipText = t("OPTIONS_DEBUG_LOGGING_TOOLTIP")
-
-  local uiDebugEnabled = false
-  if BookArchivist and type(BookArchivist.IsUIDebugEnabled) == "function" then
-    uiDebugEnabled = BookArchivist:IsUIDebugEnabled() and true or false
-  elseif BookArchivistDB and BookArchivistDB.options then
-    uiDebugEnabled = BookArchivistDB.options.uiDebug and true or false
+  optionsPanel.debugCheckbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
+  
+  -- Sync UI debug grid state with debug mode (don't call SetDebugEnabled to avoid circular calls)
+  if enabled then
+    BookArchivistDB = BookArchivistDB or {}
+    BookArchivistDB.options = BookArchivistDB.options or {}
+    BookArchivistDB.options.uiDebug = true
+    if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.setGridOverlayVisible then
+      BookArchivist.UI.Internal.setGridOverlayVisible(true)
+    end
   end
-  optionsPanel.uiDebugCheckbox:SetChecked(uiDebugEnabled)
-  if optionsPanel.uiDebugCheckbox.Text and optionsPanel.uiDebugCheckbox.Text.SetText then
-	optionsPanel.uiDebugCheckbox.Text:SetText(t("OPTIONS_UI_DEBUG_LABEL"))
-	end
-  optionsPanel.uiDebugCheckbox.tooltipText = t("OPTIONS_UI_DEBUG_TOOLTIP")
 
   local tooltipEnabled = true
   if BookArchivist and type(BookArchivist.IsTooltipEnabled) == "function" then
@@ -159,18 +151,6 @@ function OptionsUI:Sync()
       optionsPanel.tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
     end
     optionsPanel.tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
-  end
-
-  local debugModeEnabled = false
-  if BookArchivistDB and BookArchivistDB.options then
-    debugModeEnabled = BookArchivistDB.options.debugMode and true or false
-  end
-  if optionsPanel.debugModeCheckbox then
-    optionsPanel.debugModeCheckbox:SetChecked(debugModeEnabled)
-    if optionsPanel.debugModeCheckbox.Text and optionsPanel.debugModeCheckbox.Text.SetText then
-      optionsPanel.debugModeCheckbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
-    end
-    optionsPanel.debugModeCheckbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
   end
 
   local resumeEnabled = true
@@ -304,59 +284,24 @@ function OptionsUI:Ensure()
 
   local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
   checkbox:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -12)
-  checkbox.Text:SetText(t("OPTIONS_DEBUG_LOGGING_LABEL"))
-  checkbox.tooltipText = t("OPTIONS_DEBUG_LOGGING_TOOLTIP")
+  checkbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
+  checkbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
   checkbox:SetScript("OnClick", function(self)
-    if BookArchivist and type(BookArchivist.SetDebugEnabled) == "function" then
-      BookArchivist:SetDebugEnabled(self:GetChecked())
-    end
-  end)
-
-  optionsPanel.debugCheckbox = checkbox
-
-  local uiDebugCheckbox = createFrame("CheckButton", "BookArchivistUIDebugCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  uiDebugCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -8)
-  uiDebugCheckbox.Text:SetText(t("OPTIONS_UI_DEBUG_LABEL"))
-  uiDebugCheckbox.tooltipText = t("OPTIONS_UI_DEBUG_TOOLTIP")
-  uiDebugCheckbox:SetScript("OnClick", function(self)
     local state = self:GetChecked()
-    if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
-      BookArchivist:SetUIDebugEnabled(state)
-    else
-      BookArchivistDB = BookArchivistDB or {}
-      BookArchivistDB.options = BookArchivistDB.options or {}
-      BookArchivistDB.options.uiDebug = state and true or false
+    if BookArchivist and type(BookArchivist.SetDebugEnabled) == "function" then
+      BookArchivist:SetDebugEnabled(state)
     end
+    
+    -- Also control UI debug grid visibility
+    BookArchivistDB = BookArchivistDB or {}
+    BookArchivistDB.options = BookArchivistDB.options or {}
+    BookArchivistDB.options.uiDebug = state and true or false
+    
     if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.setGridOverlayVisible then
       BookArchivist.UI.Internal.setGridOverlayVisible(state and true or false)
     end
-  end)
-
-  optionsPanel.uiDebugCheckbox = uiDebugCheckbox
-
-  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  tooltipCheckbox:SetPoint("TOPLEFT", uiDebugCheckbox, "BOTTOMLEFT", 0, -8)
-  tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
-  tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
-  tooltipCheckbox:SetScript("OnClick", function(self)
-    local state = self:GetChecked()
-    if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
-      BookArchivist:SetTooltipEnabled(state)
-    end
-  end)
-
-  optionsPanel.tooltipCheckbox = tooltipCheckbox
-
-  local debugModeCheckbox = createFrame("CheckButton", "BookArchivistDebugModeCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  debugModeCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -8)
-  debugModeCheckbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
-  debugModeCheckbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
-  debugModeCheckbox:SetScript("OnClick", function(self)
-    local state = self:GetChecked()
-    BookArchivistDB = BookArchivistDB or {}
-    BookArchivistDB.options = BookArchivistDB.options or {}
-    BookArchivistDB.options.debugMode = state and true or false
     
+    -- Also control debug log widget visibility
     if state then
       -- Create and show debug log widget
       if optionsPanel.CreateDebugLogWidget then
@@ -383,10 +328,23 @@ function OptionsUI:Ensure()
     end
   end)
 
-  optionsPanel.debugModeCheckbox = debugModeCheckbox
+  optionsPanel.debugCheckbox = checkbox
+
+  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
+  tooltipCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -8)
+  tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
+  tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
+  tooltipCheckbox:SetScript("OnClick", function(self)
+    local state = self:GetChecked()
+    if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
+      BookArchivist:SetTooltipEnabled(state)
+    end
+  end)
+
+  optionsPanel.tooltipCheckbox = tooltipCheckbox
 
   local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  resumePageCheckbox:SetPoint("TOPLEFT", debugModeCheckbox, "BOTTOMLEFT", 0, -8)
+  resumePageCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -8)
   resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
   resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
   resumePageCheckbox:SetScript("OnClick", function(self)
@@ -497,7 +455,7 @@ function OptionsUI:Ensure()
   local importScroll
   local importBox
   local function GetImportPayload()
-    local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+    local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
     
     -- 1) Prefer an explicit pending payload captured from the
     --    import box (including placeholder-visible mode).
@@ -595,7 +553,7 @@ function OptionsUI:Ensure()
 
     local ok = worker:Start(raw, {
       onProgress = function(label, pct)
-        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
         local pctNum = math.floor((pct or 0) * 100)
         local phase = tostring(label or "")
         local userPhase = phase
@@ -637,7 +595,7 @@ function OptionsUI:Ensure()
         end
         
         -- Log to debug if enabled
-        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
         if debugMode and optionsPanel.AppendDebugLog then
           optionsPanel.AppendDebugLog(summary or t("OPTIONS_IMPORT_STATUS_COMPLETE"))
         end
@@ -665,7 +623,7 @@ function OptionsUI:Ensure()
         if print then print(fullMsg) end
         
         -- Log detailed error info only if debug mode is enabled
-        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
         if debugMode and optionsPanel.AppendDebugLog then
           optionsPanel.AppendDebugLog(fullMsg)
           optionsPanel.AppendDebugLog("Phase: " .. tostring(phase))
@@ -698,7 +656,7 @@ function OptionsUI:Ensure()
     importWidget:DisableButton(true)
     importWidget:SetNumLines(6)
     importWidget:SetFullWidth(true)
-    importWidget.frame:SetParent(optionsPanel)
+    importWidget.frame:SetParent(scrollChild)
     importWidget.frame:ClearAllPoints()
     importWidget.frame:SetPoint("TOPLEFT", optionsPanel.importStatus or importHelp, "BOTTOMLEFT", 0, -4)
     importWidget.frame:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
@@ -717,7 +675,7 @@ function OptionsUI:Ensure()
     optionsPanel.importBoxCommittedText = ""
     importWidget.editBox:SetScript("OnTextChanged", function(self, userInput)
       if userInput then
-        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
         local pasted = self:GetText() or ""
         local numLetters = self:GetNumLetters()
         local rawLength = #pasted
@@ -764,7 +722,7 @@ function OptionsUI:Ensure()
               ProcessImport()
             end)
           elseif hasHeader and not hasFooter then
-            local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+            local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
             local msg = "PASTE TRUNCATED! Footer missing (" .. #pasted .. " chars received)."
             
             if debugMode and optionsPanel.AppendDebugLog then
@@ -833,7 +791,7 @@ function OptionsUI:Ensure()
   optionsPanel.importBoxCommittedText = ""
   importBox:SetScript("OnTextChanged", function(self, userInput)
     if userInput then
-      local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+      local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
       
       -- User-initiated change (paste, typing, etc)
       local pasted = self:GetText() or ""
@@ -915,10 +873,10 @@ function OptionsUI:Ensure()
     local debugWidget = AceGUI:Create("MultiLineEditBox")
     debugWidget:SetLabel("Debug Log (copy errors from here):")
     debugWidget:DisableButton(true)
-    debugWidget:SetNumLines(4)
+    debugWidget:SetNumLines(12)
     debugWidget:SetFullWidth(true)
     debugWidget:SetMaxLetters(50000)  -- Prevent overflow
-    debugWidget.frame:SetParent(optionsPanel)
+    debugWidget.frame:SetParent(scrollChild)
     debugWidget.frame:ClearAllPoints()
     -- Anchor below import widget or fallback scroll frame
     local anchorFrame = (optionsPanel.importWidget and optionsPanel.importWidget.frame) or optionsPanel.importScroll
@@ -935,6 +893,11 @@ function OptionsUI:Ensure()
     
     optionsPanel.debugWidget = debugWidget
     optionsPanel.debugLogBox = debugWidget.editBox
+    
+    -- Expand scroll child height to accommodate debug widget
+    if optionsPanel.scrollChild and optionsPanel.scrollChild.SetHeight then
+      optionsPanel.scrollChild:SetHeight(1200)
+    end
     
     -- Helper function to append to debug log
     local function AppendDebugLog(message)
@@ -966,7 +929,7 @@ function OptionsUI:Ensure()
       optionsPanel.CreateImportWidget()
     end
     -- Create debug log if debug mode is enabled
-    if BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode then
+    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
       if optionsPanel.CreateDebugLogWidget then
         optionsPanel.CreateDebugLogWidget()
       end
@@ -1019,21 +982,10 @@ function OptionsUI:Open()
     end
   end)
 
-  local openedPanel = false
   local settingsAPI = type(_G) == "table" and rawget(_G, "Settings") or nil
   if settingsAPI and type(settingsAPI.OpenToCategory) == "function" and optionsCategory then
     settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
     settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
-    openedPanel = true
-  end
-
-  if not openedPanel then
-    local openLegacy = type(_G) == "table" and rawget(_G, "InterfaceOptionsFrame_OpenToCategory") or nil
-    if type(openLegacy) == "function" then
-      openLegacy(panel)
-      openLegacy(panel)
-      openedPanel = true
-    end
   end
 end
 

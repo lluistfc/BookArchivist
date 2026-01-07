@@ -105,13 +105,13 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
 - `ui/reader/BookArchivist_UI_Reader_Rich_Parse.lua` — HTML-to-block parser used by the rich renderer.
 - `ui/reader/BookArchivist_UI_Reader_Rich.lua` — rich renderer that turns blocks into FontStrings/Textures.
 - `ui/reader/BookArchivist_UI_Reader_Delete.lua` — delete-button behavior and confirmation dialog.
+- `ui/reader/BookArchivist_UI_Reader_Share.lua` — share popup and book export string generation.
 - `ui/reader/BookArchivist_UI_Reader_Layout.lua` — reader header, navigation row, and scroll/text layout.
 
 ### Other UI
 
 - `ui/minimap/BookArchivist_UI_Minimap.lua` — minimap button UI (click handling, toggling the main frame).
 - `ui/options/BookArchivist_UI_Options.lua` — options panel, export/import UI, and integration with Blizzard's Settings.
-- `ui/reader/BookArchivist_UI_Reader_Share.lua` — share popup for book export strings.
 
 ## Development notes
 

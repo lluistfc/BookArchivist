@@ -15,7 +15,12 @@ These instructions are repository-wide. Follow them unless the user explicitly o
   - `UIPanelScrollFrameTemplate` for scroll areas
   - `BackdropTemplate` for modal dialogs
   - `SimpleHTML` frames for rich text rendering
-- **AceGUI-3.0** is used **only** for `MultiLineEditBox` widgets in the Options/Import panel (for handling large paste operations)
+- **Allowed AceGUI widgets**: `MultiLineEditBox` for Import and Debug Log only
+  - Import textarea in Options → Import panel (for handling large paste operations)
+  - Debug Log textarea in Options → Debug panel (for handling large debug output)
+  - All other AceGUI usage (AceEvent, AceConsole, AceConfigRegistry, etc.) is explicitly disallowed
+  - If AceGUI is missing, fallback to native `ScrollFrame+EditBox`
+- **All other UI uses native CreateFrame + Blizzard templates**
 - Use the `safeCreateFrame` helper functions that wrap `CreateFrame` with error handling
 - Follow the established pattern of separating layout modules (`*_Layout.lua`) from behavior modules (`*.lua`)
 

@@ -26,9 +26,18 @@ end
 function Core:GetOptions()
   local db = self:EnsureDB()
   db.options = db.options or {}
+  
+  -- Migration: merge old debugMode into debugEnabled
   if db.options.debugEnabled == nil then
-    db.options.debugEnabled = false
+    -- If either old setting was enabled, enable the new merged setting
+    local oldDebugEnabled = db.options.enableDebugLogging
+    local oldDebugMode = db.options.debugMode
+    db.options.debugEnabled = (oldDebugEnabled or oldDebugMode) and true or false
+    -- Clean up old keys
+    db.options.enableDebugLogging = nil
+    db.options.debugMode = nil
   end
+  
   return db.options
 end
 

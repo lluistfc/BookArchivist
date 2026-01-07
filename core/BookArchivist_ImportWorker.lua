@@ -308,7 +308,8 @@ function ImportWorker:_Step(_elapsed)
         processed = processed + 1
       end
 
-      self:_Progress("Merging", self.incomingIdx / math.max(1, total))
+      local pct = math.min(1.0, (self.incomingIdx - 1) / math.max(1, total))
+      self:_Progress("Merging", pct)
 
       if self.incomingIdx > total then
         self.needsIds = MakeSortedKeys(self.needsSearchText or {})
@@ -342,7 +343,8 @@ function ImportWorker:_Step(_elapsed)
         processed = processed + 1
       end
 
-      self:_Progress("Building search", self.needsIdx / math.max(1, total))
+      local pct = math.min(1.0, (self.needsIdx - 1) / math.max(1, total))
+      self:_Progress("Building search", pct)
 
       if self.needsIdx > total then
         self.needsIdx = 1
@@ -373,7 +375,8 @@ function ImportWorker:_Step(_elapsed)
         processed = processed + 1
       end
 
-      self:_Progress("Indexing titles", self.needsIdx / math.max(1, total))
+      local pct = math.min(1.0, (self.needsIdx - 1) / math.max(1, total))
+      self:_Progress("Indexing titles", pct)
 
       if self.needsIdx > total then
         self.phase = "finalize_recent"

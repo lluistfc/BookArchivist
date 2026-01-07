@@ -109,8 +109,10 @@ Locales.ptBR = {
   ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importação indisponível.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Nenhum dado de importação para processar.",
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Uma importação já está em andamento.",
-  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importados: %d novos, %d mesclados",
-
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importados: %d novos, %d mesclados",	["OPTIONS_TOOLTIP_LABEL"] = "Mostrar etiqueta 'Arquivado' na dica",
+	["OPTIONS_TOOLTIP_TOOLTIP"] = "Quando ativado, itens legíveis cujo texto foi salvo para este personagem mostrarão uma linha adicional 'Book Archivist: Arquivado' na dica de ferramenta.",
+  ["OPTIONS_DEBUG_LABEL"] = "Modo de depuração",
+  ["OPTIONS_DEBUG_TOOLTIP"] = "Quando ativado, mostra um registro de depuração abaixo da caixa de importação com diagnósticos detalhados para solução de problemas.",
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconhecida",
   ["LOCATION_UNKNOWN_MOB"] = "Inimigo desconhecido",
