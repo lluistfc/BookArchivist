@@ -18,9 +18,6 @@ local DEFAULT_LIST_MODES = {
 }
 
 local DEFAULT_ROW_HEIGHT = Metrics.ROW_H or 36
-local SEARCH_DEBOUNCE_SECONDS = 0.2
-local PAGE_SIZES = { 10, 25, 50, 100 }
-local PAGE_SIZE_DEFAULT = 25
 
 local SORT_OPTIONS = {
   { value = "title", labelKey = "SORT_TITLE" },
@@ -50,7 +47,7 @@ state.listModes = state.listModes or DEFAULT_LIST_MODES
 state.filters = state.filters or {}
 state.widgets = state.widgets or {}
 state.search = state.search or { pendingToken = 0 }
-state.pagination = state.pagination or { page = 1, pageSize = PAGE_SIZE_DEFAULT }
+state.pagination = state.pagination or { page = 1, pageSize = 25 }
 state.filterButtons = state.filterButtons or {}
 state.locationMenuFrame = state.locationMenuFrame or nil
 state.selectedListTab = state.selectedListTab or 1
@@ -247,78 +244,6 @@ function ListUI:SetCategoryId(categoryId)
   end
 end
 
-local function normalizePageSize(size)
-  size = tonumber(size)
-  for _, allowed in ipairs(PAGE_SIZES) do
-    if size == allowed then
-      return allowed
-    end
-  end
-  return PAGE_SIZE_DEFAULT
-end
-
-function ListUI:GetPageSizes()
-  return PAGE_SIZES
-end
-
-function ListUI:GetPageSize()
-  local ctx = self:GetContext()
-  local persisted = ctx and ctx.getPageSize and ctx.getPageSize()
-  local size = normalizePageSize(persisted or self.__state.pagination.pageSize)
-  self.__state.pagination.pageSize = size
-  return size
-end
-
-function ListUI:SetPageSize(size)
-  local normalized = normalizePageSize(size)
-  self.__state.pagination.pageSize = normalized
-  self.__state.pagination.page = 1
-  local ctx = self:GetContext()
-  if ctx and ctx.setPageSize then
-    ctx.setPageSize(normalized)
-  end
-  self:RunSearchRefresh()
-end
-
-function ListUI:GetPage()
-  local page = tonumber(self.__state.pagination.page) or 1
-  if page < 1 then
-    page = 1
-    self.__state.pagination.page = page
-  end
-  return page
-end
-
-function ListUI:SetPage(page, skipRefresh)
-  local total = self.__state.pagination.total or #self:GetFilteredKeys()
-  local pageCount = self:GetPageCount(total)
-  local target = tonumber(page) or 1
-  if pageCount < 1 then
-    pageCount = 1
-  end
-  target = math.min(math.max(1, target), pageCount)
-  self.__state.pagination.page = target
-  if not skipRefresh then
-    self:UpdateList()
-  end
-end
-
-function ListUI:NextPage()
-  self:SetPage(self:GetPage() + 1)
-end
-
-function ListUI:PrevPage()
-  self:SetPage(self:GetPage() - 1)
-end
-
-function ListUI:GetPageCount(total)
-  total = tonumber(total) or 0
-  local pageSize = self:GetPageSize()
-  if pageSize <= 0 then
-    return 1
-  end
-  return math.max(1, math.ceil(total / pageSize))
-end
 
 function ListUI:GetFiltersState()
   local ctx = self:GetContext()
@@ -908,135 +833,6 @@ function ListUI:GetWidget(name)
   if ctx and ctx.getWidget then
     return ctx.getWidget(name)
   end
-end
-
-function ListUI:GetSearchText()
-  local box = self:GetFrame("searchBox") or self:GetWidget("searchBox")
-  if not box or not box.GetText then
-    return ""
-  end
-  return box:GetText() or ""
-end
-
-function ListUI:ClearSearchMatchKinds()
-  local search = self.__state.search or {}
-  self.__state.search = search
-  search.matchFlags = {}
-end
-
-function ListUI:SetSearchMatchKind(key, kind)
-  if not key or not kind then
-    return
-  end
-  local search = self.__state.search or {}
-  self.__state.search = search
-  search.matchFlags = search.matchFlags or {}
-  local flags = search.matchFlags[key] or {}
-  if kind == "title" then
-    flags.title = true
-  elseif kind == "content" then
-    flags.text = true
-  end
-  search.matchFlags[key] = flags
-end
-
-function ListUI:GetSearchMatchKind(key)
-  local search = self.__state.search
-  if not search or not search.matchFlags then
-    return nil
-  end
-  return search.matchFlags[key]
-end
-
-function ListUI:ClearSearch()
-  local box = self:GetFrame("searchBox") or self:GetWidget("searchBox")
-  if box and box.SetText then
-    box:SetText("")
-    if box.ClearFocus then
-      box:ClearFocus()
-    end
-  end
-  self:RunSearchRefresh()
-end
-
-function ListUI:UpdateSearchClearButton()
-  local button = self:GetFrame("searchClearButton")
-  if not button then
-    return
-  end
-  if self:GetSearchQuery() ~= "" then
-    button:Show()
-  else
-    button:Hide()
-  end
-end
-
-function ListUI:UpdatePaginationUI(total, pageCount)
-  local frame = self:GetFrame("paginationFrame")
-  if not frame then
-    return
-  end
-
-  total = tonumber(total) or 0
-  pageCount = tonumber(pageCount) or self:GetPageCount(total)
-  if pageCount < 1 then
-    pageCount = 1
-  end
-
-  local page = self:GetPage()
-  if page > pageCount then
-    page = pageCount
-    self.__state.pagination.page = page
-  end
-  if page < 1 then
-    page = 1
-    self.__state.pagination.page = page
-  end
-
-  local prevButton = self:GetFrame("pagePrevButton")
-  local nextButton = self:GetFrame("pageNextButton")
-  local pageLabel = self:GetFrame("pageLabel")
-  local dropdown = self:GetFrame("pageSizeDropdown")
-
-  if prevButton and prevButton.SetEnabled then
-    prevButton:SetEnabled(page > 1)
-  end
-  if nextButton and nextButton.SetEnabled then
-    nextButton:SetEnabled(page < pageCount and total > 0)
-  end
-  if pageLabel and pageLabel.SetText then
-    if total == 0 then
-	      pageLabel:SetText(t("PAGINATION_EMPTY_RESULTS"))
-    else
-	      pageLabel:SetText(string.format(t("PAGINATION_PAGE_FORMAT"), page, pageCount))
-    end
-  end
-  if dropdown and UIDropDownMenu_SetText then
-	    UIDropDownMenu_SetText(dropdown, string.format(t("PAGINATION_PAGE_SIZE_FORMAT"), self:GetPageSize()))
-  end
-end
-
-function ListUI:RunSearchRefresh()
-  self:RebuildFiltered()
-  self:UpdateList()
-end
-
-function ListUI:ScheduleSearchRefresh()
-  local tracker = self.__state.search
-  tracker.pendingToken = (tracker.pendingToken or 0) + 1
-  local token = tracker.pendingToken
-  if not C_Timer or not C_Timer.After then
-    tracker.pendingToken = nil
-    self:RunSearchRefresh()
-    return
-  end
-  C_Timer.After(SEARCH_DEBOUNCE_SECONDS, function()
-    if tracker.pendingToken ~= token then
-      return
-    end
-    tracker.pendingToken = nil
-    self:RunSearchRefresh()
-  end)
 end
 
 function ListUI:GetInfoText()

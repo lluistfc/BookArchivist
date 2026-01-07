@@ -254,27 +254,6 @@ end
 Core._DecodeBDB1Envelope = DecodeBDB1Envelope
 
 local LIST_WIDTH_DEFAULT = 360
-local LIST_SORT_DEFAULT = "lastSeen"
-local LIST_PAGE_SIZE_DEFAULT = 25
-local LIST_PAGE_SIZES = {
-  [10] = true,
-  [25] = true,
-  [50] = true,
-  [100] = true,
-}
-local LIST_FILTER_DEFAULTS = {
-  hasLocation = false,
-  multiPage = false,
-  unread = false,
-  favoritesOnly = false,
-}
-
-local VALID_SORT_MODES = {
-  title = true,
-  zone = true,
-  firstSeen = true,
-  lastSeen = true,
-}
 
 local SUPPORTED_LANGUAGES = {
   enUS = true,
@@ -444,18 +423,6 @@ local function ensureDB()
     uiOpts.virtualCategoriesEnabled = true
   end
 
-  BookArchivistDB.options.list = BookArchivistDB.options.list or {}
-  local listOpts = BookArchivistDB.options.list
-  if type(listOpts.sortMode) ~= "string" then
-    listOpts.sortMode = LIST_SORT_DEFAULT
-  end
-  listOpts.filters = listOpts.filters or {}
-  for key, defaultValue in pairs(LIST_FILTER_DEFAULTS) do
-    if listOpts.filters[key] == nil then
-      listOpts.filters[key] = defaultValue
-    end
-  end
-
   -- Recently read (Step 4): ensure per-character MRU container exists.
   BookArchivistDB.recent = BookArchivistDB.recent or {}
   local recent = BookArchivistDB.recent
@@ -540,26 +507,6 @@ local function ensureUIOptions()
     uiOpts.resumeLastPage = true
   end
   return uiOpts
-end
-
-local function ensureListOptions()
-  local db = ensureDB()
-  db.options.list = db.options.list or {}
-  local listOpts = db.options.list
-  if type(listOpts.sortMode) ~= "string" then
-    listOpts.sortMode = LIST_SORT_DEFAULT
-  end
-  if type(listOpts.pageSize) ~= "number" or not LIST_PAGE_SIZES[listOpts.pageSize] then
-    listOpts.pageSize = LIST_PAGE_SIZE_DEFAULT
-  end
-  listOpts.filters = listOpts.filters or {}
-  for key, defaultValue in pairs(LIST_FILTER_DEFAULTS) do
-    if listOpts.filters[key] == nil then
-      listOpts.filters[key] = defaultValue
-    end
-  end
-  listOpts.filters.hasAuthor = nil
-  return listOpts
 end
 
 pruneLegacyAuthor = function(db)
@@ -751,34 +698,53 @@ function Core:SetResumeLastPageEnabled(state)
   uiOpts.resumeLastPage = state and true or false
 end
 
+local function getListConfig()
+  return BookArchivist and BookArchivist.ListConfig or nil
+end
+
 function Core:GetSortMode()
-  local listOpts = ensureListOptions()
-  local mode = listOpts.sortMode or LIST_SORT_DEFAULT
-  if not VALID_SORT_MODES[mode] then
-    -- Gracefully remap the legacy "recent" sort mode (which used the
-    -- capture order) to the new default instead of leaving an invalid
-    -- value in SavedVariables.
-    if mode == "recent" then
-      mode = LIST_SORT_DEFAULT
-    end
-    if not VALID_SORT_MODES[mode] then
-      mode = LIST_SORT_DEFAULT
-    end
-    listOpts.sortMode = mode
+  local cfg = getListConfig()
+  if cfg and cfg.GetSortMode then
+    return cfg:GetSortMode()
   end
-  return mode
+
+  local db = ensureDB()
+  db.options = db.options or {}
+  db.options.list = db.options.list or {}
+  local listOpts = db.options.list
+  if type(listOpts.sortMode) ~= "string" or listOpts.sortMode == "" then
+    listOpts.sortMode = "lastSeen"
+  end
+  return listOpts.sortMode
 end
 
 function Core:SetSortMode(mode)
-  local listOpts = ensureListOptions()
-  if type(mode) ~= "string" or not VALID_SORT_MODES[mode] then
-    mode = LIST_SORT_DEFAULT
+  local cfg = getListConfig()
+  if cfg and cfg.SetSortMode then
+    return cfg:SetSortMode(mode)
+  end
+
+  local db = ensureDB()
+  db.options = db.options or {}
+  db.options.list = db.options.list or {}
+  local listOpts = db.options.list
+  if type(mode) ~= "string" or mode == "" then
+    mode = "lastSeen"
   end
   listOpts.sortMode = mode
 end
 
 function Core:GetListFilters()
-  local listOpts = ensureListOptions()
+  local cfg = getListConfig()
+  if cfg and cfg.GetListFilters then
+    return cfg:GetListFilters()
+  end
+
+  local db = ensureDB()
+  db.options = db.options or {}
+  db.options.list = db.options.list or {}
+  local listOpts = db.options.list
+  listOpts.filters = listOpts.filters or {}
   return listOpts.filters
 end
 
@@ -786,11 +752,22 @@ function Core:SetListFilter(filterKey, state)
   if not filterKey then
     return
   end
-  local listOpts = ensureListOptions()
-  if listOpts.filters[filterKey] == nil then
-    return
+  local cfg = getListConfig()
+  local filters
+  if cfg and cfg.SetListFilter then
+    filters = cfg:SetListFilter(filterKey, state)
+  else
+    local db = ensureDB()
+    db.options = db.options or {}
+    db.options.list = db.options.list or {}
+    local listOpts = db.options.list
+    listOpts.filters = listOpts.filters or {}
+    if listOpts.filters[filterKey] == nil then
+      return
+    end
+    listOpts.filters[filterKey] = state and true or false
+    filters = listOpts.filters
   end
-  listOpts.filters[filterKey] = state and true or false
 
   -- Keep virtual category state in sync with the favorites-only
   -- filter so category-aware UIs can treat it as a view selector.
@@ -803,23 +780,33 @@ function Core:SetListFilter(filterKey, state)
   end
 end
 
-local function normalizePageSize(size)
-  size = tonumber(size)
-  if LIST_PAGE_SIZES[size] then
-    return size
-  end
-  return LIST_PAGE_SIZE_DEFAULT
-end
-
 function Core:GetListPageSize()
-  local listOpts = ensureListOptions()
-  listOpts.pageSize = normalizePageSize(listOpts.pageSize)
+  local cfg = getListConfig()
+  if cfg and cfg.GetListPageSize then
+    return cfg:GetListPageSize()
+  end
+
+  local db = ensureDB()
+  db.options = db.options or {}
+  db.options.list = db.options.list or {}
+  local listOpts = db.options.list
+  if type(listOpts.pageSize) ~= "number" then
+    listOpts.pageSize = 25
+  end
   return listOpts.pageSize
 end
 
 function Core:SetListPageSize(size)
-  local listOpts = ensureListOptions()
-  listOpts.pageSize = normalizePageSize(size)
+  local cfg = getListConfig()
+  if cfg and cfg.SetListPageSize then
+    return cfg:SetListPageSize(size)
+  end
+
+  local db = ensureDB()
+  db.options = db.options or {}
+  db.options.list = db.options.list or {}
+  local listOpts = db.options.list
+  listOpts.pageSize = tonumber(size) or 25
 end
 
 -- Step 8 – Export / Import helpers

@@ -29,14 +29,6 @@ local function t(key)
   return (L and L[key]) or key
 end
 
-local function getSearchTooltipText()
-  local text = L and L["BOOK_SEARCH_TOOLTIP"]
-  if text and text ~= "" then
-    return text
-  end
-  return "Search matches all words anywhere in the title or text.\nIt does not require the exact phrase."
-end
-
 local function ClearAnchors(frame)
   if frame and frame.ClearAllPoints then
     frame:ClearAllPoints()
@@ -183,188 +175,6 @@ function ListUI:EnsureInfoText()
   return info
 end
 
-function ListUI:EnsurePaginationControls()
-  local pagination = self:GetFrame("paginationFrame")
-  if pagination then
-    return pagination
-  end
-
-  local tipRow = self:EnsureListTipRow()
-  if not tipRow then
-    return nil
-  end
-
-  pagination = self:SafeCreateFrame("Frame", nil, tipRow)
-  if not pagination then
-    return nil
-  end
-	pagination:ClearAllPoints()
-	pagination:SetPoint("CENTER", tipRow, "CENTER", 0, 0)
-  pagination:SetWidth(320)
-  local gap = Metrics.GAP_S or Metrics.GAP_XS or 4
-  local btnH = Metrics.BTN_H or 22
-  pagination:SetHeight((btnH * 2) + gap)
-  self:SetFrame("paginationFrame", pagination)
-
-  local gap = Metrics.GAP_S or Metrics.GAP_XS or 4
-  local btnH = Metrics.BTN_H or 22
-
-  local topRow = self:SafeCreateFrame("Frame", nil, pagination)
-  if topRow then
-    topRow:SetPoint("TOPLEFT", pagination, "TOPLEFT", 0, 0)
-    topRow:SetPoint("TOPRIGHT", pagination, "TOPRIGHT", 0, 0)
-    topRow:SetHeight(btnH)
-  end
-
-  local bottomRow = self:SafeCreateFrame("Frame", nil, pagination)
-  if bottomRow then
-    if topRow then
-      bottomRow:SetPoint("TOPLEFT", topRow, "BOTTOMLEFT", 0, -gap)
-      bottomRow:SetPoint("TOPRIGHT", topRow, "BOTTOMRIGHT", 0, -gap)
-    else
-      bottomRow:SetPoint("TOPLEFT", pagination, "TOPLEFT", 0, 0)
-      bottomRow:SetPoint("TOPRIGHT", pagination, "TOPRIGHT", 0, 0)
-    end
-    bottomRow:SetPoint("BOTTOMLEFT", pagination, "BOTTOMLEFT", 0, 0)
-    bottomRow:SetPoint("BOTTOMRIGHT", pagination, "BOTTOMRIGHT", 0, 0)
-    bottomRow:SetHeight(btnH)
-  end
-
-  local prev = self:SafeCreateFrame("Button", "BookArchivistListPrevPage", bottomRow or pagination, "UIPanelButtonTemplate")
-  if prev then
-		prev:SetSize(80, btnH)
-	    prev:SetText(t("PAGINATION_PREV"))
-    prev:SetScript("OnClick", function()
-      self:PrevPage()
-    end)
-    self:SetFrame("pagePrevButton", prev)
-  end
-
-  local nextBtn = self:SafeCreateFrame("Button", "BookArchivistListNextPage", bottomRow or pagination, "UIPanelButtonTemplate")
-  if nextBtn then
-		nextBtn:SetSize(80, btnH)
-	    nextBtn:SetText(t("PAGINATION_NEXT"))
-    nextBtn:SetScript("OnClick", function()
-      self:NextPage()
-    end)
-    self:SetFrame("pageNextButton", nextBtn)
-  end
-
-  local pageLabelHost = bottomRow or pagination
-  local pageLabel = pageLabelHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  pageLabel:SetJustifyH("CENTER")
-  pageLabel:SetJustifyV("MIDDLE")
-  pageLabel:SetHeight(btnH)
-	pageLabel:SetText(t("PAGINATION_PAGE_SINGLE"))
-  if prev and nextBtn then
-    pageLabel:ClearAllPoints()
-    pageLabel:SetPoint("CENTER", pageLabelHost, "CENTER", 0, 0)
-    prev:ClearAllPoints()
-    prev:SetPoint("RIGHT", pageLabel, "LEFT", -gap, 0)
-    nextBtn:ClearAllPoints()
-    nextBtn:SetPoint("LEFT", pageLabel, "RIGHT", gap, 0)
-  else
-    pageLabel:SetPoint("CENTER", pageLabelHost, "CENTER", 0, 0)
-  end
-  self:SetFrame("pageLabel", pageLabel)
-
-  local dropdownHost = topRow or pagination
-  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistPageSizeDropdown", dropdownHost, "UIDropDownMenuTemplate")
-  if dropdown then
-    dropdown:ClearAllPoints()
-    dropdown:SetPoint("CENTER", dropdownHost, "CENTER", 0, 0)
-    UIDropDownMenu_SetWidth(dropdown, 110)
-    UIDropDownMenu_JustifyText(dropdown, "LEFT")
-	    UIDropDownMenu_SetText(dropdown, string.format(t("PAGINATION_PAGE_SIZE_FORMAT"), self:GetPageSize()))
-    UIDropDownMenu_Initialize(dropdown, function(frame, level)
-      for _, size in ipairs(self:GetPageSizes()) do
-        local info = UIDropDownMenu_CreateInfo()
-	        info.text = string.format(t("PAGINATION_PAGE_SIZE_FORMAT"), size)
-        info.func = function()
-          self:SetPageSize(size)
-        end
-        info.checked = (size == self:GetPageSize())
-        UIDropDownMenu_AddButton(info, level)
-      end
-    end)
-    self:SetFrame("pageSizeDropdown", dropdown)
-  end
-
-  return pagination
-end
-
-local function wireSearchHandlers(self, searchBox)
-  if not (self and searchBox) then
-    return
-  end
-
-  local instructions = searchBox.Instructions
-  if instructions and instructions.SetText then
-		instructions:SetText(t("BOOK_SEARCH_PLACEHOLDER"))
-  end
-
-  local function syncInstructions(box)
-    if not instructions then
-      return
-    end
-    if (box:GetText() or "") == "" then
-      instructions:Show()
-    else
-      instructions:Hide()
-    end
-  end
-
-  searchBox:SetScript("OnEditFocusGained", function(box)
-    if instructions then
-      instructions:Hide()
-    end
-  end)
-
-  searchBox:SetScript("OnEditFocusLost", function(box)
-    syncInstructions(box)
-  end)
-
-  searchBox:SetScript("OnEscapePressed", function(box)
-    box:SetText("")
-    box:ClearFocus()
-    syncInstructions(box)
-    self:RunSearchRefresh()
-    self:UpdateSearchClearButton()
-  end)
-
-  searchBox:SetScript("OnEnterPressed", function(box)
-    box:ClearFocus()
-  end)
-
-  searchBox:SetScript("OnTextChanged", function(box, userInput)
-    syncInstructions(box)
-    if userInput then
-      if self.ScheduleSearchRefresh then
-        self:ScheduleSearchRefresh()
-      else
-        self:RunSearchRefresh()
-      end
-      self:UpdateSearchClearButton()
-    end
-  end)
-
-  searchBox:SetScript("OnEnter", function(box)
-    if not GameTooltip or not GameTooltip.SetOwner then
-      return
-    end
-    GameTooltip:SetOwner(box, "ANCHOR_BOTTOMLEFT")
-    GameTooltip:SetText(getSearchTooltipText(), 1, 1, 1, 1, true)
-  end)
-
-  searchBox:SetScript("OnLeave", function()
-    if GameTooltip and GameTooltip.Hide then
-      GameTooltip:Hide()
-    end
-  end)
-
-  syncInstructions(searchBox)
-end
-
 function ListUI:Create(uiFrame)
   if not uiFrame then
     return
@@ -444,7 +254,9 @@ function ListUI:Create(uiFrame)
     end
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
-    wireSearchHandlers(self, searchBox)
+    if self.WireSearchBox then
+      self:WireSearchBox(searchBox)
+    end
   end
 
   local clearButton = self:SafeCreateFrame("Button", nil, searchHost, "UIPanelCloseButton")
