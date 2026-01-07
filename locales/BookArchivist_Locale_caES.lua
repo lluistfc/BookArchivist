@@ -62,7 +62,26 @@ Locales.caES = {
   ["READER_SHARE_TOOLTIP_TITLE"] = "Exporta aquest llibre",
   ["READER_SHARE_TOOLTIP_BODY"] = "Genera una cadena d'exportació per a aquest únic llibre. Copia-la amb Ctrl+C i comparteix-la amb altres, o enganxa-la al panell d'Importació (Opcions → Exporta / Importa) en un altre personatge o client.",
   ["READER_SHARE_POPUP_TITLE"] = "Cadena d'exportació del llibre",
-  ["READER_SHARE_POPUP_LABEL"] = "Fes servir Ctrl+C per copiar aquesta cadena i després comparteix-la amb altres jugadors o enganxa-la en un altre client de Book Archivist.",  ["READER_SHARE_SELECT_ALL"] = "Selecciona-ho tot",
+  ["READER_SHARE_POPUP_LABEL"] = "Fes servir Ctrl+C per copiar aquesta cadena i després comparteix-la amb altres jugadors o enganxa-la en un altre client de Book Archivist.",
+  ["READER_SHARE_SELECT_ALL"] = "Selecciona-ho tot",
+  ["SHARE_CHAT_HINT"] = "Crea un enllaç clicable al xat, o copia la cadena d'exportació a sota per compartir directament.",
+  ["SHARE_TO_CHAT_BUTTON"] = "Comparteix al xat",
+  ["SHARE_LINK_INSERTED"] = "Enllaç inserit al xat! Prem Enter per enviar.",
+
+  -- Import from chat links
+  ["IMPORT_PROMPT_TITLE"] = "Importa llibre",
+  ["IMPORT_PROMPT_TEXT"] = "Enganxa la cadena d'exportació del llibre a continuació:",
+  ["IMPORT_PROMPT_HINT"] = "El remitent ha de compartir la cadena d'exportació completa per separat (fora del xat de WoW).",
+  ["IMPORT_PROMPT_BUTTON"] = "Importa",
+  ["IMPORT_SUCCESS"] = "Importat: %s",
+  ["IMPORT_FAILED"] = "Error en importar: %s",
+  ["IMPORT_COMPLETED_WITH_WARNINGS"] = "Importació completada amb advertiments",
+  ["REQUESTING_BOOK"] = "Sol·licitant llibre de %s...",
+  ["REQUEST_TIMEOUT"] = "Sense resposta de %s",
+  ["BOOK_NOT_AVAILABLE"] = "Llibre ja no disponible per compartir",
+  ["IMPORT_PROMPT_TITLE_WITH_DATA"] = "Importar: %s",
+  ["IMPORT_CONFIRM_MESSAGE"] = "Llibre rebut! Fes clic a Importar per afegir '%s' a la teva biblioteca.",
+
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Afegeix als preferits",
   ["READER_FAVORITE_REMOVE"] = "Treu dels preferits",

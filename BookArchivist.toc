@@ -10,6 +10,8 @@
 # Ace3 libraries
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\AceSerializer-3.0\AceSerializer-3.0.xml
+libs\AceComm-3.0\AceComm-3.0.xml
 libs\AceGUI-3.0\AceGUI-3.0.xml
 
 core/BookArchivist_BookId.lua
@@ -29,6 +31,7 @@ core/BookArchivist_ImportWorker.lua
 core/BookArchivist_Recent.lua
 core/BookArchivist_Tooltip.lua
 core/BookArchivist_Location.lua
+core/BookArchivist_ChatLinks.lua
 core/BookArchivist_Capture.lua
 core/BookArchivist_Minimap.lua
 core/BookArchivist.lua

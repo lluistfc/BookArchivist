@@ -62,7 +62,26 @@ Locales.esES = {
   ["READER_SHARE_TOOLTIP_TITLE"] = "Exportar este libro",
   ["READER_SHARE_TOOLTIP_BODY"] = "Genera una cadena de exportación para este único libro. Cópiala con Ctrl+C y compártela con otros, o pégala en el panel de Importación (Opciones → Exportar / Importar) en otro personaje o cliente.",
   ["READER_SHARE_POPUP_TITLE"] = "Cadena de exportación del libro",
-  ["READER_SHARE_POPUP_LABEL"] = "Usa Ctrl+C para copiar esta cadena y luego compártela con otros jugadores o pégala en otro cliente de Book Archivist.",  ["READER_SHARE_SELECT_ALL"] = "Seleccionar todo",
+  ["READER_SHARE_POPUP_LABEL"] = "Usa Ctrl+C para copiar esta cadena y luego compártela con otros jugadores o pégala en otro cliente de Book Archivist.",
+  ["READER_SHARE_SELECT_ALL"] = "Seleccionar todo",
+  ["SHARE_CHAT_HINT"] = "Crea un enlace clicable en el chat, o copia la cadena de exportación abajo para compartir directamente.",
+  ["SHARE_TO_CHAT_BUTTON"] = "Compartir en el chat",
+  ["SHARE_LINK_INSERTED"] = "¡Enlace insertado en el chat! Presiona Enter para enviar.",
+
+  -- Import from chat links
+  ["IMPORT_PROMPT_TITLE"] = "Importar libro",
+  ["IMPORT_PROMPT_TEXT"] = "Pega la cadena de exportación del libro a continuación:",
+  ["IMPORT_PROMPT_HINT"] = "El remitente debe compartir la cadena de exportación completa por separado (fuera del chat de WoW).",
+  ["IMPORT_PROMPT_BUTTON"] = "Importar",
+  ["IMPORT_SUCCESS"] = "Importado: %s",
+  ["IMPORT_FAILED"] = "Error al importar: %s",
+  ["IMPORT_COMPLETED_WITH_WARNINGS"] = "Importación completada con advertencias",
+  ["REQUESTING_BOOK"] = "Solicitando libro de %s...",
+  ["REQUEST_TIMEOUT"] = "Sin respuesta de %s",
+  ["BOOK_NOT_AVAILABLE"] = "Libro ya no disponible para compartir",
+  ["IMPORT_PROMPT_TITLE_WITH_DATA"] = "Importar: %s",
+  ["IMPORT_CONFIRM_MESSAGE"] = "¡Libro recibido! Haz clic en Importar para agregar '%s' a tu biblioteca.",
+
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Añadir a Favoritos",
   ["READER_FAVORITE_REMOVE"] = "Quitar de Favoritos",

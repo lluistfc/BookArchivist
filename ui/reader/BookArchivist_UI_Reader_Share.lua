@@ -29,10 +29,17 @@ local function getCreateFrame()
 end
 
 -- Show the share popup with the export string
-function ReaderShare:Show(exportStr)
+function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
   if not exportStr or exportStr == "" then
     print("|cFFFF0000[BookArchivist]|r Failed to generate export string.")
     return
+  end
+  
+  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
+    print("|cFF4A7EBB[Share DEBUG]|r Show() called with:")
+    print("  bookTitle:", bookTitle)
+    print("  bookKey:", bookKey)
+    print("  bookData:", bookData and "present" or "nil")
   end
   
   -- Get or create the share modal frame
@@ -83,9 +90,18 @@ function ReaderShare:Show(exportStr)
     helpText:SetJustifyH("LEFT")
     helpText:SetText(t("READER_SHARE_POPUP_LABEL"))
     
+    -- Chat link hint
+    local chatHint = shareFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    chatHint:SetPoint("TOPLEFT", helpText, "BOTTOMLEFT", 0, -4)
+    chatHint:SetPoint("TOPRIGHT", helpText, "BOTTOMRIGHT", 0, -4)
+    chatHint:SetJustifyH("LEFT")
+    chatHint:SetTextColor(0.29, 0.49, 0.73) -- Blue color
+    chatHint:SetText(t("SHARE_CHAT_HINT"))
+    shareFrame.chatHint = chatHint
+    
     -- ScrollFrame for EditBox
     local scrollFrame = createFrame("ScrollFrame", nil, shareFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", helpText, "BOTTOMLEFT", 0, -8)
+    scrollFrame:SetPoint("TOPLEFT", chatHint, "BOTTOMLEFT", 0, -8)
     scrollFrame:SetPoint("BOTTOMRIGHT", shareFrame, "BOTTOMRIGHT", -28, 48)
     
     if scrollFrame.SetBackdrop then
@@ -114,6 +130,51 @@ function ReaderShare:Show(exportStr)
     scrollFrame:SetScrollChild(editBox)
     shareFrame.editBox = editBox
     
+    -- Share to Chat button (at bottom)
+    local shareToChatBtn = createFrame("Button", nil, shareFrame, "UIPanelButtonTemplate")
+    shareToChatBtn:SetSize(140, 22)
+    shareToChatBtn:SetPoint("BOTTOMLEFT", shareFrame, "BOTTOMLEFT", 8, 12)
+    shareToChatBtn:SetText(t("SHARE_TO_CHAT_BUTTON"))
+    shareToChatBtn:SetScript("OnClick", function()
+      local bookTitle = shareFrame.bookTitle or "Book"
+      local chatLink = string.format("[BookArchivist: %s]", bookTitle)
+      
+      if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
+        print("|cFF4A7EBB[Share DEBUG]|r Share to Chat clicked:")
+        print("  bookTitle:", bookTitle)
+        print("  bookKey:", shareFrame.bookKey)
+        print("  bookData:", shareFrame.bookData and "present" or "nil")
+      end
+      
+      -- Register book as linked RIGHT NOW when sending to chat
+      if BookArchivist.ChatLinks and shareFrame.bookKey and shareFrame.bookData then
+        if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
+          print("|cFF00FF00[Share DEBUG]|r Registering book as linked")
+        end
+        BookArchivist.ChatLinks:RegisterLinkedBook(shareFrame.bookKey, shareFrame.bookData)
+      else
+        if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
+          print("|cFFFF0000[Share DEBUG]|r Cannot register: missing ChatLinks, bookKey, or bookData")
+        end
+      end
+      
+      -- Insert into active chat editbox
+      local editbox = ChatEdit_GetActiveWindow()
+      if editbox then
+        editbox:Insert(chatLink)
+        editbox:SetFocus()
+      else
+        -- No active chat, just put it in the default chat frame
+        ChatFrame1EditBox:Show()
+        ChatFrame1EditBox:SetFocus()
+        ChatFrame1EditBox:Insert(chatLink)
+      end
+      
+      -- Optional: show confirmation
+      print("|cFF4A7EBBBookArchivist:|r " .. (t("SHARE_LINK_INSERTED") or "Chat link inserted! Press Enter to send."))
+    end)
+    shareFrame.shareToChatBtn = shareToChatBtn
+    
     -- Select All button
     local selectAllBtn = createFrame("Button", nil, shareFrame, "UIPanelButtonTemplate")
     selectAllBtn:SetSize(100, 22)
@@ -126,6 +187,28 @@ function ReaderShare:Show(exportStr)
         editBox:SetCursorPosition(0)
       end
     end)
+  end
+  
+  -- Store book context for Share to Chat button (update EVERY time Show() is called)
+  shareFrame.bookTitle = bookTitle
+  shareFrame.bookKey = bookKey
+  shareFrame.addon = addon
+  shareFrame.bookData = bookData
+  
+  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
+    print("|cFF4A7EBB[Share DEBUG]|r Stored in shareFrame:")
+    print("  bookTitle:", shareFrame.bookTitle)
+    print("  bookKey:", shareFrame.bookKey)
+    print("  bookData:", shareFrame.bookData and "present" or "nil")
+  end
+  
+  -- Update chat hint with book title if provided
+  if shareFrame.chatHint and bookTitle then
+    local hintText = string.format(
+      t("SHARE_CHAT_HINT") or "Click the button below to insert a chat link, or copy the export string to share directly.",
+      bookTitle
+    )
+    shareFrame.chatHint:SetText(hintText)
   end
   
   -- Set the export string and show
@@ -146,6 +229,22 @@ function ReaderShare:ShareCurrentBook(addon, bookKey)
     return
   end
   
+  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
+    print("|cFF4A7EBB[Share DEBUG]|r ShareCurrentBook called:")
+    print("  addon:", addon)
+    print("  bookKey:", bookKey)
+  end
+  
+  -- Get book data directly from DB
+  local bookData = BookArchivistDB and BookArchivistDB.booksById and BookArchivistDB.booksById[bookKey]
+  local bookTitle = bookData and bookData.title
+  
+  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
+    print("|cFF4A7EBB[Share DEBUG]|r Retrieved from DB:")
+    print("  bookData:", bookData and "found" or "nil")
+    print("  bookTitle:", bookTitle or "nil")
+  end
+  
   -- Generate export for single book
   local exportStr, err
   if addon.ExportBook and type(addon.ExportBook) == "function" then
@@ -161,8 +260,13 @@ function ReaderShare:ShareCurrentBook(addon, bookKey)
       addon.__lastExportPayload = exportStr
     end
     
-    -- Show share popup
-    self:Show(exportStr)
+    -- Register book as "linked" for auto-response to requests
+    if BookArchivist.ChatLinks and bookData then
+      BookArchivist.ChatLinks:RegisterLinkedBook(bookKey, bookData)
+    end
+    
+    -- Show share popup with book title and context
+    self:Show(exportStr, bookTitle, bookKey, addon, bookData)
   else
     local errMsg = err or "unknown error"
     print("|cFFFF0000[BookArchivist]|r Failed to generate export string: " .. tostring(errMsg))

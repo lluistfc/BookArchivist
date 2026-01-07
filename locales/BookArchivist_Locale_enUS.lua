@@ -68,6 +68,23 @@ Locales.enUS = {
   ["READER_SHARE_POPUP_TITLE"] = "Book export string",
   ["READER_SHARE_POPUP_LABEL"] = "Use Ctrl+C to copy this string, then share it with other players or paste it into another client of Book Archivist.",
   ["READER_SHARE_SELECT_ALL"] = "Select All",
+  ["SHARE_CHAT_HINT"] = "Create a clickable chat link, or copy the export string below to share directly.",
+  ["SHARE_TO_CHAT_BUTTON"] = "Share to Chat",
+  ["SHARE_LINK_INSERTED"] = "Chat link inserted! Press Enter to send.",
+
+  -- Import from chat links
+  ["IMPORT_PROMPT_TITLE"] = "Import Book",
+  ["IMPORT_PROMPT_TEXT"] = "Paste the book export string below:",
+  ["IMPORT_PROMPT_HINT"] = "The sender must share the full export string with you separately (outside WoW chat).",
+  ["IMPORT_PROMPT_BUTTON"] = "Import",
+  ["IMPORT_SUCCESS"] = "Imported: %s",
+  ["IMPORT_FAILED"] = "Import failed: %s",
+  ["IMPORT_COMPLETED_WITH_WARNINGS"] = "Import completed with warnings",
+  ["REQUESTING_BOOK"] = "Requesting book from %s...",
+  ["REQUEST_TIMEOUT"] = "No response from %s",
+  ["BOOK_NOT_AVAILABLE"] = "Book no longer available for sharing",
+  ["IMPORT_PROMPT_TITLE_WITH_DATA"] = "Import: %s",
+  ["IMPORT_CONFIRM_MESSAGE"] = "Book received! Click Import to add '%s' to your library.",
 
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Add to Favorites",

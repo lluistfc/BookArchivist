@@ -11,6 +11,7 @@ local Capture = BookArchivist.Capture
 local Location = BookArchivist.Location
 local MinimapModule = BookArchivist.Minimap
 local TooltipModule = BookArchivist.Tooltip
+local ChatLinks = BookArchivist.ChatLinks
 
 local function callInternalDebug(method, ...)
   local ui = BookArchivist.UI
@@ -90,6 +91,9 @@ local function handleAddonLoaded(name)
   end
   if TooltipModule and TooltipModule.Initialize then
     TooltipModule:Initialize()
+  end
+  if ChatLinks and ChatLinks.Init then
+    ChatLinks:Init()
   end
 end
 

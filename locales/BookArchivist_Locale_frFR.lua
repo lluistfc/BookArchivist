@@ -64,6 +64,23 @@ Locales.frFR = {
   ["READER_SHARE_POPUP_TITLE"] = "Chaîne d'exportation du livre",
   ["READER_SHARE_POPUP_LABEL"] = "Utilisez Ctrl+C pour copier cette chaîne, puis partagez-la avec d'autres joueurs ou collez-la dans un autre client de Book Archivist.",
   ["READER_SHARE_SELECT_ALL"] = "Tout sélectionner",
+  ["SHARE_CHAT_HINT"] = "Créez un lien cliquable dans le chat, ou copiez la chaîne d'exportation ci-dessous pour partager directement.",
+  ["SHARE_TO_CHAT_BUTTON"] = "Partager dans le chat",
+  ["SHARE_LINK_INSERTED"] = "Lien inséré dans le chat ! Appuyez sur Entrée pour envoyer.",
+
+  -- Import from chat links
+  ["IMPORT_PROMPT_TITLE"] = "Importer le livre",
+  ["IMPORT_PROMPT_TEXT"] = "Collez la chaîne d'exportation du livre ci-dessous :",
+  ["IMPORT_PROMPT_HINT"] = "L'expéditeur doit partager la chaîne d'exportation complète séparément (en dehors du chat WoW).",
+  ["IMPORT_PROMPT_BUTTON"] = "Importer",
+  ["IMPORT_SUCCESS"] = "Importé : %s",
+  ["IMPORT_FAILED"] = "Échec de l'importation : %s",
+  ["IMPORT_COMPLETED_WITH_WARNINGS"] = "Importation terminée avec des avertissements",
+  ["REQUESTING_BOOK"] = "Demande de livre auprès de %s...",
+  ["REQUEST_TIMEOUT"] = "Pas de réponse de %s",
+  ["BOOK_NOT_AVAILABLE"] = "Livre plus disponible pour le partage",
+  ["IMPORT_PROMPT_TITLE_WITH_DATA"] = "Importer : %s",
+  ["IMPORT_CONFIRM_MESSAGE"] = "Livre reçu ! Cliquez sur Importer pour ajouter '%s' à votre bibliothèque.",
 
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Ajouter aux favoris",

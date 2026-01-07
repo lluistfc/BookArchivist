@@ -62,7 +62,26 @@ Locales.itIT = {
   ["READER_SHARE_TOOLTIP_TITLE"] = "Esporta questo libro",
   ["READER_SHARE_TOOLTIP_BODY"] = "Genera una stringa di esportazione per questo singolo libro. Copiala con Ctrl+C e condividila con altri, oppure incollala nel pannello di Importazione (Opzioni → Esporta / Importa) su un altro personaggio o client.",
   ["READER_SHARE_POPUP_TITLE"] = "Stringa di esportazione del libro",
-  ["READER_SHARE_POPUP_LABEL"] = "Usa Ctrl+C per copiare questa stringa, quindi condividila con altri giocatori o incollala in un altro client di Book Archivist.",  ["READER_SHARE_SELECT_ALL"] = "Seleziona tutto",
+  ["READER_SHARE_POPUP_LABEL"] = "Usa Ctrl+C per copiare questa stringa, quindi condividila con altri giocatori o incollala in un altro client di Book Archivist.",
+  ["READER_SHARE_SELECT_ALL"] = "Seleziona tutto",
+  ["SHARE_CHAT_HINT"] = "Crea un link cliccabile nella chat, o copia la stringa di esportazione qui sotto per condividere direttamente.",
+  ["SHARE_TO_CHAT_BUTTON"] = "Condividi nella chat",
+  ["SHARE_LINK_INSERTED"] = "Link inserito nella chat! Premi Invio per inviare.",
+
+  -- Import from chat links
+  ["IMPORT_PROMPT_TITLE"] = "Importa libro",
+  ["IMPORT_PROMPT_TEXT"] = "Incolla la stringa di esportazione del libro qui sotto:",
+  ["IMPORT_PROMPT_HINT"] = "Il mittente deve condividere la stringa di esportazione completa separatamente (fuori dalla chat di WoW).",
+  ["IMPORT_PROMPT_BUTTON"] = "Importa",
+  ["IMPORT_SUCCESS"] = "Importato: %s",
+  ["IMPORT_FAILED"] = "Importazione fallita: %s",
+  ["IMPORT_COMPLETED_WITH_WARNINGS"] = "Importazione completata con avvisi",
+  ["REQUESTING_BOOK"] = "Richiesta libro da %s...",
+  ["REQUEST_TIMEOUT"] = "Nessuna risposta da %s",
+  ["BOOK_NOT_AVAILABLE"] = "Libro non più disponibile per la condivisione",
+  ["IMPORT_PROMPT_TITLE_WITH_DATA"] = "Importa: %s",
+  ["IMPORT_CONFIRM_MESSAGE"] = "Libro ricevuto! Clicca su Importa per aggiungere '%s' alla tua biblioteca.",
+
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Aggiungi ai preferiti",
   ["READER_FAVORITE_REMOVE"] = "Rimuovi dai preferiti",

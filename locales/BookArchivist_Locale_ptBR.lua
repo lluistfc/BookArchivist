@@ -62,7 +62,26 @@ Locales.ptBR = {
   ["READER_SHARE_TOOLTIP_TITLE"] = "Exportar este livro",
   ["READER_SHARE_TOOLTIP_BODY"] = "Gera uma string de exportação para este único livro. Copie-a com Ctrl+C e compartilhe com outras pessoas, ou cole-a no painel de Importação (Opções → Exportar / Importar) em outro personagem ou cliente.",
   ["READER_SHARE_POPUP_TITLE"] = "String de exportação do livro",
-  ["READER_SHARE_POPUP_LABEL"] = "Use Ctrl+C para copiar esta string e depois compartilhe-a com outros jogadores ou cole-a em outro cliente do Book Archivist.",  ["READER_SHARE_SELECT_ALL"] = "Selecionar tudo",
+  ["READER_SHARE_POPUP_LABEL"] = "Use Ctrl+C para copiar esta string e depois compartilhe-a com outros jogadores ou cole-a em outro cliente do Book Archivist.",
+  ["READER_SHARE_SELECT_ALL"] = "Selecionar tudo",
+  ["SHARE_CHAT_HINT"] = "Crie um link clicável no chat, ou copie a string de exportação abaixo para compartilhar diretamente.",
+  ["SHARE_TO_CHAT_BUTTON"] = "Compartilhar no chat",
+  ["SHARE_LINK_INSERTED"] = "Link inserido no chat! Pressione Enter para enviar.",
+
+  -- Import from chat links
+  ["IMPORT_PROMPT_TITLE"] = "Importar livro",
+  ["IMPORT_PROMPT_TEXT"] = "Cole a string de exportação do livro abaixo:",
+  ["IMPORT_PROMPT_HINT"] = "O remetente deve compartilhar a string de exportação completa separadamente (fora do chat do WoW).",
+  ["IMPORT_PROMPT_BUTTON"] = "Importar",
+  ["IMPORT_SUCCESS"] = "Importado: %s",
+  ["IMPORT_FAILED"] = "Falha na importação: %s",
+  ["IMPORT_COMPLETED_WITH_WARNINGS"] = "Importação concluída com avisos",
+  ["REQUESTING_BOOK"] = "Solicitando livro de %s...",
+  ["REQUEST_TIMEOUT"] = "Sem resposta de %s",
+  ["BOOK_NOT_AVAILABLE"] = "Livro não está mais disponível para compartilhamento",
+  ["IMPORT_PROMPT_TITLE_WITH_DATA"] = "Importar: %s",
+  ["IMPORT_CONFIRM_MESSAGE"] = "Livro recebido! Clique em Importar para adicionar '%s' à sua biblioteca.",
+
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Adicionar aos Favoritos",
   ["READER_FAVORITE_REMOVE"] = "Remover dos Favoritos",
