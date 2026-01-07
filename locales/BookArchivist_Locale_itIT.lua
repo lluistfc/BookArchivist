@@ -7,8 +7,8 @@ local Locales = BookArchivist.__Locales
 
 Locales.itIT = {
   -- Addon & options
-  ["ADDON_TITLE"] = "Archivista di Libri",
-  ["OPTIONS_TITLE"] = "Opzioni di Archivista di Libri",
+  ["ADDON_TITLE"] = "Book Archivist",
+  ["OPTIONS_TITLE"] = "Opzioni di Book Archivist",
   ["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Apri il pannello delle opzioni",
 
   -- List header / tabs
@@ -38,8 +38,7 @@ Locales.itIT = {
   ["HEADER_BUTTON_OPTIONS"] = "Opzioni",
   ["HEADER_BUTTON_HELP"] = "Aiuto",
   ["HEADER_HELP_CHAT"] = "Usa ricerca, filtri e ordinamento per trovare subito qualsiasi libro salvato.",
-	["RESUME_LAST_BOOK"] = "Riprendi ultimo libro",
-  ["RESUME_LAST_BOOK"] = "Riprendi ultimo libro",
+	["RESUME_LAST_BOOK"] = "Riprendi libro",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Seleziona un libro dall'elenco",

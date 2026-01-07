@@ -410,7 +410,9 @@ function ListUI:InitializeSortDropdown(dropdown)
     return
   end
 
-  UIDropDownMenu_SetWidth(dropdown, 160)
+  -- Keep the sort dropdown compact so it fits comfortably
+  -- alongside the search box and resume button.
+    UIDropDownMenu_SetWidth(dropdown, 120)
 	  UIDropDownMenu_SetText(dropdown, t("SORT_DROPDOWN_PLACEHOLDER"))
 
   UIDropDownMenu_Initialize(dropdown, function(self)

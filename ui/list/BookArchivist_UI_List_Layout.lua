@@ -232,7 +232,7 @@ function ListUI:EnsurePaginationControls()
 
   local prev = self:SafeCreateFrame("Button", "BookArchivistListPrevPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if prev then
-    prev:SetSize(60, btnH)
+		prev:SetSize(80, btnH)
 	    prev:SetText(t("PAGINATION_PREV"))
     prev:SetScript("OnClick", function()
       self:PrevPage()
@@ -242,7 +242,7 @@ function ListUI:EnsurePaginationControls()
 
   local nextBtn = self:SafeCreateFrame("Button", "BookArchivistListNextPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if nextBtn then
-    nextBtn:SetSize(60, btnH)
+		nextBtn:SetSize(80, btnH)
 	    nextBtn:SetText(t("PAGINATION_NEXT"))
     nextBtn:SetScript("OnClick", function()
       self:NextPage()
@@ -432,7 +432,16 @@ function ListUI:Create(uiFrame)
     self:SetFrame("searchBox", searchBox)
     searchBox:SetHeight((Metrics.BTN_H or 22) + (Metrics.GAP_S or 0))
     searchBox:SetPoint("TOPLEFT", searchHost, "TOPLEFT", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
-    searchBox:SetPoint("BOTTOMRIGHT", searchHost, "BOTTOMRIGHT", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
+
+    -- Constrain the search box so it leaves room for the sort
+    -- dropdown + resume button on the right, avoiding overlap.
+    if headerRightBottom then
+      local gap = Metrics.GAP_M or Metrics.GUTTER or 8
+      local extra = 32 -- leave room before the sort dropdown
+      searchBox:SetPoint("RIGHT", headerRightBottom, "LEFT", -(gap + extra), Metrics.HEADER_CENTER_BIAS_Y or 0)
+    else
+      searchBox:SetPoint("BOTTOMRIGHT", searchHost, "BOTTOMRIGHT", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
+    end
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
     wireSearchHandlers(self, searchBox)

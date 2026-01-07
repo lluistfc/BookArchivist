@@ -180,6 +180,10 @@ local function rebuildUIForLanguageChange()
 		if helpButton and helpButton.SetText then
 			helpButton:SetText(t("HEADER_BUTTON_HELP"))
 		end
+		local resumeButton = ListUI:GetFrame("resumeButton")
+		if resumeButton and resumeButton.SetText then
+			resumeButton:SetText(t("RESUME_LAST_BOOK"))
+		end
 
 		-- Update list pagination button labels.
 		local listPrev = ListUI:GetFrame("pagePrevButton")

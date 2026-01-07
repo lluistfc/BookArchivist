@@ -7,8 +7,8 @@ local Locales = BookArchivist.__Locales
 
 Locales.caES = {
   -- Addon & options
-  ["ADDON_TITLE"] = "Arxivista de Llibres",
-  ["OPTIONS_TITLE"] = "Opcions d'Arxivista de Llibres",
+  ["ADDON_TITLE"] = "Book Archivist",
+  ["OPTIONS_TITLE"] = "Opcions de Book Archivist",
   ["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Obre el panell d'opcions",
 
   -- List header / tabs
@@ -38,8 +38,7 @@ Locales.caES = {
   ["HEADER_BUTTON_OPTIONS"] = "Opcions",
   ["HEADER_BUTTON_HELP"] = "Ajuda",
   ["HEADER_HELP_CHAT"] = "Utilitza la cerca, els filtres i el menú d'ordenació per trobar qualsevol llibre desat a l'instant.",
-  ["RESUME_LAST_BOOK"] = "Reprèn l'últim llibre",
-  ["RESUME_LAST_BOOK"] = "Reprèn l'últim llibre",
+  ["RESUME_LAST_BOOK"] = "Reprèn llibre",
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Selecciona un llibre de la llista",
