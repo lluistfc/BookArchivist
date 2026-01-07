@@ -88,26 +88,48 @@ local function configureDeleteButton(button)
 	if not button then
 		return
 	end
-	button:SetSize(Metrics.BTN_W + 20, Metrics.BTN_H)
-	button:SetText(t("READER_DELETE_BUTTON"))
-	button:SetNormalFontObject("GameFontNormal")
+	local size = Metrics.BTN_H or 22
+	button:SetSize(size, size)
+	-- Enable mouse clicks
+	button:EnableMouse(true)
+	button:RegisterForClicks("LeftButtonUp")
 	button:Disable()
 	button:SetMotionScriptsWhileDisabled(true)
+	
+	-- Create icon texture for delete/trash
+	local icon = button:CreateTexture(nil, "ARTWORK")
+	icon:SetAllPoints()
+	if icon.SetAtlas then
+		-- Try red X icon first
+		local success = pcall(function() icon:SetAtlas("common-icon-redx", true) end)
+		if not success then
+			-- Fallback: close/X button
+			success = pcall(function() icon:SetAtlas("transmog-icon-remove", true) end)
+			if not success then
+				-- Final fallback: use X button texture
+				icon:SetTexture("Interface\\Buttons\\UI-StopButton")
+				-- Tint red for delete
+				icon:SetVertexColor(1, 0.2, 0.2)
+			end
+		end
+	end
+	button.icon = icon
+	
 	button:SetScript("OnEnter", function(self)
 		if not GameTooltip then
 			return
 		end
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 		if self:IsEnabled() then
-			GameTooltip:SetText(t("READER_DELETE_TOOLTIP_ENABLED_TITLE"), 1, 1, 1)
+			GameTooltip:SetText(t("READER_DELETE_BUTTON"), 1, 1, 1)
 			GameTooltip:AddLine(t("READER_DELETE_TOOLTIP_ENABLED_BODY"), 1, 0.82, 0, true)
 		else
-			GameTooltip:SetText(t("READER_DELETE_TOOLTIP_DISABLED_TITLE"), 1, 0.9, 0)
+			GameTooltip:SetText(t("READER_DELETE_BUTTON"), 1, 0.9, 0)
 			GameTooltip:AddLine(t("READER_DELETE_TOOLTIP_DISABLED_BODY"), 0.9, 0.9, 0.9, true)
 		end
 		GameTooltip:Show()
 	end)
-	button:SetScript("OnLeave", function()
+	button:SetScript("OnLeave", function(self)
 		if GameTooltip then
 			GameTooltip:Hide()
 		end
@@ -170,16 +192,16 @@ local function buildDeleteButton(parent)
 	local button
 	if safeCreateFrame then
 		deleteDebug("buildDeleteButton: attempting safeCreateFrame with named button")
-		button = safeCreateFrame("Button", "BookArchivistDeleteButton", parent, "UIPanelButtonTemplate")
+		button = safeCreateFrame("Button", "BookArchivistDeleteButton", parent)
 		if not button then
 			deleteDebug("buildDeleteButton: named creation failed, retrying anonymous")
-			button = safeCreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+			button = safeCreateFrame("Button", nil, parent)
 		end
 	end
 
 	if not button and CreateFrame then
 		deleteDebug("buildDeleteButton: fallback to CreateFrame")
-		local ok, created = pcall(CreateFrame, "Button", nil, parent, "UIPanelButtonTemplate")
+		local ok, created = pcall(CreateFrame, "Button", nil, parent)
 		if ok then
 			button = created
 		else
@@ -200,9 +222,9 @@ local function anchorDeleteButton(button, parent)
 	if not button or not parent then
 		return
 	end
-	button:SetHeight(Metrics.BTN_H)
+	local size = Metrics.BTN_H or 22
+	button:SetSize(size, size)
 	button:ClearAllPoints()
-	button:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 	button:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
 	local levelSource = (parent.GetFrameLevel and parent:GetFrameLevel()) or 0
 	button:SetFrameLevel(math.min(levelSource + 25, 128))

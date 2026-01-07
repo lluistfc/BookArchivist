@@ -300,10 +300,32 @@ end
     if plainTarget and plainTarget.SetText then
       plainTarget:SetText(displayText ~= "" and displayText or "|cFF888888No content available|r")
     end
-    local h = plainTarget.GetStringHeight and plainTarget:GetStringHeight() or 0
-    updateReaderHeight(h)
+    
+    -- Set large initial height for plain text too
+    updateReaderHeight(10000)
     if state.textScroll and state.textScroll.UpdateScrollChildRect then
       state.textScroll:UpdateScrollChildRect()
+    end
+    
+    -- Measure actual height and reset scroll on next frame
+    if C_Timer and C_Timer.After then
+      local initialScroll = state.textScroll or getWidget("textScroll")
+      local currentPlain = plainTarget
+      if initialScroll and currentPlain then
+        C_Timer.After(0, function()
+          if not state then return end
+          local scroll = state.textScroll or initialScroll
+          
+          local h = currentPlain.GetStringHeight and currentPlain:GetStringHeight() or 0
+          updateReaderHeight(h)
+          
+          if scroll and scroll.UpdateScrollChildRect then
+            scroll:UpdateScrollChildRect()
+          end
+          
+          resetScrollToTop(scroll)
+        end)
+      end
     end
   end
 
@@ -353,35 +375,41 @@ end
     return
   end
 
-  if state.textScroll and state.textScroll.UpdateScrollChildRect then
-    state.textScroll:UpdateScrollChildRect()
-  end
-  local htmlHeight = (html.GetContentHeight and html:GetContentHeight()) or (html.GetHeight and html:GetHeight()) or 0
-  if (not htmlHeight or htmlHeight < 4) and state.textChild and state.textChild.GetHeight then
-    htmlHeight = state.textChild:GetHeight()
-  end
-  local minVisible = 200
-  if not htmlHeight or htmlHeight < minVisible then
-    htmlHeight = minVisible
-  end
-
-  updateReaderHeight(htmlHeight)
+  -- Set a large initial height to ensure HTML has room to render fully
+  -- We'll adjust to actual size after it reflowsupdateReaderHeight(10000)
+  
+  -- Force immediate layout update
   if state.textScroll and state.textScroll.UpdateScrollChildRect then
     state.textScroll:UpdateScrollChildRect()
   end
 
-  -- SimpleHTML often finishes its final reflow on the next frame; run a
-  -- second rect update and ensure the scroll offset is reset once more
-  -- so returning to a page never starts mid-content.
+  -- SimpleHTML needs time to calculate its content; measure and adjust on next frame
   if C_Timer and C_Timer.After then
     local initialScroll = state.textScroll or getWidget("textScroll")
-    if initialScroll then
+    local currentHTML = html
+    if initialScroll and currentHTML then
       C_Timer.After(0, function()
         if not state then return end
         local scroll = state.textScroll or initialScroll
+        
+        -- Now get the actual content height after HTML has reflowed
+        local finalHeight = (currentHTML.GetContentHeight and currentHTML:GetContentHeight()) or (currentHTML.GetHeight and currentHTML:GetHeight()) or 0
+        if (not finalHeight or finalHeight < 4) and state.textChild and state.textChild.GetHeight then
+          finalHeight = state.textChild:GetHeight()
+        end
+        local minVisible = 200
+        if not finalHeight or finalHeight < minVisible then
+          finalHeight = minVisible
+        end
+        
+        -- Update to actual height
+        updateReaderHeight(finalHeight)
+        
         if scroll and scroll.UpdateScrollChildRect then
           scroll:UpdateScrollChildRect()
         end
+        
+        -- Reset scroll to top after proper height is set
         resetScrollToTop(scroll)
       end)
     end
@@ -478,18 +506,80 @@ function ReaderUI:RenderSelected()
   local entry = key and books and books[key] or nil
   if not entry then
     debugPrint("[BookArchivist] renderSelected: no entry for key", tostring(key))
-		bookTitle:SetText(t("READER_EMPTY_PROMPT"))
+    -- Show empty state
+    local emptyStateFrame = state.emptyStateFrame or getWidget("emptyStateFrame")
+    if emptyStateFrame then
+      -- Update stats footer
+      local statsFooter = state.emptyStatsFooter
+      if statsFooter and db then
+        local bookCount = 0
+        if db.order then
+          bookCount = #db.order
+        elseif db.booksById then
+          for _ in pairs(db.booksById) do
+            bookCount = bookCount + 1
+          end
+        end
+        
+        local locationCount = 0
+        if addon.GetLocationTree then
+          local tree = addon:GetLocationTree()
+          if tree and tree.childNames then
+            locationCount = #tree.childNames
+          end
+        end
+        
+        local lastCapture = ""
+        if db.order and #db.order > 0 and books then
+          local mostRecent = nil
+          for _, bKey in ipairs(db.order) do
+            local b = books[bKey]
+            if b and b.lastSeenAt then
+              if not mostRecent or b.lastSeenAt > mostRecent then
+                mostRecent = b.lastSeenAt
+              end
+            end
+          end
+          if mostRecent then
+            lastCapture = " • Last captured: " .. fmtTime(mostRecent)
+          end
+        end
+        
+        local statsText = string.format("%d books archived • %d locations%s", bookCount, locationCount, lastCapture)
+        statsFooter:SetText(statsText)
+      end
+      emptyStateFrame:Show()
+    end
+    
+    -- Hide reader content
+    local textScroll = state.textScroll or getWidget("textScroll")
+    if textScroll then textScroll:Hide() end
+    
+    -- Hide navigation row
+    local readerNavRow = state.readerNavRow or getWidget("readerNavRow")
+    if readerNavRow then readerNavRow:Hide() end
+    
+		bookTitle:SetText("")
     bookTitle:SetTextColor(0.5, 0.5, 0.5)
     metaDisplay:SetText("")
-    renderBookContent("")
+    
+    -- Hide action buttons when no book selected
     local deleteButton = getDeleteButton()
-    if deleteButton then deleteButton:Disable() end
+    if deleteButton then
+      deleteButton:Disable()
+      deleteButton:Hide()
+    end
     local shareButton = state.shareButton or getWidget("shareButton")
-    if shareButton and shareButton.Disable then
-      shareButton:Disable()
+    if shareButton then
+      if shareButton.Disable then shareButton:Disable() end
+      if shareButton.Hide then shareButton:Hide() end
+    end
+    local favoriteBtn = state.favoriteButton or getWidget("favoriteBtn")
+    if favoriteBtn and favoriteBtn.Hide then
+      favoriteBtn:Hide()
     end
     if state.countText then
-	      state.countText:SetText(t("READER_FOOTER_HINT"))
+	      state.countText:SetText("")
     end
     state.currentEntryKey = nil
     state.pageOrder = {}
@@ -497,6 +587,20 @@ function ReaderUI:RenderSelected()
     self:UpdatePageControlsDisplay(0)
     return
   end
+
+  -- Hide empty state when book is selected
+  local emptyStateFrame = state.emptyStateFrame or getWidget("emptyStateFrame")
+  if emptyStateFrame then
+    emptyStateFrame:Hide()
+  end
+  
+  -- Show reader content
+  local textScroll = state.textScroll or getWidget("textScroll")
+  if textScroll then textScroll:Show() end
+  
+  -- Show navigation row
+  local readerNavRow = state.readerNavRow or getWidget("readerNavRow")
+  if readerNavRow then readerNavRow:Show() end
 
   if addon.SetLastBookId and key then
     addon:SetLastBookId(key)
@@ -574,14 +678,19 @@ function ReaderUI:RenderSelected()
       end
     end
 
-	resetScrollToTop(state.textScroll)
+	-- Don't reset scroll here - let renderBookContent and its timer handle it
 	renderBookContent(pageText)
 
+  -- Show and enable action buttons when book is selected
   local deleteButton = getDeleteButton()
-  if deleteButton then deleteButton:Enable() end
+  if deleteButton then
+    deleteButton:Enable()
+    deleteButton:Show()
+  end
   local shareButton = state.shareButton or getWidget("shareButton")
-  if shareButton and shareButton.Enable then
-    shareButton:Enable()
+  if shareButton then
+    if shareButton.Enable then shareButton:Enable() end
+    if shareButton.Show then shareButton:Show() end
   end
 
   local pageCount = 0
@@ -603,6 +712,8 @@ function ReaderUI:RenderSelected()
 	-- Sync favorites toggle state for the newly selected entry.
 	local favoriteBtn = state.favoriteButton or getWidget("favoriteBtn")
   if favoriteBtn then
+    -- Show the favorite button
+    if favoriteBtn.Show then favoriteBtn:Show() end
     local addon = getAddon()
     local isFav = false
     if addon and addon.Favorites and addon.Favorites.IsFavorite and key then

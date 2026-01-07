@@ -373,6 +373,114 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 
 	-- Width is governed by anchors to contentHost; no explicit SetWidth needed.
 
+	-- Create empty state frame
+	local emptyStateFrame = safeCreateFrame and safeCreateFrame("Frame", nil, readerScrollRow or readerBlock)
+	if emptyStateFrame then
+		emptyStateFrame:SetAllPoints(readerScrollRow or readerBlock)
+		emptyStateFrame:Hide() -- Hidden by default, shown when no book selected
+		state.emptyStateFrame = emptyStateFrame
+		if rememberWidget then
+			rememberWidget("emptyStateFrame", emptyStateFrame)
+		end
+
+		-- Center container
+		local centerContainer = CreateFrame("Frame", nil, emptyStateFrame)
+		centerContainer:SetSize(400, 300)
+		centerContainer:SetPoint("CENTER", emptyStateFrame, "CENTER", 0, 20)
+
+		-- Title: "Book Archivist"
+		local emptyTitle = centerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+		emptyTitle:SetPoint("TOP", centerContainer, "TOP", 0, 0)
+		emptyTitle:SetText("Book Archivist")
+		emptyTitle:SetTextColor(0.7, 0.7, 0.7)
+		state.emptyTitle = emptyTitle
+
+		-- Subtitle: "Select a book from the list"
+		local emptySubtitle = centerContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		emptySubtitle:SetPoint("TOP", emptyTitle, "BOTTOM", 0, -8)
+		emptySubtitle:SetText(t("READER_EMPTY_PROMPT"))
+		emptySubtitle:SetTextColor(0.6, 0.6, 0.6)
+		state.emptySubtitle = emptySubtitle
+
+		-- Buttons container
+		local buttonsRow = CreateFrame("Frame", nil, centerContainer)
+		buttonsRow:SetSize(280, 24)
+		buttonsRow:SetPoint("TOP", emptySubtitle, "BOTTOM", 0, -20)
+
+		-- Resume last book button
+		local resumeBtn = safeCreateFrame("Button", nil, buttonsRow, "UIPanelButtonTemplate")
+		if resumeBtn then
+			resumeBtn:SetSize(135, 24)
+			resumeBtn:SetPoint("LEFT", buttonsRow, "LEFT", 0, 0)
+			resumeBtn:SetText(t("RESUME_LAST_BOOK"))
+			resumeBtn:SetScript("OnClick", function()
+				local addon = BookArchivist
+				if not addon or not addon.GetLastBookId then
+					return
+				end
+				local lastId = addon:GetLastBookId()
+				if not lastId then
+					return
+				end
+				local listUI = addon.UI and addon.UI.List
+				if listUI then
+					if listUI.SetSelectedKey then
+						listUI:SetSelectedKey(lastId)
+					end
+					if listUI.NotifySelectionChanged then
+						listUI:NotifySelectionChanged()
+					end
+				end
+			end)
+			state.emptyResumeBtn = resumeBtn
+		end
+
+		-- Options button
+		local optionsBtn = safeCreateFrame("Button", nil, buttonsRow, "UIPanelButtonTemplate")
+		if optionsBtn then
+			optionsBtn:SetSize(135, 24)
+			optionsBtn:SetPoint("RIGHT", buttonsRow, "RIGHT", 0, 0)
+			optionsBtn:SetText(t("HEADER_BUTTON_OPTIONS"))
+			optionsBtn:SetScript("OnClick", function()
+				local optionsUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.Options
+				if optionsUI and optionsUI.Open then
+					optionsUI:Open()
+				end
+			end)
+			state.emptyOptionsBtn = optionsBtn
+		end
+
+		-- Tips container
+		local tipsContainer = CreateFrame("Frame", nil, centerContainer)
+		tipsContainer:SetPoint("TOP", buttonsRow, "BOTTOM", 0, -24)
+		tipsContainer:SetSize(380, 60)
+
+		local tip1 = tipsContainer:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+		tip1:SetPoint("TOP", tipsContainer, "TOP", 0, 0)
+		tip1:SetWidth(380)
+		tip1:SetJustifyH("CENTER")
+		tip1:SetText("Tip: Use the search box to find books by title or text.")
+		tip1:SetTextColor(0.5, 0.5, 0.5)
+		state.emptyTip1 = tip1
+
+		local tip2 = tipsContainer:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+		tip2:SetPoint("TOP", tip1, "BOTTOM", 0, -6)
+		tip2:SetWidth(380)
+		tip2:SetJustifyH("CENTER")
+		tip2:SetText("Tip: Switch to Locations to browse by where you found them.")
+		tip2:SetTextColor(0.5, 0.5, 0.5)
+		state.emptyTip2 = tip2
+
+		-- Stats footer
+		local statsFooter = emptyStateFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+		statsFooter:SetPoint("BOTTOM", emptyStateFrame, "BOTTOM", 0, 20)
+		statsFooter:SetWidth(450)
+		statsFooter:SetJustifyH("CENTER")
+		statsFooter:SetTextColor(0.4, 0.4, 0.4)
+		statsFooter:SetText("") -- Will be populated dynamically
+		state.emptyStatsFooter = statsFooter
+	end
+
 	local deleteParent = actionsRail or readerHeaderRow
 	local deleteButton
 	if ReaderUI.__ensureDeleteButton then
@@ -388,30 +496,48 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	-- Favorites toggle lives in the reader header actions rail, to the
 	-- left of the delete button when available.
 	if actionsRail and safeCreateFrame then
-		-- Share button (export single book)
+		-- Share button (export single book) - icon only
 		local shareButton = state.shareButton
 		if not shareButton or not (shareButton.IsObjectType and shareButton:IsObjectType("Button")) then
-			shareButton = safeCreateFrame("Button", "BookArchivistShareButton", actionsRail, "UIPanelButtonTemplate")
+			shareButton = safeCreateFrame("Button", "BookArchivistShareButton", actionsRail)
 			state.shareButton = shareButton
 			if rememberWidget then
 				rememberWidget("shareButton", shareButton)
 			end
+			local size = Metrics.BTN_H or 22
 			if shareButton.SetSize then
-				shareButton:SetSize(Metrics.BTN_W or 90, Metrics.BTN_H or 22)
+				shareButton:SetSize(size, size)
 			end
-			if shareButton.SetText then
-				shareButton:SetText(t("READER_SHARE_BUTTON"))
+			-- Enable mouse clicks
+			shareButton:EnableMouse(true)
+			shareButton:RegisterForClicks("LeftButtonUp")
+			-- Create icon texture for share/export
+			local icon = shareButton:CreateTexture(nil, "ARTWORK")
+			icon:SetAllPoints()
+			if icon.SetAtlas then
+				-- Try mail icon first
+				local success = pcall(function() icon:SetAtlas("mailbox", true) end)
+				if not success then
+					-- Fallback: community invite icon
+					success = pcall(function() icon:SetAtlas("communities-icon-invitemail", true) end)
+					if not success then
+						-- Final fallback: scroll/document icon
+						icon:SetTexture("Interface\\Icons\\INV_Misc_Note_06")
+					end
+				end
 			end
+			shareButton.icon = icon
+			-- Tooltip
 			shareButton:SetScript("OnEnter", function(self)
 				if not GameTooltip then return end
 				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-				GameTooltip:SetText(t("READER_SHARE_TOOLTIP_TITLE"), 1, 1, 1)
+				GameTooltip:SetText(t("READER_SHARE_BUTTON"), 1, 1, 1)
 				if GameTooltip.AddLine then
 					GameTooltip:AddLine(t("READER_SHARE_TOOLTIP_BODY"), nil, nil, nil, true)
 				end
 				GameTooltip:Show()
 			end)
-			shareButton:SetScript("OnLeave", function()
+			shareButton:SetScript("OnLeave", function(self)
 				if GameTooltip then GameTooltip:Hide() end
 			end)
 			shareButton:SetScript("OnClick", function()
