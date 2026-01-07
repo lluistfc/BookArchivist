@@ -618,3 +618,20 @@ function ReaderUI:RenderSelected()
 end
 
 -- Share functionality delegated to BookArchivist_UI_Reader_Share module
+
+-- Show export/share dialog for a specific book (callable from context menus)
+function ReaderUI:ShowExportForBook(bookKey)
+  if not bookKey then
+    return
+  end
+  
+  local addon = getAddon()
+  if not addon then
+    return
+  end
+  
+  local Share = BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
+  if Share and Share.ShareCurrentBook then
+    Share:ShareCurrentBook(addon, bookKey)
+  end
+end
