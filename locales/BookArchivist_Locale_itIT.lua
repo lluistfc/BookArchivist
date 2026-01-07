@@ -58,7 +58,11 @@ Locales.itIT = {
   ["READER_DELETE_TOOLTIP_DISABLED_BODY"] = "Scegli un libro dall'elenco per poterlo eliminare.",
   ["READER_DELETE_CONFIRM"] = "Eliminare '%s'? Questa azione non può essere annullata.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Libro eliminato dall'archivio.|r",
-
+  ["READER_SHARE_BUTTON"] = "Condividi",
+  ["READER_SHARE_TOOLTIP_TITLE"] = "Esporta questo libro",
+  ["READER_SHARE_TOOLTIP_BODY"] = "Genera una stringa di esportazione per questo singolo libro. Copiala con Ctrl+C e condividila con altri, oppure incollala nel pannello di Importazione (Opzioni → Esporta / Importa) su un altro personaggio o client.",
+  ["READER_SHARE_POPUP_TITLE"] = "Stringa di esportazione del libro",
+  ["READER_SHARE_POPUP_LABEL"] = "Usa Ctrl+C per copiare questa stringa, quindi condividila con altri giocatori o incollala in un altro client di Book Archivist.",  ["READER_SHARE_SELECT_ALL"] = "Seleziona tutto",
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Aggiungi ai preferiti",
   ["READER_FAVORITE_REMOVE"] = "Rimuovi dai preferiti",
@@ -86,11 +90,9 @@ Locales.itIT = {
   ["OPTIONS_EXPORT_STATUS_NOTHING_TO_COPY"] = "Niente da copiare per ora. Fai prima clic su Esporta.",
   ["OPTIONS_EXPORT_STATUS_DEFAULT"] = "Non è ancora stata generata alcuna esportazione.",
   ["OPTIONS_EXPORT_STATUS_COPY_HINT"] = "Premi Ctrl+C per copiare e poi Ctrl+V per incollare.",
-  ["OPTIONS_IMPORT_LABEL"] = "Stringa da importare",
-  ["OPTIONS_IMPORT_BUTTON"] = "Importa",
-  ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Cattura incolla",
-  ["OPTIONS_IMPORT_HELP"] = "Su questo client: dopo l'Esporta puoi fare clic su Importa qui per testare o ripristinare i tuoi dati senza incollare.\n\nPer spostare i dati su un altro client/account:\n1) Sul client di origine fai clic su Esporta e poi su Copia.\n2) Condividi il testo di esportazione copiato come preferisci (Discord, siti di paste, file condivisi, ecc.).\n3) Sul client di destinazione copia quel testo, apri questo pannello, fai clic su Cattura incolla e poi premi una volta Ctrl+V.\n4) Quando lo stato mostra 'Dati ricevuti', fai clic su Importa.\n\nNota: un semplice Ctrl+V nel gioco non avvia da solo l'importazione; l'addon ascolta l'incolla solo mentre Cattura incolla è attivo oppure riutilizza la tua ultima Esportazione quando fai semplicemente clic su Importa qui.",
-  ["OPTIONS_IMPORT_PERF_TIP"] = "Suggerimento: puoi incollare l'esportazione completa direttamente nel riquadro di importazione con Ctrl+V, ma stringhe molto grandi possono bloccare il client di gioco per alcuni secondi mentre l'incolla termina. Usa invece Cattura incolla per inserire il testo gradualmente ed evitare questo picco di carico.",
+  ["OPTIONS_IMPORT_LABEL"] = "Importa",
+  ["OPTIONS_IMPORT_HELP"] = "Incolla una stringa di esportazione nel riquadro sottostante. L'importazione inizia automaticamente quando vengono rilevati dati validi.",
+  ["OPTIONS_IMPORT_PERF_TIP"] = "Come importare su questo client:\n\n- Da un altro client/account: Sulla sorgente, fai clic su Esporta poi su Copia. Su questo client, apri questo pannello, fai clic su Cattura incolla, poi premi una volta Ctrl+V. L'importazione partirà automaticamente quando i dati vengono rilevati.\n\n- Stesso client dopo Copia: Fai clic su Esporta, poi su Copia, poi (facoltativo) su Cattura incolla e premi una volta Ctrl+V. Questo ti permette di testare esattamente ciò che è stato copiato.\n\nImportante: Cattura incolla non può leggere gli appunti da solo. Dice solo all'addon di ascoltare il *prossimo* Ctrl+V che esegui nel gioco; senza quell'incolla manuale, non viene importato nulla.\n\nAvviso prestazioni: L'importazione di una grande stringa di esportazione può bloccare temporaneamente il client di gioco mentre WoW elabora l'incolla e i libri vengono decodificati. Ad esempio, l'importazione di circa 10-15 libri può mettere in pausa il gioco per 10-15 secondi; l'importazione di 50 o più libri può richiedere quasi un minuto, e carichi molto grandi possono causare il fallimento dell'incolla o addirittura il crash del client a causa delle limitazioni del motore. Quando possibile, preferisci esportazioni più piccole o importazioni per personaggio invece di importazioni estremamente grandi tutto-in-uno.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Incolla il testo di esportazione e attendi 'Dati ricevuti' prima di importare.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Premi ora Ctrl+V per incollare e poi attendi 'Dati ricevuti'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Preparazione dell'importazione…",
@@ -101,9 +103,10 @@ Locales.itIT = {
   ["OPTIONS_IMPORT_STATUS_PHASE_TITLES"] = "Aggiornamento dei titoli",
   ["OPTIONS_IMPORT_STATUS_COMPLETE"] = "Importazione completata.",
   ["OPTIONS_IMPORT_STATUS_FAILED"] = "Importazione non riuscita: %s",
+  ["OPTIONS_IMPORT_STATUS_ERROR"] = "Errore di importazione (%s): %s",
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Dati troppo grandi. Interruzione.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "Nessun testo di esportazione rilevato negli appunti. Assicurati di aver fatto clic su Copia sul client di origine.",
-  ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dati ricevuti (%d caratteri). Fai clic su Importa.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dati ricevuti (%d caratteri). Importazione in corso…",
   ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importazione non disponibile.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Nessun dato di importazione da elaborare.",
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Importazione già in corso.",
@@ -156,6 +159,8 @@ Locales.itIT = {
   ["BOOK_MISSING_DATA"] = "Dati mancanti",
 	["MATCH_TITLE"] = "TITOLO",
 	["MATCH_TEXT"] = "TESTO",
+
+  ["LIST_SHARE_BOOK_MENU"] = "Condividi / Esporta questo libro",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Lingua",

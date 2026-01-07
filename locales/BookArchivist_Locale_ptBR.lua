@@ -58,7 +58,11 @@ Locales.ptBR = {
   ["READER_DELETE_TOOLTIP_DISABLED_BODY"] = "Escolha um livro na lista para poder excluí-lo.",
   ["READER_DELETE_CONFIRM"] = "Excluir '%s'? Esta ação não pode ser desfeita.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Livro removido do arquivo.|r",
-
+  ["READER_SHARE_BUTTON"] = "Compartilhar",
+  ["READER_SHARE_TOOLTIP_TITLE"] = "Exportar este livro",
+  ["READER_SHARE_TOOLTIP_BODY"] = "Gera uma string de exportação para este único livro. Copie-a com Ctrl+C e compartilhe com outras pessoas, ou cole-a no painel de Importação (Opções → Exportar / Importar) em outro personagem ou cliente.",
+  ["READER_SHARE_POPUP_TITLE"] = "String de exportação do livro",
+  ["READER_SHARE_POPUP_LABEL"] = "Use Ctrl+C para copiar esta string e depois compartilhe-a com outros jogadores ou cole-a em outro cliente do Book Archivist.",  ["READER_SHARE_SELECT_ALL"] = "Selecionar tudo",
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Adicionar aos Favoritos",
   ["READER_FAVORITE_REMOVE"] = "Remover dos Favoritos",
@@ -86,11 +90,10 @@ Locales.ptBR = {
   ["OPTIONS_EXPORT_STATUS_NOTHING_TO_COPY"] = "Nada para copiar ainda. Clique primeiro em Exportar.",
   ["OPTIONS_EXPORT_STATUS_DEFAULT"] = "Nenhuma exportação foi gerada ainda.",
   ["OPTIONS_EXPORT_STATUS_COPY_HINT"] = "Pressione Ctrl+C para copiar e depois Ctrl+V para colar.",
-  ["OPTIONS_IMPORT_LABEL"] = "String para importar",
-  ["OPTIONS_IMPORT_BUTTON"] = "Importar",
-  ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Capturar colagem",
-  ["OPTIONS_IMPORT_HELP"] = "Neste cliente: após Exportar, você pode clicar em Importar aqui para testar ou restaurar seus próprios dados sem colar.\n\nPara mover dados para outro cliente/conta:\n1) No cliente de origem, clique em Exportar e depois em Copiar.\n2) Compartilhe o texto de exportação copiado como quiser (Discord, sites de paste, arquivos compartilhados, etc.).\n3) No cliente de destino, copie esse texto, abra este painel, clique em Capturar colagem e depois pressione Ctrl+V uma vez.\n4) Quando o status mostrar 'Dados recebidos', clique em Importar.\n\nObservação: um simples Ctrl+V no jogo não inicia a importação por si só; o addon só escuta a colagem enquanto Capturar colagem está ativo, ou reutiliza sua última Exportação quando você apenas clica em Importar aqui.",
-    ["OPTIONS_IMPORT_PERF_TIP"] = "Dica: você pode colar a exportação completa diretamente na caixa de importação com Ctrl+V, mas strings muito grandes podem travar o cliente do jogo por alguns segundos enquanto a colagem termina. Use Capturar colagem para inserir o texto aos poucos e evitar esse pico de desempenho.",
+  ["OPTIONS_IMPORT_LABEL"] = "Importar um único livro",
+
+  ["OPTIONS_IMPORT_HELP"] = "Cole uma string de exportação na caixa abaixo. A importação acontece automaticamente quando dados válidos são detectados.",
+  ["OPTIONS_IMPORT_PERF_TIP"] = "Como importar neste cliente:\n\n- De outro cliente/conta: Na origem, clique em Exportar e depois em Copiar. Neste cliente, abra este painel, clique em Capturar colagem e depois pressione Ctrl+V uma vez. A importação começará automaticamente quando os dados forem detectados.\n\n- Mesmo cliente após Copiar: Clique em Exportar, depois em Copiar, depois (opcionalmente) em Capturar colagem e pressione Ctrl+V uma vez. Isso permite testar exatamente o que foi copiado.\n\nImportante: Capturar colagem não pode ler sua área de transferência sozinho. Apenas diz ao addon para escutar o *próximo* Ctrl+V que você realizar no jogo; sem essa colagem manual, nada é importado.\n\nAviso de desempenho: Importar uma string de exportação grande pode travar temporariamente o cliente do jogo enquanto o WoW processa a colagem e os livros são decodificados. Por exemplo, importar cerca de 10-15 livros pode pausar o jogo por 10-15 segundos; importar 50 ou mais livros pode levar perto de um minuto, e cargas muito grandes podem causar falha na colagem ou até travar o cliente devido a limitações do motor. Sempre que possível, prefira exportações menores ou importações por personagem em vez de importações extremamente grandes tudo-em-um.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Cole o texto de exportação e aguarde 'Dados recebidos' antes de importar.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Pressione agora Ctrl+V para colar e depois aguarde 'Dados recebidos'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Preparando importação…",
@@ -100,10 +103,9 @@ Locales.ptBR = {
   ["OPTIONS_IMPORT_STATUS_PHASE_SEARCH"] = "Atualizando índice de busca",
   ["OPTIONS_IMPORT_STATUS_PHASE_TITLES"] = "Atualizando títulos",
   ["OPTIONS_IMPORT_STATUS_COMPLETE"] = "Importação concluída.",
-  ["OPTIONS_IMPORT_STATUS_FAILED"] = "Falha na importação: %s",
-  ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Carga muito grande. Cancelando.",
+  ["OPTIONS_IMPORT_STATUS_FAILED"] = "Falha na importação: %s",  ["OPTIONS_IMPORT_STATUS_ERROR"] = "Erro na importação (%s): %s",  ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Carga muito grande. Cancelando.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "Nenhum texto de exportação detectado na área de transferência. Certifique-se de ter clicado em Copiar no cliente de origem.",
-  ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dados recebidos (%d caracteres). Clique em Importar.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dados recebidos (%d caracteres). Importando…",
   ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importação indisponível.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Nenhum dado de importação para processar.",
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Uma importação já está em andamento.",
@@ -156,6 +158,8 @@ Locales.ptBR = {
   ["BOOK_MISSING_DATA"] = "Dados ausentes",
 	["MATCH_TITLE"] = "TÍTULO",
 	["MATCH_TEXT"] = "TEXTO",
+
+  ["LIST_SHARE_BOOK_MENU"] = "Compartilhar / Exportar este livro",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Idioma",

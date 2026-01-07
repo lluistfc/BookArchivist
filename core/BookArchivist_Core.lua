@@ -390,6 +390,40 @@ function Core:BuildExportPayload()
   }
 end
 
+function Core:BuildExportPayloadForBook(bookId)
+  if not bookId or bookId == "" then
+    return nil, "invalid book ID"
+  end
+  
+  local db = ensureDB()
+  if not (db.booksById and db.booksById[bookId]) then
+    return nil, "book not found"
+  end
+  
+  local name, realm
+  if type(UnitName) == "function" then
+    name = UnitName("player")
+  end
+  if type(GetRealmName) == "function" then
+    realm = GetRealmName()
+  end
+  
+  -- Export only the selected book
+  local singleBookTable = {}
+  singleBookTable[bookId] = db.booksById[bookId]
+  
+  return {
+    schemaVersion = 1,
+    exportedAt = now(),
+    character = {
+      name = name or "?",
+      realm = realm or "?",
+    },
+    booksById = singleBookTable,
+    order = { bookId },
+  }
+end
+
 function Core:GetLastBookId()
   local db = ensureDB()
   db.uiState = db.uiState or {}

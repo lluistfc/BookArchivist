@@ -113,6 +113,11 @@ function Core:IsVirtualCategoriesEnabled()
   return uiOpts.virtualCategoriesEnabled and true or false
 end
 
+function Core:SetVirtualCategoriesEnabled(state)
+  local uiOpts = ensureUIOptions()
+  uiOpts.virtualCategoriesEnabled = state and true or false
+end
+
 function Core:IsResumeLastPageEnabled()
   local uiOpts = ensureUIOptions()
   if uiOpts.resumeLastPage == nil then

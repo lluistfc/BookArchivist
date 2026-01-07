@@ -80,6 +80,7 @@ local function handleAddonLoaded(name)
   if Core and Core.EnsureDB then
     Core:EnsureDB()
   end
+  
   local optionsUI = getOptionsUI()
   if optionsUI and optionsUI.OnAddonLoaded then
     optionsUI:OnAddonLoaded(name)
@@ -88,8 +89,8 @@ local function handleAddonLoaded(name)
     MinimapModule:Initialize()
   end
   if TooltipModule and TooltipModule.Initialize then
-		TooltipModule:Initialize()
-	end
+    TooltipModule:Initialize()
+  end
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -118,6 +119,13 @@ function BookArchivist:GetDB()
     return Core:GetDB()
   end
   return {}
+end
+
+function BookArchivist:ExportBook(bookId)
+	if Core and Core.ExportBookToString then
+		return Core:ExportBookToString(bookId)
+	end
+	return nil, "export unavailable"
 end
 
 function BookArchivist:Delete(key)

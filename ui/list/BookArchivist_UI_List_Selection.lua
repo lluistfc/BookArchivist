@@ -64,6 +64,17 @@ function ListUI:ShowBookContextMenu(anchorButton, bookKey)
       end
     end },
   }
+
+	local Reader = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader or nil
+	if Reader and Reader.ShowExportForBook then
+		menu[#menu + 1] = {
+			text = t("LIST_SHARE_BOOK_MENU"),
+			notCheckable = true,
+			func = function()
+				Reader:ShowExportForBook(bookKey)
+			end,
+		}
+	end
   if type(EasyMenu) == "function" then
     EasyMenu(menu, menuFrame, anchorButton, 0, 0, "MENU")
     return

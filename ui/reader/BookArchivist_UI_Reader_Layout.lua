@@ -388,6 +388,69 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	-- Favorites toggle lives in the reader header actions rail, to the
 	-- left of the delete button when available.
 	if actionsRail and safeCreateFrame then
+		-- Share button (export single book)
+		local shareButton = state.shareButton
+		if not shareButton or not (shareButton.IsObjectType and shareButton:IsObjectType("Button")) then
+			shareButton = safeCreateFrame("Button", "BookArchivistShareButton", actionsRail, "UIPanelButtonTemplate")
+			state.shareButton = shareButton
+			if rememberWidget then
+				rememberWidget("shareButton", shareButton)
+			end
+			if shareButton.SetSize then
+				shareButton:SetSize(Metrics.BTN_W or 90, Metrics.BTN_H or 22)
+			end
+			if shareButton.SetText then
+				shareButton:SetText(t("READER_SHARE_BUTTON"))
+			end
+			shareButton:SetScript("OnEnter", function(self)
+				if not GameTooltip then return end
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+				GameTooltip:SetText(t("READER_SHARE_TOOLTIP_TITLE"), 1, 1, 1)
+				if GameTooltip.AddLine then
+					GameTooltip:AddLine(t("READER_SHARE_TOOLTIP_BODY"), nil, nil, nil, true)
+				end
+				GameTooltip:Show()
+			end)
+			shareButton:SetScript("OnLeave", function()
+				if GameTooltip then GameTooltip:Hide() end
+			end)
+			shareButton:SetScript("OnClick", function()
+				local addon = getAddon and getAddon()
+				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
+				if not (addon and key) then 
+					print("|cFFFF0000[BookArchivist]|r No book selected.")
+					return
+				end
+				
+				-- Generate export for single book
+				local exportStr, err
+				if addon.ExportBook and type(addon.ExportBook) == "function" then
+					exportStr, err = addon:ExportBook(key)
+				elseif addon.Export and type(addon.Export) == "function" then
+					-- Fallback to full export if ExportBook doesn't exist
+					exportStr, err = addon:Export()
+				end
+				
+				if exportStr and exportStr ~= "" then
+					-- Store for quick access
+					if addon then
+						addon.__lastExportPayload = exportStr
+					end
+					
+					-- Show copy frame
+					if ReaderUI.ShowSharePopup then
+						ReaderUI:ShowSharePopup(exportStr)
+					else
+						-- Fallback: print to chat
+						print("|cFFFFD700[BookArchivist]|r Export string ready (" .. #exportStr .. " chars). Use Ctrl+C to copy.")
+					end
+				else
+					local errMsg = err or "unknown error"
+					print("|cFFFF0000[BookArchivist]|r Failed to generate export string: " .. tostring(errMsg))
+				end
+			end)
+		end
+		
 		local favoriteBtn = state.favoriteButton
 		if not favoriteBtn or not (favoriteBtn.IsObjectType and favoriteBtn:IsObjectType("Button")) then
 			favoriteBtn = safeCreateFrame("Button", "BookArchivistFavoriteButton", actionsRail)
@@ -461,6 +524,18 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				favoriteBtn:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
 			else
 				favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
+		end
+		
+		-- Position share button to the left of favorite button
+		if shareButton then
+			shareButton:ClearAllPoints()
+			if favoriteBtn then
+				shareButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif deleteButton then
+				shareButton:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			else
+				shareButton:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
 			end
 		end
 	end

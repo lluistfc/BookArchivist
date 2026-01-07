@@ -58,7 +58,11 @@ Locales.caES = {
   ["READER_DELETE_TOOLTIP_DISABLED_BODY"] = "Tria un llibre de la llista per poder eliminar-lo.",
   ["READER_DELETE_CONFIRM"] = "Vols eliminar '%s'? Aquesta acció no es pot desfer.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Llibre eliminat de l'arxiu.|r",
-
+  ["READER_SHARE_BUTTON"] = "Comparteix",
+  ["READER_SHARE_TOOLTIP_TITLE"] = "Exporta aquest llibre",
+  ["READER_SHARE_TOOLTIP_BODY"] = "Genera una cadena d'exportació per a aquest únic llibre. Copia-la amb Ctrl+C i comparteix-la amb altres, o enganxa-la al panell d'Importació (Opcions → Exporta / Importa) en un altre personatge o client.",
+  ["READER_SHARE_POPUP_TITLE"] = "Cadena d'exportació del llibre",
+  ["READER_SHARE_POPUP_LABEL"] = "Fes servir Ctrl+C per copiar aquesta cadena i després comparteix-la amb altres jugadors o enganxa-la en un altre client de Book Archivist.",  ["READER_SHARE_SELECT_ALL"] = "Selecciona-ho tot",
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Afegeix als preferits",
   ["READER_FAVORITE_REMOVE"] = "Treu dels preferits",
@@ -86,11 +90,10 @@ Locales.caES = {
   ["OPTIONS_EXPORT_STATUS_NOTHING_TO_COPY"] = "Encara no hi ha res per copiar. Fes primer clic a Exporta.",
   ["OPTIONS_EXPORT_STATUS_DEFAULT"] = "Encara no s'ha generat cap exportació.",
   ["OPTIONS_EXPORT_STATUS_COPY_HINT"] = "Prem Ctrl+C per copiar i després Ctrl+V per enganxar.",
-  ["OPTIONS_IMPORT_LABEL"] = "Cadena per importar",
-  ["OPTIONS_IMPORT_BUTTON"] = "Importa",
-  ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Captura enganxat",
-  ["OPTIONS_IMPORT_HELP"] = "En aquest client: després d'Exporta pots fer clic a Importa aquí per provar o restaurar les teves pròpies dades sense enganxar res.\n\nPer moure dades a un altre client/compte:\n1) Al client d'origen, fes clic a Exporta i després a Copia.\n2) Comparteix el text d'exportació copiat com vulguis (Discord, llocs de pega, fitxers compartits, etc.).\n3) Al client de destinació, copia aquest text, obre aquest panell, fes clic a Captura enganxat i després prem una vegada Ctrl+V.\n4) Quan l'estat mostri 'Dades rebudes', fes clic a Importa.\n\nNota: un simple Ctrl+V dins del joc no inicia la importació per si sol; l'addon només escolta l'enganxat mentre Captura enganxat està actiu, o reutilitza la teva última Exportació quan simplement fas clic a Importa aquí.",
-    ["OPTIONS_IMPORT_PERF_TIP"] = "Consell: Pots enganxar l'exportació completa directament al quadre d'importació amb Ctrl+V, però les cadenes molt grans poden congelar el client del joc durant uns segons mentre acaba l'enganxat. Fes servir Captura enganxat per introduir el text gradualment i evitar aquest pic de rendiment.",
+  ["OPTIONS_IMPORT_LABEL"] = "Importa un sol llibre",
+
+  ["OPTIONS_IMPORT_HELP"] = "Enganxa una cadena d'exportació al quadre inferior. La importació es fa automàticament quan es detecten dades vàlides.",
+  ["OPTIONS_IMPORT_PERF_TIP"] = "Com importar en aquest client:\n\n- Des d'un altre client/compte: A l'origen, fes clic a Exporta i després a Copia. En aquest client, obre aquest panell, fes clic a Captura enganxat i després prem Ctrl+V una vegada. La importació començarà automàticament quan es detectin les dades.\n\n- Mateix client després de Copia: Fes clic a Exporta, després a Copia, després (opcionalment) a Captura enganxat i prem Ctrl+V una vegada. Això et permet provar exactament el que s'ha copiat.\n\nImportant: Captura enganxat no pot llegir el porta-retalls per si sol. Només li diu a l'addon que escolti el *proper* Ctrl+V que facis al joc; sense aquest enganxat manual, no s'importa res.\n\nAdvertiment de rendiment: Importar una cadena d'exportació gran pot congelar temporalment el client del joc mentre WoW processa l'enganxat i es descodifiquen els llibres. Per exemple, importar al voltant de 10-15 llibres pot pausar el joc durant 10-15 segons; importar 50 o més llibres pot trigar prop d'un minut, i càrregues molt grans poden fer que l'enganxat falli o fins i tot bloquegi el client degut a limitacions del motor. Sempre que sigui possible, prefereix exportacions més petites o importacions per personatge en lloc d'importacions extremadament grans tot en un.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Enganxa el text d'exportació i espera 'Dades rebudes' abans d'importar.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Prem ara Ctrl+V per enganxar i després espera 'Dades rebudes'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Preparant la importació…",
@@ -100,10 +103,9 @@ Locales.caES = {
   ["OPTIONS_IMPORT_STATUS_PHASE_SEARCH"] = "Actualitzant l'índex de cerca",
   ["OPTIONS_IMPORT_STATUS_PHASE_TITLES"] = "Actualitzant títols",
   ["OPTIONS_IMPORT_STATUS_COMPLETE"] = "Importació completada.",
-  ["OPTIONS_IMPORT_STATUS_FAILED"] = "Error en la importació: %s",
-  ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Càrrega massa gran. S'està cancel·lant.",
+  ["OPTIONS_IMPORT_STATUS_FAILED"] = "Error en la importació: %s",  ["OPTIONS_IMPORT_STATUS_ERROR"] = "Error d'importació (%s): %s",  ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Càrrega massa gran. S'està cancel·lant.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "No s'ha detectat cap text d'exportació al porta-retalls. Assegura't d'haver fet clic a Copia al client d'origen.",
-  ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dades rebudes (%d caràcters). Fes clic a Importa.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dades rebudes (%d caràcters). Important…",
   ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importació no disponible.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "No hi ha dades d'importació per processar.",
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Ja hi ha una importació en curs.",
@@ -156,6 +158,8 @@ Locales.caES = {
   ["BOOK_MISSING_DATA"] = "Falten dades",
 	["MATCH_TITLE"] = "TÍTOL",
 	["MATCH_TEXT"] = "TEXT",
+
+  ["LIST_SHARE_BOOK_MENU"] = "Comparteix / Exporta aquest llibre",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Idioma",

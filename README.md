@@ -26,9 +26,16 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
   - Search across titles and text from the main header search box.
   - Filter and sort modes exposed via the list header and dropdowns.
 
+- **Export and Import**
+  - Export single books or entire collections to share with other characters or players.
+  - Import works automatically: paste an export string and the import starts when valid data is detected.
+  - Supports cross-character and cross-client transfers.
+
 - **Quality-of-life**
   - Minimap button and slash command entry points for opening the library.
   - Optional delete button in the reader with confirmation dialog.
+  - Favorites system to bookmark important books.
+  - "Resume last book" feature to return to your most recent read.
 
 ## Installation
 
@@ -50,7 +57,12 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
   - Use the tabs to switch between **Books** and **Locations** views.
 - Selecting a row updates the reader on the right.
   - Use the Prev/Next buttons or page selector to navigate pages.
+  - Use the Share button to export a book for sharing with others.
   - If enabled, use the Delete button to remove an entry (with confirmation).
+- Export and import books:
+  - Click Share in the reader or Export in Options to generate an export string.
+  - Copy it with Ctrl+C and share it, or paste it into another character's Import panel (Options → Import).
+  - Import happens automatically when you paste valid data.
 
 ## Architecture overview
 
@@ -61,6 +73,10 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
 - `core/BookArchivist_Capture.lua` — ItemText capture sessions and incremental persistence.
 - `core/BookArchivist_Location.lua` — provenance (zone chain, NPC names) for location breadcrumbs.
 - `core/BookArchivist_Minimap.lua` — minimap button state; persistence of angle/visibility.
+- `core/BookArchivist_ImportWorker.lua` — staged import pipeline (decode/parse/merge/search/titles).
+- `core/BookArchivist_Favorites.lua` — favorites system for bookmarking books.
+- `core/BookArchivist_Recent.lua` — recent reads tracking.
+- `core/BookArchivist_Locale.lua` — localization loader and helpers.
 
 ### UI framework
 
@@ -94,7 +110,8 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
 ### Other UI
 
 - `ui/minimap/BookArchivist_UI_Minimap.lua` — minimap button UI (click handling, toggling the main frame).
-- `ui/options/BookArchivist_UI_Options.lua` — options panel and integration with Blizzard's Settings.
+- `ui/options/BookArchivist_UI_Options.lua` — options panel, export/import UI, and integration with Blizzard's Settings.
+- `ui/reader/BookArchivist_UI_Reader_Share.lua` — share popup for book export strings.
 
 ## Development notes
 

@@ -58,6 +58,12 @@ Locales.deDE = {
   ["READER_DELETE_TOOLTIP_DISABLED_BODY"] = "Wähle ein Buch aus der Liste, um es zu löschen.",
   ["READER_DELETE_CONFIRM"] = "'%s' löschen? Dies kann nicht rückgängig gemacht werden.",
   ["READER_DELETE_CHAT_SUCCESS"] = "|cFFFF0000Buch aus dem Archiv gelöscht.|r",
+  ["READER_SHARE_BUTTON"] = "Teilen",
+  ["READER_SHARE_TOOLTIP_TITLE"] = "Dieses Buch exportieren",
+  ["READER_SHARE_TOOLTIP_BODY"] = "Erstelle einen Exportstring für dieses einzelne Buch. Kopiere ihn mit Strg+C und teile ihn mit anderen, oder füge ihn in das Importpanel (Optionen → Export / Import) auf einem anderen Charakter oder Client ein.",
+  ["READER_SHARE_POPUP_TITLE"] = "Buch-Exportzeichenkette",
+  ["READER_SHARE_POPUP_LABEL"] = "Verwende Strg+C, um diese Zeichenkette zu kopieren, und teile sie dann mit anderen Spielern oder füge sie in einem anderen Book Archivist-Client ein.",
+  ["READER_SHARE_SELECT_ALL"] = "Alles auswählen",
 
   -- Favorites
   ["READER_FAVORITE_ADD"] = "Zu Favoriten hinzufügen",
@@ -86,11 +92,9 @@ Locales.deDE = {
   ["OPTIONS_EXPORT_STATUS_NOTHING_TO_COPY"] = "Noch nichts zu kopieren. Klicke zuerst auf Export.",
   ["OPTIONS_EXPORT_STATUS_DEFAULT"] = "Es wurde noch kein Export erstellt.",
   ["OPTIONS_EXPORT_STATUS_COPY_HINT"] = "Drücke Strg+C zum Kopieren und dann Strg+V zum Einfügen.",
-  ["OPTIONS_IMPORT_LABEL"] = "Zeichenkette importieren",
-  ["OPTIONS_IMPORT_BUTTON"] = "Importieren",
-  ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Einfügen erfassen",
-  ["OPTIONS_IMPORT_HELP"] = "Auf diesem Client: Nach einem Export kannst du hier auf Importieren klicken, um deine eigenen Daten zu testen oder wiederherzustellen, ohne etwas einzufügen.\n\nUm Daten auf einen anderen Client/Account zu übertragen:\n1) Auf dem Quell-Client auf Export und dann auf Kopieren klicken.\n2) Den kopierten Exporttext nach Belieben teilen (Discord, Paste-Seiten, gemeinsame Dateien usw.).\n3) Auf dem Ziel-Client diesen Text kopieren, dieses Fenster öffnen, auf Einfügen erfassen klicken und einmal Strg+V drücken.\n4) Wenn der Status \"Daten empfangen\" anzeigt, auf Importieren klicken.\n\nHinweis: Ein einfaches Strg+V im Spiel startet den Import nicht von allein; das Addon lauscht nur auf Einfügen, während Einfügen erfassen aktiv ist, oder es verwendet deinen letzten Export, wenn du hier einfach auf Importieren klickst.",
-  ["OPTIONS_IMPORT_PERF_TIP"] = "Tipp: Du kannst den kompletten Export direkt mit Strg+V in das Importfeld einfügen, aber sehr große Zeichenketten können den Spielclient für einige Sekunden einfrieren, während das Einfügen abgeschlossen wird. Verwende stattdessen Einfügen erfassen, um den Text schrittweise zu übernehmen und diesen Leistungseinbruch zu vermeiden.",
+  ["OPTIONS_IMPORT_LABEL"] = "Importieren",
+  ["OPTIONS_IMPORT_HELP"] = "Füge eine Exportzeichenfolge in das Feld unten ein. Der Import startet automatisch, wenn gültige Daten erkannt werden.",
+  ["OPTIONS_IMPORT_PERF_TIP"] = "So importierst du auf diesem Client:\n\n- Von einem anderen Client/Account: Auf der Quelle auf Exportieren und dann auf Kopieren klicken. Auf diesem Client dieses Panel öffnen, auf Einfügen erfassen klicken und dann einmal Strg+V drücken. Der Import startet automatisch, wenn die Daten erkannt werden.\n\n- Derselbe Client nach Kopieren: Auf Exportieren klicken, dann auf Kopieren, dann (optional) auf Einfügen erfassen klicken und einmal Strg+V drücken. So kannst du genau testen, was kopiert wurde.\n\nWichtig: Einfügen erfassen kann deine Zwischenablage nicht selbst lesen. Es teilt dem Addon nur mit, dass es auf das *nächste* Strg+V lauschen soll, das du im Spiel durchführst; ohne dieses manuelle Einfügen wird nichts importiert.\n\nLeistungswarnung: Das Importieren eines großen Exporttexts kann den Spielclient vorübergehend einfrieren, während WoW das Einfügen verarbeitet und die Bücher dekodiert werden. Beispielsweise kann das Importieren von etwa 10–15 Büchern das Spiel für 10–15 Sekunden pausieren; das Importieren von 50 oder mehr Büchern kann fast eine Minute dauern, und sehr große Datenmengen können dazu führen, dass das Einfügen fehlschlägt oder sogar den Client aufgrund von Engine-Beschränkungen zum Absturz bringt. Bevorzuge nach Möglichkeit kleinere Exporte oder Importe pro Charakter anstelle extrem großer All-in-One-Importe.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Füge den Exporttext ein und warte auf 'Daten empfangen', bevor du importierst.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Drücke jetzt Strg+V zum Einfügen und warte dann auf 'Daten empfangen'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Import wird vorbereitet…",
@@ -100,8 +104,7 @@ Locales.deDE = {
   ["OPTIONS_IMPORT_STATUS_PHASE_SEARCH"] = "Suchindex wird aktualisiert",
   ["OPTIONS_IMPORT_STATUS_PHASE_TITLES"] = "Titel werden aktualisiert",
   ["OPTIONS_IMPORT_STATUS_COMPLETE"] = "Import abgeschlossen.",
-  ["OPTIONS_IMPORT_STATUS_FAILED"] = "Import fehlgeschlagen: %s",
-  ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Datenmenge zu groß. Abbruch.",
+  ["OPTIONS_IMPORT_STATUS_FAILED"] = "Import fehlgeschlagen: %s",  ["OPTIONS_IMPORT_STATUS_ERROR"] = "Importfehler (%s): %s",  ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Datenmenge zu groß. Abbruch.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "Im Zwischenspeicher wurde kein Exporttext gefunden. Stelle sicher, dass du auf dem Quell-Client auf Kopieren geklickt hast.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Daten empfangen (%d Zeichen). Klicke auf Importieren.",
   ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Import nicht verfügbar.",
@@ -156,6 +159,8 @@ Locales.deDE = {
   ["BOOK_MISSING_DATA"] = "Fehlende Daten",
 	["MATCH_TITLE"] = "TITEL",
 	["MATCH_TEXT"] = "TEXT",
+
+  ["LIST_SHARE_BOOK_MENU"] = "Dieses Buch teilen / exportieren",
 
   -- Language names / options
   ["LANGUAGE_LABEL"] = "Sprache",

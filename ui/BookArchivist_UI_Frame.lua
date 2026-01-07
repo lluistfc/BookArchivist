@@ -293,3 +293,31 @@ local function ensureUI()
 end
 
 Internal.ensureUI = ensureUI
+
+-- Apply list width (called from options slider)
+function FrameUI:ApplyListWidth(width)
+	if not width or type(width) ~= "number" then
+		return
+	end
+	
+	-- Get the main frame
+	local frame = Internal.getMainFrame and Internal.getMainFrame()
+	if not frame then
+		return
+	end
+	
+	-- Update the contentContainer's listWidth
+	if frame.contentContainer then
+		frame.contentContainer.listWidth = width
+		
+		-- Trigger layout refresh
+		if frame.contentContainer.DoLayout then
+			frame.contentContainer:DoLayout()
+		end
+		
+		-- Call onListWidthChanged callback if it exists
+		if frame.contentContainer.onListWidthChanged then
+			frame.contentContainer.onListWidthChanged(width)
+		end
+	end
+end

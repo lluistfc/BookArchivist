@@ -161,6 +161,18 @@ function OptionsUI:Sync()
     optionsPanel.tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
   end
 
+  local debugModeEnabled = false
+  if BookArchivistDB and BookArchivistDB.options then
+    debugModeEnabled = BookArchivistDB.options.debugMode and true or false
+  end
+  if optionsPanel.debugModeCheckbox then
+    optionsPanel.debugModeCheckbox:SetChecked(debugModeEnabled)
+    if optionsPanel.debugModeCheckbox.Text and optionsPanel.debugModeCheckbox.Text.SetText then
+      optionsPanel.debugModeCheckbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
+    end
+    optionsPanel.debugModeCheckbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
+  end
+
   local resumeEnabled = true
   if BookArchivist and type(BookArchivist.IsResumeLastPageEnabled) == "function" then
 	  resumeEnabled = BookArchivist:IsResumeLastPageEnabled() and true or false
@@ -180,38 +192,11 @@ function OptionsUI:Sync()
   if optionsPanel.exportLabel and optionsPanel.exportLabel.SetText then
     optionsPanel.exportLabel:SetText(t("OPTIONS_EXPORT_IMPORT_LABEL"))
   end
-  if optionsPanel.exportButton and optionsPanel.exportButton.SetText then
-    optionsPanel.exportButton:SetText(t("OPTIONS_EXPORT_BUTTON"))
-  end
-  if optionsPanel.exportCopyButton and optionsPanel.exportCopyButton.SetText then
-    optionsPanel.exportCopyButton:SetText(t("OPTIONS_EXPORT_BUTTON_COPY"))
-  end
   if optionsPanel.importLabel and optionsPanel.importLabel.SetText then
     optionsPanel.importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
   end
-  if optionsPanel.importButton and optionsPanel.importButton.SetText then
-    optionsPanel.importButton:SetText(t("OPTIONS_IMPORT_BUTTON"))
-  end
-  if optionsPanel.importPasteButton and optionsPanel.importPasteButton.SetText then
-    optionsPanel.importPasteButton:SetText(t("OPTIONS_IMPORT_BUTTON_CAPTURE"))
-  end
   if optionsPanel.importHelp and optionsPanel.importHelp.SetText then
     optionsPanel.importHelp:SetText(t("OPTIONS_IMPORT_HELP"))
-  end
-  -- Keep the export status line in sync with the active
-  -- language: show the default hint if no payload exists,
-  -- otherwise show the localized "export ready" text.
-  if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
-    if optionsPanel.lastExportPayload and type(optionsPanel.lastExportPayload) == "string" and optionsPanel.lastExportPayload ~= "" then
-      optionsPanel.exportStatus:SetText(string.format(t("OPTIONS_EXPORT_STATUS_READY"), #optionsPanel.lastExportPayload))
-    else
-      optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_DEFAULT"))
-    end
-  end
-  -- If there is no pending import payload, keep the status line
-  -- synced with the default hint in the active language.
-  if optionsPanel.importStatus and optionsPanel.importStatus.SetText and not optionsPanel.pendingImportPayload then
-    optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_DEFAULT"))
   end
 
   if optionsPanel.languageDropdown and UIDropDownMenu_SetSelectedValue and BookArchivist and BookArchivist.GetLanguage then
@@ -362,8 +347,46 @@ function OptionsUI:Ensure()
 
   optionsPanel.tooltipCheckbox = tooltipCheckbox
 
+  local debugModeCheckbox = createFrame("CheckButton", "BookArchivistDebugModeCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
+  debugModeCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -8)
+  debugModeCheckbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
+  debugModeCheckbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
+  debugModeCheckbox:SetScript("OnClick", function(self)
+    local state = self:GetChecked()
+    BookArchivistDB = BookArchivistDB or {}
+    BookArchivistDB.options = BookArchivistDB.options or {}
+    BookArchivistDB.options.debugMode = state and true or false
+    
+    if state then
+      -- Create and show debug log widget
+      if optionsPanel.CreateDebugLogWidget then
+        -- First ensure import widget exists
+        if not optionsPanel.importWidget and optionsPanel.CreateImportWidget then
+          optionsPanel.CreateImportWidget()
+        end
+        -- Now create debug widget
+        optionsPanel.CreateDebugLogWidget()
+        -- Force show if it was created
+        if optionsPanel.debugWidget and optionsPanel.debugWidget.frame then
+          optionsPanel.debugWidget.frame:Show()
+        end
+      end
+    else
+      -- Hide debug log widget
+      if optionsPanel.debugWidget and optionsPanel.debugWidget.frame then
+        optionsPanel.debugWidget.frame:Hide()
+        optionsPanel.debugWidget.frame:SetParent(nil)
+        optionsPanel.debugWidget = nil
+      end
+      -- Provide no-op when disabled
+      optionsPanel.AppendDebugLog = function(message) end
+    end
+  end)
+
+  optionsPanel.debugModeCheckbox = debugModeCheckbox
+
   local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  resumePageCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -8)
+  resumePageCheckbox:SetPoint("TOPLEFT", debugModeCheckbox, "BOTTOMLEFT", 0, -8)
   resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
   resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
   resumePageCheckbox:SetScript("OnClick", function(self)
@@ -422,226 +445,18 @@ function OptionsUI:Ensure()
     optionsPanel.languageDropdown = dropdown
   end
 
-  -- Prefer anchoring export/import to the visible dropdown button when available
-  local dropdownButton
-  if dropdown and dropdown.GetName then
-    local name = dropdown:GetName()
-    if name and _G then
-      dropdownButton = _G[name .. "Button"]
-    end
-  end
-
-  -- Export / Import section container (two columns)
-  local exportImportContainer = createFrame("Frame", "BookArchivistExportImportContainer", scrollChild)
-  exportImportContainer:ClearAllPoints()
-  -- Align with the left content column under the language row, with extra spacing as a new section
-  exportImportContainer:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -36)
-  -- Clamp to the panel's content width so it never drifts or overflows
-  exportImportContainer:SetPoint("TOPRIGHT", optionsPanel.contentRight, "TOPLEFT", 0, -36)
-  exportImportContainer:SetHeight(120)
-  optionsPanel.exportImportContainer = exportImportContainer
-
-  local COLUMN_GAP = 24
-
-  local exportColumn = createFrame("Frame", "BookArchivistExportColumn", exportImportContainer)
-  exportColumn:ClearAllPoints()
-  exportColumn:SetPoint("TOPLEFT", exportImportContainer, "TOPLEFT", 0, 0)
-  exportColumn:SetPoint("BOTTOMLEFT", exportImportContainer, "BOTTOMLEFT", 0, 0)
-  optionsPanel.exportColumn = exportColumn
-
-  local importColumn = createFrame("Frame", "BookArchivistImportColumn", exportImportContainer)
-  importColumn:ClearAllPoints()
-  importColumn:SetPoint("TOPRIGHT", exportImportContainer, "TOPRIGHT", 0, 0)
-  importColumn:SetPoint("BOTTOMRIGHT", exportImportContainer, "BOTTOMRIGHT", 0, 0)
-  optionsPanel.importColumn = importColumn
-
-  local function LayoutExportImport()
-    local w = exportImportContainer:GetWidth()
-    if not w or w <= 0 then return end
-
-    local colW = math.floor((w - COLUMN_GAP) / 2)
-    if colW < 140 then
-      colW = 140
-    end
-
-    exportColumn:SetWidth(colW)
-    importColumn:SetWidth(colW)
-
-    -- Ensure columns sit inside the container with a fixed gap
-    exportColumn:ClearAllPoints()
-    exportColumn:SetPoint("TOPLEFT", exportImportContainer, "TOPLEFT", 0, 0)
-    exportColumn:SetPoint("BOTTOMLEFT", exportImportContainer, "BOTTOMLEFT", 0, 0)
-
-    importColumn:ClearAllPoints()
-    importColumn:SetPoint("TOPLEFT", exportColumn, "TOPRIGHT", COLUMN_GAP, 0)
-    importColumn:SetPoint("BOTTOMLEFT", exportColumn, "BOTTOMRIGHT", COLUMN_GAP, 0)
-  end
-
-  exportImportContainer:HookScript("OnShow", LayoutExportImport)
-  exportImportContainer:HookScript("OnSizeChanged", LayoutExportImport)
-  LayoutExportImport()
-
-  -- Export column
-  local exportLabel = exportColumn:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  exportLabel:SetPoint("TOPLEFT", exportColumn, "TOPLEFT", 0, 0)
-  exportLabel:SetText(t("OPTIONS_EXPORT_LABEL"))
-  optionsPanel.exportLabel = exportLabel
-
-  local exportCopyScroll
-  local exportCopyBox
-  local exportStatus
-
-  local exportButton = createFrame("Button", "BookArchivistExportButton", exportColumn, "UIPanelButtonTemplate")
-  exportButton:SetSize(160, 22)
-  exportButton:SetPoint("TOPLEFT", exportLabel, "BOTTOMLEFT", 0, -4)
-  exportButton:SetText(t("OPTIONS_EXPORT_BUTTON"))
-  exportButton:SetScript("OnClick", function()
-    if not BookArchivist or type(BookArchivist.ExportLibrary) ~= "function" then
-      if print then
-        print("[BookArchivist] Export unavailable")
-      end
-      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
-        optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_UNAVAILABLE"))
-        if optionsPanel.exportStatus.SetTextColor then
-          optionsPanel.exportStatus:SetTextColor(1, 0.2, 0.2)
-        end
-      end
-      return
-    end
-    local payload, err = BookArchivist:ExportLibrary()
-    if not payload then
-      if print then
-        print("[BookArchivist] Export failed: " .. tostring(err))
-      end
-      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
-        optionsPanel.exportStatus:SetText(string.format(t("OPTIONS_EXPORT_STATUS_FAILED"), tostring(err)))
-        if optionsPanel.exportStatus.SetTextColor then
-          optionsPanel.exportStatus:SetTextColor(1, 0.2, 0.2)
-        end
-      end
-      return
-    end
-    optionsPanel.lastExportPayload = payload
-    if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
-      optionsPanel.exportStatus:SetText(string.format(t("OPTIONS_EXPORT_STATUS_READY"), #payload))
-      if optionsPanel.exportStatus.SetTextColor then
-        optionsPanel.exportStatus:SetTextColor(0.6, 1, 0.6)
-      end
-    end
-  end)
-  optionsPanel.exportButton = exportButton
-
-  local exportCopyButton = createFrame("Button", "BookArchivistExportCopyButton", exportColumn, "UIPanelButtonTemplate")
-  exportCopyButton:SetSize(80, 22)
-  exportCopyButton:SetPoint("LEFT", exportButton, "RIGHT", 4, 0)
-  exportCopyButton:SetText(t("OPTIONS_EXPORT_BUTTON_COPY"))
-  exportCopyButton:SetScript("OnClick", function()
-    local text = optionsPanel.lastExportPayload or ""
-    if text == "" then
-      if print then
-        print("[BookArchivist] Nothing to copy yet")
-      end
-      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
-        optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_NOTHING_TO_COPY"))
-        if optionsPanel.exportStatus.SetTextColor then
-          optionsPanel.exportStatus:SetTextColor(1, 0.9, 0.4)
-        end
-      end
-      return
-    end
-    if optionsPanel.exportCopyBox then
-      optionsPanel.exportCopyBox:Show()
-      optionsPanel.exportCopyBox:SetText(text)
-      if optionsPanel.exportCopyBox.SetCursorPosition then
-        optionsPanel.exportCopyBox:SetCursorPosition(0)
-      end
-      optionsPanel.exportCopyBox:SetFocus()
-      optionsPanel.exportCopyBox:HighlightText()
-      if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
-        optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_COPY_HINT"))
-        if optionsPanel.exportStatus.SetTextColor then
-          optionsPanel.exportStatus:SetTextColor(0.9, 0.9, 0.9)
-        end
-      end
-    end
-  end)
-  optionsPanel.exportCopyButton = exportCopyButton
-  -- Export status line: communicates current export state.
-  exportStatus = exportColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  exportStatus:SetPoint("TOPLEFT", exportButton, "BOTTOMLEFT", 0, -4)
-  exportStatus:SetPoint("RIGHT", exportColumn, "RIGHT", 0, 0)
-  exportStatus:SetJustifyH("LEFT")
-  exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_DEFAULT"))
-  if exportStatus.SetTextColor then
-    exportStatus:SetTextColor(0.8, 0.8, 0.8)
-  end
-  optionsPanel.exportStatus = exportStatus
-  -- Hidden multiline copy-catcher edit box: keeps the full
-  -- BDB1 export (including newlines) so copy/paste works
-  -- correctly, without rendering a giant visible textarea.
-  exportCopyScroll = CreateFrame and CreateFrame("ScrollFrame", "BookArchivistExportCopyScrollFrame", optionsPanel, "InputScrollFrameTemplate")
-  if exportCopyScroll and exportCopyScroll.EditBox then
-    exportCopyScroll:ClearAllPoints()
-    exportCopyScroll:SetPoint("TOPLEFT", optionsPanel, "BOTTOMLEFT", 0, -100)
-    exportCopyScroll:SetSize(1, 1)
-    if exportCopyScroll.SetAlpha then
-      exportCopyScroll:SetAlpha(0)
-    end
-    exportCopyBox = exportCopyScroll.EditBox
-    exportCopyBox:SetAutoFocus(false)
-    if exportCopyBox.SetMultiLine then
-      exportCopyBox:SetMultiLine(true)
-    end
-    if exportCopyBox.SetMaxBytes then
-      exportCopyBox:SetMaxBytes(0)
-    end
-    exportCopyBox:SetFontObject("GameFontHighlightSmall")
-    exportCopyBox:SetMaxLetters(0)
-    -- Seed cursor metrics so ScrollingEdit_OnUpdate has safe values
-    -- even before the first cursor change callback fires.
-    exportCopyBox.cursorOffset = 0
-    if exportCopyBox.GetLineHeight then
-      exportCopyBox.cursorHeight = exportCopyBox:GetLineHeight() or 1
-    else
-      exportCopyBox.cursorHeight = 1
-    end
-    StylePayloadEditBox(exportCopyBox, false)
+  -- Import section (aligned with other options)
+  local importLabel = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+  if dropdown then
+    importLabel:SetPoint("TOPLEFT", dropdown, "BOTTOMLEFT", -16, -24)
   else
-    -- Fallback for environments without InputScrollFrameTemplate:
-    -- still prefer multiline so newlines are preserved.
-    exportCopyBox = createFrame("EditBox", "BookArchivistExportCopyBox", exportColumn, "InputBoxTemplate")
-    exportCopyBox:ClearAllPoints()
-    exportCopyBox:SetPoint("TOPLEFT", exportStatus, "BOTTOMLEFT", 0, -4)
-    exportCopyBox:SetPoint("TOPRIGHT", exportColumn, "TOPRIGHT", -6, 0)
-    exportCopyBox:SetHeight(40)
-    exportCopyBox:SetAutoFocus(false)
-    if exportCopyBox.SetMultiLine then
-      exportCopyBox:SetMultiLine(true)
-    end
-    if exportCopyBox.SetMaxBytes then
-      exportCopyBox:SetMaxBytes(0)
-    end
-    exportCopyBox:SetFontObject("GameFontHighlightSmall")
-    exportCopyBox:SetMaxLetters(0)
-    exportCopyBox.cursorOffset = 0
-    if exportCopyBox.GetLineHeight then
-      exportCopyBox.cursorHeight = exportCopyBox:GetLineHeight() or 1
-    else
-      exportCopyBox.cursorHeight = 1
-    end
-    StylePayloadEditBox(exportCopyBox, false)
-    exportCopyBox:Hide()
+    importLabel:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -24)
   end
-  optionsPanel.exportCopyBox = exportCopyBox
-
-  -- Import column
-  local importLabel = importColumn:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  importLabel:SetPoint("TOPLEFT", importColumn, "TOPLEFT", 0, 0)
   importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
   optionsPanel.importLabel = importLabel
 
-  -- Info icon explaining Ctrl+V vs Capture Paste performance
-  local importInfoButton = createFrame("Button", nil, importColumn)
+  -- Info icon explaining import process
+  local importInfoButton = createFrame("Button", nil, scrollChild)
   importInfoButton:SetSize(16, 16)
   importInfoButton:SetPoint("LEFT", importLabel, "RIGHT", 4, 0)
   local importInfoTex = importInfoButton:CreateTexture(nil, "ARTWORK")
@@ -662,374 +477,524 @@ function OptionsUI:Ensure()
     end
   end)
 
-  local importHelp = importColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  importHelp:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -4)
-  importHelp:SetPoint("RIGHT", importColumn, "RIGHT", 0, 0)
+  local importHelp = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  importHelp:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -8)
+  importHelp:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
   importHelp:SetJustifyH("LEFT")
+  importHelp:SetWordWrap(true)
   importHelp:SetText(t("OPTIONS_IMPORT_HELP"))
   optionsPanel.importHelp = importHelp
 
+  -- Import status label for user feedback
+  local importStatus = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+  importStatus:SetPoint("TOPLEFT", importHelp, "BOTTOMLEFT", 0, -8)
+  importStatus:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
+  importStatus:SetJustifyH("LEFT")
+  importStatus:SetText("")
+  importStatus:SetTextColor(0.8, 0.8, 0.8)
+  optionsPanel.importStatus = importStatus
+
   local importScroll
   local importBox
-
-  local importButton = createFrame("Button", "BookArchivistImportButton", importColumn, "UIPanelButtonTemplate")
-  importButton:SetSize(160, 22)
-  importButton:SetPoint("TOPLEFT", importHelp, "BOTTOMLEFT", 0, -4)
-  importButton:SetText(t("OPTIONS_IMPORT_BUTTON"))
   local function GetImportPayload()
+    local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+    
     -- 1) Prefer an explicit pending payload captured from the
     --    import box (including placeholder-visible mode).
     if optionsPanel.pendingImportVisibleIsPlaceholder then
       if optionsPanel.pendingImportPayload and optionsPanel.pendingImportPayload ~= "" then
+        if debugMode and optionsPanel.AppendDebugLog then 
+          optionsPanel.AppendDebugLog("[Payload] Using pending payload: " .. #optionsPanel.pendingImportPayload .. " chars")
+        end
         return optionsPanel.pendingImportPayload
       end
     elseif optionsPanel.pendingImportPayload and optionsPanel.pendingImportPayload ~= "" then
+      if debugMode and optionsPanel.AppendDebugLog then
+        optionsPanel.AppendDebugLog("[Payload] Using pending payload: " .. #optionsPanel.pendingImportPayload .. " chars")
+      end
       return optionsPanel.pendingImportPayload
     end
 
-    -- 2) If there is no explicit import text but we
+    -- 2) If the visible import box has text (cross-client
+    --    sharing case), prioritise that over any same-session
+    --    export state. Use the committed text from OnTextChanged
+    --    instead of GetText() to work around WoW multiline paste
+    --    quirks.
+    if optionsPanel.importBoxCommittedText and optionsPanel.importBoxCommittedText ~= "" then
+      local vis = trim(optionsPanel.importBoxCommittedText)
+      if vis ~= "" then
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog("[Payload] Using committed box text: " .. #vis .. " chars")
+        end
+        return vis
+      else
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog("[Payload] Committed text is empty after trim")
+        end
+      end
+    elseif optionsPanel.importBox and optionsPanel.importBox.GetText then
+      local vis = trim(optionsPanel.importBox:GetText() or "")
+      if vis ~= "" then
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog("[Payload] Using visible box text: " .. #vis .. " chars")
+        end
+        return vis
+      else
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog("[Payload] Visible box is empty")
+        end
+      end
+    end
+
+    -- 3) If there is no explicit import text but we
     --    have a payload from this session's Export, allow Import
     --    to consume that directly so users don't need to paste at
     --    all for local transfers.
     if optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= "" then
+      if debugMode and optionsPanel.AppendDebugLog then
+        optionsPanel.AppendDebugLog("[Payload] Using session export: " .. #optionsPanel.lastExportPayload .. " chars")
+      end
       return optionsPanel.lastExportPayload
     end
 
+    -- 4) As a final same-session fast path, fall back to the
+    --    most recent export payload recorded globally (used by
+    --    the reader Share popup as well as the options Export
+    --    button) so imports don't depend on paste length.
+    if BookArchivist and BookArchivist.__lastExportPayload and BookArchivist.__lastExportPayload ~= "" then
+      if debugMode and optionsPanel.AppendDebugLog then
+        optionsPanel.AppendDebugLog("[Payload] Using global export: " .. #BookArchivist.__lastExportPayload .. " chars")
+      end
+      return BookArchivist.__lastExportPayload
+    end
+
+    if debugMode and optionsPanel.AppendDebugLog then
+      optionsPanel.AppendDebugLog("[Payload] No payload found")
+    end
     return ""
   end
-
-  local importStatus = importColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  importStatus:SetPoint("TOPLEFT", importButton, "BOTTOMLEFT", 0, -4)
-  importStatus:SetPoint("RIGHT", importColumn, "RIGHT", 0, 0)
-  importStatus:SetJustifyH("LEFT")
-  importStatus:SetText(t("OPTIONS_IMPORT_STATUS_DEFAULT"))
-  if importStatus.SetTextColor then
-    importStatus:SetTextColor(0.8, 0.8, 0.8)
-  end
-  optionsPanel.importStatus = importStatus
-
-  local importPasteButton = createFrame("Button", "BookArchivistImportPasteButton", importColumn, "UIPanelButtonTemplate")
-  importPasteButton:SetSize(120, 22)
-  importPasteButton:SetPoint("LEFT", importButton, "RIGHT", 4, 0)
-  importPasteButton:SetText(t("OPTIONS_IMPORT_BUTTON_CAPTURE"))
-  importPasteButton:SetScript("OnClick", function()
-    optionsPanel.pendingImportPayload = nil
-    optionsPanel.pendingImportVisibleIsPlaceholder = false
-    optionsPanel.importPasteBuffer = {}
-    optionsPanel.importBufferLen = 0
-    optionsPanel.importIsPasting = false
-    optionsPanel.importLastCharElapsed = 0
-
-    -- Decide how aggressively to capture paste based on
-    -- whether we still have a local export payload from this
-    -- session. In the local-export case, we only need a tiny
-    -- paste to act as a trigger and can avoid clipboard-sized
-    -- freezes; in the cross-client/after-reload case we allow
-    -- a full paste so we can reconstruct the payload text.
-    local hasLocalExport = optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= ""
-    optionsPanel.importUseLocalExport = hasLocalExport and true or false
-    if optionsPanel.importBox and optionsPanel.importBox.SetMaxBytes then
-    if hasLocalExport then
-      optionsPanel.importBox:SetMaxBytes(1)
-    else
-      optionsPanel.importBox:SetMaxBytes(0)
-    end
-    end
-    if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-      optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_PASTE_HINT"))
-      if optionsPanel.importStatus.SetTextColor then
-        optionsPanel.importStatus:SetTextColor(0.9, 0.9, 0.9)
-      end
-    end
-    if optionsPanel.importBox and optionsPanel.importBox.SetFocus then
-      optionsPanel.importBox:SetFocus()
-    end
-  end)
-  optionsPanel.importPasteButton = importPasteButton
-
-  importButton:SetScript("OnClick", function()
+  
+  -- Separate import processing logic (WeakAuras pattern)
+  -- This can be called from OnTextChanged (auto-import) or from button click
+  local function ProcessImport()
     local worker = optionsPanel.importWorker
     if not (BookArchivist and BookArchivist.ImportWorker and worker) then
-      if print then
-        print("[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_UNAVAILABLE"))
-      end
-      return
+      local msg = "[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_UNAVAILABLE")
+      if print then print(msg) end
+      if optionsPanel.AppendDebugLog then optionsPanel.AppendDebugLog(msg) end
+      return false
     end
 
     local raw = trim(GetImportPayload())
     if raw == "" then
-      if print then
-        print("[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"))
-      end
-      return
-    end
-
-    importButton:Disable()
-    if optionsPanel.exportButton then optionsPanel.exportButton:Disable() end
-    if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Disable() end
-    if importStatus.SetText then
-      importStatus:SetText(t("OPTIONS_IMPORT_STATUS_PREPARING"))
-      if importStatus.SetTextColor then
-        importStatus:SetTextColor(1, 0.9, 0.4)
-      end
+      local msg = "[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING")
+      if print then print(msg) end
+      if optionsPanel.AppendDebugLog then optionsPanel.AppendDebugLog(msg) end
+      return false
     end
 
     local ok = worker:Start(raw, {
       onProgress = function(label, pct)
-        if not importStatus or not importStatus.SetText then return end
+        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
         local pctNum = math.floor((pct or 0) * 100)
         local phase = tostring(label or "")
+        local userPhase = phase
+        
         if phase == "Decoded" then
-          phase = t("OPTIONS_IMPORT_STATUS_PHASE_DECODE")
+          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_DECODE")
         elseif phase == "Parsed" then
-          phase = t("OPTIONS_IMPORT_STATUS_PHASE_PARSED")
+          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_PARSED")
         elseif phase == "Merging" then
-          phase = t("OPTIONS_IMPORT_STATUS_PHASE_MERGE")
+          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_MERGE")
         elseif phase == "Building search" then
-          phase = t("OPTIONS_IMPORT_STATUS_PHASE_SEARCH")
+          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_SEARCH")
         elseif phase == "Indexing titles" then
-          phase = t("OPTIONS_IMPORT_STATUS_PHASE_TITLES")
+          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_TITLES")
         end
-        importStatus:SetText(string.format("%s: %d%%", phase, pctNum))
-        if importStatus.SetTextColor then
-          importStatus:SetTextColor(1, 0.9, 0.4)
+        
+        -- Show user-friendly progress for import/merge phases
+        if phase == "Merging" or phase == "Building search" or phase == "Indexing titles" then
+          if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+            optionsPanel.importStatus:SetText(string.format("%s: %d%%", userPhase, pctNum))
+            optionsPanel.importStatus:SetTextColor(1, 0.9, 0.4)
+          end
+        end
+        
+        -- Log all phases to debug log if debug mode is enabled
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog(string.format("%s: %d%%", userPhase, pctNum))
         end
       end,
       onDone = function(summary)
-        importButton:Enable()
-        if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
-        if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
-        if importStatus.SetText then
-          importStatus:SetText(summary or t("OPTIONS_IMPORT_STATUS_COMPLETE"))
-          if importStatus.SetTextColor then
-            importStatus:SetTextColor(0.6, 1, 0.6)
-          end
+        -- Show success message to user
+        if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+          optionsPanel.importStatus:SetText(summary or t("OPTIONS_IMPORT_STATUS_COMPLETE"))
+          optionsPanel.importStatus:SetTextColor(0.6, 1, 0.6)
         end
+        
         if print then
           print("[BookArchivist] " .. (summary or t("OPTIONS_IMPORT_STATUS_COMPLETE")))
         end
-        if BookArchivist.UI and BookArchivist.UI.Refresh then
-          BookArchivist.UI:Refresh()
-        elseif BookArchivist.RefreshUI then
-          BookArchivist:RefreshUI()
+        
+        -- Log to debug if enabled
+        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog(summary or t("OPTIONS_IMPORT_STATUS_COMPLETE"))
         end
-      end,
-      onError = function(err)
-        importButton:Enable()
-        if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
-        if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
-        if importStatus.SetText then
-          importStatus:SetText(string.format(t("OPTIONS_IMPORT_STATUS_FAILED"), tostring(err)))
-          if importStatus.SetTextColor then
-            importStatus:SetTextColor(1, 0.2, 0.2)
-          end
-        end
-        if print then
-          print("[BookArchivist] " .. string.format(t("OPTIONS_IMPORT_STATUS_FAILED"), tostring(err)))
-        end
-      end,
-    })
-
-    if not ok then
-      importButton:Enable()
-      if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
-      if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
-      if print then
-        print("[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_IN_PROGRESS"))
-      end
-    end
-  end)
-  optionsPanel.importButton = importButton
-
-  -- Hidden paste-catcher edit box: no visible textarea in the UI.
-  importScroll = nil
-  importBox = createFrame("EditBox", "BookArchivistImportPasteBox", optionsPanel, "InputBoxTemplate")
-  importBox:ClearAllPoints()
-  importBox:SetPoint("TOPLEFT", optionsPanel, "BOTTOMLEFT", 0, -100)
-  importBox:SetWidth(1)
-  importBox:SetHeight(1)
-  importBox:SetAutoFocus(false)
-  if importBox.SetMultiLine then
-	  -- Use a multiline edit box so WoW will accept large
-	  -- pasted payloads (full BDB export strings) instead of
-	  -- truncating them to a short single-line limit, which
-	  -- would trigger "Payload too short" during decode.
-	  importBox:SetMultiLine(true)
-  end
-  if importBox.SetMaxBytes then
-    -- Default to allowing full paste; Capture Paste will
-    -- tighten this per-scenario (local export vs clipboard).
-    importBox:SetMaxBytes(0)
-  end
-  importBox:SetFontObject("GameFontHighlightSmall")
-  importBox:SetMaxLetters(0)
-  importBox.cursorOffset = 0
-  if importBox.SetAlpha then
-    importBox:SetAlpha(0)
-  end
-  StylePayloadEditBox(importBox, false)
-
-  -- Paste-catcher state: collect characters via OnChar into a
-  -- Lua buffer and rebuild the full string off-screen after the
-  -- paste finishes, as described in docs/import-export.md.
-  optionsPanel.importPasteBuffer = optionsPanel.importPasteBuffer or {}
-  optionsPanel.importIsPasting = false
-  optionsPanel.importLastCharElapsed = 0
-  optionsPanel.importBufferLen = optionsPanel.importBufferLen or 0
-
-  local pasteWatcher = optionsPanel.importPasteWatcher
-  if not pasteWatcher then
-    pasteWatcher = createFrame("Frame", nil, optionsPanel)
-    optionsPanel.importPasteWatcher = pasteWatcher
-  end
-
-  pasteWatcher:Hide()
-  pasteWatcher:SetScript("OnUpdate", function(_, elapsed)
-    if not optionsPanel.importIsPasting then
-      return
-    end
-
-    optionsPanel.importLastCharElapsed = (optionsPanel.importLastCharElapsed or 0) + elapsed
-
-    -- If no new chars for ~0.2s, assume the paste finished and
-    -- rebuild the real string off-screen.
-    if optionsPanel.importLastCharElapsed > 0.2 then
-      optionsPanel.importIsPasting = false
-      if pasteWatcher.Hide then
-        pasteWatcher:Hide()
-      end
-
-      local function RebuildAndProcess()
-        local buf = optionsPanel.importPasteBuffer or {}
-        local text = table.concat(buf)
-
-        optionsPanel.importPasteBuffer = {}
-        optionsPanel.importBufferLen = 0
-
-        if #text == 0 then
-          optionsPanel.pendingImportPayload = nil
-          optionsPanel.pendingImportVisibleIsPlaceholder = false
-          if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-            optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_DEFAULT"))
-          end
-          return
-        end
-
-        if #text > IMPORT_MAX_PAYLOAD_CHARS then
-          optionsPanel.pendingImportPayload = nil
-          optionsPanel.pendingImportVisibleIsPlaceholder = false
-          if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-            optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_TOO_LARGE"))
-          end
-          return
-        end
-
-        local payload
-
-        if optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= "" then
-          -- Same-session fast path (Export -> Copy -> Capture
-          -- Paste on this client): if we still have a canonical
-          -- export string in memory, trust it and ignore any
-          -- mutations introduced by the copy/paste path.
-          payload = optionsPanel.lastExportPayload
-        else
-          -- Cross-client / after-reload path: accept the pasted
-          -- text as a candidate payload and let the ImportWorker
-          -- validate whether it is a real BookArchivist export.
-          -- This avoids false "no export in clipboard" errors
-          -- when the text is valid but formatted differently
-          -- than expected.
-          payload = text
-          -- Remember this clipboard-based payload as the current
-          -- canonical export so that subsequent Capture Paste
-          -- uses on this client can take the fast, no-freeze
-          -- path that relies on lastExportPayload instead of
-          -- rebuilding from a large paste again.
-          optionsPanel.lastExportPayload = payload
-        end
-
-        optionsPanel.pendingImportPayload = payload
-        optionsPanel.pendingImportVisibleIsPlaceholder = true
-
-        if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-          optionsPanel.importStatus:SetText(string.format(t("OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"), #payload))
-        end
-
-        if optionsPanel.importBox and optionsPanel.importBox.SetText then
+        
+        -- Clear the import box after successful import
+        if optionsPanel.importBox then
           optionsPanel.importBox:SetText("")
-          if optionsPanel.importBox.SetCursorPosition then
-            optionsPanel.importBox:SetCursorPosition(0)
+          optionsPanel.importBoxCommittedText = ""
+        end
+        
+        if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
+          BookArchivist.RefreshUI()
+        end
+      end,
+      onError = function(phase, err)
+        local errMsg = string.format(t("OPTIONS_IMPORT_STATUS_ERROR"), tostring(phase or ""), tostring(err or ""))
+        
+        -- Show error to user
+        if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+          optionsPanel.importStatus:SetText(errMsg)
+          optionsPanel.importStatus:SetTextColor(1, 0.2, 0.2)
+        end
+        
+        local fullMsg = "[BookArchivist] " .. errMsg
+        if print then print(fullMsg) end
+        
+        -- Log detailed error info only if debug mode is enabled
+        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog(fullMsg)
+          optionsPanel.AppendDebugLog("Phase: " .. tostring(phase))
+          optionsPanel.AppendDebugLog("Error: " .. tostring(err))
+        end
+      end
+    })
+    
+    if not ok then
+      return false
+    end
+    
+    return true
+  end
+
+  -- Defer AceGUI widget creation to avoid layout anchor conflicts
+  -- Create it after the panel is shown and layout is stable
+  local function CreateImportWidget()
+    if optionsPanel.importWidget then return end -- Already created
+    
+    local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
+    if not AceGUI then
+      print("[BookArchivist] AceGUI-3.0 not found, using basic EditBox")
+      return
+    end
+    
+    -- Create AceGUI MultiLineEditBox widget (like WeakAuras)
+    local importWidget = AceGUI:Create("MultiLineEditBox")
+    importWidget:SetLabel("")
+    importWidget:DisableButton(true)
+    importWidget:SetNumLines(6)
+    importWidget:SetFullWidth(true)
+    importWidget.frame:SetParent(optionsPanel)
+    importWidget.frame:ClearAllPoints()
+    importWidget.frame:SetPoint("TOPLEFT", optionsPanel.importStatus or importHelp, "BOTTOMLEFT", 0, -4)
+    importWidget.frame:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
+    importWidget.frame:SetFrameLevel(optionsPanel:GetFrameLevel() + 10)
+    importWidget.frame:Show()
+    
+    optionsPanel.importWidget = importWidget
+    optionsPanel.importBox = importWidget.editBox
+    
+    -- Hide the fallback EditBox since we're using AceGUI
+    if optionsPanel.importScroll then
+      optionsPanel.importScroll:Hide()
+    end
+    
+    -- WeakAuras-style auto-import on paste
+    optionsPanel.importBoxCommittedText = ""
+    importWidget.editBox:SetScript("OnTextChanged", function(self, userInput)
+      if userInput then
+        local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+        local pasted = self:GetText() or ""
+        local numLetters = self:GetNumLetters()
+        local rawLength = #pasted
+        
+        -- CRITICAL: WoW EditBox escapes | to || during paste, we need to unescape it
+        pasted = pasted:gsub("||", "|")
+        
+        -- Show first and last 50 chars for diagnostics (only in debug mode)
+        local first50 = pasted:sub(1, 50)
+        local last50 = pasted:sub(-50)
+        
+        pasted = pasted:match("^%s*(.-)%s*$")
+        
+        optionsPanel.importBoxCommittedText = pasted
+        
+        if debugMode and #pasted > 0 and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog("Text pasted: " .. #pasted .. " chars (trimmed)")
+          optionsPanel.AppendDebugLog("GetNumLetters: " .. numLetters)
+          optionsPanel.AppendDebugLog("First 50: " .. first50:gsub("|", "||"))
+          optionsPanel.AppendDebugLog("Last 50: " .. last50:gsub("|", "||"))
+        end
+        
+        if #pasted > 50 then
+          local hasHeader = pasted:find("BDB1|S|", 1, true) ~= nil
+          local hasFooter = pasted:find("BDB1|E", 1, true) ~= nil
+          
+          if debugMode and optionsPanel.AppendDebugLog then
+            optionsPanel.AppendDebugLog("Has BDB1 header: " .. tostring(hasHeader))
+            optionsPanel.AppendDebugLog("Has BDB1 footer: " .. tostring(hasFooter))
+          end
+          
+          if hasHeader and hasFooter then
+            -- Show user that import is starting
+            if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+              optionsPanel.importStatus:SetText("Processing import...")
+              optionsPanel.importStatus:SetTextColor(1, 0.9, 0.4)
+            end
+            
+            if debugMode and optionsPanel.AppendDebugLog then
+              optionsPanel.AppendDebugLog("Valid BDB1 envelope detected, starting import...")
+            end
+            
+            C_Timer.After(0.1, function()
+              ProcessImport()
+            end)
+          elseif hasHeader and not hasFooter then
+            local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+            local msg = "PASTE TRUNCATED! Footer missing (" .. #pasted .. " chars received)."
+            
+            if debugMode and optionsPanel.AppendDebugLog then
+              optionsPanel.AppendDebugLog(msg)
+              optionsPanel.AppendDebugLog("Paste may be incomplete - check export string.")
+            end
           end
         end
       end
+    end)
+  end  -- End CreateImportWidget function
+  
+  -- Store reference so it's accessible from checkbox handlers
+  optionsPanel.CreateImportWidget = CreateImportWidget
+  
+  -- Fallback: Create basic EditBox if AceGUI will not be available
+  -- (kept for compatibility when AceGUI is missing)
+  local importScroll = createFrame("ScrollFrame", "BookArchivistImportScrollFrame", scrollChild)
+  importScroll:SetPoint("TOPLEFT", importStatus, "BOTTOMLEFT", 0, -4)
+  importScroll:SetPoint("RIGHT", contentRight, "TOPLEFT", -20, 0)
+  importScroll:SetHeight(120)
+  optionsPanel.importScroll = importScroll  -- Store for debug widget anchor
+  importScroll:EnableMouse(true)
+  importScroll:EnableMouseWheel(true)
+  if importScroll.SetBackdrop then
+    importScroll:SetBackdrop({
+      bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+      edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+      tile = true, tileSize = 32, edgeSize = 16,
+      insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+  end
 
-      local hasTimer = type(C_Timer) == "table" and type(C_Timer.After) == "function"
-      if hasTimer then
-        C_Timer.After(0, RebuildAndProcess)
-      else
-        RebuildAndProcess()
+  importBox = createFrame("EditBox", "BookArchivistImportEditBox", importScroll)
+  importBox:SetMultiLine(true)
+  importBox:SetAutoFocus(false)
+  importBox:SetMaxLetters(0)
+  importBox:SetMaxBytes(0)
+  importBox:EnableMouse(true)
+  importBox:EnableKeyboard(true)
+  importBox:SetEnabled(true)
+  importBox:SetCountInvisibleLetters(false)  -- KEY: This allows large paste like WeakAuras
+  importBox:SetFontObject("GameFontHighlightSmall")
+  importBox:SetWidth(importScroll:GetWidth() - 20)
+  importBox:SetHeight(400)
+  importBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  
+  -- Make import box clearly visible with background and border
+  local importBg = importScroll:CreateTexture(nil, "BACKGROUND")
+  importBg:SetAllPoints(importScroll)
+  importBg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
+  
+  local importBorder = importScroll:CreateTexture(nil, "BORDER")
+  importBorder:SetAllPoints(importScroll)
+  importBorder:SetColorTexture(0.5, 0.5, 0.5, 1)
+  importBorder:SetDrawLayer("BORDER", 0)
+  
+  local importInset = importScroll:CreateTexture(nil, "BACKGROUND")
+  importInset:SetPoint("TOPLEFT", importScroll, "TOPLEFT", 1, -1)
+  importInset:SetPoint("BOTTOMRIGHT", importScroll, "BOTTOMRIGHT", -1, 1)
+  importInset:SetColorTexture(0.05, 0.05, 0.05, 0.9)
+
+  -- WeakAuras-style import: OnTextChanged processes paste immediately
+  -- and triggers import automatically when valid data detected.
+  -- This bypasses GetText() unreliability entirely.
+  optionsPanel.importBoxCommittedText = ""
+  importBox:SetScript("OnTextChanged", function(self, userInput)
+    if userInput then
+      local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+      
+      -- User-initiated change (paste, typing, etc)
+      local pasted = self:GetText() or ""
+      local numLetters = self:GetNumLetters()
+      local rawLength = #pasted
+      pasted = pasted:match("^%s*(.-)%s*$") -- trim whitespace
+      
+      optionsPanel.importBoxCommittedText = pasted
+      
+      if debugMode and #pasted > 0 then
+        if optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog("Text pasted: " .. #pasted .. " chars (trimmed)")
+          optionsPanel.AppendDebugLog("GetNumLetters: " .. numLetters)
+          optionsPanel.AppendDebugLog("Raw GetText length: " .. rawLength)
+        end
+      end
+      
+      -- Check for truncated paste (has header but no footer)
+      if #pasted > 50 then
+        local hasHeader = pasted:find("BDB1|S|", 1, true) ~= nil
+        local hasFooter = pasted:find("BDB1|E", 1, true) ~= nil
+        
+        if debugMode and optionsPanel.AppendDebugLog then
+          optionsPanel.AppendDebugLog("Has BDB1 header: " .. tostring(hasHeader))
+          optionsPanel.AppendDebugLog("Has BDB1 footer: " .. tostring(hasFooter))
+        end
+        
+        if hasHeader and not hasFooter then
+          -- Paste was truncated - shouldn't happen with AceGUI but keep check
+          local msg = "PASTE TRUNCATED! Footer missing (" .. #pasted .. " chars received)."
+          if debugMode then
+            print("[BA Import] " .. msg)
+            if optionsPanel.AppendDebugLog then
+              optionsPanel.AppendDebugLog(msg)
+              optionsPanel.AppendDebugLog("Export may be too large or incomplete.")
+            end
+          end
+          return
+        end
+        
+        if hasHeader and hasFooter then
+          if debugMode and optionsPanel.AppendDebugLog then
+            optionsPanel.AppendDebugLog("Valid BDB1 envelope detected, starting import...")
+          end
+          -- Process immediately like WeakAuras does
+          C_Timer.After(0.1, function()
+            ProcessImport()
+          end)
+        end
       end
     end
   end)
-
-  importBox:SetScript("OnChar", function(_, char)
-    -- Fast path: when we still have a local export string from
-    -- this session, treat Capture Paste as a lightweight
-    -- trigger and avoid building a large Lua buffer.
-    if optionsPanel.importUseLocalExport and optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= "" then
-    optionsPanel.importIsPasting = false
-    optionsPanel.importPasteBuffer = {}
-    optionsPanel.importBufferLen = 0
-    if optionsPanel.importPasteWatcher and optionsPanel.importPasteWatcher.Hide then
-      optionsPanel.importPasteWatcher:Hide()
-    end
-
-    local payload = optionsPanel.lastExportPayload
-    optionsPanel.pendingImportPayload = payload
-    optionsPanel.pendingImportVisibleIsPlaceholder = true
-    if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-      optionsPanel.importStatus:SetText(string.format(t("OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"), #payload))
-    end
-    if optionsPanel.importBox and optionsPanel.importBox.SetText then
-      optionsPanel.importBox:SetText("")
-      if optionsPanel.importBox.SetCursorPosition then
-      optionsPanel.importBox:SetCursorPosition(0)
-      end
-    end
-    return
-    end
-
-    optionsPanel.importIsPasting = true
-    optionsPanel.importLastCharElapsed = 0
-
-    local buf = optionsPanel.importPasteBuffer
-    buf[#buf + 1] = char
-    optionsPanel.importBufferLen = (optionsPanel.importBufferLen or 0) + #char
-
-    if optionsPanel.importBufferLen > IMPORT_MAX_PAYLOAD_CHARS then
-      -- Enforce the cap during paste to avoid ever building an
-      -- enormous string only to throw it away afterwards.
-      optionsPanel.importIsPasting = false
-      optionsPanel.importPasteBuffer = {}
-      optionsPanel.importBufferLen = 0
-      if optionsPanel.importPasteWatcher and optionsPanel.importPasteWatcher.Hide then
-        optionsPanel.importPasteWatcher:Hide()
-      end
-      optionsPanel.pendingImportPayload = nil
-      optionsPanel.pendingImportVisibleIsPlaceholder = false
-      if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-        optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_TOO_LARGE"))
-      end
-      return
-    end
-
-    if optionsPanel.importPasteWatcher and optionsPanel.importPasteWatcher.Show then
-      optionsPanel.importPasteWatcher:Show()
+  
+  StylePayloadEditBox(importBox, false)
+  
+  importScroll:SetScrollChild(importBox)
+  importScroll:SetScript("OnSizeChanged", function(self, w)
+    if importBox and w and w > 20 then
+      importBox:SetWidth(w - 20)
     end
   end)
 
   optionsPanel.importScroll = importScroll
   optionsPanel.importBox = importBox
+  
+  -- Define CreateDebugLogWidget after import widgets exist
+  local function CreateDebugLogWidget()
+    if optionsPanel.debugWidget then 
+      -- Already created, just show it
+      if optionsPanel.debugWidget.frame then
+        optionsPanel.debugWidget.frame:Show()
+      end
+      return
+    end
+    
+    local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
+    if not AceGUI then return end
+    
+    local debugWidget = AceGUI:Create("MultiLineEditBox")
+    debugWidget:SetLabel("Debug Log (copy errors from here):")
+    debugWidget:DisableButton(true)
+    debugWidget:SetNumLines(4)
+    debugWidget:SetFullWidth(true)
+    debugWidget:SetMaxLetters(50000)  -- Prevent overflow
+    debugWidget.frame:SetParent(optionsPanel)
+    debugWidget.frame:ClearAllPoints()
+    -- Anchor below import widget or fallback scroll frame
+    local anchorFrame = (optionsPanel.importWidget and optionsPanel.importWidget.frame) or optionsPanel.importScroll
+    if anchorFrame then
+      debugWidget.frame:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -8)
+    else
+      -- Last resort: anchor below import status label
+      debugWidget.frame:SetPoint("TOPLEFT", optionsPanel.importStatus or importHelp, "BOTTOMLEFT", 0, -150)
+    end
+    debugWidget.frame:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
+    debugWidget.frame:SetFrameLevel(optionsPanel:GetFrameLevel() + 10)
+    debugWidget.frame:Show()
+    debugWidget:SetText("Debug mode enabled. Diagnostics will appear here...")
+    
+    optionsPanel.debugWidget = debugWidget
+    optionsPanel.debugLogBox = debugWidget.editBox
+    
+    -- Helper function to append to debug log
+    local function AppendDebugLog(message)
+      if not debugWidget then return end
+      local current = debugWidget:GetText() or ""
+      if current:match("^Debug mode enabled") or current:match("^Errors and diagnostic") then
+        current = ""
+      end
+      local timestamp = date("%H:%M:%S")
+      local newText = current .. "\n[" .. timestamp .. "] " .. message
+      -- Truncate if too long
+      if #newText > 45000 then
+        newText = "[Log truncated]\n" .. newText:sub(-40000)
+      end
+      debugWidget:SetText(newText)
+      if debugWidget.editBox then
+        debugWidget.editBox:SetCursorPosition(#newText)
+      end
+    end
+    
+    optionsPanel.AppendDebugLog = AppendDebugLog
+  end
+  
+  optionsPanel.CreateDebugLogWidget = CreateDebugLogWidget
+  
+  -- Call CreateImportWidget when panel is shown to ensure proper widget creation
+  optionsPanel:HookScript("OnShow", function()
+    if not optionsPanel.importWidget and optionsPanel.CreateImportWidget then
+      optionsPanel.CreateImportWidget()
+    end
+    -- Create debug log if debug mode is enabled
+    if BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode then
+      if optionsPanel.CreateDebugLogWidget then
+        optionsPanel.CreateDebugLogWidget()
+      end
+    end
+  end)
+  
+  -- Provide no-op AppendDebugLog if debug widget not created
+  if not optionsPanel.AppendDebugLog then
+    optionsPanel.AppendDebugLog = function(message)
+      -- No-op when debug mode is disabled
+    end
+  end
+
+  -- Override print for the import section to also log to debug box
+  local originalPrint = print
+  local function debugPrint(...)
+    local message = strjoin(" ", tostringall(...))
+    if message:match("%[BA") or message:match("%[BookArchivist%]") then
+      AppendDebugLog(message)
+    end
+    if originalPrint then
+      originalPrint(...)
+    end
+  end
+  
+  -- Temporarily replace print during import operations
+  optionsPanel.debugPrint = debugPrint
+  optionsPanel.CreateImportWidget = CreateImportWidget
   optionsPanel.importWorker = optionsPanel.importWorker or (BookArchivist.ImportWorker and BookArchivist.ImportWorker:New(optionsPanel))
   optionsPanel.refresh = function()
     OptionsUI:Sync()
@@ -1046,6 +1011,13 @@ function OptionsUI:Open()
   if not panel then
     return
   end
+  
+  -- Create AceGUI import widget after panel is ready
+  C_Timer.After(0.1, function()
+    if panel.CreateImportWidget then
+      panel.CreateImportWidget()
+    end
+  end)
 
   local openedPanel = false
   local settingsAPI = type(_G) == "table" and rawget(_G, "Settings") or nil

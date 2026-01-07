@@ -228,30 +228,31 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 	return true
 end
 
-local function attachListUI(listUI, frame)
+local function attachListUI(listUI, frame, listWrapper)
 	if not listUI or type(listUI.Create) ~= "function" then
 		return
 	end
-	local ok, err = pcall(listUI.Create, listUI, frame)
+	
+	-- Use the wrapper frame (traditional frame inside AceGUI container)
+	local listContainer = listWrapper or frame
+	
+	local ok, err = pcall(listUI.Create, listUI, listContainer)
 	if not ok and BookArchivist and BookArchivist.LogError then
 		BookArchivist:LogError("BookArchivist list UI failed: " .. tostring(err))
 	end
 end
 
-local function attachReaderUI(readerUI, listUI, frame)
+local function attachReaderUI(readerUI, listUI, frame, readerWrapper)
 	if not readerUI or type(readerUI.Create) ~= "function" then
 		return
 	end
-	local anchor
-	if listUI and type(listUI.GetListBlock) == "function" then
-		local ok, block = pcall(function()
-			return listUI:GetListBlock()
-		end)
-		if ok and block then
-			anchor = block
-		end
-	end
-	local ok, err = pcall(readerUI.Create, readerUI, frame, anchor or frame)
+	
+	-- Use the wrapper frame (traditional frame inside AceGUI container)
+	local readerContainer = readerWrapper or frame
+	
+	-- CRITICAL: Do NOT pass list block as anchor to prevent cross-anchoring.
+	-- Reader should fill readerContainer and be 100% wrapper-relative.
+	local ok, err = pcall(readerUI.Create, readerUI, readerContainer, readerContainer)
 	if not ok and BookArchivist and BookArchivist.LogError then
 		BookArchivist:LogError("BookArchivist reader UI failed: " .. tostring(err))
 	end

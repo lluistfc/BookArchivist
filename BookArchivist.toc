@@ -7,6 +7,11 @@
 ## AddonCompartmentFunc: BookArchivist_ToggleFromCompartment
 ## X-Curse-Project-ID: CF_PROJECT_ID_PLACEHOLDER
 
+# Ace3 libraries
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\AceGUI-3.0\AceGUI-3.0.xml
+
 core/BookArchivist_BookId.lua
 core/BookArchivist_Migrations.lua
 core/BookArchivist_DB.lua
