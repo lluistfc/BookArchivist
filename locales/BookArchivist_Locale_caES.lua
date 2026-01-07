@@ -78,7 +78,7 @@ Locales.caES = {
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprèn a l'última pàgina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quan està activat, en tornar a obrir un llibre desat s'anirà a l'última pàgina que vas veure en lloc de començar sempre a la pàgina 1.",
   ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exporta / Importa",
-  ["OPTIONS_EXPORT_BUTTON"] = "Genera cadena d'exportació",
+  ["OPTIONS_EXPORT_BUTTON"] = "Genera exportació",
   ["OPTIONS_EXPORT_LABEL"] = "Exporta",
   ["OPTIONS_EXPORT_BUTTON_COPY"] = "Copia",
   ["OPTIONS_EXPORT_STATUS_UNAVAILABLE"] = "Exportació no disponible.",
@@ -104,6 +104,10 @@ Locales.caES = {
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Càrrega massa gran. S'està cancel·lant.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "No s'ha detectat cap text d'exportació al porta-retalls. Assegura't d'haver fet clic a Copia al client d'origen.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dades rebudes (%d caràcters). Fes clic a Importa.",
+  ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importació no disponible.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "No hi ha dades d'importació per processar.",
+  ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Ja hi ha una importació en curs.",
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importats: %d nous, %d fusionats",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconeguda",

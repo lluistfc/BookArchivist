@@ -78,7 +78,7 @@ Locales.frFR = {
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprendre à la dernière page",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si cette option est activée, rouvrir un livre enregistré revient à la dernière page lue au lieu de toujours commencer à la page 1.",
   ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exporter / Importer",
-  ["OPTIONS_EXPORT_BUTTON"] = "Générer la chaîne d'export",
+  ["OPTIONS_EXPORT_BUTTON"] = "Générer l'export",
   ["OPTIONS_EXPORT_LABEL"] = "Exporter",
   ["OPTIONS_EXPORT_BUTTON_COPY"] = "Copier",
   ["OPTIONS_EXPORT_STATUS_UNAVAILABLE"] = "Exportation indisponible.",
@@ -104,6 +104,10 @@ Locales.frFR = {
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Charge trop volumineuse. Abandon.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "Aucun texte d'export détecté dans le presse-papiers. Assurez-vous d'avoir cliqué sur Copier sur le client source.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Données reçues (%d caractères). Cliquez sur Importer.",
+  ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importation indisponible.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Aucune donnée à importer.",
+  ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Une importation est déjà en cours.",
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importé : %d nouveaux, %d fusionnés",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zone inconnue",

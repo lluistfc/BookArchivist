@@ -78,7 +78,7 @@ Locales.itIT = {
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Riprendi all'ultima pagina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Se abilitato, riaprire un libro salvato ti riporta all'ultima pagina visualizzata invece di iniziare sempre dalla pagina 1.",
   ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Esporta / Importa",
-  ["OPTIONS_EXPORT_BUTTON"] = "Genera stringa di esportazione",
+  ["OPTIONS_EXPORT_BUTTON"] = "Genera esportazione",
   ["OPTIONS_EXPORT_LABEL"] = "Esporta",
   ["OPTIONS_EXPORT_BUTTON_COPY"] = "Copia",
   ["OPTIONS_EXPORT_STATUS_UNAVAILABLE"] = "Esportazione non disponibile.",
@@ -104,6 +104,10 @@ Locales.itIT = {
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Dati troppo grandi. Interruzione.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "Nessun testo di esportazione rilevato negli appunti. Assicurati di aver fatto clic su Copia sul client di origine.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dati ricevuti (%d caratteri). Fai clic su Importa.",
+  ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importazione non disponibile.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Nessun dato di importazione da elaborare.",
+  ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Importazione già in corso.",
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importati: %d nuovi, %d uniti",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona sconosciuta",

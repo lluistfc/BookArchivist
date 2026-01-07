@@ -78,7 +78,7 @@ Locales.ptBR = {
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Retomar na última página",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quando ativado, reabrir um livro salvo leva à última página visualizada em vez de começar sempre na página 1.",
   ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exportar / Importar",
-  ["OPTIONS_EXPORT_BUTTON"] = "Gerar string de exportação",
+  ["OPTIONS_EXPORT_BUTTON"] = "Gerar exportação",
   ["OPTIONS_EXPORT_LABEL"] = "Exportar",
   ["OPTIONS_EXPORT_BUTTON_COPY"] = "Copiar",
   ["OPTIONS_EXPORT_STATUS_UNAVAILABLE"] = "Exportação indisponível.",
@@ -104,6 +104,10 @@ Locales.ptBR = {
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Carga muito grande. Cancelando.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "Nenhum texto de exportação detectado na área de transferência. Certifique-se de ter clicado em Copiar no cliente de origem.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Dados recebidos (%d caracteres). Clique em Importar.",
+  ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importação indisponível.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Nenhum dado de importação para processar.",
+  ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Uma importação já está em andamento.",
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importados: %d novos, %d mesclados",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconhecida",

@@ -389,7 +389,18 @@ function ImportWorker:_Step(_elapsed)
 
       self.phase = "done"
     elseif self.phase == "done" then
-      local summary = string.format("Imported: %d new, %d merged", self.stats.newCount or 0, self.stats.mergedCount or 0)
+      local newCount = self.stats.newCount or 0
+      local mergedCount = self.stats.mergedCount or 0
+      local summary
+      if BookArchivist and BookArchivist.L then
+        local L = BookArchivist.L
+        if L["OPTIONS_IMPORT_STATUS_SUMMARY"] then
+          summary = string.format(L["OPTIONS_IMPORT_STATUS_SUMMARY"], newCount, mergedCount)
+        end
+      end
+      if not summary then
+        summary = string.format("Imported: %d new, %d merged", newCount, mergedCount)
+      end
       self:Cancel()
       if self.onDone then
         self.onDone(summary)

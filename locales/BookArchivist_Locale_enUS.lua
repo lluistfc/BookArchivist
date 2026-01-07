@@ -106,6 +106,10 @@ Locales.enUS = {
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Payload too large. Aborting.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "No export text detected in clipboard. Make sure you clicked Copy on the source client first.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Payload received (%d chars). Click Import.",
+	["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Import unavailable.",
+	["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "No import data to process.",
+	["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Import already in progress.",
+	["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Imported: %d new, %d merged",
 	["OPTIONS_TOOLTIP_LABEL"] = "Show tooltip 'Archived' tag",
 	["OPTIONS_TOOLTIP_TOOLTIP"] = "When enabled, readable items whose text has been saved for this character will show an extra 'Book Archivist: Archived' line in their tooltip.",
 

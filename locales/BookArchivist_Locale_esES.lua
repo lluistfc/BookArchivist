@@ -78,7 +78,7 @@ Locales.esES = {
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reanudar en la última página",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si está activado, al volver a abrir un libro guardado se irá a la última página que viste en lugar de empezar siempre en la página 1.",
   ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exportar / Importar",
-  ["OPTIONS_EXPORT_BUTTON"] = "Generar cadena de exportación",
+  ["OPTIONS_EXPORT_BUTTON"] = "Generar exportación",
   ["OPTIONS_EXPORT_LABEL"] = "Exportar",
   ["OPTIONS_EXPORT_BUTTON_COPY"] = "Copiar",
   ["OPTIONS_EXPORT_STATUS_UNAVAILABLE"] = "Exportación no disponible.",
@@ -104,6 +104,10 @@ Locales.esES = {
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Carga demasiado grande. Cancelando.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "No se ha detectado texto de exportación en el portapapeles. Asegúrate de haber hecho clic en Copiar en el cliente de origen.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Carga recibida (%d caracteres). Haz clic en Importar.",
+  ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Importación no disponible.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "No hay datos de importación para procesar.",
+  ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "La importación ya está en curso.",
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importados: %d nuevos, %d combinados",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Zona desconocida",

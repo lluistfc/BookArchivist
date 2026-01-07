@@ -183,11 +183,35 @@ function OptionsUI:Sync()
   if optionsPanel.exportButton and optionsPanel.exportButton.SetText then
     optionsPanel.exportButton:SetText(t("OPTIONS_EXPORT_BUTTON"))
   end
+  if optionsPanel.exportCopyButton and optionsPanel.exportCopyButton.SetText then
+    optionsPanel.exportCopyButton:SetText(t("OPTIONS_EXPORT_BUTTON_COPY"))
+  end
   if optionsPanel.importLabel and optionsPanel.importLabel.SetText then
     optionsPanel.importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
   end
   if optionsPanel.importButton and optionsPanel.importButton.SetText then
     optionsPanel.importButton:SetText(t("OPTIONS_IMPORT_BUTTON"))
+  end
+  if optionsPanel.importPasteButton and optionsPanel.importPasteButton.SetText then
+    optionsPanel.importPasteButton:SetText(t("OPTIONS_IMPORT_BUTTON_CAPTURE"))
+  end
+  if optionsPanel.importHelp and optionsPanel.importHelp.SetText then
+    optionsPanel.importHelp:SetText(t("OPTIONS_IMPORT_HELP"))
+  end
+  -- Keep the export status line in sync with the active
+  -- language: show the default hint if no payload exists,
+  -- otherwise show the localized "export ready" text.
+  if optionsPanel.exportStatus and optionsPanel.exportStatus.SetText then
+    if optionsPanel.lastExportPayload and type(optionsPanel.lastExportPayload) == "string" and optionsPanel.lastExportPayload ~= "" then
+      optionsPanel.exportStatus:SetText(string.format(t("OPTIONS_EXPORT_STATUS_READY"), #optionsPanel.lastExportPayload))
+    else
+      optionsPanel.exportStatus:SetText(t("OPTIONS_EXPORT_STATUS_DEFAULT"))
+    end
+  end
+  -- If there is no pending import payload, keep the status line
+  -- synced with the default hint in the active language.
+  if optionsPanel.importStatus and optionsPanel.importStatus.SetText and not optionsPanel.pendingImportPayload then
+    optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_DEFAULT"))
   end
 
   if optionsPanel.languageDropdown and UIDropDownMenu_SetSelectedValue and BookArchivist and BookArchivist.GetLanguage then
@@ -233,36 +257,67 @@ function OptionsUI:Ensure()
   optionsPanel.pendingImportVisibleIsPlaceholder = false
   optionsPanel.lastExportPayload = optionsPanel.lastExportPayload or nil
 
-  local logo = optionsPanel:CreateTexture(nil, "ARTWORK")
+  -- Wrap panel contents in a scroll frame so long localized
+  -- help text (such as the export/import instructions) never
+  -- overflows the visible options area.
+  local scrollFrame
+  local scrollChild
+  if type(_G) == "table" and rawget(_G, "CreateFrame") then
+    scrollFrame = _G.CreateFrame("ScrollFrame", "BookArchivistOptionsScrollFrame", optionsPanel, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 0, -4)
+    scrollFrame:SetPoint("BOTTOMRIGHT", optionsPanel, "BOTTOMRIGHT", -26, 4)
+
+    scrollChild = createFrame("Frame", nil, scrollFrame)
+    -- Give the scroll child a reasonable initial height so that
+    -- content can extend and be scrolled without being clipped.
+    scrollChild:SetSize(1, 800)
+    scrollFrame:SetScrollChild(scrollChild)
+
+    scrollFrame:HookScript("OnSizeChanged", function(frame, width)
+      if not width or width <= 0 then return end
+      if scrollChild and scrollChild.SetWidth then
+        scrollChild:SetWidth(width)
+      end
+    end)
+  else
+    -- Fallback: no scroll frame available (e.g. in tests),
+    -- render everything directly on the panel.
+    scrollChild = optionsPanel
+  end
+
+  optionsPanel.scrollFrame = scrollFrame
+  optionsPanel.scrollChild = scrollChild
+
+  local logo = scrollChild:CreateTexture(nil, "ARTWORK")
   logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png")
   logo:SetSize(64, 64)
-  logo:SetPoint("TOP", optionsPanel, "TOP", 0, -32)
+  logo:SetPoint("TOP", scrollChild, "TOP", 0, -32)
 
-  local title = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+  local title = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
   title:SetPoint("TOP", logo, "BOTTOM", 0, -8)
 	title:SetText(t("OPTIONS_TITLE"))
   optionsPanel.titleText = title
 
-  local subtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  local subtitle = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 	subtitle:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
   optionsPanel.subtitleText = subtitle
 
   -- Left content column anchor (matches Blizzard option panel left margin)
-  local contentLeft = createFrame("Frame", nil, optionsPanel)
+  local contentLeft = createFrame("Frame", nil, scrollChild)
   contentLeft:SetSize(1, 1)
-  contentLeft:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 16, -120)
+  contentLeft:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 16, -120)
   optionsPanel.contentLeft = contentLeft
 
   -- Right content boundary (matches Settings panel padding)
-  local contentRight = createFrame("Frame", nil, optionsPanel)
+  local contentRight = createFrame("Frame", nil, scrollChild)
   contentRight:SetSize(1, 1)
-  contentRight:SetPoint("TOPRIGHT", optionsPanel, "TOPRIGHT", -16, -120)
+  contentRight:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -16, -120)
   optionsPanel.contentRight = contentRight
 
   subtitle:ClearAllPoints()
   subtitle:SetPoint("TOPLEFT", contentLeft, "TOPLEFT", 0, 0)
 
-  local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
+  local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
   checkbox:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -12)
   checkbox.Text:SetText(t("OPTIONS_DEBUG_LOGGING_LABEL"))
   checkbox.tooltipText = t("OPTIONS_DEBUG_LOGGING_TOOLTIP")
@@ -274,7 +329,7 @@ function OptionsUI:Ensure()
 
   optionsPanel.debugCheckbox = checkbox
 
-  local uiDebugCheckbox = createFrame("CheckButton", "BookArchivistUIDebugCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
+  local uiDebugCheckbox = createFrame("CheckButton", "BookArchivistUIDebugCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
   uiDebugCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -8)
   uiDebugCheckbox.Text:SetText(t("OPTIONS_UI_DEBUG_LABEL"))
   uiDebugCheckbox.tooltipText = t("OPTIONS_UI_DEBUG_TOOLTIP")
@@ -294,7 +349,7 @@ function OptionsUI:Ensure()
 
   optionsPanel.uiDebugCheckbox = uiDebugCheckbox
 
-  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
+  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
   tooltipCheckbox:SetPoint("TOPLEFT", uiDebugCheckbox, "BOTTOMLEFT", 0, -8)
   tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
   tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
@@ -307,7 +362,7 @@ function OptionsUI:Ensure()
 
   optionsPanel.tooltipCheckbox = tooltipCheckbox
 
-  local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
+  local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
   resumePageCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -8)
   resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
   resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
@@ -320,12 +375,12 @@ function OptionsUI:Ensure()
 
   optionsPanel.resumePageCheckbox = resumePageCheckbox
 
-  local langLabel = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  local langLabel = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   langLabel:SetPoint("TOPLEFT", resumePageCheckbox, "BOTTOMLEFT", 0, -16)
 	langLabel:SetText(t("LANGUAGE_LABEL"))
   optionsPanel.langLabel = langLabel
 
-  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", optionsPanel, "UIDropDownMenuTemplate")
+  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", scrollChild, "UIDropDownMenuTemplate")
   if dropdown then
     -- Align language dropdown with the main content column
     dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -4)
@@ -355,6 +410,9 @@ function OptionsUI:Ensure()
           if BookArchivist and BookArchivist.SetLanguage then
             BookArchivist:SetLanguage(opt.value)
           end
+          if OptionsUI and OptionsUI.Sync then
+            OptionsUI:Sync()
+          end
         end
         info.checked = (opt.value == current)
         UIDropDownMenu_AddButton(info, level)
@@ -374,7 +432,7 @@ function OptionsUI:Ensure()
   end
 
   -- Export / Import section container (two columns)
-  local exportImportContainer = createFrame("Frame", "BookArchivistExportImportContainer", optionsPanel)
+  local exportImportContainer = createFrame("Frame", "BookArchivistExportImportContainer", scrollChild)
   exportImportContainer:ClearAllPoints()
   -- Align with the left content column under the language row, with extra spacing as a new section
   exportImportContainer:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -36)
@@ -539,7 +597,14 @@ function OptionsUI:Ensure()
     end
     exportCopyBox:SetFontObject("GameFontHighlightSmall")
     exportCopyBox:SetMaxLetters(0)
+    -- Seed cursor metrics so ScrollingEdit_OnUpdate has safe values
+    -- even before the first cursor change callback fires.
     exportCopyBox.cursorOffset = 0
+    if exportCopyBox.GetLineHeight then
+      exportCopyBox.cursorHeight = exportCopyBox:GetLineHeight() or 1
+    else
+      exportCopyBox.cursorHeight = 1
+    end
     StylePayloadEditBox(exportCopyBox, false)
   else
     -- Fallback for environments without InputScrollFrameTemplate:
@@ -559,6 +624,11 @@ function OptionsUI:Ensure()
     exportCopyBox:SetFontObject("GameFontHighlightSmall")
     exportCopyBox:SetMaxLetters(0)
     exportCopyBox.cursorOffset = 0
+    if exportCopyBox.GetLineHeight then
+      exportCopyBox.cursorHeight = exportCopyBox:GetLineHeight() or 1
+    else
+      exportCopyBox.cursorHeight = 1
+    end
     StylePayloadEditBox(exportCopyBox, false)
     exportCopyBox:Hide()
   end
@@ -643,7 +713,7 @@ function OptionsUI:Ensure()
     local worker = optionsPanel.importWorker
     if not (BookArchivist and BookArchivist.ImportWorker and worker) then
       if print then
-        print("[BookArchivist] Import unavailable")
+        print("[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_UNAVAILABLE"))
       end
       return
     end
@@ -651,7 +721,7 @@ function OptionsUI:Ensure()
     local raw = trim(GetImportPayload())
     if raw == "" then
       if print then
-        print("[BookArchivist] Import payload missing")
+        print("[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"))
       end
       return
     end
@@ -698,7 +768,7 @@ function OptionsUI:Ensure()
           end
         end
         if print then
-          print("[BookArchivist] " .. (summary or "Import complete"))
+          print("[BookArchivist] " .. (summary or t("OPTIONS_IMPORT_STATUS_COMPLETE")))
         end
         if BookArchivist.UI and BookArchivist.UI.Refresh then
           BookArchivist.UI:Refresh()
@@ -717,7 +787,7 @@ function OptionsUI:Ensure()
           end
         end
         if print then
-          print("[BookArchivist] Import failed: " .. tostring(err))
+          print("[BookArchivist] " .. string.format(t("OPTIONS_IMPORT_STATUS_FAILED"), tostring(err)))
         end
       end,
     })
@@ -727,7 +797,7 @@ function OptionsUI:Ensure()
       if optionsPanel.exportButton then optionsPanel.exportButton:Enable() end
       if optionsPanel.exportCopyButton then optionsPanel.exportCopyButton:Enable() end
       if print then
-        print("[BookArchivist] Import already in progress")
+        print("[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_IN_PROGRESS"))
       end
     end
   end)

@@ -78,7 +78,7 @@ Locales.deDE = {
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Auf letzter Seite fortsetzen",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Wenn aktiviert, springt das erneute Öffnen eines gespeicherten Buches zur zuletzt angesehenen Seite, anstatt immer bei Seite 1 zu beginnen.",
   ["OPTIONS_EXPORT_IMPORT_LABEL"] = "Export / Import",
-  ["OPTIONS_EXPORT_BUTTON"] = "Exportzeichenkette erzeugen",
+  ["OPTIONS_EXPORT_BUTTON"] = "Export erstellen",
   ["OPTIONS_EXPORT_LABEL"] = "Export",
   ["OPTIONS_EXPORT_BUTTON_COPY"] = "Kopieren",
   ["OPTIONS_EXPORT_STATUS_UNAVAILABLE"] = "Export nicht verfügbar.",
@@ -104,6 +104,10 @@ Locales.deDE = {
   ["OPTIONS_IMPORT_STATUS_TOO_LARGE"] = "Datenmenge zu groß. Abbruch.",
   ["OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"] = "Im Zwischenspeicher wurde kein Exporttext gefunden. Stelle sicher, dass du auf dem Quell-Client auf Kopieren geklickt hast.",
   ["OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"] = "Daten empfangen (%d Zeichen). Klicke auf Importieren.",
+  ["OPTIONS_IMPORT_STATUS_UNAVAILABLE"] = "Import nicht verfügbar.",
+  ["OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"] = "Keine Importdaten zum Verarbeiten vorhanden.",
+  ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Import läuft bereits.",
+  ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importiert: %d neu, %d zusammengeführt",
 
   -- Location / provenance
   ["LOCATION_UNKNOWN_ZONE"] = "Unbekannte Zone",
