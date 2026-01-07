@@ -42,6 +42,8 @@ Locales.esES = {
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Selecciona un libro de la lista",
+  ["READER_EMPTY_TIP_SEARCH"] = "Consejo: Usa el cuadro de búsqueda para encontrar libros por título o texto.",
+  ["READER_EMPTY_TIP_LOCATIONS"] = "Consejo: Cambia a Ubicaciones para navegar por donde los encontraste.",
   ["READER_NO_CONTENT"] = "|cFF888888No hay contenido disponible|r",
   ["READER_FOOTER_HINT"] = "|cFF888888Los libros se guardan a medida que los lees en el juego|r",
   ["READER_META_CREATOR"] = "Autor:",

@@ -42,6 +42,8 @@ Locales.deDE = {
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Wähle ein Buch aus der Liste",
+  ["READER_EMPTY_TIP_SEARCH"] = "Tipp: Verwende das Suchfeld, um Bücher nach Titel oder Text zu finden.",
+  ["READER_EMPTY_TIP_LOCATIONS"] = "Tipp: Wechsle zu Orte, um nach Fundorten zu durchsuchen.",
   ["READER_NO_CONTENT"] = "|cFF888888Kein Inhalt verfügbar|r",
   ["READER_FOOTER_HINT"] = "|cFF888888Bücher werden gespeichert, während du sie im Spiel liest|r",
   ["READER_META_CREATOR"] = "Autor:",

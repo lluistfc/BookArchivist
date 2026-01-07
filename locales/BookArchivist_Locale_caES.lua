@@ -42,6 +42,8 @@ Locales.caES = {
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Selecciona un llibre de la llista",
+  ["READER_EMPTY_TIP_SEARCH"] = "Consell: Utilitza el quadre de cerca per trobar llibres per títol o text.",
+  ["READER_EMPTY_TIP_LOCATIONS"] = "Consell: Canvia a Ubicacions per navegar per on els vas trobar.",
   ["READER_NO_CONTENT"] = "|cFF888888No hi ha contingut disponible|r",
   ["READER_FOOTER_HINT"] = "|cFF888888Els llibres es desen a mesura que els llegeixes dins del joc|r",
   ["READER_META_CREATOR"] = "Autor:",

@@ -42,6 +42,8 @@ Locales.frFR = {
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Sélectionnez un livre dans la liste",
+  ["READER_EMPTY_TIP_SEARCH"] = "Astuce : Utilisez la boîte de recherche pour trouver des livres par titre ou texte.",
+  ["READER_EMPTY_TIP_LOCATIONS"] = "Astuce : Basculez vers Lieux pour parcourir par où vous les avez trouvés.",
   ["READER_NO_CONTENT"] = "|cFF888888Aucun contenu disponible|r",
   ["READER_FOOTER_HINT"] = "|cFF888888Les livres sont enregistrés au fur et à mesure que vous les lisez en jeu|r",
   ["READER_META_CREATOR"] = "Auteur :",

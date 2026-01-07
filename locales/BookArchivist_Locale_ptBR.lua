@@ -41,8 +41,8 @@ Locales.ptBR = {
 	["RESUME_LAST_BOOK"] = "Retomar livro",
 
   -- Reader
-  ["READER_EMPTY_PROMPT"] = "Selecione um livro na lista",
-  ["READER_NO_CONTENT"] = "|cFF888888Nenhum conteúdo disponível|r",
+  ["READER_EMPTY_PROMPT"] = "Selecione um livro na lista",  ["READER_EMPTY_TIP_SEARCH"] = "Dica: Use a caixa de pesquisa para encontrar livros por título ou texto.",
+  ["READER_EMPTY_TIP_LOCATIONS"] = "Dica: Mude para Localizações para navegar por onde você os encontrou.",  ["READER_NO_CONTENT"] = "|cFF888888Nenhum conteúdo disponível|r",
   ["READER_FOOTER_HINT"] = "|cFF888888Os livros são salvos enquanto você os lê no jogo|r",
   ["READER_META_CREATOR"] = "Autor:",
   ["READER_META_MATERIAL"] = "Material:",

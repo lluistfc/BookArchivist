@@ -46,6 +46,8 @@ Locales.enUS = {
 
   -- Reader
   ["READER_EMPTY_PROMPT"] = "Select a book from the list",
+  ["READER_EMPTY_TIP_SEARCH"] = "Tip: Use the search box to find books by title or text.",
+  ["READER_EMPTY_TIP_LOCATIONS"] = "Tip: Switch to Locations to browse by where you found them.",
   ["READER_NO_CONTENT"] = "|cFF888888No content available|r",
   ["READER_FOOTER_HINT"] = "|cFF888888Books are saved as you read them in-game|r",
   ["READER_META_CREATOR"] = "Creator:",

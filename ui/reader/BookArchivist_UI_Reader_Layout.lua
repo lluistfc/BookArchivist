@@ -391,7 +391,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		-- Title: "Book Archivist"
 		local emptyTitle = centerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 		emptyTitle:SetPoint("TOP", centerContainer, "TOP", 0, 0)
-		emptyTitle:SetText("Book Archivist")
+		emptyTitle:SetText(t("ADDON_TITLE"))
 		emptyTitle:SetTextColor(0.7, 0.7, 0.7)
 		state.emptyTitle = emptyTitle
 
@@ -459,7 +459,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		tip1:SetPoint("TOP", tipsContainer, "TOP", 0, 0)
 		tip1:SetWidth(380)
 		tip1:SetJustifyH("CENTER")
-		tip1:SetText("Tip: Use the search box to find books by title or text.")
+		tip1:SetText(t("READER_EMPTY_TIP_SEARCH"))
 		tip1:SetTextColor(0.5, 0.5, 0.5)
 		state.emptyTip1 = tip1
 
@@ -467,7 +467,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		tip2:SetPoint("TOP", tip1, "BOTTOM", 0, -6)
 		tip2:SetWidth(380)
 		tip2:SetJustifyH("CENTER")
-		tip2:SetText("Tip: Switch to Locations to browse by where you found them.")
+		tip2:SetText(t("READER_EMPTY_TIP_LOCATIONS"))
 		tip2:SetTextColor(0.5, 0.5, 0.5)
 		state.emptyTip2 = tip2
 

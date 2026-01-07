@@ -232,6 +232,26 @@ local function rebuildUIForLanguageChange()
 			end
 		end
 
+		-- Update welcome panel texts
+		if rstate.emptyTitle and rstate.emptyTitle.SetText then
+			rstate.emptyTitle:SetText(t("ADDON_TITLE"))
+		end
+		if rstate.emptySubtitle and rstate.emptySubtitle.SetText then
+			rstate.emptySubtitle:SetText(t("READER_EMPTY_PROMPT"))
+		end
+		if rstate.emptyResumeBtn and rstate.emptyResumeBtn.SetText then
+			rstate.emptyResumeBtn:SetText(t("RESUME_LAST_BOOK"))
+		end
+		if rstate.emptyOptionsBtn and rstate.emptyOptionsBtn.SetText then
+			rstate.emptyOptionsBtn:SetText(t("HEADER_BUTTON_OPTIONS"))
+		end
+		if rstate.emptyTip1 and rstate.emptyTip1.SetText then
+			rstate.emptyTip1:SetText(t("READER_EMPTY_TIP_SEARCH"))
+		end
+		if rstate.emptyTip2 and rstate.emptyTip2.SetText then
+			rstate.emptyTip2:SetText(t("READER_EMPTY_TIP_LOCATIONS"))
+		end
+
 		-- Update reader delete button text.
 		local deleteBtn = rstate.deleteButton or (ReaderUI.__getWidget and ReaderUI.__getWidget("deleteBtn"))
 		if deleteBtn and deleteBtn.SetText then

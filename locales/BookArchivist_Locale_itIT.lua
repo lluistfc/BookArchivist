@@ -41,8 +41,8 @@ Locales.itIT = {
 	["RESUME_LAST_BOOK"] = "Riprendi libro",
 
   -- Reader
-  ["READER_EMPTY_PROMPT"] = "Seleziona un libro dall'elenco",
-  ["READER_NO_CONTENT"] = "|cFF888888Nessun contenuto disponibile|r",
+  ["READER_EMPTY_PROMPT"] = "Seleziona un libro dall'elenco",  ["READER_EMPTY_TIP_SEARCH"] = "Suggerimento: Usa la casella di ricerca per trovare libri per titolo o testo.",
+  ["READER_EMPTY_TIP_LOCATIONS"] = "Suggerimento: Passa a Posizioni per sfogliare per dove li hai trovati.",  ["READER_NO_CONTENT"] = "|cFF888888Nessun contenuto disponibile|r",
   ["READER_FOOTER_HINT"] = "|cFF888888I libri vengono salvati mentre li leggi in gioco|r",
   ["READER_META_CREATOR"] = "Autore:",
   ["READER_META_MATERIAL"] = "Materiale:",
