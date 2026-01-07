@@ -90,6 +90,7 @@ Locales.esES = {
   ["OPTIONS_IMPORT_BUTTON"] = "Importar",
   ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Capturar pegado",
   ["OPTIONS_IMPORT_HELP"] = "En este cliente: Después de Exportar, puedes hacer clic en Importar aquí para probar o restaurar tus propios datos sin pegar.\n\nPara mover datos a otro cliente/cuenta:\n1) En el cliente de origen, haz clic en Exportar y luego en Copiar.\n2) Comparte el texto de exportación copiado como quieras (Discord, sitios de pegado, archivos compartidos, etc.).\n3) En el cliente de destino, copia ese texto, abre este panel, haz clic en Capturar pegado y luego pulsa Ctrl+V una vez.\n4) Cuando el estado muestre 'Carga recibida', haz clic en Importar.\n\nNota: Un simple Ctrl+V en el juego no inicia la importación por sí solo; el addon solo escucha el pegado mientras Capturar pegado está activo, o reutiliza tu última Exportación cuando solo haces clic en Importar aquí.",
+  ["OPTIONS_IMPORT_PERF_TIP"] = "Consejo: Puedes pegar la exportación completa directamente en el cuadro de importación con Ctrl+V, pero las cadenas muy grandes pueden congelar el cliente del juego durante varios segundos mientras termina el pegado. Usa Capturar pegado para introducir el texto poco a poco y evitar ese pico de rendimiento.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Pega el texto de exportación y espera a que aparezca 'Carga recibida' antes de importar.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Pulsa Ctrl+V ahora para pegar y luego espera a que aparezca 'Carga recibida'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Preparando importación…",

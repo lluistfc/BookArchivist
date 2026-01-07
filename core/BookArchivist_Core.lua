@@ -19,239 +19,8 @@ local Serialize = BookArchivist.Serialize
 local Base64 = BookArchivist.Base64
 local CRC32 = BookArchivist.CRC32
 
-local function DecodeBDB1Envelope(raw)
-  if type(raw) ~= "string" or raw == "" then
-    return nil, nil, "Payload missing"
-  end
-
-  raw = raw:gsub("\r\n", "\n"):gsub("\r", "\n")
-  local lines = {}
-
-  if raw:find("\n", 1, true) then
-    -- Normal case: newline-delimited header/chunks/footer.
-    for line in string.gmatch(raw, "([^\n]+)") do
-      local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
-      if trimmed ~= "" then
-        lines[#lines + 1] = trimmed
-      end
-    end
-  else
-    -- Fallback: some paste paths (or single-line edit boxes)
-    -- may strip newline characters and concatenate everything
-    -- into a single string. In that case, recover logical lines
-    -- using the BDB1 control tokens, which never appear in the
-    -- base64 payload.
-
-    local searchPos = 1
-
-    -- Optional header, if still present.
-    local headerStart = raw:find("BDB1|S|", searchPos, true)
-    if headerStart then
-      local nextControl = math.huge
-      local c1 = raw:find("BDB1|C|", headerStart + 1, true)
-      local f1 = raw:find("BDB1|E", headerStart + 1, true)
-      if c1 and c1 < nextControl then nextControl = c1 end
-      if f1 and f1 < nextControl then nextControl = f1 end
-      if nextControl == math.huge then
-        nextControl = #raw + 1
-      end
-
-      local headerLine = raw:sub(headerStart, nextControl - 1)
-      headerLine = headerLine:gsub("^%s+", ""):gsub("%s+$", "")
-      if headerLine ~= "" then
-        lines[#lines + 1] = headerLine
-      end
-      searchPos = nextControl
-    end
-
-    -- Chunk lines: each starts with "BDB1|C|" and runs up to
-    -- the next chunk or footer token.
-    while true do
-      local ci = raw:find("BDB1|C|", searchPos, true)
-      if not ci then
-        break
-      end
-
-      local nextPos = math.huge
-      local cNext = raw:find("BDB1|C|", ci + 1, true)
-      local fNext = raw:find("BDB1|E", ci + 1, true)
-      if cNext and cNext < nextPos then nextPos = cNext end
-      if fNext and fNext < nextPos then nextPos = fNext end
-      if nextPos == math.huge then
-        nextPos = #raw + 1
-      end
-
-      local line = raw:sub(ci, nextPos - 1)
-      line = line:gsub("^%s+", ""):gsub("%s+$", "")
-      if line ~= "" then
-        lines[#lines + 1] = line
-      end
-
-      searchPos = nextPos
-    end
-
-    -- Optional footer, if present anywhere after the chunks.
-    local footerStart = raw:find("BDB1|E", searchPos, true)
-    if footerStart then
-      local footerLine = raw:sub(footerStart, footerStart + #"BDB1|E" - 1)
-      footerLine = footerLine:gsub("^%s+", ""):gsub("%s+$", "")
-      if footerLine ~= "" then
-        lines[#lines + 1] = footerLine
-      end
-    end
-  end
-
-  if #lines < 3 then
-    return nil, nil, "Payload too short"
-  end
-
-  -- Scan for header/footer/chunk lines. Treat header/footer as
-  -- hints only; if chunk lines look valid we will attempt a
-  -- best-effort decode even if the header was mangled by
-  -- copy/paste.
-  local headerIdx, footerIdx
-  local hasChunks = false
-  local maxChunkIdx = 0
-
-  for i = 1, #lines do
-    local line = lines[i]
-    if not headerIdx and line:find("BDB%d+|S|") then
-      headerIdx = i
-    end
-    if line:find("BDB%d+|E") then
-      footerIdx = i
-    end
-
-    local _, idxStr = line:match("(BDB%d+)|C|(%d+)")
-    if idxStr then
-      hasChunks = true
-      local idxNum = tonumber(idxStr or "0") or 0
-      if idxNum > maxChunkIdx then
-        maxChunkIdx = idxNum
-      end
-    end
-  end
-
-  if not hasChunks then
-    -- No recognizable chunk lines at all; this is not a BDB
-    -- export payload.
-    return nil, nil, "Invalid header"
-  end
-
-  -- If we never found an explicit header/footer but chunks are
-  -- present, fall back to treating the first/last lines as the
-  -- logical bounds for scanning. This allows us to decode even
-  -- if the header/footer text was stripped or badly damaged.
-  if not headerIdx then
-    headerIdx = 1
-  end
-  if not footerIdx or footerIdx <= headerIdx then
-    footerIdx = #lines
-  end
-
-  local header = lines[headerIdx] or ""
-
-  -- Try to read full header fields first.
-  local marker, totalChunksStr, crcStr, rawSizeStr, schemaStr = header:match("(BDB%d+)|S|(%d+)|(%d+)|(%d+)|(%d+)")
-  if not marker then
-    -- Tolerate truncated headers that only carry chunk count.
-    local m2, chunksOnly = header:match("(BDB%d+)|S|(%d+)|")
-    if m2 then
-      marker = m2
-      totalChunksStr = chunksOnly
-      crcStr, rawSizeStr, schemaStr = "0", "0", "1"
-    end
-  end
-
-  local totalChunks
-  local expectedCRC, expectedSize, headerSchema = 0, 0, 1
-
-  if marker and marker == "BDB1" then
-    totalChunks = tonumber(totalChunksStr or "0") or 0
-    expectedCRC = tonumber(crcStr or "0") or 0
-    expectedSize = tonumber(rawSizeStr or "0") or 0
-    headerSchema = tonumber(schemaStr or "0") or 0
-  else
-    -- Header is missing or unreadable; trust the observed
-    -- chunk indexes and disable integrity checks.
-    totalChunks = maxChunkIdx
-    expectedCRC = 0
-    expectedSize = 0
-    headerSchema = 1
-  end
-
-  if not totalChunks or totalChunks <= 0 then
-    -- Even with a damaged header we should have seen at least
-    -- one valid chunk index if this were a real export.
-    return nil, nil, "Invalid chunk count"
-  end
-
-  if not (Base64 and Base64.Decode) then
-    return nil, nil, "Decode unavailable"
-  end
-
-  local chunks = {}
-  for i = 1, #lines do
-    local line = lines[i]
-
-    -- Primary form: BDB1|C|<idx>|<payload>
-    local prefix, idxStr, payload = line:match("^(BDB%d+)|C|(%d+)|(.+)$")
-
-    -- Fallback form for slightly corrupted lines where the
-    -- '|' separator after the index was lost (e.g. 'BDB1|C|8WFz')
-    -- by capturing everything after the numeric index.
-    if not prefix then
-      prefix, idxStr, payload = line:match("^(BDB%d+)|C|(%d+)(.+)$")
-    end
-
-    if prefix and idxStr and payload ~= nil then
-      if prefix ~= "BDB1" then
-        return nil, nil, "Invalid chunk line"
-      end
-
-      local idx = tonumber(idxStr)
-      if not idx or idx < 1 or idx > totalChunks then
-        return nil, nil, "Invalid chunk index"
-      end
-      if chunks[idx] then
-        return nil, nil, "Duplicate chunk index"
-      end
-      chunks[idx] = payload
-    end
-  end
-
-  local missing = {}
-  for i = 1, totalChunks do
-    if not chunks[i] then
-      missing[#missing + 1] = i
-    end
-  end
-  if #missing > 0 then
-    return nil, nil, "Missing chunks: " .. table.concat(missing, ", ")
-  end
-
-  local encoded = table.concat(chunks, "", 1, totalChunks)
-  local compressed, err = Base64.Decode(encoded)
-  if not compressed then
-    return nil, nil, "Decode failed: " .. tostring(err)
-  end
-
-  if CRC32 and CRC32.Compute and expectedCRC ~= 0 then
-    local actual = CRC32:Compute(compressed)
-    if actual ~= expectedCRC then
-      return nil, nil, "CRC mismatch; data may be corrupt"
-    end
-  end
-
-  local serialized = compressed
-  if expectedSize > 0 and #serialized ~= expectedSize then
-    return nil, nil, "Size mismatch; data may be corrupt"
-  end
-
-  return serialized, headerSchema, nil
-end
-
-Core._DecodeBDB1Envelope = DecodeBDB1Envelope
+-- BDB1 envelope decode and export helpers now live in
+-- core/BookArchivist_Export.lua.
 
 local LIST_WIDTH_DEFAULT = 360
 
@@ -265,6 +34,8 @@ local SUPPORTED_LANGUAGES = {
   ptBR = true,
 }
 
+local pruneLegacyAuthor
+
 local function normalizeLanguageTag(tag)
   tag = tostring(tag or "")
   if SUPPORTED_LANGUAGES[tag] then
@@ -277,8 +48,6 @@ local function normalizeLanguageTag(tag)
   end
   return "enUS"
 end
-
-local pruneLegacyAuthor
 
 local function now()
   return timeProvider()
@@ -300,67 +69,6 @@ local function normalizeKeyPart(s)
   s = s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
   s = s:gsub("%s+", " ")
   return s
-end
-
--- Step 6 – Search Optimization
--- Normalize free-text fields for search and build a cached searchText
--- blob per entry so we don't have to concatenate title/pages on every
--- query. We intentionally include the full pages set for best match
--- completeness.
-
-local function normalizeSearchText(text)
-  text = tostring(text or "")
-  text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
-  text = text:gsub("^%s+", ""):gsub("%s+$", "")
-  text = text:gsub("%s+", " ")
-  return text:lower()
-end
-
-local function buildSearchText(title, pages)
-  local out = normalizeSearchText(title or "")
-  if type(pages) == "table" then
-    local first = (out ~= "") and ("\n" .. out) or ""
-    -- Preserve deterministic output by iterating page numbers in
-    -- ascending order when possible.
-    local indices = {}
-    for pageNum in pairs(pages) do
-      if type(pageNum) == "number" then
-        table.insert(indices, pageNum)
-      end
-    end
-    table.sort(indices)
-    if #indices == 0 then
-      -- Fallback to generic pairs order when pages are keyed
-      -- unusually; this keeps search behavior correct even if
-      -- ordering is undefined.
-      for _, text in pairs(pages) do
-        local norm = normalizeSearchText(text)
-        if norm ~= "" then
-          if out ~= "" then
-            out = out .. "\n" .. norm
-          else
-            out = norm
-          end
-        end
-      end
-    else
-      for _, pageNum in ipairs(indices) do
-        local norm = normalizeSearchText(pages[pageNum])
-        if norm ~= "" then
-          if out ~= "" then
-            out = out .. "\n" .. norm
-          else
-            out = norm
-          end
-        end
-      end
-    end
-  end
-  return out
-end
-
-function Core:BuildSearchText(title, pages)
-	return buildSearchText(title, pages)
 end
 
 local function cloneTable(value)
@@ -469,13 +177,13 @@ local function ensureDB()
     end
   end
 
-	-- Step 6 – backfill searchText so existing entries can use the
-	-- optimized search path without changing user-visible results.
-	for bookId, entry in pairs(BookArchivistDB.booksById or {}) do
-		if type(entry) == "table" and entry.searchText == nil then
-			entry.searchText = buildSearchText(entry.title, entry.pages)
-		end
-	end
+  -- Step 6 – backfill searchText so existing entries can use the
+  -- optimized search path without changing user-visible results.
+  for bookId, entry in pairs(BookArchivistDB.booksById or {}) do
+    if type(entry) == "table" and entry.searchText == nil and Core.BuildSearchText then
+      entry.searchText = Core:BuildSearchText(entry.title, entry.pages)
+    end
+  end
 
   -- Step 7 – UI state container (per-character, non-breaking).
   BookArchivistDB.uiState = BookArchivistDB.uiState or {}
@@ -491,22 +199,6 @@ local function ensureDB()
 
   pruneLegacyAuthor(BookArchivistDB)
   return BookArchivistDB
-end
-
-local function ensureUIOptions()
-  local db = ensureDB()
-  db.options.ui = db.options.ui or {}
-  local uiOpts = db.options.ui
-  if type(uiOpts.listWidth) ~= "number" then
-    uiOpts.listWidth = LIST_WIDTH_DEFAULT
-  end
-  if uiOpts.virtualCategoriesEnabled == nil then
-    uiOpts.virtualCategoriesEnabled = true
-  end
-  if uiOpts.resumeLastPage == nil then
-    uiOpts.resumeLastPage = true
-  end
-  return uiOpts
 end
 
 pruneLegacyAuthor = function(db)
@@ -548,50 +240,10 @@ function Core:GetDB()
   return ensureDB()
 end
 
-function Core:TouchOrder(key)
-  if not key then return end
-  local db = ensureDB()
-  local order = db.order
-  removeFromOrder(order, key)
-  table.insert(order, 1, key)
-end
-
-function Core:AppendOrder(key)
-  if not key then return end
-  local db = ensureDB()
-  local order = db.order
-  removeFromOrder(order, key)
-  table.insert(order, key)
-end
-
-function Core:Delete(key)
-  if not key then return end
-  local db = ensureDB()
-  if db.booksById and not db.booksById[key] then return end
-	if db.booksById then
-		db.booksById[key] = nil
-	end
-  removeFromOrder(db.order, key)
-  if db.recent and type(db.recent.list) == "table" then
-    removeFromOrder(db.recent.list, key)
-  end
-  -- Clear resume pointer if it referenced the deleted entry.
-  if db.uiState and db.uiState.lastBookId == key then
-    db.uiState.lastBookId = nil
-  end
-end
-
-function Core:GetOptions()
+function Core:GetLanguage()
   local db = ensureDB()
   db.options = db.options or {}
-  if db.options.debugEnabled == nil then
-	db.options.debugEnabled = false
-  end
-  return db.options
-end
-
-function Core:GetLanguage()
-  local opts = self:GetOptions()
+  local opts = db.options
   if type(opts.language) ~= "string" or opts.language == "" then
     local gameLocale = (type(GetLocale) == "function" and GetLocale()) or "enUS"
     opts.language = normalizeLanguageTag(gameLocale)
@@ -602,100 +254,6 @@ end
 function Core:SetLanguage(lang)
   local opts = self:GetOptions()
   opts.language = normalizeLanguageTag(lang)
-end
-
-function Core:GetMinimapButtonOptions()
-  local opts = self:GetOptions()
-  opts.minimapButton = opts.minimapButton or {}
-  if type(opts.minimapButton.angle) ~= "number" then
-    opts.minimapButton.angle = 200
-  end
-  return opts.minimapButton
-end
-
-function Core:IsDebugEnabled()
-  local opts = self:GetOptions()
-  return opts.debugEnabled and true or false
-end
-
-function Core:SetDebugEnabled(state)
-  local opts = self:GetOptions()
-  opts.debugEnabled = state and true or false
-end
-
-function Core:IsTooltipEnabled()
-  local opts = self:GetOptions()
-  local tooltipOpts = opts.tooltip
-  if tooltipOpts == nil then
-    return true
-  end
-  if type(tooltipOpts) == "table" then
-    if tooltipOpts.enabled == nil then
-      tooltipOpts.enabled = true
-    end
-    return tooltipOpts.enabled and true or false
-  end
-  if type(tooltipOpts) == "boolean" then
-    return tooltipOpts and true or false
-  end
-  return true
-end
-
-function Core:SetTooltipEnabled(state)
-  local opts = self:GetOptions()
-  opts.tooltip = opts.tooltip or {}
-  if type(opts.tooltip) ~= "table" then
-    opts.tooltip = { enabled = state and true or false }
-  else
-    opts.tooltip.enabled = state and true or false
-  end
-end
-
-function Core:IsUIDebugEnabled()
-  local opts = self:GetOptions()
-  return opts.uiDebug and true or false
-end
-
-function Core:SetUIDebugEnabled(state)
-  local opts = self:GetOptions()
-  opts.uiDebug = state and true or false
-end
-
-function Core:GetUIFrameOptions()
-  return ensureUIOptions()
-end
-
-function Core:GetListWidth()
-  local uiOpts = ensureUIOptions()
-  return uiOpts.listWidth or LIST_WIDTH_DEFAULT
-end
-
-function Core:SetListWidth(width)
-  local uiOpts = ensureUIOptions()
-  if type(width) == "number" then
-    uiOpts.listWidth = math.max(260, math.min(math.floor(width + 0.5), 600))
-  end
-end
-
-function Core:IsVirtualCategoriesEnabled()
-  local uiOpts = ensureUIOptions()
-  if uiOpts.virtualCategoriesEnabled == nil then
-    uiOpts.virtualCategoriesEnabled = true
-  end
-  return uiOpts.virtualCategoriesEnabled and true or false
-end
-
-function Core:IsResumeLastPageEnabled()
-  local uiOpts = ensureUIOptions()
-  if uiOpts.resumeLastPage == nil then
-    uiOpts.resumeLastPage = true
-  end
-  return uiOpts.resumeLastPage and true or false
-end
-
-function Core:SetResumeLastPageEnabled(state)
-  local uiOpts = ensureUIOptions()
-  uiOpts.resumeLastPage = state and true or false
 end
 
 local function getListConfig()
@@ -832,53 +390,6 @@ function Core:BuildExportPayload()
   }
 end
 
-function Core:ExportToString()
-  if not (Serialize and Serialize.SerializeTable) then
-    return nil, "serializer unavailable"
-  end
-  local payload = self:BuildExportPayload()
-  local serialized, err = Serialize.SerializeTable(payload)
-  if not serialized then
-    return nil, err or "serialization failed"
-  end
-  -- Compress step is intentionally a no-op for now; we still
-  -- compute integrity over the serialized blob and wrap it in the
-  -- BDB1 chunked envelope so the wire format matches the
-  -- import/export design without requiring LibDeflate.
-  local compressed = serialized
-
-  local crc
-  if CRC32 and CRC32.Compute then
-    crc = CRC32:Compute(compressed)
-  else
-    crc = 0
-  end
-
-  local rawSize = #serialized
-
-  if not (Base64 and Base64.Encode) then
-    return nil, "base64 encoder unavailable"
-  end
-
-  local encoded = Base64.Encode(compressed)
-
-  local CHUNK_SIZE = 16384
-  local totalChunks = math.max(1, math.ceil(#encoded / CHUNK_SIZE))
-
-  local header = string.format("BDB1|S|%d|%u|%d|%d", totalChunks, crc or 0, rawSize, payload.schemaVersion or 1)
-  local lines = { header }
-
-  for i = 1, totalChunks do
-    local startIdx = (i - 1) * CHUNK_SIZE + 1
-    local endIdx = math.min(i * CHUNK_SIZE, #encoded)
-    local chunk = encoded:sub(startIdx, endIdx)
-    lines[#lines + 1] = string.format("BDB1|C|%d|%s", i, chunk)
-  end
-
-  lines[#lines + 1] = "BDB1|E"
-  return table.concat(lines, "\n"), nil
-end
-
 function Core:GetLastBookId()
   local db = ensureDB()
   db.uiState = db.uiState or {}
@@ -992,7 +503,9 @@ function Core:PersistSession(session)
     entry.location = cloneTable(session.location)
   end
 
-	entry.searchText = buildSearchText(entry.title, entry.pages)
+  if Core.BuildSearchText then
+    entry.searchText = Core:BuildSearchText(entry.title, entry.pages)
+  end
 	self:IndexTitleForBook(entry.title or session.title, bookId)
 	self:TouchOrder(bookId)
   return entry
@@ -1053,7 +566,9 @@ function Core:InjectEntry(entry, opts)
 	db.booksById = db.booksById or {}
 	db.booksById[entry.key] = entry
   entry.pages = entry.pages or {}
-	entry.searchText = entry.searchText or buildSearchText(entry.title, entry.pages)
+  if Core.BuildSearchText then
+    entry.searchText = entry.searchText or Core:BuildSearchText(entry.title, entry.pages)
+  end
 
   if opts.append then
     self:AppendOrder(entry.key)

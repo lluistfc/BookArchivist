@@ -90,6 +90,7 @@ Locales.itIT = {
   ["OPTIONS_IMPORT_BUTTON"] = "Importa",
   ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Cattura incolla",
   ["OPTIONS_IMPORT_HELP"] = "Su questo client: dopo l'Esporta puoi fare clic su Importa qui per testare o ripristinare i tuoi dati senza incollare.\n\nPer spostare i dati su un altro client/account:\n1) Sul client di origine fai clic su Esporta e poi su Copia.\n2) Condividi il testo di esportazione copiato come preferisci (Discord, siti di paste, file condivisi, ecc.).\n3) Sul client di destinazione copia quel testo, apri questo pannello, fai clic su Cattura incolla e poi premi una volta Ctrl+V.\n4) Quando lo stato mostra 'Dati ricevuti', fai clic su Importa.\n\nNota: un semplice Ctrl+V nel gioco non avvia da solo l'importazione; l'addon ascolta l'incolla solo mentre Cattura incolla è attivo oppure riutilizza la tua ultima Esportazione quando fai semplicemente clic su Importa qui.",
+  ["OPTIONS_IMPORT_PERF_TIP"] = "Suggerimento: puoi incollare l'esportazione completa direttamente nel riquadro di importazione con Ctrl+V, ma stringhe molto grandi possono bloccare il client di gioco per alcuni secondi mentre l'incolla termina. Usa invece Cattura incolla per inserire il testo gradualmente ed evitare questo picco di carico.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Incolla il testo di esportazione e attendi 'Dati ricevuti' prima di importare.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Premi ora Ctrl+V per incollare e poi attendi 'Dati ricevuti'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Preparazione dell'importazione…",

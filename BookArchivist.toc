@@ -16,6 +16,10 @@ core/BookArchivist_Base64.lua
 core/BookArchivist_CRC32.lua
 core/BookArchivist_Core.lua
 core/BookArchivist_ListConfig.lua
+core/BookArchivist_Search.lua
+core/BookArchivist_Export.lua
+core/BookArchivist_Options.lua
+core/BookArchivist_Order.lua
 core/BookArchivist_ImportWorker.lua
 core/BookArchivist_Recent.lua
 core/BookArchivist_Tooltip.lua
@@ -33,6 +37,10 @@ locales/BookArchivist_Locale_ptBR.lua
 core/BookArchivist_Locale.lua
 ui/BookArchivist_UI_Metrics.lua
 ui/list/BookArchivist_UI_List.lua
+ui/list/BookArchivist_UI_List_Sort.lua
+ui/list/BookArchivist_UI_List_Categories.lua
+ui/list/BookArchivist_UI_List_Header.lua
+ui/list/BookArchivist_UI_List_Selection.lua
 ui/list/BookArchivist_UI_List_Search.lua
 ui/list/BookArchivist_UI_List_Pagination.lua
 ui/list/BookArchivist_UI_List_Rows_Core.lua

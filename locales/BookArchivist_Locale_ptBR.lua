@@ -90,6 +90,7 @@ Locales.ptBR = {
   ["OPTIONS_IMPORT_BUTTON"] = "Importar",
   ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Capturar colagem",
   ["OPTIONS_IMPORT_HELP"] = "Neste cliente: após Exportar, você pode clicar em Importar aqui para testar ou restaurar seus próprios dados sem colar.\n\nPara mover dados para outro cliente/conta:\n1) No cliente de origem, clique em Exportar e depois em Copiar.\n2) Compartilhe o texto de exportação copiado como quiser (Discord, sites de paste, arquivos compartilhados, etc.).\n3) No cliente de destino, copie esse texto, abra este painel, clique em Capturar colagem e depois pressione Ctrl+V uma vez.\n4) Quando o status mostrar 'Dados recebidos', clique em Importar.\n\nObservação: um simples Ctrl+V no jogo não inicia a importação por si só; o addon só escuta a colagem enquanto Capturar colagem está ativo, ou reutiliza sua última Exportação quando você apenas clica em Importar aqui.",
+    ["OPTIONS_IMPORT_PERF_TIP"] = "Dica: você pode colar a exportação completa diretamente na caixa de importação com Ctrl+V, mas strings muito grandes podem travar o cliente do jogo por alguns segundos enquanto a colagem termina. Use Capturar colagem para inserir o texto aos poucos e evitar esse pico de desempenho.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Cole o texto de exportação e aguarde 'Dados recebidos' antes de importar.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Pressione agora Ctrl+V para colar e depois aguarde 'Dados recebidos'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Preparando importação…",

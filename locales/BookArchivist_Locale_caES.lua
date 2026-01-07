@@ -90,6 +90,7 @@ Locales.caES = {
   ["OPTIONS_IMPORT_BUTTON"] = "Importa",
   ["OPTIONS_IMPORT_BUTTON_CAPTURE"] = "Captura enganxat",
   ["OPTIONS_IMPORT_HELP"] = "En aquest client: després d'Exporta pots fer clic a Importa aquí per provar o restaurar les teves pròpies dades sense enganxar res.\n\nPer moure dades a un altre client/compte:\n1) Al client d'origen, fes clic a Exporta i després a Copia.\n2) Comparteix el text d'exportació copiat com vulguis (Discord, llocs de pega, fitxers compartits, etc.).\n3) Al client de destinació, copia aquest text, obre aquest panell, fes clic a Captura enganxat i després prem una vegada Ctrl+V.\n4) Quan l'estat mostri 'Dades rebudes', fes clic a Importa.\n\nNota: un simple Ctrl+V dins del joc no inicia la importació per si sol; l'addon només escolta l'enganxat mentre Captura enganxat està actiu, o reutilitza la teva última Exportació quan simplement fas clic a Importa aquí.",
+    ["OPTIONS_IMPORT_PERF_TIP"] = "Consell: Pots enganxar l'exportació completa directament al quadre d'importació amb Ctrl+V, però les cadenes molt grans poden congelar el client del joc durant uns segons mentre acaba l'enganxat. Fes servir Captura enganxat per introduir el text gradualment i evitar aquest pic de rendiment.",
   ["OPTIONS_IMPORT_STATUS_DEFAULT"] = "Enganxa el text d'exportació i espera 'Dades rebudes' abans d'importar.",
   ["OPTIONS_IMPORT_STATUS_PASTE_HINT"] = "Prem ara Ctrl+V per enganxar i després espera 'Dades rebudes'.",
   ["OPTIONS_IMPORT_STATUS_PREPARING"] = "Preparant la importació…",

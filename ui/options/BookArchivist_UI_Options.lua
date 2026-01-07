@@ -640,6 +640,28 @@ function OptionsUI:Ensure()
   importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
   optionsPanel.importLabel = importLabel
 
+  -- Info icon explaining Ctrl+V vs Capture Paste performance
+  local importInfoButton = createFrame("Button", nil, importColumn)
+  importInfoButton:SetSize(16, 16)
+  importInfoButton:SetPoint("LEFT", importLabel, "RIGHT", 4, 0)
+  local importInfoTex = importInfoButton:CreateTexture(nil, "ARTWORK")
+  importInfoTex:SetAllPoints(true)
+  importInfoTex:SetTexture("Interface\\FriendsFrame\\InformationIcon")
+  importInfoButton:SetScript("OnEnter", function(self)
+    if not GameTooltip or not GameTooltip.SetOwner then return end
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText(t("OPTIONS_IMPORT_LABEL"), 1, 1, 1)
+    if GameTooltip.AddLine then
+      GameTooltip:AddLine(t("OPTIONS_IMPORT_PERF_TIP"), nil, nil, nil, true)
+    end
+    GameTooltip:Show()
+  end)
+  importInfoButton:SetScript("OnLeave", function()
+    if GameTooltip and GameTooltip.Hide then
+      GameTooltip:Hide()
+    end
+  end)
+
   local importHelp = importColumn:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   importHelp:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -4)
   importHelp:SetPoint("RIGHT", importColumn, "RIGHT", 0, 0)
@@ -697,6 +719,22 @@ function OptionsUI:Ensure()
     optionsPanel.importBufferLen = 0
     optionsPanel.importIsPasting = false
     optionsPanel.importLastCharElapsed = 0
+
+    -- Decide how aggressively to capture paste based on
+    -- whether we still have a local export payload from this
+    -- session. In the local-export case, we only need a tiny
+    -- paste to act as a trigger and can avoid clipboard-sized
+    -- freezes; in the cross-client/after-reload case we allow
+    -- a full paste so we can reconstruct the payload text.
+    local hasLocalExport = optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= ""
+    optionsPanel.importUseLocalExport = hasLocalExport and true or false
+    if optionsPanel.importBox and optionsPanel.importBox.SetMaxBytes then
+    if hasLocalExport then
+      optionsPanel.importBox:SetMaxBytes(1)
+    else
+      optionsPanel.importBox:SetMaxBytes(0)
+    end
+    end
     if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
       optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_PASTE_HINT"))
       if optionsPanel.importStatus.SetTextColor then
@@ -812,10 +850,16 @@ function OptionsUI:Ensure()
   importBox:SetHeight(1)
   importBox:SetAutoFocus(false)
   if importBox.SetMultiLine then
-    importBox:SetMultiLine(false)
+	  -- Use a multiline edit box so WoW will accept large
+	  -- pasted payloads (full BDB export strings) instead of
+	  -- truncating them to a short single-line limit, which
+	  -- would trigger "Payload too short" during decode.
+	  importBox:SetMultiLine(true)
   end
   if importBox.SetMaxBytes then
-    importBox:SetMaxBytes(1)
+    -- Default to allowing full paste; Capture Paste will
+    -- tighten this per-scenario (local export vs clipboard).
+    importBox:SetMaxBytes(0)
   end
   importBox:SetFontObject("GameFontHighlightSmall")
   importBox:SetMaxLetters(0)
@@ -889,25 +933,19 @@ function OptionsUI:Ensure()
           -- mutations introduced by the copy/paste path.
           payload = optionsPanel.lastExportPayload
         else
-          -- Cross-client path: require the pasted text to at
-          -- least resemble a BDB export before treating it as an
-          -- import payload. This avoids confusing errors when
-          -- the clipboard still holds unrelated text (e.g., a
-          -- single character or chat line).
-          local hasBDBMarker = type(text) == "string" and (
-            text:find("BDB1|S|", 1, true) or text:find("BDB1|C|", 1, true)
-          )
-
-          if not hasBDBMarker then
-            optionsPanel.pendingImportPayload = nil
-            optionsPanel.pendingImportVisibleIsPlaceholder = false
-            if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-              optionsPanel.importStatus:SetText(t("OPTIONS_IMPORT_STATUS_NO_EXPORT_IN_CLIPBOARD"))
-            end
-            return
-          end
-
+          -- Cross-client / after-reload path: accept the pasted
+          -- text as a candidate payload and let the ImportWorker
+          -- validate whether it is a real BookArchivist export.
+          -- This avoids false "no export in clipboard" errors
+          -- when the text is valid but formatted differently
+          -- than expected.
           payload = text
+          -- Remember this clipboard-based payload as the current
+          -- canonical export so that subsequent Capture Paste
+          -- uses on this client can take the fast, no-freeze
+          -- path that relies on lastExportPayload instead of
+          -- rebuilding from a large paste again.
+          optionsPanel.lastExportPayload = payload
         end
 
         optionsPanel.pendingImportPayload = payload
@@ -935,6 +973,32 @@ function OptionsUI:Ensure()
   end)
 
   importBox:SetScript("OnChar", function(_, char)
+    -- Fast path: when we still have a local export string from
+    -- this session, treat Capture Paste as a lightweight
+    -- trigger and avoid building a large Lua buffer.
+    if optionsPanel.importUseLocalExport and optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= "" then
+    optionsPanel.importIsPasting = false
+    optionsPanel.importPasteBuffer = {}
+    optionsPanel.importBufferLen = 0
+    if optionsPanel.importPasteWatcher and optionsPanel.importPasteWatcher.Hide then
+      optionsPanel.importPasteWatcher:Hide()
+    end
+
+    local payload = optionsPanel.lastExportPayload
+    optionsPanel.pendingImportPayload = payload
+    optionsPanel.pendingImportVisibleIsPlaceholder = true
+    if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
+      optionsPanel.importStatus:SetText(string.format(t("OPTIONS_IMPORT_STATUS_PAYLOAD_RECEIVED"), #payload))
+    end
+    if optionsPanel.importBox and optionsPanel.importBox.SetText then
+      optionsPanel.importBox:SetText("")
+      if optionsPanel.importBox.SetCursorPosition then
+      optionsPanel.importBox:SetCursorPosition(0)
+      end
+    end
+    return
+    end
+
     optionsPanel.importIsPasting = true
     optionsPanel.importLastCharElapsed = 0
 
