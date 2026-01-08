@@ -156,6 +156,276 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 	local verb, rest = cleaned:match("^(%S+)%s*(.*)$")
 	verb = (verb or ""):lower()
 	rest = trim(rest or "")
+	
+	-- Options/Tools window commands
+	if verb == "options" or verb == "settings" or verb == "config" then
+		if BookArchivist and BookArchivist.UI and BookArchivist.UI.OptionsUI then
+			BookArchivist.UI.OptionsUI:Open()
+		else
+			print("|cFFFF0000BookArchivist:|r Options UI not available")
+		end
+		return
+	end
+	
+	if verb == "tools" or verb == "import" or verb == "export" then
+		if BookArchivist and BookArchivist.UI and BookArchivist.UI.OptionsUI then
+			BookArchivist.UI.OptionsUI:OpenTools()
+		else
+			print("|cFFFF0000BookArchivist:|r Tools UI not available")
+		end
+		return
+	end
+	
+	-- Module status diagnostic
+	if verb == "modules" or verb == "modstatus" then
+		print("|cFF00FF00BookArchivist Module Status:|r")
+		print(string.format("  BookArchivist: %s", tostring(BookArchivist ~= nil)))
+		print(string.format("  Profiler: %s", tostring(BookArchivist and BookArchivist.Profiler ~= nil)))
+		print(string.format("  Iterator: %s", tostring(BookArchivist and BookArchivist.Iterator ~= nil)))
+		print(string.format("  TestDataGenerator: %s", tostring(BookArchivist and BookArchivist.TestDataGenerator ~= nil)))
+		print(string.format("  DBSafety: %s", tostring(BookArchivist and BookArchivist.DBSafety ~= nil)))
+		print(string.format("  Core: %s", tostring(BookArchivist and BookArchivist.Core ~= nil)))
+		return
+	end
+	
+	-- Help command
+	if verb == "help" or verb == "?" or verb == "commands" then
+		print("|cFF00FF00BookArchivist Commands:|r")
+		print("  |cFFFFFF00/ba|r - Open main UI")
+		print("  |cFFFFFF00/ba help|r - Show this help")
+		print("  |cFFFFFF00/ba modules|r - Check module loading status")
+		print("  |cFFFFFF00/ba options|r - Open options panel")
+		print("  |cFFFFFF00/ba import|r - Open import/export tools")
+		print("")
+		print("|cFF00FF00Profiler Commands:|r")
+		print("  |cFFFFFF00/ba profile on|r - Enable profiler")
+		print("  |cFFFFFF00/ba profile off|r - Disable profiler")
+		print("  |cFFFFFF00/ba profile report|r - Show performance report")
+		print("  |cFFFFFF00/ba profile help|r - More profiler commands")
+		print("")
+		print("|cFF00FF00Iterator Commands:|r")
+		print("  |cFFFFFF00/ba iter test|r - Run slow test iteration")
+		print("  |cFFFFFF00/ba iter status|r - Show active iterations")
+		print("  |cFFFFFF00/ba iter cancel <op>|r - Cancel specific operation")
+		print("")
+		print("|cFF00FF00Test Data Commands:|r")
+		print("  |cFFFFFF00/ba gentest <count>|r - Generate N test books")
+		print("  |cFFFFFF00/ba genpreset <size>|r - Generate preset (small/medium/large)")
+		print("  |cFFFFFF00/ba stats|r - Show database statistics")
+		print("  |cFFFFFF00/ba cleartest|r - Delete all test books")
+		return
+	end
+	
+	-- Profiler commands
+	if verb == "profile" then
+		local Profiler = BookArchivist.Profiler
+		if not Profiler then
+			print("|cFFFF0000BookArchivist:|r Profiler module not loaded!")
+			return
+		end
+		
+		local subCmd = rest:lower()
+		
+		if subCmd == "" or subCmd == "report" then
+			-- Print full report
+			local report = Profiler:Report("total")
+			print(report)
+			return
+		elseif subCmd == "summary" then
+			-- Print quick summary
+			Profiler:PrintSummary()
+			return
+		elseif subCmd == "on" or subCmd == "enable" then
+			Profiler:SetEnabled(true)
+			print("|cFF00FF00BookArchivist Profiler:|r Enabled")
+			return
+		elseif subCmd == "off" or subCmd == "disable" then
+			Profiler:SetEnabled(false)
+			print("|cFFFF6B6BBookArchivist Profiler:|r Disabled")
+			return
+		elseif subCmd == "reset" or subCmd == "clear" then
+			Profiler:Reset()
+			print("|cFF00FF00BookArchivist Profiler:|r Data reset")
+			return
+		elseif subCmd == "avg" or subCmd == "total" or subCmd == "count" or subCmd == "max" then
+			local report = Profiler:Report(subCmd)
+			print(report)
+			return
+		elseif subCmd == "slow" then
+			local slowest = Profiler:GetSlowestOperations(10)
+			print("|cFF00FF00Top 10 Slowest Operations:|r")
+			for i, op in ipairs(slowest) do
+				print(string.format("  %d. %s: %.2fms avg (n=%d)", i, op.label, op.avg, op.count))
+			end
+			return
+		elseif subCmd == "help" then
+			print("|cFF00FF00BookArchivist Profiler Commands:|r")
+			print("  /ba profile [report] - Full performance report (default)")
+			print("  /ba profile summary - Quick summary")
+			print("  /ba profile on/off - Enable/disable profiler")
+			print("  /ba profile reset - Clear all data")
+			print("  /ba profile <sort> - Sort by: avg, total, count, max")
+			print("  /ba profile slow - Show 10 slowest operations")
+			return
+		else
+			print("|cFFFF0000Unknown profile command:|r " .. subCmd)
+			print("Type |cFFFFFF00/ba profile help|r for usage")
+			return
+		end
+	end
+	
+	-- Iterator commands
+	if verb == "iter" or verb == "iterator" then
+		local Iterator = BookArchivist.Iterator
+		if not Iterator then
+			print("|cFFFF0000BookArchivist:|r Iterator module not loaded!")
+			return
+		end
+		
+		local subCmd, opName = rest:match("^(%S+)%s*(.*)$")
+		subCmd = (subCmd or ""):lower()
+		opName = trim(opName or "")
+		
+		if subCmd == "test" then
+			-- Test iteration with visible progress
+			print("|cFF00FF00Iterator Test:|r Starting slow test iteration...")
+			Iterator:Start(
+				"test_iteration",
+				BookArchivistDB.booksById or {},
+				function(bookId, entry, context)
+					context.count = (context.count or 0) + 1
+					return true
+				end,
+				{
+					chunkSize = 25,
+					budgetMs = 3,
+					onProgress = function(progress, current, total)
+						if current % 100 == 0 then
+							print(string.format("|cFFFFFF00  Progress:|r %d/%d (%.1f%%)", current, total, progress * 100))
+						end
+					end,
+					onComplete = function(context)
+						print(string.format("|cFF00FF00Iterator Test:|r Complete! Processed %d books", context.count or 0))
+					end
+				}
+			)
+			return
+		elseif subCmd == "" or subCmd == "status" then
+			-- Show all active iterations
+			local operations = Iterator:GetActiveOperations()
+			if #operations == 0 then
+				print("|cFF00FF00Iterator:|r No active iterations")
+			else
+				print(string.format("|cFF00FF00Iterator:|r %d active operation(s):", #operations))
+				for _, op in ipairs(operations) do
+					local status = Iterator:GetStatus(op)
+					if status then
+						print(string.format(
+							"  %s: %d/%d (%.1f%%) - %.1fs elapsed",
+							op,
+							status.current,
+							status.total,
+							status.progress * 100,
+							status.elapsedSeconds
+						))
+					end
+				end
+			end
+			return
+		elseif subCmd == "cancel" then
+			if opName == "" then
+				print("|cFFFF0000Usage:|r /ba iter cancel <operation>")
+				return
+			end
+			if Iterator:Cancel(opName) then
+				print(string.format("|cFF00FF00Iterator:|r Cancelled '%s'", opName))
+			else
+				print(string.format("|cFFFF0000Iterator:|r No such operation '%s'", opName))
+			end
+			return
+		elseif subCmd == "cancelall" then
+			local count = Iterator:CancelAll()
+			print(string.format("|cFF00FF00Iterator:|r Cancelled %d operation(s)", count))
+			return
+		else
+			print("|cFFFF0000Unknown iter command:|r " .. subCmd)
+			print("Type |cFFFFFF00/ba help|r for usage")
+			return
+		end
+	end
+	
+	-- Test data generator commands
+	if verb == "gentest" then
+		local Generator = BookArchivist.TestDataGenerator
+		if not Generator then
+			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
+			return
+		end
+		
+		local count = tonumber(rest)
+		if count and count > 0 then
+			Generator:GenerateBooks(count, { uniqueTitles = true })
+		else
+			print("|cFFFF0000Usage:|r /ba gentest <count>")
+			print("Example: /ba gentest 1000")
+		end
+		return
+	end
+	
+	if verb == "genpreset" then
+		local Generator = BookArchivist.TestDataGenerator
+		if not Generator then
+			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
+			return
+		end
+		
+		if rest == "" then
+			print("|cFF00FF00Available presets:|r")
+			print("  small (100), medium (500), large (1000)")
+			print("  xlarge (2500), stress (5000)")
+			print("  minimal (50), rich (200)")
+			print("|cFFFFFF00Usage:|r /ba genpreset <preset>")
+		else
+			Generator:GeneratePreset(rest)
+		end
+		return
+	end
+	
+	if verb == "cleartest" then
+		local Generator = BookArchivist.TestDataGenerator
+		if not Generator then
+			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
+			return
+		end
+		
+		StaticPopupDialogs["BOOKARCHIVIST_CLEARTEST"] = {
+			text = "Delete all test books?\n\nThis will remove books matching test patterns.\n\n|cFFFF0000This cannot be undone!|r",
+			button1 = "Delete",
+			button2 = "Cancel",
+			OnAccept = function()
+				Generator:ClearTestData()
+			end,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+			preferredIndex = 3,
+		}
+		StaticPopup_Show("BOOKARCHIVIST_CLEARTEST")
+		return
+	end
+	
+	if verb == "stats" then
+		local Generator = BookArchivist.TestDataGenerator
+		if not Generator then
+			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
+			return
+		end
+		
+		Generator:PrintStats()
+		return
+	end
+	
+	-- UI grid debug (existing functionality)
 	if verb == "uigrid" or verb == "uidebug" then
 		local ok = ensureUI()
 		if not ok then
@@ -263,42 +533,28 @@ end
 
 local loadMessageShown = false
 
-local function tryInitializeAndAnnounce()
-	local ok, err = ensureUI()
-	if not ok then
-		if (not err or not err:find("not ready")) and Internal.logError then
-			Internal.logError(err or "BookArchivist UI unavailable.")
-		end
-		return
-	end
-
+local function announceReady()
+	-- Just announce addon is ready, don't create UI frames yet
+	-- UI frames are created on-demand when user opens window
 	if not loadMessageShown then
 		loadMessageShown = true
 		if print then
-			print("|cFF00FF00BookArchivist UI loaded.|r Type /ba to open.")
+			print("|cFF00FF00BookArchivist loaded.|r Type /ba to open.")
 		end
-	end
-
-	if type(addonRoot.RefreshUI) == "function" then
-		addonRoot.RefreshUI()
 	end
 end
 
 if CreateFrame then
 	local loadFrame = CreateFrame("Frame")
 	loadFrame:RegisterEvent("PLAYER_LOGIN")
-	loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	loadFrame:SetScript("OnEvent", function(self, event)
-		tryInitializeAndAnnounce()
+		announceReady()
 		if event == "PLAYER_LOGIN" then
 			self:UnregisterEvent("PLAYER_LOGIN")
-		end
-		if loadMessageShown then
-			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 		end
 	end)
 end
 
 if type(IsLoggedIn) == "function" and IsLoggedIn() then
-	tryInitializeAndAnnounce()
+	announceReady()
 end

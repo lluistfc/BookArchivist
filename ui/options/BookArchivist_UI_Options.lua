@@ -634,15 +634,6 @@ function OptionsUI:OnAddonLoaded(name)
   if name ~= ADDON_NAME then return end
   self:Ensure()
 
-  -- Optional: add a slash command to open the tools window.
-  SLASH_BOOKARCHIVIST1 = "/bookarchivist"
-  SLASH_BOOKARCHIVIST2 = "/ba"
-  SlashCmdList.BOOKARCHIVIST = function(msg)
-    msg = (msg or ""):lower()
-    if msg == "tools" or msg == "import" or msg == "debug" then
-      OptionsUI:OpenTools()
-    else
-      OptionsUI:Open()
-    end
-  end
+  -- Slash command registration moved to BookArchivist_UI_Runtime.lua
+  -- to consolidate all command handling in one place
 end

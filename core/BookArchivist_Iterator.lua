@@ -1,0 +1,262 @@
+-- BookArchivist_Iterator.lua
+-- Throttled iteration system for large table operations
+-- Prevents UI freezing by processing data in chunks across multiple frames
+
+local ADDON_NAME = "BookArchivist"
+local BookArchivist = _G[ADDON_NAME]
+if not BookArchivist then return end
+
+local Iterator = {}
+BookArchivist.Iterator = Iterator
+
+-- Track all active iterations
+local activeIterations = {}
+
+--- Create a throttled iterator that processes large tables in chunks
+--- Processes data across multiple frames to prevent UI freezing
+--- @param operation string Unique identifier for this operation
+--- @param dataSource table Table to iterate over
+--- @param callback function(key, value, context) -> shouldContinue
+---   - key: Current key being processed
+---   - value: Current value being processed  
+---   - context: Persistent table shared across all chunks
+---   - Return true to continue, false to abort
+--- @param options table {
+---   chunkSize = number (default 50) - Items per chunk
+---   budgetMs = number (default 10) - Max milliseconds per frame
+---   onProgress = function(progress, current, total) - Progress callback
+---   onComplete = function(context) - Completion callback
+--- }
+--- @return boolean success, string|nil errorMessage
+function Iterator:Start(operation, dataSource, callback, options)
+  if not operation or type(operation) ~= "string" then
+    return false, "operation must be a string"
+  end
+  
+  if activeIterations[operation] then
+    return false, "Operation already in progress: " .. operation
+  end
+  
+  if not dataSource or type(dataSource) ~= "table" then
+    return false, "dataSource must be a table"
+  end
+  
+  if not callback or type(callback) ~= "function" then
+    return false, "callback must be a function"
+  end
+  
+  -- Default options
+  options = options or {}
+  local chunkSize = options.chunkSize or 50
+  local budgetMs = options.budgetMs or 10
+  local onProgress = options.onProgress
+  local onComplete = options.onComplete
+  
+  -- Create deterministic array of keys for stable iteration
+  -- This ensures consistent order and allows resuming
+  local keys = {}
+  for k in pairs(dataSource) do
+    table.insert(keys, k)
+  end
+  
+  -- Sort keys for deterministic iteration order
+  -- This is important for progress reporting and debugging
+  table.sort(keys, function(a, b)
+    return tostring(a) < tostring(b)
+  end)
+  
+  -- Create iteration state
+  local state = {
+    operation = operation,
+    keys = keys,
+    total = #keys,
+    index = 1,
+    callback = callback,
+    chunkSize = chunkSize,
+    budgetMs = budgetMs,
+    onProgress = onProgress,
+    onComplete = onComplete,
+    dataSource = dataSource,
+    context = {}, -- User-modifiable context passed to callbacks
+    startTime = GetTime(),
+  }
+  
+  activeIterations[operation] = state
+  
+  -- Create worker frame that runs each frame
+  local frame = CreateFrame("Frame")
+  frame:SetScript("OnUpdate", function()
+    self:_ProcessChunk(operation)
+  end)
+  state.frame = frame
+  
+  if BookArchivist.LogInfo then
+    BookArchivist:LogInfo(string.format(
+      "Iterator started: %s (%d items, %d per chunk, %dms budget)",
+      operation, state.total, chunkSize, budgetMs
+    ))
+  end
+  
+  return true
+end
+
+--- Internal: Process one chunk of data
+--- Called each frame by the OnUpdate script
+--- @param operation string Operation identifier
+function Iterator:_ProcessChunk(operation)
+  local state = activeIterations[operation]
+  if not state then
+    return -- Operation was cancelled
+  end
+  
+  local startTime = debugprofilestop()
+  local processed = 0
+  local aborted = false
+  
+  -- Process chunk: up to chunkSize items or budgetMs time
+  while state.index <= state.total and processed < state.chunkSize do
+    local key = state.keys[state.index]
+    local value = state.dataSource[key]
+    
+    -- Call user callback with error protection
+    local success, shouldContinue = pcall(state.callback, key, value, state.context)
+    
+    if not success then
+      -- Callback error - log and abort
+      if BookArchivist.LogError then
+        BookArchivist:LogError(string.format(
+          "Iterator callback error in %s at index %d: %s",
+          operation, state.index, tostring(shouldContinue)
+        ))
+      end
+      aborted = true
+      break
+    end
+    
+    if shouldContinue == false then
+      -- User requested abort
+      if BookArchivist.LogInfo then
+        BookArchivist:LogInfo(string.format(
+          "Iterator aborted by callback: %s at index %d",
+          operation, state.index
+        ))
+      end
+      aborted = true
+      break
+    end
+    
+    state.index = state.index + 1
+    processed = processed + 1
+    
+    -- Budget check - don't exceed frame time
+    local elapsed = debugprofilestop() - startTime
+    if elapsed >= state.budgetMs then
+      break
+    end
+  end
+  
+  -- Call progress callback
+  if state.onProgress then
+    local progress = math.min(state.index / state.total, 1.0)
+    pcall(state.onProgress, progress, state.index, state.total)
+  end
+  
+  -- Check completion
+  if aborted or state.index > state.total then
+    local elapsed = GetTime() - state.startTime
+    
+    if not aborted and state.onComplete then
+      -- Success - call completion callback
+      pcall(state.onComplete, state.context)
+    end
+    
+    if BookArchivist.LogInfo then
+      if aborted then
+        BookArchivist:LogInfo(string.format(
+          "Iterator aborted: %s (processed %d/%d items in %.2fs)",
+          operation, state.index - 1, state.total, elapsed
+        ))
+      else
+        BookArchivist:LogInfo(string.format(
+          "Iterator complete: %s (processed %d items in %.2fs)",
+          operation, state.total, elapsed
+        ))
+      end
+    end
+    
+    self:Cancel(operation)
+  end
+end
+
+--- Cancel an active iteration
+--- @param operation string Operation identifier
+--- @return boolean success
+function Iterator:Cancel(operation)
+  local state = activeIterations[operation]
+  if not state then
+    return false
+  end
+  
+  -- Stop the OnUpdate script
+  if state.frame then
+    state.frame:SetScript("OnUpdate", nil)
+    state.frame = nil
+  end
+  
+  activeIterations[operation] = nil
+  return true
+end
+
+--- Check if an operation is currently running
+--- @param operation string Operation identifier
+--- @return boolean isRunning
+function Iterator:IsRunning(operation)
+  return activeIterations[operation] ~= nil
+end
+
+--- Cancel all active iterations
+--- Useful for cleanup during logout or addon disable
+function Iterator:CancelAll()
+  local count = 0
+  for operation in pairs(activeIterations) do
+    if self:Cancel(operation) then
+      count = count + 1
+    end
+  end
+  return count
+end
+
+--- Get status of an active iteration
+--- @param operation string Operation identifier
+--- @return table|nil status { operation, total, current, progress, elapsedSeconds }
+function Iterator:GetStatus(operation)
+  local state = activeIterations[operation]
+  if not state then
+    return nil
+  end
+  
+  local elapsed = GetTime() - state.startTime
+  local progress = math.min(state.index / state.total, 1.0)
+  
+  return {
+    operation = state.operation,
+    total = state.total,
+    current = state.index,
+    progress = progress,
+    elapsedSeconds = elapsed,
+  }
+end
+
+--- Get list of all active operations
+--- @return table Array of operation names
+function Iterator:GetActiveOperations()
+  local operations = {}
+  for operation in pairs(activeIterations) do
+    table.insert(operations, operation)
+  end
+  return operations
+end
+
+if BookArchivist.LogInfo then
+  BookArchivist:LogInfo("Iterator module loaded")
+end

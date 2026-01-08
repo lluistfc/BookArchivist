@@ -9,6 +9,7 @@ local DB = BookArchivist.DB or {}
 BookArchivist.DB = DB
 
 local Migrations = BookArchivist.Migrations
+local DBSafety = BookArchivist.DBSafety
 
 -- Only log the init summary once per session to avoid spam when
 -- ensureDB()/GetDB() are called many times during UI refresh.
@@ -31,32 +32,39 @@ local function getTime()
 end
 
 function DB:Init()
-  -- We still want to see at least one init line when debug is
-  -- enabled, but printing on every call is too noisy. Most calls
-  -- to Init() after the first are idempotent (no new migrations),
-  -- so we gate logs behind hasLoggedInitSummary.
+  -- Safety check and load DB with corruption detection
   if not hasLoggedInitSummary then
-    debug("Init start; existing DB type=" .. tostring(type(BookArchivistDB)) .. ", dbVersion=" .. tostring(BookArchivistDB and BookArchivistDB.dbVersion))
+    debug("Init start with safety checks")
   end
-
-  -- Fresh DB: create minimal header and containers; Core will
-  -- continue to populate defaults (options, minimap, etc.).
-  if type(BookArchivistDB) ~= "table" then
-		debug("Initializing fresh DB (no existing BookArchivistDB)")
+  
+  -- Use DBSafety to load and validate database
+  if DBSafety and DBSafety.SafeLoad then
+    BookArchivistDB = DBSafety:SafeLoad()
+    
+    -- Perform health check
+    local healthy, issue = DBSafety:HealthCheck()
+    if not healthy and issue then
+      debug("Health check failed: " .. issue)
+      -- Attempt automatic repair
+      local repairCount, summary = DBSafety:RepairDatabase()
+      if repairCount > 0 then
+        debug("Auto-repair completed: " .. summary)
+      end
+    end
+  elseif type(BookArchivistDB) ~= "table" then
+    -- Fallback if DBSafety not loaded
+    debug("DBSafety not available, using fallback initialization")
     BookArchivistDB = {
       dbVersion = 2,
-      version = 1, -- legacy marker; do not mutate in migrations
+      version = 1,
       createdAt = getTime(),
       order = {},
       options = {},
       booksById = {},
       indexes = {
-      objectToBookId = {},
+        objectToBookId = {},
       },
     }
-		debug("Fresh DB initialized with dbVersion=" .. tostring(BookArchivistDB.dbVersion))
-		hasInitialized = true
-    return BookArchivistDB
   end
 
   -- Existing DB: run migrations explicitly by version to ensure we

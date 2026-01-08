@@ -55,7 +55,13 @@ ReaderUI.__syncFavoriteVisual = syncFavoriteVisual
 local function resolveFontObject(font)
 	if type(font) == "string" then
 		local globalFonts = _G or {}
-		return globalFonts[font] or font
+		local resolved = globalFonts[font]
+		-- If font string doesn't resolve to an actual font object, return nil
+		-- to prevent SetFontObject errors
+		if type(resolved) ~= "table" and type(resolved) ~= "userdata" then
+			return nil
+		end
+		return resolved
 	end
 	return font
 end
@@ -75,8 +81,10 @@ local function applyHTMLFont(frame, tag, font)
 	if not font or unsupportedHTMLFontTags[tag] then
 		return
 	end
-	local resolved = resolveFontObject(font)
-	if not safeHTMLCall(frame, "SetFontObject", tag, resolved) then
+	local resolved = resolveFontObject(font)	-- Skip if font didn't resolve to valid object
+	if not resolved then
+		return
+	end	if not safeHTMLCall(frame, "SetFontObject", tag, resolved) then
 		unsupportedHTMLFontTags[tag] = true
 	end
 end
@@ -396,14 +404,24 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		htmlFrame:SetPoint("TOPRIGHT", textChild, "TOPRIGHT", -htmlPad, -htmlPad)
 		htmlFrame:SetPoint("BOTTOMLEFT", textChild, "BOTTOMLEFT", htmlPad, htmlPad)
 		htmlFrame:SetPoint("BOTTOMRIGHT", textChild, "BOTTOMRIGHT", -htmlPad, htmlPad)
-		local bodyFont = GameFontHighlight or GameFontNormal or "GameFontHighlight"
-		local headingFont = GameFontNormalHuge or GameFontNormalLarge or bodyFont
-		local subHeadingFont = GameFontNormalLarge or bodyFont
-		applyHTMLFont(htmlFrame, "p", bodyFont)
-		applyHTMLFont(htmlFrame, "li", bodyFont)
-		applyHTMLFont(htmlFrame, "h1", headingFont)
-		applyHTMLFont(htmlFrame, "h2", subHeadingFont)
-		applyHTMLFont(htmlFrame, "h3", subHeadingFont)
+		-- Use actual font objects, not strings, to avoid resolution issues
+		local bodyFont = GameFontHighlight
+		local headingFont = GameFontNormalHuge or GameFontNormalLarge
+		local subHeadingFont = GameFontNormalLarge
+		
+		-- Only apply fonts if they resolved to valid objects
+		if bodyFont then
+			applyHTMLFont(htmlFrame, "p", bodyFont)
+			applyHTMLFont(htmlFrame, "li", bodyFont)
+		end
+		if headingFont then
+			applyHTMLFont(htmlFrame, "h1", headingFont)
+		end
+		if subHeadingFont then
+			applyHTMLFont(htmlFrame, "h2", subHeadingFont)
+			applyHTMLFont(htmlFrame, "h3", subHeadingFont)
+		end
+		
 		applyHTMLSpacing(htmlFrame, "h1", 2)
 		applyHTMLSpacing(htmlFrame, "h2", 2)
 		applyHTMLSpacing(htmlFrame, "h3", 2)
