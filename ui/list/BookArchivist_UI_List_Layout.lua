@@ -274,9 +274,14 @@ function ListUI:Create(uiFrame)
 
   local optionsButton = self:SafeCreateFrame("Button", nil, headerRightTop, "UIPanelButtonTemplate")
   if optionsButton then
-    optionsButton:SetSize(Metrics.BTN_W, Metrics.BTN_H)
+    optionsButton:SetSize(Metrics.BTN_W, 26)
     optionsButton:SetPoint("TOPRIGHT", headerRightTop, "TOPRIGHT", 0, 0)
 	    optionsButton:SetText(t("HEADER_BUTTON_OPTIONS"))
+    optionsButton:SetNormalFontObject(GameFontNormal)
+    local fontString = optionsButton:GetFontString()
+    if fontString then
+      fontString:SetTextColor(1.0, 0.82, 0.0)
+    end
     optionsButton:SetScript("OnClick", function()
       local addon = self:GetAddon()
       if addon and addon.OpenOptionsPanel then
@@ -290,9 +295,14 @@ function ListUI:Create(uiFrame)
 
   local helpButton = self:SafeCreateFrame("Button", nil, headerRightTop, "UIPanelButtonTemplate")
   if helpButton and optionsButton then
-    helpButton:SetSize(Metrics.BTN_W - 12, Metrics.BTN_H)
+    helpButton:SetSize(Metrics.BTN_W - 12, 26)
     helpButton:SetPoint("RIGHT", optionsButton, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER), 0)
 	    helpButton:SetText(t("HEADER_BUTTON_HELP"))
+    helpButton:SetNormalFontObject(GameFontNormal)
+    local fontString = helpButton:GetFontString()
+    if fontString then
+      fontString:SetTextColor(1.0, 0.82, 0.0)
+    end
     helpButton:SetScript("OnClick", function()
       local ctx = self:GetContext()
 	      local message = t("HEADER_HELP_CHAT")
@@ -307,9 +317,14 @@ function ListUI:Create(uiFrame)
 
   local resumeButton = self:SafeCreateFrame("Button", nil, headerRightBottom, "UIPanelButtonTemplate")
   if resumeButton then
-    resumeButton:SetSize(Metrics.BTN_W, Metrics.BTN_H)
+    resumeButton:SetSize(Metrics.BTN_W, 26)
     resumeButton:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
-      resumeButton:SetText(t("RESUME_LAST_BOOK"))
+    resumeButton:SetText(t("RESUME_LAST_BOOK"))
+    resumeButton:SetNormalFontObject(GameFontNormal)
+    local fontString = resumeButton:GetFontString()
+    if fontString then
+      fontString:SetTextColor(1.0, 0.82, 0.0)
+    end
     resumeButton:SetScript("OnClick", function()
   	        local addon = self.GetAddon and self:GetAddon()
         if not addon or not addon.GetLastBookId then

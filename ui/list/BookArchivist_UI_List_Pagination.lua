@@ -201,8 +201,13 @@ function ListUI:EnsurePaginationControls()
 
   local prev = self:SafeCreateFrame("Button", "BookArchivistListPrevPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if prev then
-    prev:SetSize(80, btnH)
+    prev:SetSize(80, 22)
     prev:SetText(t("PAGINATION_PREV"))
+    prev:SetNormalFontObject(GameFontNormal)
+    local fontString = prev:GetFontString()
+    if fontString then
+      fontString:SetTextColor(1.0, 0.82, 0.0)
+    end
     prev:SetScript("OnClick", function()
       self:PrevPage()
     end)
@@ -211,8 +216,13 @@ function ListUI:EnsurePaginationControls()
 
   local nextBtn = self:SafeCreateFrame("Button", "BookArchivistListNextPage", bottomRow or pagination, "UIPanelButtonTemplate")
   if nextBtn then
-    nextBtn:SetSize(80, btnH)
+    nextBtn:SetSize(80, 22)
     nextBtn:SetText(t("PAGINATION_NEXT"))
+    nextBtn:SetNormalFontObject(GameFontNormal)
+    local fontString = nextBtn:GetFontString()
+    if fontString then
+      fontString:SetTextColor(1.0, 0.82, 0.0)
+    end
     nextBtn:SetScript("OnClick", function()
       self:NextPage()
     end)
@@ -257,6 +267,12 @@ function ListUI:EnsurePaginationControls()
       end
     end)
     self:SetFrame("pageSizeDropdown", dropdown)
+    
+    -- Style the dropdown text with gold color
+    local dropdownText = _G[dropdown:GetName() .. "Text"]
+    if dropdownText and dropdownText.SetTextColor then
+      dropdownText:SetTextColor(1.0, 0.82, 0.0)
+    end
   end
 
   return pagination

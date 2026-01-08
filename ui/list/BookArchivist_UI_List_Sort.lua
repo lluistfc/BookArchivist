@@ -219,6 +219,12 @@ function ListUI:InitializeSortDropdown(dropdown)
 
   self:SetFrame("sortDropdown", dropdown)
   self:UpdateSortDropdown()
+  
+  -- Style the dropdown text with gold color
+  local dropdownText = _G[dropdown:GetName() .. "Text"]
+  if dropdownText and dropdownText.SetTextColor then
+    dropdownText:SetTextColor(1.0, 0.82, 0.0)
+  end
 end
 
 function ListUI:UpdateSortDropdown()
@@ -235,4 +241,10 @@ function ListUI:UpdateSortDropdown()
     end
   end
   UIDropDownMenu_SetText(dropdown, label or t("SORT_DROPDOWN_PLACEHOLDER"))
+  
+  -- Ensure dropdown text stays gold after updates
+  local dropdownText = _G[dropdown:GetName() .. "Text"]
+  if dropdownText and dropdownText.SetTextColor then
+    dropdownText:SetTextColor(1.0, 0.82, 0.0)
+  end
 end

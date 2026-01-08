@@ -213,9 +213,14 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 
 	local prevButton = safeCreateFrame and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
 	if prevButton then
-		prevButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
+		prevButton:SetSize(Metrics.BTN_W - 10, 22)
 		prevButton:SetPoint("LEFT", readerNavRow or readerHeaderRow, "LEFT", 0, 0)
 		prevButton:SetText(t("PAGINATION_PREV"))
+		prevButton:SetNormalFontObject(GameFontNormal)
+		local fontString = prevButton:GetFontString()
+		if fontString then
+			fontString:SetTextColor(1.0, 0.82, 0.0)
+		end
 		prevButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
 				ReaderUI:ChangePage(-1)
@@ -229,9 +234,15 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 
 	local nextButton = safeCreateFrame and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
 	if nextButton then
-		nextButton:SetSize(Metrics.BTN_W - 10, Metrics.BTN_H)
+		nextButton:SetSize(Metrics.BTN_W - 10, 22)
 		nextButton:SetPoint("RIGHT", readerNavRow or readerHeaderRow, "RIGHT", 0, 0)
 		nextButton:SetText(t("PAGINATION_NEXT"))
+		nextButton:SetNormalFontObject(GameFontNormal)
+		local fontString = nextButton:GetFontString()
+		if fontString then
+			fontString:SetTextColor(1.0, 0.82, 0.0)
+		end
+
 		nextButton:SetScript("OnClick", function()
 			if ReaderUI.ChangePage then
 				ReaderUI:ChangePage(1)
@@ -410,9 +421,14 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		-- Resume last book button
 		local resumeBtn = safeCreateFrame("Button", nil, buttonsRow, "UIPanelButtonTemplate")
 		if resumeBtn then
-			resumeBtn:SetSize(135, 24)
+			resumeBtn:SetSize(135, 26)
 			resumeBtn:SetPoint("LEFT", buttonsRow, "LEFT", 0, 0)
 			resumeBtn:SetText(t("RESUME_LAST_BOOK"))
+			resumeBtn:SetNormalFontObject(GameFontNormal)
+			local fontString = resumeBtn:GetFontString()
+			if fontString then
+				fontString:SetTextColor(1.0, 0.82, 0.0)
+			end
 			resumeBtn:SetScript("OnClick", function()
 				local addon = BookArchivist
 				if not addon or not addon.GetLastBookId then
@@ -438,9 +454,14 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		-- Options button
 		local optionsBtn = safeCreateFrame("Button", nil, buttonsRow, "UIPanelButtonTemplate")
 		if optionsBtn then
-			optionsBtn:SetSize(135, 24)
+			optionsBtn:SetSize(135, 26)
 			optionsBtn:SetPoint("RIGHT", buttonsRow, "RIGHT", 0, 0)
 			optionsBtn:SetText(t("HEADER_BUTTON_OPTIONS"))
+			optionsBtn:SetNormalFontObject(GameFontNormal)
+			local fontString = optionsBtn:GetFontString()
+			if fontString then
+				fontString:SetTextColor(1.0, 0.82, 0.0)
+			end
 			optionsBtn:SetScript("OnClick", function()
 				local optionsUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.Options
 				if optionsUI and optionsUI.Open then

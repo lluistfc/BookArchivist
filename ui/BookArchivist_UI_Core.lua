@@ -9,12 +9,16 @@ local ListUI = Internal.ListUI
 local ReaderUI = Internal.ReaderUI
 
 local function logError(message)
-	local formatted = "|cFFFF0000BookArchivist:|r " .. (message or "Unknown error")
-	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-		DEFAULT_CHAT_FRAME:AddMessage(formatted)
-	elseif print then
-		print(formatted)
-	end
+	-- Disabled: Let errors propagate to BugSack instead of printing to chat
+	-- local formatted = "|cFFFF0000BookArchivist:|r " .. (message or "Unknown error")
+	-- if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+	-- 	DEFAULT_CHAT_FRAME:AddMessage(formatted)
+	-- elseif print then
+	-- 	print(formatted)
+	-- end
+	
+	-- Re-throw the error so BugSack can catch it
+	error(message or "Unknown error", 2)
 end
 Internal.logError = logError
 
