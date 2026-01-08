@@ -208,12 +208,9 @@ function ListUI:RebuildFiltered()
           -- Clear async filtering flag BEFORE calling UpdateList
           self.__state.isAsyncFiltering = false
           
-          -- Trigger UI update
+          -- Trigger UI update (UpdateList will call UpdatePaginationUI internally)
           if self.UpdateList then
             self:UpdateList()
-          end
-          if self.UpdatePaginationUI then
-            self:UpdatePaginationUI()
           end
         end
       }
