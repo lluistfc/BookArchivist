@@ -588,13 +588,6 @@ function Core:PersistSession(session)
   if Core.BuildSearchText then
     entry.searchText = Core:BuildSearchText(entry.title, entry.pages)
   end
-  
-  -- Invalidate filtered lists cache since book data changed
-  local Cache = BookArchivist.Cache
-  if Cache then
-    Cache:Invalidate("filteredLists")
-  end
-  
 	self:IndexTitleForBook(entry.title or session.title, bookId)
 	self:TouchOrder(bookId)
   return entry

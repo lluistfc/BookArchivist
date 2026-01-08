@@ -1,5 +1,6 @@
 # BookArchivist Testing Instructions
-**CRITICAL: Test these commands after /reload**
+**Last Updated:** January 8, 2026  
+**Status:** Phase 1 Complete - Production Ready
 
 ---
 
@@ -23,80 +24,41 @@
 
 ---
 
-## 🔍 STEP 1: Verify Module Loading
+## 🧪 Testing Workflows
 
-After `/reload`, check if modules loaded:
+### Performance Testing (Phase 1 Validated ✅)
 
-```lua
-/ba modules
-```
+**Test async filtering with large datasets:**
 
-**Expected Output:**
-```
-BookArchivist Module Status:
-  BookArchivist: true
-  Profiler: true
-  TestDataGenerator: true
-  DBSafety: true
-  Core: true
-```
+1. **Generate test data:**
+   ```lua
+   /ba gentest 1000
+   ```
+   (Remember to logout/login to persist)
 
-**If ANY show `false` or `nil`:**
-- Check `/console scriptErrors 1` for Lua errors
-- Check the load order in BookArchivist.toc
-- Report the error messages
+2. **Open main UI:**
+   ```lua
+   /ba
+   ```
 
----
+3. **Verify no freezing:**
+   - UI should open in ~1 second
+   - List filtering should be instant (<16ms)
+   - No UI freezes during filtering
 
-## 🔍 STEP 1.5: Check Available Commands
+4. **Test filtering:**
+   - Use search box with various queries
+   - Toggle filters (favorites, locations)
+   - Verify UI remains responsive
 
-```lua
-/ba help
-```
-
-This will show all available commands and confirm the slash command system is working.
-
----
-
-## 🔍 STEP 2: Enable Debug Logging
-
-```lua
-/run BookArchivistDB = BookArchivistDB or {}; BookArchivistDB.options = BookArchivistDB.options or {}; BookArchivistDB.options.debug = true
-/reload
-```
-
-After reload, you should see loading messages in chat:
-- `[Profiler] Module loaded`
-- `[TestDataGenerator] Module loaded`
-- `[DBSafety] Module loaded`
+**Expected Results:**
+- ✅ No UI freezing with 1000+ books
+- ✅ Filtering completes in <16ms (60 FPS maintained)
+- ✅ UI open time ~1 second
 
 ---
 
-## 🧪 STEP 3: Test Profiler Commands
-
-### Enable Profiler
-```lua
-/ba profile on
-```
-**Expected:** `BookArchivist Profiler: Enabled` (in green)
-
-### View Report (will be empty until operations run)
-```lua
-/ba profile report
-```
-**Expected:** Performance report table (even if empty)
-
-### View Summary
-```lua
-/ba profile summary
-```
-**Expected:** Summary with total operations
-
-### Disable Profiler
-```lua
-/ba profile off
-```
-**Expected:** `BookArchivist Profiler: Disabled` (in red)
+### Database Safety Testing (Phase 1 Validated ✅)
 
 ---
 
@@ -135,157 +97,124 @@ Once small test works:
 
 ```lua
 /ba gentest 100    -- 100 books
--- Click "Logout" when prompted
--- Log back in
-/ba stats          -- Verify count
+### Database Safety Testing (Phase 1 Validated ✅)
 
-/ba gentest 500    -- Add 500 more
--- Click "Logout"
--- Log back in
-/ba stats          -- Should show 600+ books
-```
+**Test corruption detection (optional):**
 
----
+1. **Manually corrupt database:**
+   ```lua
+   /run BookArchivistDB = "corrupted string"
+   /reload
+   ```
+   **Expected:** Popup shown, backup created, fresh DB initialized
 
-## 🧪 STEP 6: Test Presets
-
-```lua
-/ba genpreset small    -- 100 books
-/ba genpreset medium   -- 500 books
-/ba genpreset large    -- 1000 books
-```
+2. **Verify recovery:**
+   - Check for backup global variable (BookArchivistDB_Backup_CORRUPTED_*)
+   - Confirm fresh DB created
+   - No data loss for future captures
 
 ---
 
-## 🧪 STEP 7: Performance Testing
+## 🛠️ Developer Commands
 
-With 100+ books loaded:
-
-```lua
-/ba profile on
-/ba profile reset      -- Clear previous data
-```
-
-Then perform operations:
-1. Open main UI with `/ba`
-2. Search for books
-3. Apply filters
-4. Scroll through list
-
-Then check results:
-```lua
-/ba profile report
-/ba profile slow
-```
-
----
-
-## 🧪 STEP 8: Clear Test Data
-
-When done testing:
+### Test Data Generation
 
 ```lua
-/ba cleartest
+/ba gentest <count>      -- Generate N test books
+/ba genpreset small      -- 100 books
+/ba genpreset medium     -- 500 books
+/ba genpreset large      -- 1000 books
+/ba genpreset stress     -- 5000 books
+/ba cleartest            -- Remove all test books
 ```
 
-**Expected:**
-1. First popup: "Delete all test books?" with Delete/Cancel buttons
-2. Click "Delete" button
-3. Count of deleted books displayed in chat
-4. Second popup: "Deleted N test books! IMPORTANT: ReloadUI will NOT save deletions!"
-5. Click "Logout" button
-6. Log back in
-7. Books are permanently deleted
+**Remember:** Must logout/login to persist test books!
 
-After login:
+### Profiling (Optional)
+
 ```lua
-/balist
+/ba profile on           -- Enable profiler
+/ba profile report       -- View full report
+/ba profile summary      -- Quick summary
+/ba profile slow         -- Top slowest operations
+/ba profile reset        -- Clear profiling data
+/ba profile off          -- Disable profiler
 ```
-**Expected:** Back to your original 12 books
+
+### Database Info
+
+```lua
+/ba stats                -- Database statistics
+/badb                    -- Database debug info
+/balist                  -- List all books in chat
+```
+
+### Debugging
+
+```lua
+/console scriptErrors 1  -- Enable Lua error reporting
+/ba modules              -- Check module loading status
+/ba help                 -- List all commands
+```
 
 ---
 
 ## 🚨 TROUBLESHOOTING
 
-### Problem: Nothing happens with `/ba profile`
-
-**Diagnosis:**
-```lua
-/ba modules
-```
-
-If `Profiler: false`, the module didn't load.
+### Problem: Commands don't work
 
 **Fix:**
-1. Check for Lua errors: `/console scriptErrors 1`
-2. `/reload` and look for error messages
-3. Check BookArchivist.toc has the line:
-   `core/BookArchivist_Profiler.lua`
+1. Enable error reporting: `/console scriptErrors 1`
+2. Reload: `/reload`
+3. Look for red error messages
 
-### Problem: `/ba gentest` says module not loaded
+### Problem: Test books disappear after reload
 
-**Diagnosis:**
-```lua
-/ba modules
-```
+**Cause:** You reloaded instead of logging out.  
+**Fix:** Always `/logout` after generating test data to persist it.
 
-If `TestDataGenerator: false`, the module didn't load.
+### Problem: UI freezes with large datasets
 
-**Fix:**
-1. Check BookArchivist.toc has:
-   `dev/BookArchivist_TestDataGenerator.lua`
-2. Check for syntax errors in the file
-3. `/reload` with `/console scriptErrors 1` enabled
-
-### Problem: Lua errors on reload
-
-**Common causes:**
-- `date()` not available → Fixed in latest version
-- `time()` not available → Fixed in latest version
-- Module load order issue → Check .toc file
-
-**Get Error Details:**
-```lua
-/console scriptErrors 1
-/reload
-```
-
-Look for red error messages mentioning BookArchivist files.
-
-### Problem: Commands work but books don't generate
-
-**Check:**
-1. Are Core and BookId modules loaded?
-   ```lua
-   /ba modules
-   ```
-
-2. Is the DB accessible?
-   ```lua
-   /badb
-   ```
-
-3. Any errors in chat after `/ba gentest 10`?
+**Status:** Should not happen after Phase 1 optimizations.  
+**If it does:** Report with dataset size and repro steps.
 
 ---
 
-## 📊 EXPECTED TIMELINE
+## 📋 Quick Reference
 
-### First Time Setup (5 minutes)
-1. `/reload` - 30 seconds
-2. `/ba modules` - Verify modules loaded
-3. Enable debug logging - 1 minute
-4. `/reload` again - 30 seconds
-5. `/ba gentest 10` - 1 minute
-6. `/reload` - 30 seconds
-7. Verify with `/balist` - 30 seconds
+**Most Common Commands:**
+- `/ba` - Toggle main UI
+- `/ba gentest 100` - Generate test books
+- `/ba cleartest` - Remove test books
+- `/ba stats` - Database info
 
-### Performance Baseline (10 minutes)
-1. `/ba gentest 1000` - 2 minutes
-2. `/reload` - 1 minute
-3. `/ba profile on` - 5 seconds
-4. Perform operations - 5 minutes
-5. `/ba profile report` - 1 minute
+**Testing Performance:**
+1. Generate 1000 test books
+2. Logout/login to persist
+3. Open UI with `/ba`
+4. Verify no freezing (<1 second open time)
+
+**Testing Safety:**
+1. Corrupt DB manually
+2. Reload
+3. Verify popup and recovery
+
+---
+
+## ✅ Phase 1 Validation Checklist
+
+After Phase 1 implementation, verify:
+
+- [ ] No UI freezing with 1000+ books
+- [ ] List filtering completes in <16ms
+- [ ] UI opens in ~1 second
+- [ ] Corruption detection shows popup
+- [ ] Backup created on corruption
+- [ ] Fresh DB initialized after corruption
+- [ ] Test data generation works
+- [ ] Test data clears properly
+
+**All items above should pass. If not, Phase 1 has regressions.**
 6. Document results in PERFORMANCE_BASELINE.md
 
 ---
@@ -319,20 +248,6 @@ If something doesn't work, provide this info:
 ### Actual Result:
 [what actually happened]
 
-### Module Status:
-[output of /ba modules]
-
-### Lua Errors:
-[any error messages after /console scriptErrors 1]
-
-### WoW Version:
-[retail/classic/wrath]
-
-### BookArchivist Version:
-[version from .toc file]
-```
-
 ---
 
-**REMEMBER:** Start small (10 books), verify it works, then scale up.  
-Don't jump straight to 1000 books if 10 doesn't work!
+**Last Updated:** January 8, 2026

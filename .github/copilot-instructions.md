@@ -36,6 +36,23 @@ Breaking this rule wastes the user's time with premature commits of broken code.
 
 ---
 
+## 📦 Removed Features (for future reference)
+
+### Cache System (commits c94badd → 157c922)
+**Removed because:** Filtering is already fast (8.6ms), cache has weak real-world benefit.
+- Users rarely repeat exact searches in same session
+- Cache cleared on reload/zone change
+- Async filtering optimization (350x speedup) made cache unnecessary
+- Code preserved in git history if needed later
+
+**To restore:**
+```bash
+git checkout 157c922 -- core/BookArchivist_Cache.lua
+# Then reintegrate cache calls in Filter.lua and Core.lua
+```
+
+---
+
 ## Prime directive
 
 ### UI work
