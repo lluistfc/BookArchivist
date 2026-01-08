@@ -348,13 +348,13 @@ function OptionsUI:Ensure()
   -- Left content column anchor (matches Blizzard option panel left margin)
   local contentLeft = createFrame("Frame", nil, scrollChild)
   contentLeft:SetSize(1, 1)
-  contentLeft:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 16, -120)
+  contentLeft:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 16, -132)
   optionsPanel.contentLeft = contentLeft
 
   -- Right content boundary (matches Settings panel padding)
   local contentRight = createFrame("Frame", nil, scrollChild)
   contentRight:SetSize(1, 1)
-  contentRight:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -16, -120)
+  contentRight:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -16, -132)
   optionsPanel.contentRight = contentRight
 
   subtitle:ClearAllPoints()
