@@ -3,11 +3,11 @@ local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
 if not ListUI then return end
 
 local Metrics = BookArchivist.UI and BookArchivist.UI.Metrics or {}
-local ROW_PAD_L = Metrics.ROW_PAD_L or Metrics.PAD_INSET or Metrics.PAD or 10
-local ROW_PAD_R = Metrics.ROW_PAD_R or Metrics.PAD_INSET or Metrics.PAD or 10
-local ROW_PAD_T = Metrics.ROW_PAD_T or 6
+local ROW_PAD_L = Metrics.ROW_PAD_L or Metrics.PAD_INSET or Metrics.PAD or 8
+local ROW_PAD_R = Metrics.ROW_PAD_R or Metrics.PAD_INSET or Metrics.PAD or 8
+local ROW_PAD_T = Metrics.ROW_PAD_T or 4
 local SCROLLBAR_GUTTER = Metrics.SCROLLBAR_GUTTER or 18
-local ROW_HILITE_INSET = Metrics.ROW_HILITE_INSET or 2
+local ROW_HILITE_INSET = Metrics.ROW_HILITE_INSET or 0
 local ROW_EDGE_W = Metrics.ROW_EDGE_W or 3
 local BADGE_COL_W = Metrics.SEARCH_BADGE_COL_W or 52
 local BADGE_H = Metrics.SEARCH_BADGE_H or 16
@@ -181,21 +181,15 @@ local function createRowButton(self)
   button.highlight:ClearAllPoints()
   button.highlight:SetPoint("TOPLEFT", button, "TOPLEFT", ROW_HILITE_INSET, -ROW_HILITE_INSET)
   button.highlight:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -ROW_HILITE_INSET, ROW_HILITE_INSET)
-  local hasAtlas = pcall(function() button.highlight:SetAtlas("search-highlight") end)
-  if not hasAtlas then
-    button.highlight:SetColorTexture(1, 1, 1, 0.1)
-  end
-  button.highlight:SetAlpha(0.5)
+  button.highlight:SetColorTexture(1, 1, 1, 0.08)
+  button.highlight:SetAlpha(1)
 
   button.selected = button:CreateTexture(nil, "BACKGROUND", nil, 1)
   button.selected:ClearAllPoints()
   button.selected:SetPoint("TOPLEFT", button, "TOPLEFT", ROW_HILITE_INSET, -ROW_HILITE_INSET)
   button.selected:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -ROW_HILITE_INSET, ROW_HILITE_INSET)
-  local hasSelAtlas = pcall(function() button.selected:SetAtlas("groupfinder-button-cover") end)
-  if not hasSelAtlas then
-    button.selected:SetColorTexture(0.2, 0.4, 0.8, 0.3)
-  end
-  button.selected:SetAlpha(0.7)
+  button.selected:SetColorTexture(1, 0.82, 0, 0.3)
+  button.selected:SetAlpha(1)
   button.selected:Hide()
 
   button.selectedEdge = button:CreateTexture(nil, "OVERLAY")
@@ -228,14 +222,18 @@ local function createRowButton(self)
   favoriteStar:Hide()
   button.favoriteStar = favoriteStar
 
-  button.titleText = rowContent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  button.titleText = rowContent:CreateFontString(nil, "OVERLAY")
+  button.titleText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
   button.titleText:SetPoint("TOPLEFT", rowContent, "TOPLEFT", 0, 0)
   button.titleText:SetPoint("TOPRIGHT", favoriteStar, "LEFT", -(Metrics.GAP_XS or 4), 0)
   button.titleText:SetJustifyH("LEFT")
   button.titleText:SetJustifyV("TOP")
   button.titleText:SetWordWrap(false)
+  button.titleText:SetTextColor(1, 1, 1)
+  button.titleText:SetShadowOffset(0, 0)
 
-  button.metaText = rowContent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  button.metaText = rowContent:CreateFontString(nil, "OVERLAY")
+  button.metaText:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
   button.metaText:SetPoint("TOPLEFT", button.titleText, "BOTTOMLEFT", 0, -(Metrics.GAP_XS or 4))
   button.metaText:SetPoint("RIGHT", rowContent, "RIGHT", 0, 0)
   button.metaText:SetPoint("BOTTOMLEFT", rowContent, "BOTTOMLEFT", 0, 0)
@@ -243,6 +241,7 @@ local function createRowButton(self)
   button.metaText:SetTextColor(0.75, 0.75, 0.75)
   button.metaText:SetWordWrap(false)
   button.metaText:SetMaxLines(1)
+  button.metaText:SetShadowOffset(0, 0)
 
   local badgeTitle = CreateFrame("Frame", nil, badgeContainer)
   badgeTitle:SetSize(BADGE_COL_W, BADGE_H)
