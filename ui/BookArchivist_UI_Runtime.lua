@@ -182,6 +182,7 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		print(string.format("  BookArchivist: %s", tostring(BookArchivist ~= nil)))
 		print(string.format("  Profiler: %s", tostring(BookArchivist and BookArchivist.Profiler ~= nil)))
 		print(string.format("  Iterator: %s", tostring(BookArchivist and BookArchivist.Iterator ~= nil)))
+		print(string.format("  FramePool: %s", tostring(BookArchivist and BookArchivist.UI and BookArchivist.UI.FramePool ~= nil)))
 		print(string.format("  TestDataGenerator: %s", tostring(BookArchivist and BookArchivist.TestDataGenerator ~= nil)))
 		print(string.format("  DBSafety: %s", tostring(BookArchivist and BookArchivist.DBSafety ~= nil)))
 		print(string.format("  Core: %s", tostring(BookArchivist and BookArchivist.Core ~= nil)))
@@ -194,6 +195,7 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		print("  |cFFFFFF00/ba|r - Open main UI")
 		print("  |cFFFFFF00/ba help|r - Show this help")
 		print("  |cFFFFFF00/ba modules|r - Check module loading status")
+		print("  |cFFFFFF00/ba pool|r - Show frame pool statistics")
 		print("  |cFFFFFF00/ba options|r - Open options panel")
 		print("  |cFFFFFF00/ba import|r - Open import/export tools")
 		print("")
@@ -213,6 +215,34 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		print("  |cFFFFFF00/ba genpreset <size>|r - Generate preset (small/medium/large)")
 		print("  |cFFFFFF00/ba stats|r - Show database statistics")
 		print("  |cFFFFFF00/ba cleartest|r - Delete all test books")
+		return
+	end
+	
+	-- Frame pool statistics
+	if verb == "pool" or verb == "pools" or verb == "poolstats" then
+		local FramePool = BookArchivist.UI and BookArchivist.UI.FramePool
+		if not FramePool then
+			print("|cFFFF0000BookArchivist:|r FramePool module not loaded!")
+			return
+		end
+		
+		local allStats = FramePool:GetAllStats()
+		if #allStats == 0 then
+			print("|cFF00FF00Frame Pools:|r No pools created yet")
+		else
+			print("|cFF00FF00Frame Pool Statistics:|r")
+			for _, stats in ipairs(allStats) do
+				print(string.format(
+					"  |cFFFFFF00%s:|r %d active, %d available, %d total (%d created, %.1f%% reuse)",
+					stats.name,
+					stats.active,
+					stats.available,
+					stats.total,
+					stats.totalCreated,
+					stats.reuseRatio * 100
+				))
+			end
+		end
 		return
 	end
 	

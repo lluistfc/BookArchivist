@@ -298,11 +298,21 @@ function ListUI:HandleRowClick(button, mouseButton)
 end
 
 local function acquireButton(self)
+  local FramePool = BookArchivist.UI and BookArchivist.UI.FramePool
+  if FramePool and FramePool:PoolExists("listRows") then
+    -- Use proper FramePool
+    local button = FramePool:Acquire("listRows")
+    if button then
+      return button
+    end
+  end
+  
+  -- Fallback to manual pool
   local pool = self:GetButtonPool()
   local button = table.remove(pool.free)
   if not button then
     button = createRowButton(self)
-    self:DebugPrint("[BookArchivist] ButtonPool: created new row button")
+    self:DebugPrint("[BookArchivist] ButtonPool: created new row button (fallback)")
   end
   button:Show()
   table.insert(pool.active, button)
@@ -310,6 +320,14 @@ local function acquireButton(self)
 end
 
 local function releaseAllButtons(self)
+  local FramePool = BookArchivist.UI and BookArchivist.UI.FramePool
+  if FramePool and FramePool:PoolExists("listRows") then
+    -- Use proper FramePool
+    FramePool:ReleaseAll("listRows")
+    return
+  end
+  
+  -- Fallback to manual pool
   local pool = self:GetButtonPool()
   for _, button in ipairs(pool.active) do
     resetButton(button)

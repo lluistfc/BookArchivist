@@ -509,6 +509,30 @@ function ListUI:Create(uiFrame)
   scrollView:SetDataProvider(dataProvider)
   
   self:SetFrame("scrollFrame", scrollBox)  -- For backward compatibility
+  
+  -- Initialize FramePool for list rows now that scrollBox exists
+  local FramePool = BookArchivist.UI and BookArchivist.UI.FramePool
+  if FramePool and not FramePool:PoolExists("listRows") then
+    FramePool:CreatePool("listRows", "Button", scrollBox, nil)
+    
+    -- Set custom reset function that matches our row structure
+    FramePool:SetResetFunction("listRows", function(button)
+      button:Hide()
+      button:ClearAllPoints()
+      button.bookKey = nil
+      button.itemKind = nil
+      button.locationName = nil
+      button.nodeRef = nil
+      if button.titleText then button.titleText:SetText("") end
+      if button.metaText then button.metaText:SetText("") end
+      if button.selected then button.selected:Hide() end
+      if button.selectedEdge then button.selectedEdge:Hide() end
+      if button.favoriteStar then button.favoriteStar:Hide() end
+      if button.badgeTitle then button.badgeTitle:Hide() end
+      if button.badgeText then button.badgeText:Hide() end
+    end)
+  end
+  
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-scroll", scrollBox)
   end
