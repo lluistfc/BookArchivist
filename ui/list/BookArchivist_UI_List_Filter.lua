@@ -88,8 +88,128 @@ function ListUI:RebuildFiltered()
   end
 
   local selectedKey = self:GetSelectedKey()
+  
+  -- Use Iterator for throttled filtering to prevent UI freeze
+  local Iterator = BookArchivist and BookArchivist.Iterator
+  if Iterator and #baseKeys > 100 then
+    -- Throttled path for large datasets
+    self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: using throttled iteration for %d books", #baseKeys))
+    
+    -- Set async filtering flag to prevent premature UpdateList
+    self.__state.isAsyncFiltering = true
+    
+    -- Show loading indicator
+    local noResults = self:GetFrame("noResultsText")
+    if noResults then
+      noResults:SetText("|cFFFFFF00Filtering books...|r")
+      noResults:Show()
+    end
+    
+    -- Convert array to table for Iterator
+    local keysTable = {}
+    for i, key in ipairs(baseKeys) do
+      keysTable[i] = key
+    end
+    
+    Iterator:Start(
+      "rebuild_filtered",
+      keysTable,
+      function(idx, key, context)
+        -- Initialize context tables on first call
+        context.filtered = context.filtered or {}
+        
+        local entry = books[key]
+        if entry and matches(self, entry, tokens) then
+          table.insert(context.filtered, key)
+          if key == selectedKey then
+            context.selectionStillValid = true
+          end
+          if self.SetSearchMatchKind and #tokens > 0 then
+            local titleHaystack = tostring(entry.title or ""):lower()
+            local anyTitle = false
+            local anyText = false
+            for i = 1, #tokens do
+              local token = tokens[i]
+              if token ~= "" then
+                if titleHaystack:find(token, 1, true) then
+                  anyTitle = true
+                end
+                if (entry.searchText or ""):lower():find(token, 1, true) and not titleHaystack:find(token, 1, true) then
+                  anyText = true
+                end
+              end
+            end
+            if anyTitle then
+              self:SetSearchMatchKind(key, "title")
+            end
+            if anyText or (not anyTitle) then
+              self:SetSearchMatchKind(key, "content")
+            end
+          end
+        end
+        return true -- continue
+      end,
+      {
+        chunkSize = 100,
+        budgetMs = 8,
+        onProgress = function(progress, current, total)
+          -- Update loading indicator with progress
+          if noResults then
+            noResults:SetText(string.format("|cFFFFFF00Filtering: %d/%d (%.0f%%)|r", current, total, progress * 100))
+          end
+        end,
+        onComplete = function(context)
+          -- Get fresh reference to filtered keys and update it
+          local filteredKeys = self:GetFilteredKeys()
+          wipe(filteredKeys)
+          for _, key in ipairs(context.filtered or {}) do
+            table.insert(filteredKeys, key)
+          end
+          
+          self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d (throttled)", #filteredKeys, #baseKeys))
+          
+          -- Hide loading indicator
+          local noResults = self:GetFrame("noResultsText")
+          if noResults and #filteredKeys == 0 then
+            noResults:SetText("|cFF999999" .. (self.L and self.L["LIST_EMPTY_SEARCH"] or "No results") .. "|r")
+          elseif noResults then
+            noResults:Hide()
+          end
+          
+          -- Update pagination
+          local pageCount = self:GetPageCount(#filteredKeys)
+          self.__state.pagination.total = #filteredKeys
+          self.__state.pagination.pageCount = pageCount
+          if self:GetPage() > pageCount then
+            self:SetPage(pageCount)
+          end
+          
+          -- Handle selection
+          if not context.selectionStillValid then
+            self:ClearSelection()
+          end
+          
+          -- Clear async filtering flag BEFORE calling UpdateList
+          self.__state.isAsyncFiltering = false
+          self:DebugPrint(string.format("[BookArchivist] Async filtering complete, flag cleared, calling UpdateList (flag=%s)", tostring(self.__state.isAsyncFiltering)))
+          
+          -- Trigger UI update
+          if self.UpdateList then
+            self:UpdateList()
+          end
+          if self.UpdatePaginationUI then
+            self:UpdatePaginationUI()
+          end
+        end
+      }
+    )
+    
+    -- Early return - completion callback will update UI
+    return
+  end
+  
+  -- Fast synchronous path for small datasets (<100 books)
   local selectionStillValid = false
-
   for _, key in ipairs(baseKeys) do
       local entry = books[key]
     if entry and matches(self, entry, tokens) then

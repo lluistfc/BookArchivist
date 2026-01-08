@@ -29,10 +29,14 @@ local function ensureUI()
 end
 
 local function refreshAllImpl()
+	local Profiler = BookArchivist.Profiler
+	if Profiler then Profiler:Start("UI_refreshAll") end
+	
 	BookArchivist:DebugMessage("|cFFFFFF00BookArchivist UI (refreshAllImpl) refreshing...|r")
 	local ui = call(Internal.getUIFrame)
 	if not ui or not call(Internal.getIsInitialized) then
 		BookArchivist:DebugPrint("[BookArchivist] refreshAll skipped (UI not initialized)")
+		if Profiler then Profiler:Stop("UI_refreshAll") end
 		return
 	end
 
@@ -43,13 +47,14 @@ local function refreshAllImpl()
 	local needsReader = flags.reader
 
 	if needsList then
+		if Profiler then Profiler:Start("UI_rebuildFiltered") end
 		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildFiltered")
 		if not Internal.safeStep or not Internal.safeStep("BookArchivist rebuildFiltered", function()
 			call(Internal.rebuildFiltered)
 		end) then
 			BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildFiltered failed")
-			return
 		end
+		if Profiler then Profiler:Stop("UI_rebuildFiltered") end
 		if Internal.markRefreshComplete then
 			Internal.markRefreshComplete("list")
 		end
@@ -95,6 +100,8 @@ local function refreshAllImpl()
 	if not (needsList or needsLocation or needsReader) and Internal.setNeedsRefresh then
 		Internal.setNeedsRefresh(false)
 	end
+	
+	if Profiler then Profiler:Stop("UI_refreshAll") end
 end
 
 Internal.refreshAll = refreshAllImpl
@@ -119,30 +126,33 @@ function addonRoot.RefreshUI()
 end
 
 local function toggleUI()
+	local Profiler = BookArchivist.Profiler
+	if Profiler then Profiler:Start("UI_toggle") end
+	
 	local ok, err = ensureUI()
 	if not ok then
 		if Internal.logError then
 			Internal.logError(err or "BookArchivist UI unavailable.")
 		end
+		if Profiler then Profiler:Stop("UI_toggle") end
 		return
 	end
 
 	local frame = call(Internal.getUIFrame)
 	if not frame then
+		if Profiler then Profiler:Stop("UI_toggle") end
 		return
 	end
 
 	if frame:IsShown() then
 		frame:Hide()
 	else
-		if Internal.requestFullRefresh then
-			Internal.requestFullRefresh()
-		elseif Internal.setNeedsRefresh then
-			Internal.setNeedsRefresh(true)
-		end
-		call(Internal.flushPendingRefresh)
+		-- Don't call requestFullRefresh here - OnShow handler will do it
+		-- This prevents duplicate refreshAll calls
 		frame:Show()
 	end
+	
+	if Profiler then Profiler:Stop("UI_toggle") end
 end
 
 addonRoot.ToggleUI = toggleUI

@@ -14,6 +14,12 @@ local function hasMethod(obj, methodName)
 end
 
 function ListUI:UpdateList()
+  -- Skip if async filtering is in progress
+  if self.__state.isAsyncFiltering then
+    self:DebugPrint("[BookArchivist] updateList skipped (async filtering in progress)")
+    return
+  end
+  
   local dataProvider = self:GetDataProvider()
   if not dataProvider then
     self:DebugPrint("[BookArchivist] updateList skipped (data provider missing)")
