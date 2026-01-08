@@ -115,7 +115,9 @@ function ListUI:UpdateList()
     local noResults = self:GetFrame("noResultsText")
     if noResults then
       if total == 0 then
-        if self:GetSearchQuery() ~= "" or self:HasActiveFilters() then
+        local hasSearch = (self.GetSearchQuery and self:GetSearchQuery() ~= "") or false
+        local hasFilters = (self.HasActiveFilters and self:HasActiveFilters()) or false
+        if hasSearch or hasFilters then
           noResults:SetText("|cFF999999" .. t("LIST_EMPTY_SEARCH") .. "|r")
         else
           noResults:SetText("|cFF999999" .. t("LIST_EMPTY_NO_BOOKS") .. "|r")

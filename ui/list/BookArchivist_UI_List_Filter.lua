@@ -92,6 +92,12 @@ function ListUI:RebuildFiltered()
   -- Use Iterator for throttled filtering to prevent UI freeze
   local Iterator = BookArchivist and BookArchivist.Iterator
   if Iterator and #baseKeys > 100 then
+    -- Prevent concurrent async filtering
+    if self.__state.isAsyncFiltering then
+      self:DebugPrint("[BookArchivist] rebuildFiltered: async filtering already in progress, skipping")
+      return
+    end
+    
     -- Throttled path for large datasets
     self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: using throttled iteration for %d books", #baseKeys))
     
@@ -162,34 +168,44 @@ function ListUI:RebuildFiltered()
           self:DebugPrint("[BookArchivist] === ASYNC FILTER COMPLETION CALLBACK FIRED ===")
           self:DebugPrint(string.format("[BookArchivist] Flag before clear: %s", tostring(self.__state.isAsyncFiltering)))
           
-          -- Get fresh reference to filtered keys and update it
-          local filteredKeys = self:GetFilteredKeys()
-          wipe(filteredKeys)
-          for _, key in ipairs(context.filtered or {}) do
-            table.insert(filteredKeys, key)
-          end
+          -- Wrap entire completion in error handler to catch issues
+          local success, err = pcall(function()
+            -- Get fresh reference to filtered keys and update it
+            local filteredKeys = self:GetFilteredKeys()
+            wipe(filteredKeys)
+            for _, key in ipairs(context.filtered or {}) do
+              table.insert(filteredKeys, key)
+            end
+            
+            self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d (throttled)", #filteredKeys, #baseKeys))
+            
+            -- Hide loading indicator
+            local noResults = self:GetFrame("noResultsText")
+            if noResults and #filteredKeys == 0 then
+              noResults:SetText("|cFF999999" .. (self.L and self.L["LIST_EMPTY_SEARCH"] or "No results") .. "|r")
+            elseif noResults then
+              noResults:Hide()
+            end
+            
+            -- Update pagination (protect against errors)
+            local pageCount = (self.GetPageCount and self:GetPageCount(#filteredKeys)) or 1
+            if self.__state.pagination then
+              self.__state.pagination.total = #filteredKeys
+              self.__state.pagination.pageCount = pageCount
+              local currentPage = (self.GetPage and self:GetPage()) or 1
+              if currentPage > pageCount and self.SetPage then
+                self:SetPage(pageCount)
+              end
+            end
+            
+            -- Handle selection (protect against errors)
+            if not context.selectionStillValid and self.ClearSelection then
+              self:ClearSelection()
+            end
+          end)
           
-          self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d (throttled)", #filteredKeys, #baseKeys))
-          
-          -- Hide loading indicator
-          local noResults = self:GetFrame("noResultsText")
-          if noResults and #filteredKeys == 0 then
-            noResults:SetText("|cFF999999" .. (self.L and self.L["LIST_EMPTY_SEARCH"] or "No results") .. "|r")
-          elseif noResults then
-            noResults:Hide()
-          end
-          
-          -- Update pagination
-          local pageCount = self:GetPageCount(#filteredKeys)
-          self.__state.pagination.total = #filteredKeys
-          self.__state.pagination.pageCount = pageCount
-          if self:GetPage() > pageCount then
-            self:SetPage(pageCount)
-          end
-          
-          -- Handle selection
-          if not context.selectionStillValid then
-            self:ClearSelection()
+          if not success then
+            self:DebugPrint("[BookArchivist] ERROR in completion callback: " .. tostring(err))
           end
           
           -- Clear async filtering flag BEFORE calling UpdateList
