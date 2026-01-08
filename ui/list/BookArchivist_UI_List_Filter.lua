@@ -73,6 +73,49 @@ function ListUI:RebuildFiltered()
   end
 
   self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: start (order=%d, category=%s)", #baseKeys, tostring(categoryId)))
+  
+  -- Build cache key from filter state
+  local Cache = BookArchivist.Cache
+  local cacheKey = nil
+  local query = self:GetSearchQuery()
+  local hasFilters = (self.HasActiveFilters and self:HasActiveFilters()) or false
+  
+  -- Only use cache for non-trivial searches (has query or filters)
+  -- Don't cache "show all" results as they're fast anyway
+  if Cache and (query ~= "" or hasFilters) then
+    local listMode = (self.GetListMode and self:GetListMode()) or "books"
+    cacheKey = string.format("mode:%s|cat:%s|query:%s|filters:%s|total:%d", 
+      tostring(listMode), 
+      tostring(categoryId),
+      tostring(query),
+      tostring(hasFilters),
+      #baseKeys
+    )
+    
+    -- Check cache
+    local cached = Cache:Get("filteredLists", cacheKey)
+    if cached and type(cached) == "table" and #cached > 0 then
+      self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: using cached result (%d books)", #cached))
+      
+      -- Update filtered keys from cache (deep copy to avoid reference issues)
+      local filteredKeys = self:GetFilteredKeys()
+      wipe(filteredKeys)
+      for _, key in ipairs(cached) do
+        table.insert(filteredKeys, key)
+      end
+      
+      -- Update pagination
+      local pageCount = self:GetPageCount(#filteredKeys)
+      self.__state.pagination.total = #filteredKeys
+      self.__state.pagination.pageCount = pageCount
+      if self:GetPage() > pageCount then
+        self:SetPage(pageCount > 0 and pageCount or 1, true)
+      end
+      
+      return -- Early return with cached result
+    end
+  end
+  
   local query = self:GetSearchQuery()
   local tokens = {}
   for token in query:lower():gmatch("%S+") do
@@ -199,6 +242,12 @@ function ListUI:RebuildFiltered()
             if not context.selectionStillValid and self.ClearSelection then
               self:ClearSelection()
             end
+            
+            -- Cache the filtered result (only if non-empty and has query/filters)
+            if Cache and cacheKey and #filteredKeys > 0 then
+              Cache:Set("filteredLists", cacheKey, filteredKeys)
+              self:DebugPrint("[BookArchivist] rebuildFiltered: cached result")
+            end
           end)
           
           if not success then
@@ -255,6 +304,12 @@ function ListUI:RebuildFiltered()
   end
 
 	self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #baseKeys))
+
+  -- Cache the filtered result (only if non-empty and has query/filters)
+  if Cache and cacheKey and #filtered > 0 then
+    Cache:Set("filteredLists", cacheKey, filtered)
+    self:DebugPrint("[BookArchivist] rebuildFiltered: cached result")
+  end
 
   local pageCount = self:GetPageCount(#filtered)
   self.__state.pagination.total = #filtered

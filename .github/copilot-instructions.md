@@ -5,6 +5,37 @@ These instructions are repository-wide. Follow them unless the user explicitly o
 
 ---
 
+## ⚠️ CRITICAL WORKFLOW RULES
+
+### NEVER commit without explicit approval
+**RULE:** Do NOT run `git commit` until the user:
+1. Tests the changes in-game
+2. Confirms they work correctly
+3. Explicitly tells you to commit
+
+**When to commit:**
+- User says "commit this" / "commit these changes" / "git commit"
+- User says "looks good, commit it"
+- User explicitly approves after testing
+
+**When NOT to commit:**
+- After implementing a feature (user needs to test first)
+- After fixing a bug (user needs to verify first)
+- After making ANY code changes (user must test)
+- Just because you finished the work
+
+**Correct workflow:**
+1. Implement changes
+2. STOP and let user test
+3. User reports results
+4. Fix any issues if needed
+5. User says "commit"
+6. THEN run git commit
+
+Breaking this rule wastes the user's time with premature commits of broken code.
+
+---
+
 ## Prime directive
 
 ### UI work
