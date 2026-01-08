@@ -240,15 +240,20 @@ function OptionsUI:Ensure()
     scrollFrame:SetPoint("RIGHT", scrollBar, "LEFT", -4, 0)
 
     scrollChild = createFrame("Frame", nil, scrollFrame)
-    -- Give the scroll child a reasonable initial height so that
-    -- content can extend and be scrolled without being clipped.
-    scrollChild:SetSize(1, 800)
+    scrollChild:SetHeight(800)
     scrollFrame:SetScrollChild(scrollChild)
     
-    -- Helper function to update scroll child height based on content
-    local function updateScrollChildHeight()
-      if not scrollChild then return end
+    -- Helper function to update scroll child dimensions based on content
+    local function updateScrollChildDimensions()
+      if not scrollChild or not scrollFrame then return end
       
+      -- Update width to match scrollFrame
+      local width = scrollFrame:GetWidth()
+      if width and width > 0 then
+        scrollChild:SetWidth(width)
+      end
+      
+      -- Update height based on content
       local maxBottom = 0
       local children = {scrollChild:GetChildren()}
       for _, child in ipairs(children) do
@@ -270,7 +275,7 @@ function OptionsUI:Ensure()
     end
     
     -- Store helper for external access
-    optionsPanel.updateScrollChildHeight = updateScrollChildHeight
+    optionsPanel.updateScrollChildHeight = updateScrollChildDimensions
     
     -- Initialize scroll controller with ScrollUtil
     if ScrollUtil and ScrollUtil.InitScrollFrameWithScrollBar then
@@ -303,12 +308,12 @@ function OptionsUI:Ensure()
     end)
 
     scrollFrame:HookScript("OnSizeChanged", function(frame, width)
-      if not width or width <= 0 then return end
-      if scrollChild and scrollChild.SetWidth then
-        scrollChild:SetWidth(width)
-      end
-      -- Recalculate height when frame resizes
-      updateScrollChildHeight()
+      updateScrollChildDimensions()
+    end)
+    
+    -- Ensure dimensions are set when scrollChild is shown
+    scrollChild:SetScript("OnShow", function()
+      C_Timer.After(0, updateScrollChildDimensions)
     end)
   else
     -- Fallback: no scroll frame available (e.g. in tests),
