@@ -159,6 +159,9 @@ function ListUI:RebuildFiltered()
           end
         end,
         onComplete = function(context)
+          self:DebugPrint("[BookArchivist] === ASYNC FILTER COMPLETION CALLBACK FIRED ===")
+          self:DebugPrint(string.format("[BookArchivist] Flag before clear: %s", tostring(self.__state.isAsyncFiltering)))
+          
           -- Get fresh reference to filtered keys and update it
           local filteredKeys = self:GetFilteredKeys()
           wipe(filteredKeys)
@@ -191,15 +194,21 @@ function ListUI:RebuildFiltered()
           
           -- Clear async filtering flag BEFORE calling UpdateList
           self.__state.isAsyncFiltering = false
-          self:DebugPrint(string.format("[BookArchivist] Async filtering complete, flag cleared, calling UpdateList (flag=%s)", tostring(self.__state.isAsyncFiltering)))
+          self:DebugPrint(string.format("[BookArchivist] Flag after clear: %s", tostring(self.__state.isAsyncFiltering)))
+          self:DebugPrint("[BookArchivist] About to call UpdateList...")
           
           -- Trigger UI update
           if self.UpdateList then
             self:UpdateList()
+            self:DebugPrint("[BookArchivist] UpdateList called from completion callback")
+          else
+            self:DebugPrint("[BookArchivist] ERROR: UpdateList method not found!")
           end
           if self.UpdatePaginationUI then
             self:UpdatePaginationUI()
           end
+          
+          self:DebugPrint("[BookArchivist] === COMPLETION CALLBACK FINISHED ===")
         end
       }
     )
