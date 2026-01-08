@@ -148,6 +148,22 @@ function ListUI:GetFrame(name)
   return self.__state.frames[name]
 end
 
+function ListUI:SetDataProvider(dataProvider)
+  self.__state.dataProvider = dataProvider
+end
+
+function ListUI:GetDataProvider()
+  return self.__state.dataProvider
+end
+
+function ListUI:SetScrollView(scrollView)
+  self.__state.scrollView = scrollView
+end
+
+function ListUI:GetScrollView()
+  return self.__state.scrollView
+end
+
 function ListUI:RememberWidget(name, widget)
   local ctx = self:GetContext()
   if ctx and ctx.rememberWidget then

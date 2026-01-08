@@ -392,41 +392,107 @@ function ListUI:Create(uiFrame)
   listSeparator:SetColorTexture(0.25, 0.25, 0.25, 1)
   self:SetFrame("listSeparator", listSeparator)
 
-  local scrollFrame = self:SafeCreateFrame("ScrollFrame", "BookArchivistListScroll", listScrollRow, "UIPanelScrollFrameTemplate")
-  if not scrollFrame then
-    self:LogError("Unable to create list scroll frame.")
+  local scrollBox = CreateFrame("Frame", "BookArchivistListScrollBox", listScrollRow, "WowScrollBoxList")
+  if not scrollBox then
+    self:LogError("Unable to create list scroll box.")
     return
   end
   local gap = Metrics.GAP_S or Metrics.GAP_XS or 6
   local gutter = Metrics.SCROLLBAR_GUTTER or 18
-  scrollFrame:ClearAllPoints()
-  scrollFrame:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 0, -gap)
-  scrollFrame:SetPoint("BOTTOMRIGHT", listScrollRow, "BOTTOMRIGHT", -gutter, 0)
-  self:SetFrame("scrollFrame", scrollFrame)
+  scrollBox:ClearAllPoints()
+  scrollBox:SetPoint("TOPLEFT", listSeparator, "BOTTOMLEFT", 0, -gap)
+  scrollBox:SetPoint("BOTTOMRIGHT", listScrollRow, "BOTTOMRIGHT", -gutter, 0)
+  self:SetFrame("scrollBox", scrollBox)
+  
+  local scrollBar = CreateFrame("EventFrame", "BookArchivistListScrollBar", listScrollRow, "MinimalScrollBar")
+  scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 0, 0)
+  scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 0, 0)
+  self:SetFrame("scrollBar", scrollBar)
+  
+  -- Create the data provider and scroll view
+  local dataProvider = CreateDataProvider()
+  self:SetDataProvider(dataProvider)
+  
+  local scrollView = CreateScrollBoxListLinearView()
+  self:SetScrollView(scrollView)
+  
+  -- Link components
+  ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, scrollView)
+  
+  -- Define element initializer
+  local function InitializeListElement(button, elementData)
+    if not button or not elementData then return end
+    
+    button.bookKey = elementData.bookKey
+    button.itemKind = elementData.itemKind
+    button.locationName = elementData.locationName
+    button.nodeRef = elementData.nodeRef
+    
+    if button.titleText then
+      button.titleText:SetText(elementData.title or "")
+    end
+    if button.metaText then
+      button.metaText:SetText(elementData.meta or "")
+    end
+    
+    if elementData.isSelected then
+      if button.selected then button.selected:Show() end
+      if button.selectedEdge then button.selectedEdge:Show() end
+    else
+      if button.selected then button.selected:Hide() end
+      if button.selectedEdge then button.selectedEdge:Hide() end
+    end
+    
+    if button.favoriteStar then
+      button.favoriteStar:SetShown(elementData.isFavorite or false)
+    end
+    
+    if button.badgeTitle then
+      button.badgeTitle:SetShown(elementData.showTitleBadge or false)
+    end
+    if button.badgeText then
+      button.badgeText:SetShown(elementData.showTextBadge or false)
+    end
+    
+    -- Set up click handler
+    button:SetScript("OnClick", function(btn, mouseButton)
+      if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON then
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+      end
+      local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
+      if ListUI and ListUI.HandleRowClick then
+        ListUI:HandleRowClick(btn, mouseButton)
+      end
+    end)
+  end
+  
+  -- Set element factory BEFORE setting data provider
+  local rowHeight = self:GetRowHeight()
+  scrollView:SetElementExtent(rowHeight)
+  
+  local function ElementInitializer(button, elementData)
+    -- Initialize the button structure on first creation only
+    if not button.titleText then
+      self:CreateRowButtonStructure(button, rowHeight)
+    end
+    InitializeListElement(button, elementData)
+  end
+  
+  scrollView:SetElementInitializer("Button", ElementInitializer)
+  
+  -- NOW set the data provider after factory is configured
+  scrollView:SetDataProvider(dataProvider)
+  
+  self:SetFrame("scrollFrame", scrollBox)  -- For backward compatibility
   if Internal and Internal.registerGridTarget then
-    Internal.registerGridTarget("list-scroll", scrollFrame)
+    Internal.registerGridTarget("list-scroll", scrollBox)
   end
 
-  local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-  scrollChild:SetSize(336, 1)
-  scrollChild:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 0)
-  scrollChild:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 0, 0)
-  scrollFrame:SetScrollChild(scrollChild)
-  self:SetFrame("scrollChild", scrollChild)
-
   local noResults = listBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  noResults:SetPoint("CENTER", scrollFrame, "CENTER", 0, 0)
+  noResults:SetPoint("CENTER", scrollBox, "CENTER", 0, 0)
 	noResults:SetText("|cFF999999" .. t("LIST_EMPTY_SEARCH") .. "|r")
   noResults:Hide()
   self:SetFrame("noResultsText", noResults)
-
-  local rowHeight = self:GetRowHeight()
-  scrollFrame:SetScript("OnMouseWheel", function(frame, delta)
-    local current = frame:GetVerticalScroll()
-    local maxScroll = frame:GetVerticalScrollRange()
-    local newScroll = math.max(0, math.min(maxScroll, current - (delta * rowHeight * 3)))
-    frame:SetVerticalScroll(newScroll)
-  end)
 
   self:UpdateSearchClearButton()
   self:UpdateSortDropdown()

@@ -170,6 +170,23 @@ local function createRowButton(self)
   local parent = getScrollChild(self)
   local rowHeight = self:GetRowHeight()
   local button = CreateFrame("Button", nil, parent)
+  self:CreateRowButtonStructure(button, rowHeight)
+  
+  button:SetScript("OnClick", function(btn, mouseButton)
+    if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON then
+      PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+    end
+    handleRowClick(self, btn, mouseButton)
+  end)
+
+  return button
+end
+
+-- Extract the row structure creation into a reusable method
+function ListUI:CreateRowButtonStructure(button, rowHeight)
+  if not button then return end
+  
+  rowHeight = rowHeight or self:GetRowHeight()
   button:SetSize(340, rowHeight)
   button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
@@ -274,15 +291,10 @@ local function createRowButton(self)
   bxText:SetTextColor(0.8, 0.9, 1)
   badgeText.text = bxText
   button.badgeText = badgeText
+end
 
-  button:SetScript("OnClick", function(btn, mouseButton)
-    if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON then
-      PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-    end
-    handleRowClick(self, btn, mouseButton)
-  end)
-
-  return button
+function ListUI:HandleRowClick(button, mouseButton)
+  handleRowClick(self, button, mouseButton)
 end
 
 local function acquireButton(self)

@@ -14,12 +14,11 @@ local function hasMethod(obj, methodName)
 end
 
 function ListUI:UpdateList()
-  local scrollChild = self:GetListScrollChild()
-  if not scrollChild then
-    self:DebugPrint("[BookArchivist] updateList skipped (scroll child missing)")
+  local dataProvider = self:GetDataProvider()
+  if not dataProvider then
+    self:DebugPrint("[BookArchivist] updateList skipped (data provider missing)")
     return
   end
-  local scrollFrame = self:GetFrame("scrollFrame") or self:GetWidget("scrollFrame")
 
   local addon = self:GetAddon()
   if not addon then
@@ -35,10 +34,8 @@ function ListUI:UpdateList()
   local mode = self:GetListMode()
   local modes = self:GetListModes()
   self:UpdateListModeUI()
-  self:ReleaseAllRowButtons()
 
   local info = self:EnsureEntryInfo()
-  local rowHeight = self:GetRowHeight()
   local paginationFrame = self:GetFrame("paginationFrame")
 
   if paginationFrame then
@@ -49,6 +46,9 @@ function ListUI:UpdateList()
     info:SetText("")
     info:Hide()
   end
+
+  -- Clear existing data
+  dataProvider:Flush()
 
   if mode == modes.BOOKS then
     local filtered = self:GetFilteredKeys()
@@ -70,63 +70,49 @@ function ListUI:UpdateList()
 
     local startIndex = (page - 1) * pageSize + 1
     local endIndex = math.min(total, startIndex + pageSize - 1)
-    local visibleCount = (total > 0 and endIndex >= startIndex) and (endIndex - startIndex + 1) or 0
 
-    local totalHeight = math.max(1, math.max(visibleCount, 0) * rowHeight)
-    if hasMethod(scrollChild, "SetSize") then
-      local width = (scrollFrame and scrollFrame:GetWidth()) or 336
-      scrollChild:SetSize(width, totalHeight)
-    else
-      self:DebugPrint("[BookArchivist] scrollChild missing SetSize; skipping resize")
-    end
-
-    local layoutIndex = 0
     local hasSearch = self.GetSearchQuery and (self:GetSearchQuery() ~= "") or false
+    local selectedKey = self:GetSelectedKey()
+    
     for i = startIndex, endIndex do
-      layoutIndex = layoutIndex + 1
-      local button = self:AcquireRowButton()
-      button:SetPoint("TOPLEFT", 0, -(layoutIndex-1) * rowHeight)
-      self:SetRowContentAnchors(button, hasSearch)
-
       local key = filtered[i]
       if key then
-    local books
-    if db and db.booksById and next(db.booksById) ~= nil then
-      books = db.booksById
-    else
-      books = db and db.books or {}
-    end
-    local entry = books[key]
-        if entry then
-          button.bookKey = key
-          button.itemKind = "book"
-      local title = entry.title or "(Untitled)"
-      local meta = self:FormatRowMetadata(entry)
-      button.titleText:SetText(title)
-      button.metaText:SetText(meta)
-      self:SyncMatchBadges(button, key)
-        self:SyncRowFavorite(button, entry)
-
-          if key == self:GetSelectedKey() then
-            button.selected:Show()
-            button.selectedEdge:Show()
-          else
-            button.selected:Hide()
-            button.selectedEdge:Hide()
-          end
+        local books
+        if db and db.booksById and next(db.booksById) ~= nil then
+          books = db.booksById
         else
-	      self:SyncRowFavorite(button, nil)
+          books = db and db.books or {}
+        end
+        local entry = books[key]
+        if entry then
+          local title = entry.title or "(Untitled)"
+          local meta = self:FormatRowMetadata(entry)
+          local matchFlags = self:GetSearchMatchKind(key)
+          
+          -- Build element data for data provider
+          local elementData = {
+            bookKey = key,
+            itemKind = "book",
+            title = title,
+            meta = meta,
+            isSelected = (key == selectedKey),
+            isFavorite = entry.isFavorite,
+            showTitleBadge = matchFlags and matchFlags.title or false,
+            showTextBadge = matchFlags and matchFlags.text or false,
+          }
+          dataProvider:Insert(elementData)
         end
       end
     end
+    self:DebugPrint(string.format("[BookArchivist] UpdateList: Added %d books to data provider", dataProvider:GetSize()))
 
     local noResults = self:GetFrame("noResultsText")
     if noResults then
       if total == 0 then
         if self:GetSearchQuery() ~= "" or self:HasActiveFilters() then
-	          noResults:SetText("|cFF999999" .. t("LIST_EMPTY_SEARCH") .. "|r")
+          noResults:SetText("|cFF999999" .. t("LIST_EMPTY_SEARCH") .. "|r")
         else
-	          noResults:SetText("|cFF999999" .. t("LIST_EMPTY_NO_BOOKS") .. "|r")
+          noResults:SetText("|cFF999999" .. t("LIST_EMPTY_NO_BOOKS") .. "|r")
         end
         noResults:Show()
       else
@@ -137,6 +123,12 @@ function ListUI:UpdateList()
     self:UpdatePaginationUI(total, pageCount)
 
     self:UpdateCountsDisplay()
+    
+    -- Force scroll box to update after data provider changes
+    local scrollBox = self:GetFrame("scrollBox") or self:GetFrame("scrollFrame")
+    if scrollBox and scrollBox.InvalidateDataProvider then
+      scrollBox:InvalidateDataProvider()
+    end
     return
   end
 
@@ -145,97 +137,98 @@ function ListUI:UpdateList()
   end
   local rows = self:GetLocationRows()
   local total = #rows
-  if hasMethod(scrollChild, "SetSize") then
-    local width = (scrollFrame and scrollFrame:GetWidth()) or 336
-    scrollChild:SetSize(width, math.max(1, total * rowHeight))
-  else
-    self:DebugPrint("[BookArchivist] scrollChild missing SetSize; skipping resize")
-  end
   local state = self:GetLocationState()
   local activeNode = state.activeNode or state.root
+  local selectedKey = self:GetSelectedKey()
+  local hasSearch = self.GetSearchQuery and (self:GetSearchQuery() ~= "") or false
 
   for i = 1, total do
     local row = rows[i]
-    local button = self:AcquireRowButton()
-    button:SetPoint("TOPLEFT", 0, -(i-1) * rowHeight)
-    local hasSearch = self.GetSearchQuery and (self:GetSearchQuery() ~= "") or false
-    self:SetRowContentAnchors(button, hasSearch)
-    button.itemKind = row.kind
+    local elementData = {}
 
     if row.kind == "back" then
-      button.locationName = nil
-      button.bookKey = nil
-      button.nodeRef = nil
-	      button.titleText:SetText(BACK_ICON_TAG .. " " .. t("LOCATION_BACK_TITLE"))
-	      button.metaText:SetText("|cFF999999" .. t("LOCATION_BACK_SUBTITLE") .. "|r")
-      button.selected:Hide()
-      button.selectedEdge:Hide()
-      self:SyncRowFavorite(button, nil)
+      elementData = {
+        itemKind = "back",
+        title = BACK_ICON_TAG .. " " .. t("LOCATION_BACK_TITLE"),
+        meta = "|cFF999999" .. t("LOCATION_BACK_SUBTITLE") .. "|r",
+        isSelected = false,
+        isFavorite = false,
+      }
     elseif row.kind == "location" then
-      button.locationName = row.name
-      button.bookKey = nil
       local childNode = row.node
-      button.nodeRef = childNode
       local childCount = childNode and childNode.childNames and #childNode.childNames or 0
       local bookCount = childNode and childNode.books and #childNode.books or 0
       local totalBooks = childNode and childNode.totalBooks or bookCount
       local detail
       if childCount > 0 then
-          local key = (childCount == 1) and "COUNT_SUBLOCATION_SINGULAR" or "COUNT_SUBLOCATION_PLURAL"
-          detail = string.format(t(key), childCount)
+        local key = (childCount == 1) and "COUNT_SUBLOCATION_SINGULAR" or "COUNT_SUBLOCATION_PLURAL"
+        detail = string.format(t(key), childCount)
       elseif bookCount > 0 or totalBooks > 0 then
-          local key = (totalBooks == 1) and "COUNT_BOOK_SINGULAR" or "COUNT_BOOK_PLURAL"
-          detail = string.format(t(key), totalBooks)
+        local key = (totalBooks == 1) and "COUNT_BOOK_SINGULAR" or "COUNT_BOOK_PLURAL"
+        detail = string.format(t(key), totalBooks)
       else
-          detail = t("LOCATION_EMPTY")
+        detail = t("LOCATION_EMPTY")
       end
-      button.titleText:SetText(string.format("|cFFFFD100%s|r", row.name))
-      button.metaText:SetText("|cFF999999" .. detail .. "|r")
-      button.selected:Hide()
-      button.selectedEdge:Hide()
-      self:SyncRowFavorite(button, nil)
+      elementData = {
+        itemKind = "location",
+        locationName = row.name,
+        nodeRef = childNode,
+        title = string.format("|cFFFFD100%s|r", row.name),
+        meta = "|cFF999999" .. detail .. "|r",
+        isSelected = false,
+        isFavorite = false,
+      }
     elseif row.kind == "book" then
       local key = row.key
-      button.bookKey = key
-      button.locationName = nil
-      button.nodeRef = nil
-        local books
-	      if db and db.booksById and next(db.booksById) ~= nil then
-		  books = db.booksById
-	      else
-		  books = db and db.books or nil
-	      end
-	      local entry = key and books and books[key]
-      if entry then
-      local title = entry.title or t("BOOK_UNTITLED")
-      local meta = self:FormatRowMetadata(entry)
-      button.titleText:SetText(title)
-      button.metaText:SetText(meta)
-      self:SyncMatchBadges(button, key)
+      local books
+      if db and db.booksById and next(db.booksById) ~= nil then
+        books = db.booksById
       else
-          button.titleText:SetText(string.format("|cFFFFD100%s|r", t("BOOK_UNKNOWN")))
-          button.metaText:SetText("|cFF999999" .. t("BOOK_MISSING_DATA") .. "|r")
+        books = db and db.books or nil
       end
-        self:SyncRowFavorite(button, entry)
-      if key == self:GetSelectedKey() then
-        button.selected:Show()
-        button.selectedEdge:Show()
+      local entry = key and books and books[key]
+      if entry then
+        local title = entry.title or t("BOOK_UNTITLED")
+        local meta = self:FormatRowMetadata(entry)
+        local matchFlags = self:GetSearchMatchKind(key)
+        elementData = {
+          bookKey = key,
+          itemKind = "book",
+          title = title,
+          meta = meta,
+          isSelected = (key == selectedKey),
+          isFavorite = entry.isFavorite,
+          showTitleBadge = matchFlags and matchFlags.title or false,
+          showTextBadge = matchFlags and matchFlags.text or false,
+        }
       else
-        button.selected:Hide()
-        button.selectedEdge:Hide()
+        elementData = {
+          bookKey = key,
+          itemKind = "book",
+          title = string.format("|cFFFFD100%s|r", t("BOOK_UNKNOWN")),
+          meta = "|cFF999999" .. t("BOOK_MISSING_DATA") .. "|r",
+          isSelected = (key == selectedKey),
+          isFavorite = false,
+        }
       end
     else
-      button.titleText:SetText("?")
-      button.metaText:SetText("")
-      button.selected:Hide()
-      button.selectedEdge:Hide()
-      self:SyncRowFavorite(button, nil)
+      elementData = {
+        itemKind = "unknown",
+        title = "?",
+        meta = "",
+        isSelected = false,
+        isFavorite = false,
+      }
     end
+    
+    dataProvider:Insert(elementData)
   end
+  
+  self:DebugPrint(string.format("[BookArchivist] UpdateList: Added %d locations to data provider", dataProvider:GetSize()))
 
   local infoMessage
   if not activeNode or (total == 0 and (#(state.path or {}) == 0)) then
-	    infoMessage = "|cFF888888" .. t("LOCATIONS_EMPTY") .. "|r"
+    infoMessage = "|cFF888888" .. t("LOCATIONS_EMPTY") .. "|r"
   else
     local hasChildren = activeNode.childNames and #activeNode.childNames > 0
     if hasChildren then
@@ -278,4 +271,10 @@ function ListUI:UpdateList()
   end
 
   self:UpdateCountsDisplay()
+  
+  -- Force scroll box to update after data provider changes
+  local scrollBox = self:GetFrame("scrollBox") or self:GetFrame("scrollFrame")
+  if scrollBox and scrollBox.InvalidateDataProvider then
+    scrollBox:InvalidateDataProvider()
+  end
 end
