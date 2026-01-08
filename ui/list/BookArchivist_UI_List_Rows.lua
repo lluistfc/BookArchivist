@@ -129,6 +129,13 @@ function ListUI:UpdateList()
     if scrollBox and scrollBox.InvalidateDataProvider then
       scrollBox:InvalidateDataProvider()
     end
+    
+    -- Auto-hide scrollbar when content fits without scrolling
+    local scrollBar = self:GetFrame("scrollBar")
+    if scrollBar then
+      local needsScroll = (endIndex - startIndex + 1) * (self.ROW_HEIGHT or 52) > (scrollBox:GetHeight() or 0)
+      scrollBar:SetShown(needsScroll)
+    end
     return
   end
 
@@ -276,5 +283,13 @@ function ListUI:UpdateList()
   local scrollBox = self:GetFrame("scrollBox") or self:GetFrame("scrollFrame")
   if scrollBox and scrollBox.InvalidateDataProvider then
     scrollBox:InvalidateDataProvider()
+  end
+  
+  -- Auto-hide scrollbar when content fits without scrolling
+  local scrollBar = self:GetFrame("scrollBar")
+  if scrollBar then
+    local totalHeight = dataProvider:GetSize() * (self.ROW_HEIGHT or 52)
+    local needsScroll = totalHeight > (scrollBox:GetHeight() or 0)
+    scrollBar:SetShown(needsScroll)
   end
 end

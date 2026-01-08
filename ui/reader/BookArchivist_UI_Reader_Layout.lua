@@ -281,10 +281,10 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	local textScroll = safeCreateFrame and safeCreateFrame("ScrollFrame", "BookArchivistTextScroll", readerScrollRow or readerBlock, "UIPanelScrollFrameTemplate")
+	local textScroll = safeCreateFrame and safeCreateFrame("Frame", "BookArchivistTextScroll", readerScrollRow or readerBlock, "WowScrollBox")
 	if not textScroll then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
-			BookArchivist.UI.Internal.logError("Unable to create reader scroll frame.")
+			BookArchivist.UI.Internal.logError("Unable to create reader scroll box.")
 		end
 		return
 	end
@@ -294,12 +294,36 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	state.textScroll = textScroll
 	local innerPad = Metrics.PAD_INSET or Metrics.PAD or 10
 	textScroll:ClearAllPoints()
-	local scrollBar = textScroll.ScrollBar or _G[(textScroll:GetName() or "") .. "ScrollBar"]
-	local sbW = (scrollBar and scrollBar.GetWidth and scrollBar:GetWidth()) or 16
+	
+	-- Create modern scrollbar
+	local scrollBar = safeCreateFrame and safeCreateFrame("EventFrame", "BookArchivistTextScrollBar", readerScrollRow or readerBlock, "MinimalScrollBar")
+	if not scrollBar then
+		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
+			BookArchivist.UI.Internal.logError("Unable to create reader scroll bar.")
+		end
+		return
+	end
+	
+	local sbW = (scrollBar and scrollBar.GetWidth and scrollBar:GetWidth()) or 12
 	local gutter = Metrics.SCROLLBAR_GUTTER or math.ceil(sbW + 6)
+	
+	-- Position scroll box
 	textScroll:SetPoint("TOPLEFT", readerScrollRow or readerBlock, "TOPLEFT", innerPad, -innerPad)
-	textScroll:SetPoint("BOTTOMRIGHT", readerScrollRow or readerBlock, "BOTTOMRIGHT", -innerPad, innerPad)
+	textScroll:SetPoint("BOTTOMLEFT", readerScrollRow or readerBlock, "BOTTOMLEFT", innerPad, innerPad)
+	textScroll:SetPoint("RIGHT", scrollBar, "LEFT", -4, 0)
+	
+	-- Position scrollbar
+	scrollBar:SetPoint("TOPRIGHT", readerScrollRow or readerBlock, "TOPRIGHT", -innerPad, -innerPad)
+	scrollBar:SetPoint("BOTTOMRIGHT", readerScrollRow or readerBlock, "BOTTOMRIGHT", -innerPad, innerPad)
+	
+	-- Store scrollbar reference
+	state.textScrollBar = scrollBar
+	if rememberWidget then
+		rememberWidget("textScrollBar", scrollBar)
+	end
+	
 	uiFrame.textScroll = textScroll
+	uiFrame.textScrollBar = scrollBar
 	if Internal and Internal.registerGridTarget then
 		Internal.registerGridTarget("reader-scroll", textScroll)
 	end
@@ -319,11 +343,23 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	textChild:SetPoint("TOPLEFT", contentHost, "TOPLEFT", 0, 0)
 	textChild:SetPoint("TOPRIGHT", contentHost, "TOPRIGHT", 0, 0)
 	textChild:SetHeight(1)
-	textScroll:SetScrollChild(textChild)
+	
+	-- Initialize ScrollBox with view and link scrollbar
+	local scrollView = CreateScrollBoxLinearView()
+	scrollView:SetPanExtent(30) -- Allow scrolling with mousewheel
+	ScrollUtil.InitScrollBoxWithScrollBar(textScroll, scrollBar, scrollView)
+	
+	-- Set the scroll child as the content
+	if textScroll.SetScrollTarget then
+		textScroll:SetScrollTarget(textChild)
+	end
+	
 	if rememberWidget then
 		rememberWidget("textChild", textChild)
+		rememberWidget("textScrollView", scrollView)
 	end
 	state.textChild = textChild
+	state.textScrollView = scrollView
 	uiFrame.textChild = textChild
 
 	local textPad = math.floor((Metrics.PAD or 12) * 0.5)

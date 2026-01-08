@@ -113,7 +113,12 @@ end
 local function resetScrollToTop(scroll)
   scroll = scroll or state.textScroll or getWidget("textScroll")
   if not scroll then return end
-  if scroll.ScrollBar and scroll.ScrollBar.SetValue then
+  
+  -- Modern ScrollBox API
+  if scroll.ScrollToBegin then
+    scroll:ScrollToBegin()
+  -- Fallback for legacy ScrollFrame
+  elseif scroll.ScrollBar and scroll.ScrollBar.SetValue then
     scroll.ScrollBar:SetValue(0)
   elseif scroll.SetVerticalScroll then
     scroll:SetVerticalScroll(0)
@@ -133,6 +138,23 @@ local function updateReaderHeight(height)
   end
 
   child:SetHeight(math.max(1, (height or 0) + 20))
+  
+  -- Notify modern ScrollBox of content size change
+  local scroll = state.textScroll or getWidget("textScroll")
+  if scroll and scroll.Update then
+    scroll:Update()
+  elseif scroll and scroll.UpdateScrollChildRect then
+    scroll:UpdateScrollChildRect()
+  end
+  
+  -- Auto-hide scrollbar when content fits without scrolling
+  local scrollBar = state.textScrollBar or getWidget("textScrollBar")
+  if scrollBar and scroll then
+    local contentHeight = child:GetHeight() or 0
+    local visibleHeight = scroll:GetHeight() or 0
+    local needsScroll = contentHeight > visibleHeight
+    scrollBar:SetShown(needsScroll)
+  end
 end
 
 ReaderUI.UpdateReaderHeight = updateReaderHeight
@@ -303,9 +325,6 @@ end
     
     -- Set large initial height for plain text too
     updateReaderHeight(10000)
-    if state.textScroll and state.textScroll.UpdateScrollChildRect then
-      state.textScroll:UpdateScrollChildRect()
-    end
     
     -- Measure actual height and reset scroll on next frame
     if C_Timer and C_Timer.After then
@@ -318,10 +337,6 @@ end
           
           local h = currentPlain.GetStringHeight and currentPlain:GetStringHeight() or 0
           updateReaderHeight(h)
-          
-          if scroll and scroll.UpdateScrollChildRect then
-            scroll:UpdateScrollChildRect()
-          end
           
           resetScrollToTop(scroll)
         end)
@@ -376,12 +391,8 @@ end
   end
 
   -- Set a large initial height to ensure HTML has room to render fully
-  -- We'll adjust to actual size after it reflowsupdateReaderHeight(10000)
-  
-  -- Force immediate layout update
-  if state.textScroll and state.textScroll.UpdateScrollChildRect then
-    state.textScroll:UpdateScrollChildRect()
-  end
+  -- We'll adjust to actual size after it reflows
+  updateReaderHeight(10000)
 
   -- SimpleHTML needs time to calculate its content; measure and adjust on next frame
   if C_Timer and C_Timer.After then
@@ -404,10 +415,6 @@ end
         
         -- Update to actual height
         updateReaderHeight(finalHeight)
-        
-        if scroll and scroll.UpdateScrollChildRect then
-          scroll:UpdateScrollChildRect()
-        end
         
         -- Reset scroll to top after proper height is set
         resetScrollToTop(scroll)
@@ -555,6 +562,10 @@ function ReaderUI:RenderSelected()
     local textScroll = state.textScroll or getWidget("textScroll")
     if textScroll then textScroll:Hide() end
     
+    -- Hide scrollbar
+    local textScrollBar = state.textScrollBar or getWidget("textScrollBar")
+    if textScrollBar then textScrollBar:Hide() end
+    
     -- Hide navigation row
     local readerNavRow = state.readerNavRow or getWidget("readerNavRow")
     if readerNavRow then readerNavRow:Hide() end
@@ -597,6 +608,10 @@ function ReaderUI:RenderSelected()
   -- Show reader content
   local textScroll = state.textScroll or getWidget("textScroll")
   if textScroll then textScroll:Show() end
+  
+  -- Show scrollbar (will auto-hide if content fits)
+  local textScrollBar = state.textScrollBar or getWidget("textScrollBar")
+  if textScrollBar then textScrollBar:Show() end
   
   -- Show navigation row
   local readerNavRow = state.readerNavRow or getWidget("readerNavRow")
