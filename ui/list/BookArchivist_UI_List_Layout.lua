@@ -22,6 +22,13 @@ local Metrics = BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics 
   SCROLLBAR_GUTTER = 18,
 }
 
+-- Spacing constants for header layout
+local HEADER_SPACING = {
+  COLUMN_GAP = Metrics.HEADER_RIGHT_GUTTER or Metrics.GAP_M or 12,
+  BUTTON_GAP = Metrics.GAP_S or 6,
+  ELEMENT_GAP = Metrics.GAP_XS or 4,
+}
+
 local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
 
 local L = BookArchivist and BookArchivist.L or {}
@@ -204,54 +211,66 @@ function ListUI:Create(uiFrame)
   local headerRightTop = uiFrame.HeaderRightTop or headerRight
   local headerRightBottom = uiFrame.HeaderRightBottom or headerRight
 
+  -- ========================================
+  -- HEADER LEFT: Logo/Title Container
+  -- ========================================
   local titleHost = headerLeftTop or headerLeft
   local titleText
   if titleHost and titleHost.CreateFontString then
     titleText = titleHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
   end
   if titleText then
-    titleText:SetPoint("TOPLEFT", titleHost, "TOPLEFT", 0, 0)
-    titleText:SetPoint("BOTTOMRIGHT", titleHost, "BOTTOMRIGHT", 0, 0)
+    titleText:SetPoint("LEFT", titleHost, "LEFT", 0, 0)
+    titleText:SetPoint("RIGHT", titleHost, "RIGHT", 0, 0)
     titleText:SetJustifyH("LEFT")
     titleText:SetJustifyV("MIDDLE")
-	    titleText:SetText(t("ADDON_TITLE"))
+    titleText:SetText(t("ADDON_TITLE"))
+    titleText:SetWordWrap(false)
     self:SetFrame("headerTitle", titleText)
   else
     self:LogError("Unable to create header title text (HeaderLeftTop missing?)")
   end
 
+  -- Count text in bottom row
   local countHost = headerLeftBottom or headerLeft
   local headerCount
   if countHost and countHost.CreateFontString then
     headerCount = countHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   end
   if headerCount then
-    headerCount:SetPoint("TOPLEFT", countHost, "TOPLEFT", 0, 0)
-    headerCount:SetPoint("BOTTOMRIGHT", countHost, "BOTTOMRIGHT", 0, 0)
+    headerCount:SetPoint("LEFT", countHost, "LEFT", 0, 0)
     headerCount:SetJustifyH("LEFT")
     headerCount:SetJustifyV("MIDDLE")
-	    headerCount:SetText(t("BOOK_LIST_SUBHEADER"))
+    headerCount:SetText(t("BOOK_LIST_SUBHEADER"))
+    headerCount:SetWordWrap(false)
     self:SetFrame("headerCountText", headerCount)
   else
     self:LogError("Unable to create header count text (HeaderLeftBottom missing?)")
   end
 
-  local searchHost = headerCenterBottom or headerCenter
-  local searchBox = self:SafeCreateFrame("EditBox", "BookArchivistSearchBox", searchHost, "SearchBoxTemplate")
+  -- ========================================
+  -- HEADER CENTER: Filter Bar + Search Bar
+  -- ========================================
+  
+  -- Filter bar in top row: Sort dropdown
+  local filterBarHost = headerCenterTop or headerCenter
+  local sortDropdown = CreateFrame("Frame", "BookArchivistSortDropdown", filterBarHost, "UIDropDownMenuTemplate")
+  sortDropdown:ClearAllPoints()
+  UIDropDownMenu_SetWidth(sortDropdown, 120)
+  -- Offset by 16px to align with search box right edge (compensates for dropdown button padding)
+  sortDropdown:SetPoint("RIGHT", filterBarHost, "RIGHT", 16, 0)
+  self:InitializeSortDropdown(sortDropdown)
+  -- Store for future filter buttons
+  self:SetFrame("filterBarHost", filterBarHost)
+
+  -- Search bar in bottom row - full width
+  local searchBarHost = headerCenterBottom or headerCenter
+  local searchBox = self:SafeCreateFrame("EditBox", "BookArchivistSearchBox", searchBarHost, "SearchBoxTemplate")
   if searchBox then
     self:SetFrame("searchBox", searchBox)
     searchBox:SetHeight((Metrics.BTN_H or 22) + (Metrics.GAP_S or 0))
-    searchBox:SetPoint("TOPLEFT", searchHost, "TOPLEFT", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
-
-    -- Constrain the search box so it leaves room for the sort
-    -- dropdown + resume button on the right, avoiding overlap.
-    if headerRightBottom then
-      local gap = Metrics.GAP_M or Metrics.GUTTER or 8
-      local extra = 32 -- leave room before the sort dropdown
-      searchBox:SetPoint("RIGHT", headerRightBottom, "LEFT", -(gap + extra), Metrics.HEADER_CENTER_BIAS_Y or 0)
-    else
-      searchBox:SetPoint("BOTTOMRIGHT", searchHost, "BOTTOMRIGHT", 0, Metrics.HEADER_CENTER_BIAS_Y or 0)
-    end
+    searchBox:SetPoint("LEFT", searchBarHost, "LEFT", 0, 0)
+    searchBox:SetPoint("RIGHT", searchBarHost, "RIGHT", 0, 0)
     searchBox:SetAutoFocus(false)
     searchBox:SetJustifyH("LEFT")
     if self.WireSearchBox then
@@ -259,10 +278,10 @@ function ListUI:Create(uiFrame)
     end
   end
 
-  local clearButton = self:SafeCreateFrame("Button", nil, searchHost, "UIPanelCloseButton")
+  local clearButton = self:SafeCreateFrame("Button", nil, searchBarHost, "UIPanelCloseButton")
   if clearButton and searchBox then
     clearButton:SetScale(0.7)
-    clearButton:SetPoint("LEFT", searchBox, "RIGHT", -(Metrics.GAP_XS or 4), 0)
+    clearButton:SetPoint("LEFT", searchBox, "RIGHT", -HEADER_SPACING.ELEMENT_GAP, 0)
     clearButton:SetScript("OnClick", function()
       searchBox:SetText("")
       self:RunSearchRefresh()
@@ -272,11 +291,18 @@ function ListUI:Create(uiFrame)
     clearButton:Hide()
   end
 
-  local optionsButton = self:SafeCreateFrame("Button", nil, headerRightTop, "UIPanelButtonTemplate")
+  -- ========================================
+  -- HEADER RIGHT: Button Groups
+  -- ========================================
+  
+  -- Top buttons container: Options + Help
+  local topButtonsHost = headerRightTop or headerRight
+  
+  local optionsButton = self:SafeCreateFrame("Button", nil, topButtonsHost, "UIPanelButtonTemplate")
   if optionsButton then
     optionsButton:SetSize(Metrics.BTN_W, 26)
-    optionsButton:SetPoint("TOPRIGHT", headerRightTop, "TOPRIGHT", 0, 0)
-	    optionsButton:SetText(t("HEADER_BUTTON_OPTIONS"))
+    optionsButton:SetPoint("TOPRIGHT", topButtonsHost, "TOPRIGHT", 0, 0)
+    optionsButton:SetText(t("HEADER_BUTTON_OPTIONS"))
     optionsButton:SetNormalFontObject(GameFontNormal)
     local fontString = optionsButton:GetFontString()
     if fontString then
@@ -293,11 +319,11 @@ function ListUI:Create(uiFrame)
     self:SetFrame("optionsButton", optionsButton)
   end
 
-  local helpButton = self:SafeCreateFrame("Button", nil, headerRightTop, "UIPanelButtonTemplate")
+  local helpButton = self:SafeCreateFrame("Button", nil, topButtonsHost, "UIPanelButtonTemplate")
   if helpButton and optionsButton then
     helpButton:SetSize(Metrics.BTN_W - 12, 26)
-    helpButton:SetPoint("RIGHT", optionsButton, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER), 0)
-	    helpButton:SetText(t("HEADER_BUTTON_HELP"))
+    helpButton:SetPoint("RIGHT", optionsButton, "LEFT", -HEADER_SPACING.BUTTON_GAP, 0)
+    helpButton:SetText(t("HEADER_BUTTON_HELP"))
     helpButton:SetNormalFontObject(GameFontNormal)
     local fontString = helpButton:GetFontString()
     if fontString then
@@ -305,7 +331,7 @@ function ListUI:Create(uiFrame)
     end
     helpButton:SetScript("OnClick", function()
       local ctx = self:GetContext()
-	      local message = t("HEADER_HELP_CHAT")
+      local message = t("HEADER_HELP_CHAT")
       if ctx and ctx.chatMessage then
         ctx.chatMessage("|cFF00FF00BookArchivist:|r " .. message)
       elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
@@ -315,46 +341,40 @@ function ListUI:Create(uiFrame)
     self:SetFrame("helpButton", helpButton)
   end
 
-  local resumeButton = self:SafeCreateFrame("Button", nil, headerRightBottom, "UIPanelButtonTemplate")
+  -- Bottom: Resume button only
+  local bottomButtonsHost = headerRightBottom or headerRight
+  
+  local resumeButton = self:SafeCreateFrame("Button", nil, bottomButtonsHost, "UIPanelButtonTemplate")
   if resumeButton then
-    resumeButton:SetSize(Metrics.BTN_W, 26)
-    resumeButton:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
+    resumeButton:SetHeight(26)
     resumeButton:SetText(t("RESUME_LAST_BOOK"))
     resumeButton:SetNormalFontObject(GameFontNormal)
     local fontString = resumeButton:GetFontString()
     if fontString then
       fontString:SetTextColor(1.0, 0.82, 0.0)
+      fontString:SetWordWrap(false)
     end
+    resumeButton:SetWidth(Metrics.BTN_W + 20)
+    resumeButton:SetPoint("RIGHT", bottomButtonsHost, "RIGHT", 0, 0)
     resumeButton:SetScript("OnClick", function()
-  	        local addon = self.GetAddon and self:GetAddon()
-        if not addon or not addon.GetLastBookId then
-          return
-        end
-        local lastId = addon:GetLastBookId()
-        if not lastId then
-          return
-        end
-        if self.SetSelectedKey then
-          self:SetSelectedKey(lastId)
-        end
-        if self.NotifySelectionChanged then
-          self:NotifySelectionChanged()
-        end
+      local addon = self.GetAddon and self:GetAddon()
+      if not addon or not addon.GetLastBookId then
+        return
+      end
+      local lastId = addon:GetLastBookId()
+      if not lastId then
+        return
+      end
+      if self.SetSelectedKey then
+        self:SetSelectedKey(lastId)
+      end
+      if self.NotifySelectionChanged then
+        self:NotifySelectionChanged()
+      end
     end)
     self:SetFrame("resumeButton", resumeButton)
     resumeButton:Hide()
   end
-
-  local sortDropdown = CreateFrame("Frame", "BookArchivistSortDropdown", headerRightBottom, "UIDropDownMenuTemplate")
-  sortDropdown:ClearAllPoints()
-  local resumeBtn = self:GetFrame("resumeButton")
-  if resumeBtn then
-    sortDropdown:SetPoint("RIGHT", resumeBtn, "LEFT", -(Metrics.GAP_S or Metrics.GUTTER or 6), 0)
-  else
-    sortDropdown:SetPoint("RIGHT", headerRightBottom, "RIGHT", 0, 0)
-  end
-  sortDropdown:SetPoint("CENTER", headerRightBottom, "CENTER", 0, 0)
-  self:InitializeSortDropdown(sortDropdown)
 
   local listBlock = uiFrame.listBlock or uiFrame.ListInset
   if not listBlock then
