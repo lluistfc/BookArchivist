@@ -192,10 +192,22 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		print(string.format("  BookArchivist: %s", tostring(BookArchivist ~= nil)))
 		print(string.format("  Profiler: %s", tostring(BookArchivist and BookArchivist.Profiler ~= nil)))
 		print(string.format("  Iterator: %s", tostring(BookArchivist and BookArchivist.Iterator ~= nil)))
+		print(string.format("  Cache: %s", tostring(BookArchivist and BookArchivist.Cache ~= nil)))
 		print(string.format("  FramePool: %s", tostring(BookArchivist and BookArchivist.UI and BookArchivist.UI.FramePool ~= nil)))
 		print(string.format("  TestDataGenerator: %s", tostring(BookArchivist and BookArchivist.TestDataGenerator ~= nil)))
 		print(string.format("  DBSafety: %s", tostring(BookArchivist and BookArchivist.DBSafety ~= nil)))
 		print(string.format("  Core: %s", tostring(BookArchivist and BookArchivist.Core ~= nil)))
+		return
+	end
+	
+	-- Cache statistics
+	if verb == "cache" or verb == "cachestats" then
+		local Cache = BookArchivist and BookArchivist.Cache
+		if Cache and Cache.PrintStats then
+			Cache:PrintStats()
+		else
+			print("|cFFFF0000BookArchivist:|r Cache module not loaded")
+		end
 		return
 	end
 	
@@ -205,6 +217,7 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		print("  |cFFFFFF00/ba|r - Open main UI")
 		print("  |cFFFFFF00/ba help|r - Show this help")
 		print("  |cFFFFFF00/ba modules|r - Check module loading status")
+		print("  |cFFFFFF00/ba cache|r - Show cache statistics")
 		print("  |cFFFFFF00/ba pool|r - Show frame pool statistics")
 		print("  |cFFFFFF00/ba options|r - Open options panel")
 		print("  |cFFFFFF00/ba import|r - Open import/export tools")

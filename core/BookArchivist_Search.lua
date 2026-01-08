@@ -57,9 +57,25 @@ function Search.NormalizeSearchText(text)
 end
 
 function Search.BuildSearchText(title, pages)
+  -- Check cache first
+  local Cache = BookArchivist.Cache
+  if Cache then
+    local cacheKey = tostring(title) .. ":" .. tostring(type(pages) == "table" and #pages or "nil")
+    local cached = Cache:Get("searchText", cacheKey)
+    if cached then
+      return cached
+    end
+    
+    -- Build and cache result
+    local result = buildSearchText(title, pages)
+    Cache:Set("searchText", cacheKey, result)
+    return result
+  end
+  
+  -- Fallback if Cache not loaded
   return buildSearchText(title, pages)
 end
 
 function Core:BuildSearchText(title, pages)
-  return buildSearchText(title, pages)
+  return Search.BuildSearchText(title, pages)
 end

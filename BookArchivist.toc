@@ -18,6 +18,7 @@ core/BookArchivist_BookId.lua
 core/BookArchivist_Migrations.lua
 core/BookArchivist_DBSafety.lua
 core/BookArchivist_Iterator.lua
+core/BookArchivist_Cache.lua
 core/BookArchivist_DB.lua
 core/BookArchivist_Favorites.lua
 core/BookArchivist_Serialize.lua
