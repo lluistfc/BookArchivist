@@ -240,7 +240,7 @@ function OptionsUI:Ensure()
     scrollFrame:SetPoint("RIGHT", scrollBar, "LEFT", -4, 0)
 
     scrollChild = createFrame("Frame", nil, scrollFrame)
-    scrollChild:SetHeight(800)
+    scrollChild:SetHeight(1)  -- Start with minimal height, will be updated based on content
     scrollFrame:SetScrollChild(scrollChild)
     
     -- Helper function to update scroll child dimensions based on content
@@ -259,18 +259,20 @@ function OptionsUI:Ensure()
       for _, child in ipairs(children) do
         if child:IsShown() then
           local bottom = child:GetBottom()
-          local childHeight = child:GetHeight()
-          if bottom and childHeight then
-            local relativeBottom = scrollChild:GetTop() - bottom
-            if relativeBottom > maxBottom then
-              maxBottom = relativeBottom
+          if bottom then
+            local top = scrollChild:GetTop()
+            if top then
+              local relativeBottom = top - bottom
+              if relativeBottom > maxBottom then
+                maxBottom = relativeBottom
+              end
             end
           end
         end
       end
       
-      -- Add padding
-      local newHeight = math.max(800, maxBottom + 40)
+      -- Add padding, with reasonable minimum
+      local newHeight = math.max(400, maxBottom + 40)
       scrollChild:SetHeight(newHeight)
     end
     
@@ -280,6 +282,10 @@ function OptionsUI:Ensure()
     -- Initialize scroll controller with ScrollUtil
     if ScrollUtil and ScrollUtil.InitScrollFrameWithScrollBar then
       ScrollUtil.InitScrollFrameWithScrollBar(scrollFrame, scrollBar)
+      -- Configure scrollbar to auto-hide when not needed
+      if scrollBar.SetHideIfUnscrollable then
+        scrollBar:SetHideIfUnscrollable(true)
+      end
     else
       -- Manual wiring for scroll functionality
       scrollFrame:SetScript("OnMouseWheel", function(self, delta)
@@ -297,15 +303,15 @@ function OptionsUI:Ensure()
         newScroll = math.max(0, math.min(newScroll, maxScroll))
         scrollFrame:SetVerticalScroll(newScroll)
       end)
+      
+      -- Auto-hide scrollbar when content fits (manual mode)
+      scrollFrame:HookScript("OnScrollRangeChanged", function(self, xRange, yRange)
+        if scrollBar then
+          local needsScroll = (yRange or 0) > 0
+          scrollBar:SetShown(needsScroll)
+        end
+      end)
     end
-    
-    -- Auto-hide scrollbar when content fits
-    scrollFrame:SetScript("OnScrollRangeChanged", function(self, xRange, yRange)
-      if scrollBar then
-        local needsScroll = (yRange or 0) > 0
-        scrollBar:SetShown(needsScroll)
-      end
-    end)
 
     scrollFrame:HookScript("OnSizeChanged", function(frame, width)
       updateScrollChildDimensions()
