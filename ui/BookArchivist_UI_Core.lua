@@ -68,6 +68,10 @@ function addonRoot.EnableDebugLogging(state, skipPersist)
 		addonRoot:SetDebugEnabled(DEBUG_LOGGING)
 		return
 	end
+	-- If skipPersist is true, we're during initialization - just set the state silently
+	if skipPersist then
+		return
+	end
 	if DEBUG_LOGGING then
 		chatMessage("|cFF00FF00BookArchivist debug logging enabled.|r")
 		if type(addonRoot.RefreshUI) == "function" then

@@ -82,6 +82,12 @@ local function handleAddonLoaded(name)
     Core:EnsureDB()
   end
   
+  -- Initialize debug logging state from DB
+  if type(BookArchivist.EnableDebugLogging) == "function" and Core and Core.IsDebugEnabled then
+    local debugState = Core:IsDebugEnabled()
+    BookArchivist.EnableDebugLogging(debugState, true)
+  end
+  
   local optionsUI = getOptionsUI()
   if optionsUI and optionsUI.OnAddonLoaded then
     optionsUI:OnAddonLoaded(name)
@@ -152,9 +158,7 @@ function BookArchivist:SetDebugEnabled(state)
   if Core and Core.SetDebugEnabled then
     Core:SetDebugEnabled(state)
   end
-  if type(self.EnableDebugLogging) == "function" then
-    self.EnableDebugLogging(state, true)
-  end
+  -- Note: EnableDebugLogging is called by the UI callback to apply runtime state
   syncOptionsUI()
 end
 
@@ -173,20 +177,10 @@ function BookArchivist:IsTooltipEnabled()
   end
   local db = self:GetDB() or {}
   local opts = db.options or {}
-  local tooltipOpts = opts.tooltip
-  if tooltipOpts == nil then
+  if opts.tooltip == nil then
     return true
   end
-  if type(tooltipOpts) == "table" then
-    if tooltipOpts.enabled == nil then
-      tooltipOpts.enabled = true
-    end
-    return tooltipOpts.enabled and true or false
-  end
-  if type(tooltipOpts) == "boolean" then
-    return tooltipOpts and true or false
-  end
-  return true
+  return opts.tooltip and true or false
 end
 
 function BookArchivist:SetTooltipEnabled(state)
@@ -195,12 +189,7 @@ function BookArchivist:SetTooltipEnabled(state)
   else
     local db = self:GetDB() or {}
     db.options = db.options or {}
-    db.options.tooltip = db.options.tooltip or {}
-    if type(db.options.tooltip) ~= "table" then
-      db.options.tooltip = { enabled = state and true or false }
-    else
-      db.options.tooltip.enabled = state and true or false
-    end
+    db.options.tooltip = state and true or false
   end
 end
 

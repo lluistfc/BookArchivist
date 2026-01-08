@@ -22,7 +22,9 @@ local function syncGridOverlayPreference()
 		db = BookArchivistDB
 	end
 	local opts = db and db.options or nil
-	local wantsDebug = opts and opts.uiDebug and true or false
+	-- Show grid if either debug OR uiDebug is enabled
+	-- (debug controls both debug logging and UI grid)
+	local wantsDebug = opts and (opts.debug or opts.uiDebug) and true or false
 	Internal.setGridOverlayVisible(wantsDebug)
 end
 
@@ -72,6 +74,7 @@ local function buildFrame(safeCreateFrame)
 			end
 		end,
 		onShow = function()
+			syncGridOverlayPreference()
 			local refreshFn = Internal.refreshAll
 			if refreshFn then
 				refreshFn()

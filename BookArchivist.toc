@@ -66,6 +66,7 @@ ui/reader/BookArchivist_UI_Reader_Delete.lua
 ui/reader/BookArchivist_UI_Reader_Share.lua
 ui/reader/BookArchivist_UI_Reader_Layout.lua
 ui/minimap/BookArchivist_UI_Minimap.lua
+ui/options/BookArchivist_UI_OptionsTemplates.xml
 ui/options/BookArchivist_UI_Options.lua
 ui/BookArchivist_UI.lua
 ui/BookArchivist_UI_Core.lua

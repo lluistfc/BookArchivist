@@ -370,8 +370,12 @@ end
 
 function Internal.setGridOverlayVisible(state)
 	local allow = true
-	if state and (not BookArchivistDB or not BookArchivistDB.options or not BookArchivistDB.options.uiDebug) then
-		allow = false
+	if state then
+		-- Allow grid if either debug or uiDebug is enabled
+		local opts = BookArchivistDB and BookArchivistDB.options or nil
+		if not opts or (not opts.debug and not opts.uiDebug) then
+			allow = false
+		end
 	end
 	gridOverlay.visible = (state and allow) and true or false
 	for name in pairs(gridOverlay.targets) do

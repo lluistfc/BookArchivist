@@ -1,6 +1,15 @@
 ---@diagnostic disable: undefined-global
 -- BookArchivist_UI_Options.lua
--- Handles configuration panel UI separate from core logic.
+-- Retail (11.x) Settings UI integration.
+--
+-- IMPORTANT DESIGN CHOICE
+-- The Blizzard Settings panel is not a general-purpose scroll container.
+-- Mixing custom scroll frames + third-party widget libraries (AceGUI) inside
+-- a Settings category can break hit-testing after a scroll (symptoms: cannot
+-- click controls, empty panel when returning).
+--
+-- This file registers only native Settings controls (checkboxes + dropdown).
+-- Import/Export + Debug log live in a separate movable frame opened by a button.
 
 local ADDON_NAME = ...
 
@@ -10,1100 +19,630 @@ BookArchivist.UI = BookArchivist.UI or {}
 local OptionsUI = BookArchivist.UI.Options or {}
 BookArchivist.UI.Options = OptionsUI
 
-local L = BookArchivist and BookArchivist.L or {}
-local function t(key)
-  return (L and L[key]) or key
+local function L(key)
+  local t = BookArchivist and BookArchivist.L
+  return (t and t[key]) or key
 end
 
-local createFrame = BookArchivist.__createFrame or CreateFrame or function()
-  local dummy = {}
-  function dummy:RegisterEvent() end
-  function dummy:SetScript() end
-  return dummy
+-- ----------------------------
+-- Saved vars helpers
+-- ----------------------------
+
+local function EnsureDB()
+  BookArchivistDB = BookArchivistDB or {}
+  BookArchivistDB.options = BookArchivistDB.options or {}
+  return BookArchivistDB
 end
 
-local optionsPanel
-local optionsCategory
-
-local IMPORT_MAX_PAYLOAD_CHARS  = 5*1024*1024  -- hard cap: 5 MB
-
-local function trim(msg)
-  if type(msg) ~= "string" then
-    return ""
+local function GetDBOption(key, defaultValue)
+  local db = EnsureDB()
+  local v = db.options[key]
+  if v == nil then
+    db.options[key] = defaultValue
+    return defaultValue
   end
-  local cleaned = msg:match("^%s*(.-)%s*$")
-  return cleaned or ""
+  return v
 end
 
--- Ensure payload edit boxes (export/import) are readable in this panel
-local function StylePayloadEditBox(editBox, isReadOnly)
-  if not editBox then return end
-
-  if editBox.SetFontObject then
-    editBox:SetFontObject("ChatFontNormal")
-  end
-  if editBox.SetTextInsets then
-    editBox:SetTextInsets(6, 6, 6, 6)
-  end
-  if editBox.SetTextColor then
-    editBox:SetTextColor(1, 1, 1, 1)
-  end
-  if editBox.SetHighlightColor then
-    editBox:SetHighlightColor(0.25, 0.5, 1, 0.5)
-  end
-  if editBox.SetCursorColor then
-    editBox:SetCursorColor(1, 1, 1, 1)
-  end
-  if editBox.SetAlpha then
-    editBox:SetAlpha(1)
-  end
-
-  if isReadOnly then
-    editBox:SetScript("OnTextChanged", function(self, userInput)
-      if userInput then
-        self:HighlightText()
-      end
-    end)
-    editBox:SetScript("OnKeyDown", function(self)
-      self:HighlightText()
-    end)
-    editBox:SetScript("OnChar", function(self)
-      self:HighlightText()
-    end)
-  end
+local function SetDBOption(key, value)
+  local db = EnsureDB()
+  db.options[key] = value
 end
+
+-- ----------------------------
+-- Settings compatibility helpers
+-- ----------------------------
 
 local function ensureSettingsUILoaded()
-  -- Do not programmatically load Blizzard_Settings; letting Blizzard
-  -- manage loading avoids tainting its secure logout/quit flow.
-  return
-end
-
-local function registerOptionsPanel(panel)
-  if not panel then return end
-  local settingsAPI
-  if type(_G) == "table" then
-    settingsAPI = rawget(_G, "Settings")
+  -- The global Settings table exists very early, but most of the API lives in
+  -- Blizzard_Settings(_Shared) which is load-on-demand.
+  if type(Settings) ~= "table" then
+    return false
   end
 
-  if type(settingsAPI) == "table" then
-    local registerAddOnCategory = settingsAPI.RegisterAddOnCategory
-    local registerCanvas = settingsAPI.RegisterCanvasLayoutCategory
-    local registerVertical = settingsAPI.RegisterVerticalLayoutCategory
-    local category
-    if type(registerCanvas) == "function" then
-      category = registerCanvas(panel, panel.name)
-    elseif type(registerVertical) == "function" then
-      category = registerVertical(panel, panel.name)
-    end
-    if category and type(registerAddOnCategory) == "function" then
-      category.ID = category.ID or "BOOKARCHIVIST_OPTIONS"
-      registerAddOnCategory(category)
-      optionsCategory = category
-    end
+  if type(Settings.RegisterVerticalLayoutCategory) == "function" and (type(Settings.CreateCheckBox) == "function" or type(Settings.CreateCheckbox) == "function") then
+    return true
   end
+
+  -- Load Blizzard_Settings to populate the API.
+  local ok = pcall(function()
+    if type(C_AddOns) == "table" and type(C_AddOns.LoadAddOn) == "function" then
+      C_AddOns.LoadAddOn("Blizzard_Settings")
+      C_AddOns.LoadAddOn("Blizzard_Settings_Shared")
+    elseif type(LoadAddOn) == "function" then
+      LoadAddOn("Blizzard_Settings")
+      LoadAddOn("Blizzard_Settings_Shared")
+    end
+  end)
+
+  if not ok then
+    return false
+  end
+
+  return type(Settings.RegisterVerticalLayoutCategory) == "function" and (type(Settings.CreateCheckBox) == "function" or type(Settings.CreateCheckbox) == "function")
 end
 
--- No hooks into Blizzard Settings or Game Menu to avoid taint.
+-- ----------------------------
+-- Native Settings registration
+-- ----------------------------
 
-function OptionsUI:Sync()
-  if not optionsPanel or not optionsPanel.debugCheckbox then
+local optionsCategory
+local registered = false
+
+local function RegisterNativeSettings()
+  if registered then return end
+
+  local Settings = _G.Settings
+  if not Settings or not Settings.RegisterVerticalLayoutCategory then
     return
   end
 
-  -- Refresh static labels with the active locale so language
-  -- changes are reflected without requiring a reload.
-  optionsPanel.name = t("ADDON_TITLE")
-  if optionsPanel.titleText and optionsPanel.titleText.SetText then
-	optionsPanel.titleText:SetText(t("OPTIONS_TITLE"))
-	end
-  if optionsPanel.subtitleText and optionsPanel.subtitleText.SetText then
-	optionsPanel.subtitleText:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
-	end
+  EnsureDB()
 
-  local enabled = false
-  if BookArchivist and type(BookArchivist.IsDebugEnabled) == "function" then
-    enabled = BookArchivist:IsDebugEnabled() and true or false
-  end
-  optionsPanel.debugCheckbox:SetChecked(enabled)
-  if optionsPanel.debugCheckbox.Text and optionsPanel.debugCheckbox.Text.SetText then
-	optionsPanel.debugCheckbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
-	end
-  optionsPanel.debugCheckbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
+  local categoryName = L("ADDON_TITLE")
+  local category, layout = Settings.RegisterVerticalLayoutCategory(categoryName)
+  optionsCategory = category
   
-  -- Sync UI debug grid state with debug mode (don't call SetDebugEnabled to avoid circular calls)
-  if enabled then
-    BookArchivistDB = BookArchivistDB or {}
-    BookArchivistDB.options = BookArchivistDB.options or {}
-    BookArchivistDB.options.uiDebug = true
-    if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.setGridOverlayVisible then
-      BookArchivist.UI.Internal.setGridOverlayVisible(true)
+  -- Register a hidden setting to prevent defaults button from working
+  do
+    local hiddenVar = "ba_hidden_anchor"
+    local setting = Settings.RegisterAddOnSetting(
+      category,
+      hiddenVar,
+      hiddenVar,
+      BookArchivistDB.options,
+      "boolean",
+      "",
+      true
+    )
+    -- Override the GetValue to always return the same value (no defaults to apply)
+    if setting then
+      setting.GetValue = function() return true end
+      setting.SetValue = function() end
     end
   end
 
-  local tooltipEnabled = true
-  if BookArchivist and type(BookArchivist.IsTooltipEnabled) == "function" then
-    tooltipEnabled = BookArchivist:IsTooltipEnabled() and true or false
-  end
-  if optionsPanel.tooltipCheckbox then
-    optionsPanel.tooltipCheckbox:SetChecked(tooltipEnabled)
-    if optionsPanel.tooltipCheckbox.Text and optionsPanel.tooltipCheckbox.Text.SetText then
-      optionsPanel.tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
-    end
-    optionsPanel.tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
-  end
+  -- ----------------------
+  -- Debug checkbox
+  -- ----------------------
+  do
+    local variable = "debug"
+    local variableKey = variable
+    local variableTbl = BookArchivistDB.options
+    local defaultValue = false
+    local name = L("OPTIONS_DEBUG_LABEL")
 
-  local resumeEnabled = true
-  if BookArchivist and type(BookArchivist.IsResumeLastPageEnabled) == "function" then
-	  resumeEnabled = BookArchivist:IsResumeLastPageEnabled() and true or false
-  end
-  if optionsPanel.resumePageCheckbox then
-	  optionsPanel.resumePageCheckbox:SetChecked(resumeEnabled)
-	  if optionsPanel.resumePageCheckbox.Text and optionsPanel.resumePageCheckbox.Text.SetText then
-		  optionsPanel.resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
-	  end
-	  optionsPanel.resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
-  end
-
-  if optionsPanel.langLabel and optionsPanel.langLabel.SetText then
-	optionsPanel.langLabel:SetText(t("LANGUAGE_LABEL"))
-	end
-
-  if optionsPanel.exportLabel and optionsPanel.exportLabel.SetText then
-    optionsPanel.exportLabel:SetText(t("OPTIONS_EXPORT_IMPORT_LABEL"))
-  end
-  if optionsPanel.importLabel and optionsPanel.importLabel.SetText then
-    optionsPanel.importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
-  end
-  if optionsPanel.importHelp and optionsPanel.importHelp.SetText then
-    optionsPanel.importHelp:SetText(t("OPTIONS_IMPORT_HELP"))
-  end
-
-  if optionsPanel.languageDropdown and UIDropDownMenu_SetSelectedValue and BookArchivist and BookArchivist.GetLanguage then
-    local current = BookArchivist:GetLanguage()
-    UIDropDownMenu_SetSelectedValue(optionsPanel.languageDropdown, current)
-    local L2 = BookArchivist and BookArchivist.L or L
-    local labelKey
-    if current == "esES" or current == "esMX" then
-        labelKey = "LANGUAGE_NAME_SPANISH"
-      elseif current == "caES" then
-        labelKey = "LANGUAGE_NAME_CATALAN"
-      elseif current == "deDE" then
-        labelKey = "LANGUAGE_NAME_GERMAN"
-      elseif current == "frFR" then
-        labelKey = "LANGUAGE_NAME_FRENCH"
-      elseif current == "itIT" then
-        labelKey = "LANGUAGE_NAME_ITALIAN"
-      elseif current == "ptBR" or current == "ptPT" then
-        labelKey = "LANGUAGE_NAME_PORTUGUESE"
-      else
-        labelKey = "LANGUAGE_NAME_ENGLISH"
+    local setting = Settings.RegisterAddOnSetting(
+      category,
+      variable,
+      variableKey,
+      variableTbl,
+      "boolean",
+      name,
+      defaultValue
+    )
+    
+    -- Override SetValue to ensure it persists to the database
+    if setting then
+      local originalSetValue = setting.SetValue
+      setting.SetValue = function(self, value)
+        -- Ensure database exists
+        BookArchivistDB = BookArchivistDB or {}
+        BookArchivistDB.options = BookArchivistDB.options or {}
+        
+        -- Convert to boolean and persist
+        local boolValue = value and true or false
+        BookArchivistDB.options.debug = boolValue
+        
+        -- Call original if it exists
+        if originalSetValue then
+          originalSetValue(self, boolValue)
+        end
+        
+        -- Apply runtime changes
+        local state = boolValue
+        
+        -- Update debug logging
+        if BookArchivist and type(BookArchivist.EnableDebugLogging) == "function" then
+          BookArchivist.EnableDebugLogging(state, false)
+        end
+        
+        -- Update UI grid (sync uiDebug with debug)
+        if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
+          BookArchivist:SetUIDebugEnabled(state)
+        else
+          -- Fallback: directly update DB
+          BookArchivistDB.options.uiDebug = state
+          
+          -- Try to update grid visibility directly
+          local internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+          if internal and internal.setGridOverlayVisible then
+            internal.setGridOverlayVisible(state)
+          end
+        end
       end
-    local label = (L2 and L2[labelKey]) or labelKey or "English"
-    UIDropDownMenu_SetText(optionsPanel.languageDropdown, label)
+    end
+
+    Settings.CreateCheckbox(
+      category,
+      setting,
+      L("OPTIONS_DEBUG_TOOLTIP")
+    )
+
+    Settings.SetOnValueChangedCallback(variableKey, function(settingObj, value)
+      -- Get the actual boolean value from the setting
+      local actualValue = value
+      if type(settingObj) == "table" and settingObj.GetValue then
+        actualValue = settingObj:GetValue()
+      end
+      
+      -- Manually persist to ensure it's saved
+      BookArchivistDB = BookArchivistDB or {}
+      BookArchivistDB.options = BookArchivistDB.options or {}
+      BookArchivistDB.options.debug = actualValue and true or false
+      
+      -- Apply runtime state to both debug logging AND UI grid
+      local state = actualValue and true or false
+      
+      -- Update debug logging
+      if BookArchivist and type(BookArchivist.EnableDebugLogging) == "function" then
+        BookArchivist.EnableDebugLogging(state, false)
+      end
+      
+      -- Update UI grid (sync uiDebug with debug)
+      if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
+        BookArchivist:SetUIDebugEnabled(state)
+      else
+        -- Fallback: directly update DB
+        BookArchivistDB.options.uiDebug = state
+        
+        -- Try to update grid visibility directly
+        local internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+        if internal and internal.setGridOverlayVisible then
+          internal.setGridOverlayVisible(state)
+        end
+      end
+    end)
   end
+
+  -- ----------------------
+  -- Tooltip checkbox
+  -- ----------------------
+  do
+    local variable = "tooltip"
+    local variableKey = variable
+    local variableTbl = BookArchivistDB.options
+    local defaultValue = true
+    local name = L("OPTIONS_TOOLTIP_LABEL")
+
+    local setting = Settings.RegisterAddOnSetting(
+      category,
+      variable,
+      variableKey,
+      variableTbl,
+      "boolean",
+      name,
+      defaultValue
+    )
+    
+    -- Override SetValue to ensure it persists to the database
+    if setting then
+      local originalSetValue = setting.SetValue
+      setting.SetValue = function(self, value)
+        -- Ensure database exists
+        BookArchivistDB = BookArchivistDB or {}
+        BookArchivistDB.options = BookArchivistDB.options or {}
+        
+        -- Convert to boolean and persist
+        local boolValue = value and true or false
+        BookArchivistDB.options.tooltip = boolValue
+        
+        -- Call original if it exists
+        if originalSetValue then
+          originalSetValue(self, boolValue)
+        end
+        
+        -- Apply runtime state
+        if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
+          BookArchivist:SetTooltipEnabled(boolValue)
+        end
+      end
+    end
+
+    Settings.CreateCheckbox(
+      category,
+      setting,
+      L("OPTIONS_TOOLTIP_TOOLTIP")
+    )
+
+    Settings.SetOnValueChangedCallback(variableKey, function(_, value)
+      -- Blizzard already saved to BookArchivistDB.options.tooltip
+      -- Just apply runtime state
+      if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
+        BookArchivist:SetTooltipEnabled(value and true or false)
+      end
+    end)
+  end
+
+  -- ----------------------
+  -- Resume last page
+  -- ----------------------
+  do
+    local variable = "resumeLastPage"
+    local variableKey = variable
+    -- Store in options.ui.resumeLastPage to match Core implementation
+    BookArchivistDB.options = BookArchivistDB.options or {}
+    BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
+    local variableTbl = BookArchivistDB.options.ui
+    local defaultValue = true
+    local name = L("OPTIONS_RESUME_LAST_PAGE_LABEL")
+
+    local setting = Settings.RegisterAddOnSetting(
+      category,
+      variable,
+      variableKey,
+      variableTbl,
+      "boolean",
+      name,
+      defaultValue
+    )
+    
+    -- Override SetValue to ensure it persists to the database
+    if setting then
+      local originalSetValue = setting.SetValue
+      setting.SetValue = function(self, value)
+        -- Ensure database exists
+        BookArchivistDB = BookArchivistDB or {}
+        BookArchivistDB.options = BookArchivistDB.options or {}
+        BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
+        
+        -- Convert to boolean and persist
+        local boolValue = value and true or false
+        BookArchivistDB.options.ui.resumeLastPage = boolValue
+        
+        -- Call original if it exists
+        if originalSetValue then
+          originalSetValue(self, boolValue)
+        end
+        
+        -- Apply runtime state
+        if BookArchivist and type(BookArchivist.SetResumeLastPageEnabled) == "function" then
+          BookArchivist:SetResumeLastPageEnabled(boolValue)
+        end
+      end
+    end
+
+    Settings.CreateCheckbox(
+      category,
+      setting,
+      L("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
+    )
+
+    Settings.SetOnValueChangedCallback(variableKey, function(_, value)
+      -- Blizzard already saved to BookArchivistDB.options.resumeLastPage
+      -- Just apply runtime state
+      if BookArchivist and type(BookArchivist.SetResumeLastPageEnabled) == "function" then
+        BookArchivist:SetResumeLastPageEnabled(value and true or false)
+      end
+    end)
+  end
+
+  -- ----------------------
+  -- Language dropdown
+  -- ----------------------
+  do
+    local variable = "language"
+    local variableKey = variable
+    local variableTbl = BookArchivistDB.options
+    local defaultValue = "auto"
+    local name = L("LANGUAGE_LABEL")
+
+    local setting = Settings.RegisterAddOnSetting(
+      category,
+      variable,
+      variableKey,
+      variableTbl,
+      "string",
+      name,
+      defaultValue
+    )
+
+    local function GetLanguageOptions()
+      local container = Settings.CreateControlTextContainer()
+      container:Add("enUS", L("LANGUAGE_NAME_ENGLISH"))
+      container:Add("esES", L("LANGUAGE_NAME_SPANISH"))
+      container:Add("caES", L("LANGUAGE_NAME_CATALAN"))
+      container:Add("deDE", L("LANGUAGE_NAME_GERMAN"))
+      container:Add("frFR", L("LANGUAGE_NAME_FRENCH"))
+      container:Add("itIT", L("LANGUAGE_NAME_ITALIAN"))
+      container:Add("ptBR", L("LANGUAGE_NAME_PORTUGUESE"))
+      return container:GetData()
+    end
+
+    Settings.CreateDropdown(
+      category,
+      setting,
+      GetLanguageOptions,
+      L("LANGUAGE_LABEL")
+    )
+
+    Settings.SetOnValueChangedCallback(variableKey, function(_, value)
+      -- Blizzard already saved to BookArchivistDB.options.language
+      -- Just apply runtime state (locale switching)
+      if BookArchivist and type(BookArchivist.SetLanguage) == "function" then
+        BookArchivist:SetLanguage(value)
+      end
+    end)
+  end
+
+  -- Add custom button to open tools window
+  if layout and layout.AddInitializer then
+    local initializer = Settings.CreateElementInitializer("BookArchivistToolsButtonTemplate", {})
+    layout:AddInitializer(initializer)
+  end
+
+  Settings.RegisterAddOnCategory(category)
+  registered = true
+  
+  if SettingsPanel and SettingsPanel.Container.SettingsList.Header.DefaultsButton then
+    SettingsPanel.Container.SettingsList.Header.DefaultsButton:Hide()
+end
 end
 
-function OptionsUI:Ensure()
-  if optionsPanel or not createFrame then
-    self:Sync()
-    return optionsPanel
+
+-- ----------------------------
+-- Separate popup window for multiline text (import/debug)
+-- ----------------------------
+
+local toolsFrame
+
+local function CreateToolsFrame()
+  if toolsFrame then 
+    return toolsFrame 
   end
 
-  ensureSettingsUILoaded()
-  local parent
-  if type(_G) == "table" then
-    parent = rawget(_G, "UIParent")
-  end
-  optionsPanel = createFrame("Frame", "BookArchivistOptionsPanel", parent)
-	optionsPanel.name = t("ADDON_TITLE")
+  local f = CreateFrame("Frame", "BookArchivistToolsFrame", UIParent, "BasicFrameTemplateWithInset")
+  f:SetSize(700, 520)
+  f:SetPoint("CENTER")
+  f:SetFrameStrata("DIALOG")
+  f:SetFrameLevel(100)
+  f:SetMovable(true)
+  f:EnableMouse(true)
+  f:RegisterForDrag("LeftButton")
+  f:SetScript("OnDragStart", f.StartMoving)
+  f:SetScript("OnDragStop", f.StopMovingOrSizing)
+  f:Hide()
 
-  optionsPanel.pendingImportPayload = optionsPanel.pendingImportPayload or nil
-  optionsPanel.pendingImportVisibleIsPlaceholder = false
-  optionsPanel.lastExportPayload = optionsPanel.lastExportPayload or nil
+  f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  f.title:SetPoint("LEFT", f.TitleBg, "LEFT", 8, 0)
+  f.title:SetText(L("ADDON_TITLE") .. " - " .. (L("OPTIONS_EXPORT_IMPORT_LABEL") ~= "OPTIONS_EXPORT_IMPORT_LABEL" and L("OPTIONS_EXPORT_IMPORT_LABEL") or "Tools"))
 
-  -- Wrap panel contents in a scroll frame so long localized
-  -- help text (such as the export/import instructions) never
-  -- overflows the visible options area.
-  local scrollFrame
-  local scrollBar
-  local scrollChild
-  if type(_G) == "table" and rawget(_G, "CreateFrame") then
-    -- Use standard ScrollFrame for continuous content, but with modern scrollbar
-    scrollFrame = _G.CreateFrame("ScrollFrame", "BookArchivistOptionsScrollFrame", optionsPanel)
-    scrollFrame:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 4, -4)
-    scrollFrame:SetPoint("BOTTOMLEFT", optionsPanel, "BOTTOMLEFT", 4, 4)
-    
-    scrollBar = _G.CreateFrame("EventFrame", "BookArchivistOptionsScrollBar", optionsPanel, "MinimalScrollBar")
-    scrollBar:SetPoint("TOPRIGHT", optionsPanel, "TOPRIGHT", -4, -4)
-    scrollBar:SetPoint("BOTTOMRIGHT", optionsPanel, "BOTTOMRIGHT", -4, 4)
-    scrollFrame:SetPoint("RIGHT", scrollBar, "LEFT", -4, 0)
+  -- Import label
+  local importLabel = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  importLabel:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -36)
+  importLabel:SetText(L("OPTIONS_IMPORT_LABEL"))
 
-    scrollChild = createFrame("Frame", nil, scrollFrame)
-    scrollChild:SetHeight(1)  -- Start with minimal height, will be updated based on content
-    scrollFrame:SetScrollChild(scrollChild)
-    
-    -- Helper function to update scroll child dimensions based on content
-    local function updateScrollChildDimensions()
-      if not scrollChild or not scrollFrame then return end
-      
-      -- Update width to match scrollFrame
-      local width = scrollFrame:GetWidth()
-      if width and width > 0 then
-        scrollChild:SetWidth(width)
-      end
-      
-      -- Update height based on content
-      local maxBottom = 0
-      local children = {scrollChild:GetChildren()}
-      for _, child in ipairs(children) do
-        if child:IsShown() then
-          local bottom = child:GetBottom()
-          if bottom then
-            local top = scrollChild:GetTop()
-            if top then
-              local relativeBottom = top - bottom
-              if relativeBottom > maxBottom then
-                maxBottom = relativeBottom
-              end
-            end
-          end
-        end
-      end
-      
-      -- Add padding, with reasonable minimum
-      local newHeight = math.max(400, maxBottom + 40)
-      scrollChild:SetHeight(newHeight)
-    end
-    
-    -- Store helper for external access
-    optionsPanel.updateScrollChildHeight = updateScrollChildDimensions
-    
-    -- Initialize scroll controller with ScrollUtil
-    if ScrollUtil and ScrollUtil.InitScrollFrameWithScrollBar then
-      ScrollUtil.InitScrollFrameWithScrollBar(scrollFrame, scrollBar)
-      -- Configure scrollbar to auto-hide when not needed
-      if scrollBar.SetHideIfUnscrollable then
-        scrollBar:SetHideIfUnscrollable(true)
-      end
-    else
-      -- Manual wiring for scroll functionality
-      scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-        local current = self:GetVerticalScroll()
-        local maxScroll = self:GetVerticalScrollRange()
-        local newScroll = current - (delta * 20)
-        newScroll = math.max(0, math.min(newScroll, maxScroll))
-        self:SetVerticalScroll(newScroll)
-      end)
-      
-      scrollBar:SetScript("OnMouseWheel", function(self, delta)
-        local current = scrollFrame:GetVerticalScroll()
-        local maxScroll = scrollFrame:GetVerticalScrollRange()
-        local newScroll = current - (delta * 20)
-        newScroll = math.max(0, math.min(newScroll, maxScroll))
-        scrollFrame:SetVerticalScroll(newScroll)
-      end)
-      
-      -- Auto-hide scrollbar when content fits (manual mode)
-      scrollFrame:HookScript("OnScrollRangeChanged", function(self, xRange, yRange)
-        if scrollBar then
-          local needsScroll = (yRange or 0) > 0
-          scrollBar:SetShown(needsScroll)
-        end
-      end)
-    end
-
-    scrollFrame:HookScript("OnSizeChanged", function(frame, width)
-      updateScrollChildDimensions()
-    end)
-    
-    -- Ensure dimensions are set when scrollChild is shown
-    scrollChild:SetScript("OnShow", function()
-      C_Timer.After(0, updateScrollChildDimensions)
-    end)
-  else
-    -- Fallback: no scroll frame available (e.g. in tests),
-    -- render everything directly on the panel.
-    scrollChild = optionsPanel
-  end
-
-  optionsPanel.scrollFrame = scrollFrame
-  optionsPanel.scrollBar = scrollBar
-  optionsPanel.scrollChild = scrollChild
-
-  -- Define spacing constants for consistent layout
-  local MARGIN_LEFT = 16
-  local MARGIN_RIGHT = 16
-  local GAP_SECTION = 24  -- Gap between major sections
-  local GAP_ITEMS = 12    -- Gap between items within a section
-  local GAP_SMALL = 8     -- Small gap (checkboxes)
-
-  -- ========================================
-  -- FRAME 1: HEADER (Logo + Title)
-  -- ========================================
-  local headerFrame = createFrame("Frame", nil, scrollChild)
-  headerFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -20)
-  headerFrame:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, -20)
-  headerFrame:SetHeight(104)  -- 64 (logo) + 8 (gap) + 32 (title height estimate)
-  optionsPanel.headerFrame = headerFrame
-
-  local logo = headerFrame:CreateTexture(nil, "ARTWORK")
-  logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png")
-  logo:SetSize(64, 64)
-  logo:SetPoint("TOP", headerFrame, "TOP", 0, 0)
-
-  local title = headerFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-  title:SetPoint("TOP", logo, "BOTTOM", 0, -8)
-  title:SetText(t("OPTIONS_TITLE"))
-  optionsPanel.titleText = title
-
-  -- ========================================
-  -- FRAME 2: DESCRIPTION
-  -- ========================================
-  local descriptionFrame = createFrame("Frame", nil, scrollChild)
-  descriptionFrame:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", MARGIN_LEFT, -GAP_ITEMS)
-  descriptionFrame:SetPoint("TOPRIGHT", headerFrame, "BOTTOMRIGHT", -MARGIN_RIGHT, -GAP_ITEMS)
-  descriptionFrame:SetHeight(20)  -- Estimated height for single-line text
-  optionsPanel.descriptionFrame = descriptionFrame
-
-  local subtitle = descriptionFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  subtitle:SetPoint("TOPLEFT", descriptionFrame, "TOPLEFT", 0, 0)
-  subtitle:SetPoint("TOPRIGHT", descriptionFrame, "TOPRIGHT", 0, 0)
-  subtitle:SetJustifyH("LEFT")
-  subtitle:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
-  optionsPanel.subtitleText = subtitle
-
-  -- ========================================
-  -- FRAME 3: SETTINGS (Checkboxes + Language)
-  -- ========================================
-  local settingsFrame = createFrame("Frame", nil, scrollChild)
-  settingsFrame:SetPoint("TOPLEFT", descriptionFrame, "BOTTOMLEFT", 0, -GAP_SECTION)
-  settingsFrame:SetPoint("TOPRIGHT", descriptionFrame, "BOTTOMRIGHT", 0, -GAP_SECTION)
-  settingsFrame:SetHeight(200)  -- Will auto-adjust based on content
-  optionsPanel.settingsFrame = settingsFrame
-
-  local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", settingsFrame, "InterfaceOptionsCheckButtonTemplate")
-  checkbox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 0, 0)
-  checkbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
-  checkbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
-  checkbox:SetScript("OnClick", function(self)
-    local state = self:GetChecked()
-    if BookArchivist and type(BookArchivist.SetDebugEnabled) == "function" then
-      BookArchivist:SetDebugEnabled(state)
-    end
-    
-    -- Also control UI debug grid visibility
-    BookArchivistDB = BookArchivistDB or {}
-    BookArchivistDB.options = BookArchivistDB.options or {}
-    BookArchivistDB.options.uiDebug = state and true or false
-    
-    if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.setGridOverlayVisible then
-      BookArchivist.UI.Internal.setGridOverlayVisible(state and true or false)
-    end
-    
-    -- Also control debug log widget visibility
-    if state then
-      -- Create and show debug log widget
-      if optionsPanel.CreateDebugLogWidget then
-        -- First ensure import widget exists
-        if not optionsPanel.importWidget and optionsPanel.CreateImportWidget then
-          optionsPanel.CreateImportWidget()
-        end
-        -- Now create debug widget
-        optionsPanel.CreateDebugLogWidget()
-        -- Force show if it was created
-        if optionsPanel.debugWidget and optionsPanel.debugWidget.frame then
-          optionsPanel.debugWidget.frame:Show()
-        end
-        -- Update scroll child height to accommodate new content
-        if optionsPanel.updateScrollChildHeight then
-          C_Timer.After(0, optionsPanel.updateScrollChildHeight)
-        end
-      end
-    else
-      -- Hide debug log widget
-      if optionsPanel.debugWidget and optionsPanel.debugWidget.frame then
-        optionsPanel.debugWidget.frame:Hide()
-        optionsPanel.debugWidget.frame:SetParent(nil)
-        optionsPanel.debugWidget = nil
-      end
-      -- Update scroll child height after hiding content
-      if optionsPanel.updateScrollChildHeight then
-        C_Timer.After(0, optionsPanel.updateScrollChildHeight)
-      end
-      -- Provide no-op when disabled
-      optionsPanel.AppendDebugLog = function(message) end
-    end
-  end)
-  optionsPanel.debugCheckbox = checkbox
-
-  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", settingsFrame, "InterfaceOptionsCheckButtonTemplate")
-  tooltipCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -GAP_SMALL)
-  tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
-  tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
-  tooltipCheckbox:SetScript("OnClick", function(self)
-    local state = self:GetChecked()
-    if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
-      BookArchivist:SetTooltipEnabled(state)
-    end
-  end)
-  optionsPanel.tooltipCheckbox = tooltipCheckbox
-
-  local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", settingsFrame, "InterfaceOptionsCheckButtonTemplate")
-  resumePageCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -GAP_SMALL)
-  resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
-  resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
-  resumePageCheckbox:SetScript("OnClick", function(self)
-    local state = self:GetChecked()
-    if BookArchivist and type(BookArchivist.SetResumeLastPageEnabled) == "function" then
-      BookArchivist:SetResumeLastPageEnabled(state)
-    end
-  end)
-  optionsPanel.resumePageCheckbox = resumePageCheckbox
-
-  local langLabel = settingsFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  langLabel:SetPoint("TOPLEFT", resumePageCheckbox, "BOTTOMLEFT", 0, -16)
-  langLabel:SetText(t("LANGUAGE_LABEL"))
-  optionsPanel.langLabel = langLabel
-
-  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", settingsFrame, "UIDropDownMenuTemplate")
-  if dropdown then
-    -- Offset by -16 to compensate for UIDropDownMenuTemplate's left padding
-    dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", -16, -4)
-    UIDropDownMenu_SetWidth(dropdown, 160)
-
-    UIDropDownMenu_Initialize(dropdown, function(frame, level)
-      local current = "enUS"
-      if BookArchivist and BookArchivist.GetLanguage then
-        current = BookArchivist:GetLanguage()
-      end
-
-      local items = {
-        { value = "enUS", labelKey = "LANGUAGE_NAME_ENGLISH" },
-        { value = "esES", labelKey = "LANGUAGE_NAME_SPANISH" },
-        { value = "caES", labelKey = "LANGUAGE_NAME_CATALAN" },
-        { value = "deDE", labelKey = "LANGUAGE_NAME_GERMAN" },
-        { value = "frFR", labelKey = "LANGUAGE_NAME_FRENCH" },
-        { value = "itIT", labelKey = "LANGUAGE_NAME_ITALIAN" },
-        { value = "ptBR", labelKey = "LANGUAGE_NAME_PORTUGUESE" },
-      }
-
-      for _, opt in ipairs(items) do
-        local info = UIDropDownMenu_CreateInfo()
-        info.text = t(opt.labelKey)
-        info.value = opt.value
-        info.func = function()
-          if BookArchivist and BookArchivist.SetLanguage then
-            BookArchivist:SetLanguage(opt.value)
-          end
-          if OptionsUI and OptionsUI.Sync then
-            OptionsUI:Sync()
-          end
-        end
-        info.checked = (opt.value == current)
-        UIDropDownMenu_AddButton(info, level)
-      end
-    end)
-    optionsPanel.languageDropdown = dropdown
-  end
-
-  -- ========================================
-  -- FRAME 4: ADVANCED (Import + Debug Widgets)
-  -- ========================================
-  local advancedFrame = createFrame("Frame", nil, scrollChild)
-  advancedFrame:SetPoint("TOPLEFT", settingsFrame, "BOTTOMLEFT", 0, -GAP_SECTION)
-  advancedFrame:SetPoint("TOPRIGHT", settingsFrame, "BOTTOMRIGHT", 0, -GAP_SECTION)
-  advancedFrame:SetHeight(300)  -- Will grow based on dynamic widgets
-  optionsPanel.advancedFrame = advancedFrame
-
-  local importLabel = advancedFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  importLabel:SetPoint("TOPLEFT", advancedFrame, "TOPLEFT", 0, 0)
-  importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
-  optionsPanel.importLabel = importLabel
-
-  -- Info icon explaining import process
-  local importInfoButton = createFrame("Button", nil, advancedFrame)
-  importInfoButton:SetSize(16, 16)
-  importInfoButton:SetPoint("LEFT", importLabel, "RIGHT", 4, 0)
-  local importInfoTex = importInfoButton:CreateTexture(nil, "ARTWORK")
-  importInfoTex:SetAllPoints(true)
-  importInfoTex:SetTexture("Interface\\FriendsFrame\\InformationIcon")
-  importInfoButton:SetScript("OnEnter", function(self)
-    if not GameTooltip or not GameTooltip.SetOwner then return end
-    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:SetText(t("OPTIONS_IMPORT_LABEL"), 1, 1, 1)
-    if GameTooltip.AddLine then
-      GameTooltip:AddLine(t("OPTIONS_IMPORT_PERF_TIP"), nil, nil, nil, true)
-    end
-    GameTooltip:Show()
-  end)
-  importInfoButton:SetScript("OnLeave", function()
-    if GameTooltip and GameTooltip.Hide then
-      GameTooltip:Hide()
-    end
-  end)
-
-  local importHelp = advancedFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  importHelp:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -8)
-  importHelp:SetPoint("RIGHT", advancedFrame, "RIGHT", 0, 0)
+  -- Import help text
+  local importHelp = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  importHelp:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -6)
+  importHelp:SetPoint("RIGHT", f, "RIGHT", -16, 0)
   importHelp:SetJustifyH("LEFT")
-  importHelp:SetWordWrap(true)
-  importHelp:SetText(t("OPTIONS_IMPORT_HELP"))
-  optionsPanel.importHelp = importHelp
+  importHelp:SetText(L("OPTIONS_IMPORT_HELP"))
+  importHelp:SetTextColor(0.8, 0.8, 0.8, 1)
 
-  -- Import status label for user feedback
-  local importStatus = advancedFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-  importStatus:SetPoint("TOPLEFT", importHelp, "BOTTOMLEFT", 0, -8)
-  importStatus:SetPoint("RIGHT", advancedFrame, "RIGHT", 0, 0)
-  importStatus:SetJustifyH("LEFT")
+  -- Import performance tip
+  local importPerfTip = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  importPerfTip:SetPoint("TOPLEFT", importHelp, "BOTTOMLEFT", 0, -8)
+  importPerfTip:SetPoint("RIGHT", f, "RIGHT", -16, 0)
+  importPerfTip:SetJustifyH("LEFT")
+  importPerfTip:SetText(L("OPTIONS_IMPORT_PERF_TIP"))
+  importPerfTip:SetTextColor(0.6, 0.9, 0.6, 1)
+  importPerfTip:SetHeight(0)  -- Auto-height based on text wrapping
+
+  -- Import status
+  local importStatus = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  importStatus:SetPoint("TOPLEFT", importPerfTip, "BOTTOMLEFT", 0, -8)
   importStatus:SetText("")
-  importStatus:SetTextColor(0.8, 0.8, 0.8)
-  optionsPanel.importStatus = importStatus
 
-  local importScroll
-  local importBox
-  local function GetImportPayload()
-    local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
-    
-    -- 1) Prefer an explicit pending payload captured from the
-    --    import box (including placeholder-visible mode).
-    if optionsPanel.pendingImportVisibleIsPlaceholder then
-      if optionsPanel.pendingImportPayload and optionsPanel.pendingImportPayload ~= "" then
-        if debugMode and optionsPanel.AppendDebugLog then 
-          optionsPanel.AppendDebugLog("[Payload] Using pending payload: " .. #optionsPanel.pendingImportPayload .. " chars")
-        end
-        return optionsPanel.pendingImportPayload
-      end
-    elseif optionsPanel.pendingImportPayload and optionsPanel.pendingImportPayload ~= "" then
-      if debugMode and optionsPanel.AppendDebugLog then
-        optionsPanel.AppendDebugLog("[Payload] Using pending payload: " .. #optionsPanel.pendingImportPayload .. " chars")
-      end
-      return optionsPanel.pendingImportPayload
-    end
-
-    -- 2) If the visible import box has text (cross-client
-    --    sharing case), prioritise that over any same-session
-    --    export state. Use the committed text from OnTextChanged
-    --    instead of GetText() to work around WoW multiline paste
-    --    quirks.
-    if optionsPanel.importBoxCommittedText and optionsPanel.importBoxCommittedText ~= "" then
-      local vis = trim(optionsPanel.importBoxCommittedText)
-      if vis ~= "" then
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog("[Payload] Using committed box text: " .. #vis .. " chars")
-        end
-        return vis
-      else
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog("[Payload] Committed text is empty after trim")
-        end
-      end
-    elseif optionsPanel.importBox and optionsPanel.importBox.GetText then
-      local vis = trim(optionsPanel.importBox:GetText() or "")
-      if vis ~= "" then
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog("[Payload] Using visible box text: " .. #vis .. " chars")
-        end
-        return vis
-      else
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog("[Payload] Visible box is empty")
-        end
-      end
-    end
-
-    -- 3) If there is no explicit import text but we
-    --    have a payload from this session's Export, allow Import
-    --    to consume that directly so users don't need to paste at
-    --    all for local transfers.
-    if optionsPanel.lastExportPayload and optionsPanel.lastExportPayload ~= "" then
-      if debugMode and optionsPanel.AppendDebugLog then
-        optionsPanel.AppendDebugLog("[Payload] Using session export: " .. #optionsPanel.lastExportPayload .. " chars")
-      end
-      return optionsPanel.lastExportPayload
-    end
-
-    -- 4) As a final same-session fast path, fall back to the
-    --    most recent export payload recorded globally (used by
-    --    the reader Share popup as well as the options Export
-    --    button) so imports don't depend on paste length.
-    if BookArchivist and BookArchivist.__lastExportPayload and BookArchivist.__lastExportPayload ~= "" then
-      if debugMode and optionsPanel.AppendDebugLog then
-        optionsPanel.AppendDebugLog("[Payload] Using global export: " .. #BookArchivist.__lastExportPayload .. " chars")
-      end
-      return BookArchivist.__lastExportPayload
-    end
-
-    if debugMode and optionsPanel.AppendDebugLog then
-      optionsPanel.AppendDebugLog("[Payload] No payload found")
-    end
-    return ""
-  end
+  -- Import editbox with visible backdrop
+  local importScroll = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate, BackdropTemplate")
+  importScroll:SetPoint("TOPLEFT", importStatus, "BOTTOMLEFT", 0, -8)
+  importScroll:SetPoint("RIGHT", f, "RIGHT", -30, 0)
+  importScroll:SetHeight(200)
   
-  -- Separate import processing logic (WeakAuras pattern)
-  -- This can be called from OnTextChanged (auto-import) or from button click
-  local function ProcessImport()
-    local worker = optionsPanel.importWorker
-    if not (BookArchivist and BookArchivist.ImportWorker and worker) then
-      local msg = "[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_UNAVAILABLE")
-      if print then print(msg) end
-      if optionsPanel.AppendDebugLog then optionsPanel.AppendDebugLog(msg) end
-      return false
+  -- Add backdrop to make the scroll area visible
+  importScroll:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 16, edgeSize = 16,
+    insets = { left = 4, right = 4, top = 4, bottom = 4 }
+  })
+  importScroll:SetBackdropColor(0, 0, 0, 0.8)
+  importScroll:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+
+  local importChild = CreateFrame("Frame", nil, importScroll)
+  importChild:SetSize(importScroll:GetWidth() - 30, 400)
+
+  local importBox = CreateFrame("EditBox", nil, importChild)
+  importBox:SetMultiLine(true)
+  importBox:SetAutoFocus(false)
+  importBox:EnableMouse(true)
+  importBox:SetMaxLetters(0)
+  importBox:SetFontObject("ChatFontNormal")
+  importBox:SetPoint("TOPLEFT", 6, -6)
+  importBox:SetPoint("BOTTOMRIGHT", -6, 6)
+  importBox:SetTextColor(1, 1, 1, 1)
+  importBox:Show()
+  
+  importBox:SetScript("OnEscapePressed", function(self) 
+    self:ClearFocus() 
+  end)
+  importBox:SetScript("OnEditFocusGained", function(self)
+    self:EnableKeyboard(true)
+    self:HighlightText(0, 0)
+  end)
+  importBox:SetScript("OnEditFocusLost", function(self)
+    self:EnableKeyboard(false)
+  end)
+  importBox:SetScript("OnTextChanged", function(self)
+    local text = self:GetText()
+    if text and text:find("||") then
+      local newText = text:gsub("||", "|")
+      self:SetText(newText)
+    end
+  end)
+  
+  -- Click the scroll frame to focus the editbox
+  importScroll:EnableMouse(true)
+  importScroll:SetScript("OnMouseDown", function()
+    importBox:SetFocus()
+  end)
+  
+  importScroll:SetScrollChild(importChild)
+
+  local function Trim(s)
+    if type(s) ~= "string" then return "" end
+    return (s:match("^%s*(.-)%s*$")) or ""
+  end
+
+  local function ProcessImportNow()
+    local payload = Trim(importBox:GetText() or "")
+    if payload == "" then
+      importStatus:SetText(L("OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING"))
+      importStatus:SetTextColor(1, 0.2, 0.2)
+      return
+    end
+    if #payload > 5 * 1024 * 1024 then
+      importStatus:SetText("Payload too large.")
+      importStatus:SetTextColor(1, 0.2, 0.2)
+      return
     end
 
-    local raw = trim(GetImportPayload())
-    if raw == "" then
-      local msg = "[BookArchivist] " .. t("OPTIONS_IMPORT_STATUS_PAYLOAD_MISSING")
-      if print then print(msg) end
-      if optionsPanel.AppendDebugLog then optionsPanel.AppendDebugLog(msg) end
-      return false
+    if not (BookArchivist and BookArchivist.ImportWorker) then
+      importStatus:SetText(L("OPTIONS_IMPORT_STATUS_UNAVAILABLE"))
+      importStatus:SetTextColor(1, 0.2, 0.2)
+      return
     end
 
-    local ok = worker:Start(raw, {
+    local worker = OptionsUI.importWorker
+    if not worker and BookArchivist.ImportWorker and BookArchivist.ImportWorker.New then
+      worker = BookArchivist.ImportWorker:New(f)
+      OptionsUI.importWorker = worker
+    end
+    if not worker or not worker.Start then
+      importStatus:SetText(L("OPTIONS_IMPORT_STATUS_UNAVAILABLE"))
+      importStatus:SetTextColor(1, 0.2, 0.2)
+      return
+    end
+
+    importStatus:SetText("Processing...")
+    importStatus:SetTextColor(1, 0.9, 0.4)
+    
+    if BookArchivist and BookArchivist.DebugPrint then
+      BookArchivist:DebugPrint("[Import] Starting import...")
+      BookArchivist:DebugPrint("[Import] Payload size: " .. #payload .. " characters")
+    end
+
+    worker:Start(payload, {
       onProgress = function(label, pct)
-        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
         local pctNum = math.floor((pct or 0) * 100)
-        local phase = tostring(label or "")
-        local userPhase = phase
-        
-        if phase == "Decoded" then
-          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_DECODE")
-        elseif phase == "Parsed" then
-          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_PARSED")
-        elseif phase == "Merging" then
-          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_MERGE")
-        elseif phase == "Building search" then
-          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_SEARCH")
-        elseif phase == "Indexing titles" then
-          userPhase = t("OPTIONS_IMPORT_STATUS_PHASE_TITLES")
-        end
-        
-        -- Show user-friendly progress for import/merge phases
-        if phase == "Merging" or phase == "Building search" or phase == "Indexing titles" then
-          if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-            optionsPanel.importStatus:SetText(string.format("%s: %d%%", userPhase, pctNum))
-            optionsPanel.importStatus:SetTextColor(1, 0.9, 0.4)
-          end
-        end
-        
-        -- Log all phases to debug log if debug mode is enabled
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog(string.format("%s: %d%%", userPhase, pctNum))
+        importStatus:SetText(string.format("%s: %d%%", tostring(label or ""), pctNum))
+        importStatus:SetTextColor(1, 0.9, 0.4)
+        if BookArchivist and BookArchivist.DebugPrint then
+          BookArchivist:DebugPrint(string.format("[Import] [%d%%] %s", pctNum, tostring(label or "")))
         end
       end,
       onDone = function(summary)
-        -- Show success message to user
-        if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-          optionsPanel.importStatus:SetText(summary or t("OPTIONS_IMPORT_STATUS_COMPLETE"))
-          optionsPanel.importStatus:SetTextColor(0.6, 1, 0.6)
+        importStatus:SetText(summary or L("OPTIONS_IMPORT_STATUS_COMPLETE"))
+        importStatus:SetTextColor(0.6, 1, 0.6)
+        importBox:SetText("")
+        if BookArchivist and BookArchivist.DebugPrint then
+          BookArchivist:DebugPrint("[Import] Import completed: " .. tostring(summary or ""))
         end
-        
-        if print then
-          print("[BookArchivist] " .. (summary or t("OPTIONS_IMPORT_STATUS_COMPLETE")))
-        end
-        
-        -- Log to debug if enabled
-        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog(summary or t("OPTIONS_IMPORT_STATUS_COMPLETE"))
-        end
-        
-        -- Clear the import box after successful import
-        if optionsPanel.importBox then
-          optionsPanel.importBox:SetText("")
-          optionsPanel.importBoxCommittedText = ""
-        end
-        
         if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
           BookArchivist.RefreshUI()
         end
       end,
       onError = function(phase, err)
-        local errMsg = string.format(t("OPTIONS_IMPORT_STATUS_ERROR"), tostring(phase or ""), tostring(err or ""))
-        
-        -- Show error to user
-        if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-          optionsPanel.importStatus:SetText(errMsg)
-          optionsPanel.importStatus:SetTextColor(1, 0.2, 0.2)
+        importStatus:SetText(string.format(L("OPTIONS_IMPORT_STATUS_ERROR"), tostring(phase or ""), tostring(err or "")))
+        importStatus:SetTextColor(1, 0.2, 0.2)
+        if BookArchivist and BookArchivist.DebugPrint then
+          BookArchivist:DebugPrint("[Import] ERROR in " .. tostring(phase) .. ": " .. tostring(err))
         end
-        
-        local fullMsg = "[BookArchivist] " .. errMsg
-        if print then print(fullMsg) end
-        
-        -- Log detailed error info only if debug mode is enabled
-        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog(fullMsg)
-          optionsPanel.AppendDebugLog("Phase: " .. tostring(phase))
-          optionsPanel.AppendDebugLog("Error: " .. tostring(err))
-        end
-      end
-    })
-    
-    if not ok then
-      return false
-    end
-    
-    return true
-  end
-
-  -- Defer AceGUI widget creation to avoid layout anchor conflicts
-  -- Create it after the panel is shown and layout is stable
-  local function CreateImportWidget()
-    if optionsPanel.importWidget then return end -- Already created
-    
-    local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
-    if not AceGUI then
-      print("[BookArchivist] AceGUI-3.0 not found, using basic EditBox")
-      return
-    end
-    
-    -- Create AceGUI MultiLineEditBox widget (like WeakAuras)
-    local importWidget = AceGUI:Create("MultiLineEditBox")
-    importWidget:SetLabel("")
-    importWidget:DisableButton(true)
-    importWidget:SetNumLines(6)
-    importWidget:SetFullWidth(true)
-    importWidget.frame:SetParent(optionsPanel.advancedFrame or scrollChild)
-    importWidget.frame:ClearAllPoints()
-    importWidget.frame:SetPoint("TOPLEFT", optionsPanel.importStatus or importHelp, "BOTTOMLEFT", 0, -4)
-    importWidget.frame:SetPoint("RIGHT", optionsPanel.advancedFrame, "RIGHT", 0, 0)
-    importWidget.frame:SetFrameLevel(optionsPanel:GetFrameLevel() + 10)
-    importWidget.frame:Show()
-    
-    optionsPanel.importWidget = importWidget
-    optionsPanel.importBox = importWidget.editBox
-    
-    -- Hide the fallback EditBox since we're using AceGUI
-    if optionsPanel.importScroll then
-      optionsPanel.importScroll:Hide()
-    end
-    
-    -- WeakAuras-style auto-import on paste
-    optionsPanel.importBoxCommittedText = ""
-    importWidget.editBox:SetScript("OnTextChanged", function(self, userInput)
-      if userInput then
-        local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
-        local pasted = self:GetText() or ""
-        local numLetters = self:GetNumLetters()
-        local rawLength = #pasted
-        
-        -- CRITICAL: WoW EditBox escapes | to || during paste, we need to unescape it
-        pasted = pasted:gsub("||", "|")
-        
-        -- Show first and last 50 chars for diagnostics (only in debug mode)
-        local first50 = pasted:sub(1, 50)
-        local last50 = pasted:sub(-50)
-        
-        pasted = pasted:match("^%s*(.-)%s*$")
-        
-        optionsPanel.importBoxCommittedText = pasted
-        
-        if debugMode and #pasted > 0 and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog("Text pasted: " .. #pasted .. " chars (trimmed)")
-          optionsPanel.AppendDebugLog("GetNumLetters: " .. numLetters)
-          optionsPanel.AppendDebugLog("First 50: " .. first50:gsub("|", "||"))
-          optionsPanel.AppendDebugLog("Last 50: " .. last50:gsub("|", "||"))
-        end
-        
-        if #pasted > 50 then
-          local hasHeader = pasted:find("BDB1|S|", 1, true) ~= nil
-          local hasFooter = pasted:find("BDB1|E", 1, true) ~= nil
-          
-          if debugMode and optionsPanel.AppendDebugLog then
-            optionsPanel.AppendDebugLog("Has BDB1 header: " .. tostring(hasHeader))
-            optionsPanel.AppendDebugLog("Has BDB1 footer: " .. tostring(hasFooter))
-          end
-          
-          if hasHeader and hasFooter then
-            -- Show user that import is starting
-            if optionsPanel.importStatus and optionsPanel.importStatus.SetText then
-              optionsPanel.importStatus:SetText("Processing import...")
-              optionsPanel.importStatus:SetTextColor(1, 0.9, 0.4)
-            end
-            
-            if debugMode and optionsPanel.AppendDebugLog then
-              optionsPanel.AppendDebugLog("Valid BDB1 envelope detected, starting import...")
-            end
-            
-            C_Timer.After(0.1, function()
-              ProcessImport()
-            end)
-          elseif hasHeader and not hasFooter then
-            local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
-            local msg = "PASTE TRUNCATED! Footer missing (" .. #pasted .. " chars received)."
-            
-            if debugMode and optionsPanel.AppendDebugLog then
-              optionsPanel.AppendDebugLog(msg)
-              optionsPanel.AppendDebugLog("Paste may be incomplete - check export string.")
-            end
-          end
-        end
-      end
-    end)
-  end  -- End CreateImportWidget function
-  
-  -- Store reference so it's accessible from checkbox handlers
-  optionsPanel.CreateImportWidget = CreateImportWidget
-  
-  -- Fallback: Create basic EditBox if AceGUI will not be available
-  -- (kept for compatibility when AceGUI is missing)
-  local importScroll = createFrame("ScrollFrame", "BookArchivistImportScrollFrame", advancedFrame)
-  importScroll:SetPoint("TOPLEFT", importStatus, "BOTTOMLEFT", 0, -4)
-  importScroll:SetPoint("RIGHT", contentRight, "TOPLEFT", -20, 0)
-  importScroll:SetHeight(120)
-  optionsPanel.importScroll = importScroll  -- Store for debug widget anchor
-  importScroll:EnableMouse(true)
-  importScroll:EnableMouseWheel(true)
-  if importScroll.SetBackdrop then
-    importScroll:SetBackdrop({
-      bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-      edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-      tile = true, tileSize = 32, edgeSize = 16,
-      insets = { left = 4, right = 4, top = 4, bottom = 4 }
+      end,
     })
   end
 
-  importBox = createFrame("EditBox", "BookArchivistImportEditBox", importScroll)
-  importBox:SetMultiLine(true)
-  importBox:SetAutoFocus(false)
-  importBox:SetMaxLetters(0)
-  importBox:SetMaxBytes(0)
-  importBox:EnableMouse(true)
-  importBox:EnableKeyboard(true)
-  importBox:SetEnabled(true)
-  importBox:SetCountInvisibleLetters(false)  -- KEY: This allows large paste like WeakAuras
-  importBox:SetFontObject("GameFontHighlightSmall")
-  importBox:SetWidth(importScroll:GetWidth() - 20)
-  importBox:SetHeight(400)
-  importBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-  
-  -- Make import box clearly visible with background and border
-  local importBg = importScroll:CreateTexture(nil, "BACKGROUND")
-  importBg:SetAllPoints(importScroll)
-  importBg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
-  
-  local importBorder = importScroll:CreateTexture(nil, "BORDER")
-  importBorder:SetAllPoints(importScroll)
-  importBorder:SetColorTexture(0.5, 0.5, 0.5, 1)
-  importBorder:SetDrawLayer("BORDER", 0)
-  
-  local importInset = importScroll:CreateTexture(nil, "BACKGROUND")
-  importInset:SetPoint("TOPLEFT", importScroll, "TOPLEFT", 1, -1)
-  importInset:SetPoint("BOTTOMRIGHT", importScroll, "BOTTOMRIGHT", -1, 1)
-  importInset:SetColorTexture(0.05, 0.05, 0.05, 0.9)
+  local importBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  importBtn:SetSize(140, 24)
+  importBtn:SetPoint("TOPLEFT", importScroll, "BOTTOMLEFT", 0, -10)
+  importBtn:SetText(L("OPTIONS_IMPORT_LABEL"))
+  importBtn:SetScript("OnClick", ProcessImportNow)
 
-  -- WeakAuras-style import: OnTextChanged processes paste immediately
-  -- and triggers import automatically when valid data detected.
-  -- This bypasses GetText() unreliability entirely.
-  optionsPanel.importBoxCommittedText = ""
-  importBox:SetScript("OnTextChanged", function(self, userInput)
-    if userInput then
-      local debugMode = BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled()
-      
-      -- User-initiated change (paste, typing, etc)
-      local pasted = self:GetText() or ""
-      local numLetters = self:GetNumLetters()
-      local rawLength = #pasted
-      pasted = pasted:match("^%s*(.-)%s*$") -- trim whitespace
-      
-      optionsPanel.importBoxCommittedText = pasted
-      
-      if debugMode and #pasted > 0 then
-        if optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog("Text pasted: " .. #pasted .. " chars (trimmed)")
-          optionsPanel.AppendDebugLog("GetNumLetters: " .. numLetters)
-          optionsPanel.AppendDebugLog("Raw GetText length: " .. rawLength)
-        end
-      end
-      
-      -- Check for truncated paste (has header but no footer)
-      if #pasted > 50 then
-        local hasHeader = pasted:find("BDB1|S|", 1, true) ~= nil
-        local hasFooter = pasted:find("BDB1|E", 1, true) ~= nil
-        
-        if debugMode and optionsPanel.AppendDebugLog then
-          optionsPanel.AppendDebugLog("Has BDB1 header: " .. tostring(hasHeader))
-          optionsPanel.AppendDebugLog("Has BDB1 footer: " .. tostring(hasFooter))
-        end
-        
-        if hasHeader and not hasFooter then
-          -- Paste was truncated - shouldn't happen with AceGUI but keep check
-          local msg = "PASTE TRUNCATED! Footer missing (" .. #pasted .. " chars received)."
-          if debugMode then
-            print("[BA Import] " .. msg)
-            if optionsPanel.AppendDebugLog then
-              optionsPanel.AppendDebugLog(msg)
-              optionsPanel.AppendDebugLog("Export may be too large or incomplete.")
-            end
-          end
-          return
-        end
-        
-        if hasHeader and hasFooter then
-          if debugMode and optionsPanel.AppendDebugLog then
-            optionsPanel.AppendDebugLog("Valid BDB1 envelope detected, starting import...")
-          end
-          -- Process immediately like WeakAuras does
-          C_Timer.After(0.1, function()
-            ProcessImport()
-          end)
-        end
-      end
-    end
-  end)
-  
-  StylePayloadEditBox(importBox, false)
-  
-  importScroll:SetScrollChild(importBox)
-  importScroll:SetScript("OnSizeChanged", function(self, w)
-    if importBox and w and w > 20 then
-      importBox:SetWidth(w - 20)
-    end
-  end)
+  f.importBox = importBox
+  toolsFrame = f
+  return f
+end
 
-  optionsPanel.importScroll = importScroll
-  optionsPanel.importBox = importBox
-  
-  -- Define CreateDebugLogWidget after import widgets exist
-  local function CreateDebugLogWidget()
-    if optionsPanel.debugWidget then 
-      -- Already created, just show it
-      if optionsPanel.debugWidget.frame then
-        optionsPanel.debugWidget.frame:Show()
-      end
-      -- Update scroll height
-      if optionsPanel.updateScrollChildHeight then
-        C_Timer.After(0, optionsPanel.updateScrollChildHeight)
-      end
-      return
-    end
-    
-    local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
-    if not AceGUI then return end
-    
-    local debugWidget = AceGUI:Create("MultiLineEditBox")
-    debugWidget:SetLabel("Debug Log (copy errors from here):")
-    debugWidget:DisableButton(true)
-    debugWidget:SetNumLines(12)
-    debugWidget:SetFullWidth(true)
-    debugWidget:SetMaxLetters(50000)  -- Prevent overflow
-    debugWidget.frame:SetParent(optionsPanel.advancedFrame or scrollChild)
-    debugWidget.frame:ClearAllPoints()
-    -- Anchor below import widget or fallback scroll frame
-    local anchorFrame = (optionsPanel.importWidget and optionsPanel.importWidget.frame) or optionsPanel.importScroll
-    if anchorFrame then
-      debugWidget.frame:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -8)
-    else
-      -- Last resort: anchor below import status label
-      debugWidget.frame:SetPoint("TOPLEFT", optionsPanel.importStatus or importHelp, "BOTTOMLEFT", 0, -150)
-    end
-    debugWidget.frame:SetPoint("RIGHT", optionsPanel.advancedFrame, "RIGHT", 0, 0)
-    debugWidget.frame:SetFrameLevel(optionsPanel:GetFrameLevel() + 10)
-    debugWidget.frame:Show()
-    debugWidget:SetText("Debug mode enabled. Diagnostics will appear here...")
-    
-    optionsPanel.debugWidget = debugWidget
-    optionsPanel.debugLogBox = debugWidget.editBox
-    
-    -- Update scroll child height after adding debug widget
-    if optionsPanel.updateScrollChildHeight then
-      C_Timer.After(0.1, optionsPanel.updateScrollChildHeight)
-    end
-    
-    -- Helper function to append to debug log
-    local function AppendDebugLog(message)
-      if not debugWidget then return end
-      local current = debugWidget:GetText() or ""
-      if current:match("^Debug mode enabled") or current:match("^Errors and diagnostic") then
-        current = ""
-      end
-      local timestamp = date("%H:%M:%S")
-      local newText = current .. "\n[" .. timestamp .. "] " .. message
-      -- Truncate if too long
-      if #newText > 45000 then
-        newText = "[Log truncated]\n" .. newText:sub(-40000)
-      end
-      debugWidget:SetText(newText)
-      if debugWidget.editBox then
-        debugWidget.editBox:SetCursorPosition(#newText)
-      end
-    end
-    
-    optionsPanel.AppendDebugLog = AppendDebugLog
-  end
-  
-  optionsPanel.CreateDebugLogWidget = CreateDebugLogWidget
-  
-  -- Call CreateImportWidget when panel is shown to ensure proper widget creation
-  optionsPanel:HookScript("OnShow", function()
-    if not optionsPanel.importWidget and optionsPanel.CreateImportWidget then
-      optionsPanel.CreateImportWidget()
-    end
-    -- Create debug log if debug mode is enabled
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      if optionsPanel.CreateDebugLogWidget then
-        optionsPanel.CreateDebugLogWidget()
-      end
-    end
-  end)
-  
-  -- Provide no-op AppendDebugLog if debug widget not created
-  if not optionsPanel.AppendDebugLog then
-    optionsPanel.AppendDebugLog = function(message)
-      -- No-op when debug mode is disabled
-    end
-  end
+-- ----------------------------
+-- Public API
+-- ----------------------------
 
-  -- Override print for the import section to also log to debug box
-  local originalPrint = print
-  local function debugPrint(...)
-    local message = strjoin(" ", tostringall(...))
-    if message:match("%[BA") or message:match("%[BookArchivist%]") then
-      AppendDebugLog(message)
-    end
-    if originalPrint then
-      originalPrint(...)
-    end
-  end
-  
-  -- Temporarily replace print during import operations
-  optionsPanel.debugPrint = debugPrint
-  optionsPanel.CreateImportWidget = CreateImportWidget
-  optionsPanel.importWorker = optionsPanel.importWorker or (BookArchivist.ImportWorker and BookArchivist.ImportWorker:New(optionsPanel))
-  optionsPanel.refresh = function()
-    OptionsUI:Sync()
-  end
-  self:Sync()
-
-  registerOptionsPanel(optionsPanel)
-  return optionsPanel
+function OptionsUI:Ensure()
+  RegisterNativeSettings()
 end
 
 function OptionsUI:Open()
-  ensureSettingsUILoaded()
-  local panel = self:Ensure()
-  if not panel then
+  RegisterNativeSettings()
+  if not ensureSettingsUILoaded() then
     return
   end
-  
-  -- Create AceGUI import widget after panel is ready
-  C_Timer.After(0.1, function()
-    if panel.CreateImportWidget then
-      panel.CreateImportWidget()
-    end
-  end)
-
-  local settingsAPI = type(_G) == "table" and rawget(_G, "Settings") or nil
-  if settingsAPI and type(settingsAPI.OpenToCategory) == "function" and optionsCategory then
-    settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
-    settingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
+  local SettingsAPI = type(_G) == "table" and rawget(_G, "Settings") or nil
+  if SettingsAPI and optionsCategory and type(SettingsAPI.OpenToCategory) == "function" then
+    SettingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
+    SettingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
   end
 end
 
+function OptionsUI:OpenTools()
+  local f = CreateToolsFrame()
+  f:Show()
+  f:Raise()
+end
+
 function OptionsUI:OnAddonLoaded(name)
-  if name ~= ADDON_NAME then
-    return
-  end
+  if name ~= ADDON_NAME then return end
   self:Ensure()
+
+  -- Optional: add a slash command to open the tools window.
+  SLASH_BOOKARCHIVIST1 = "/bookarchivist"
+  SLASH_BOOKARCHIVIST2 = "/ba"
+  SlashCmdList.BOOKARCHIVIST = function(msg)
+    msg = (msg or ""):lower()
+    if msg == "tools" or msg == "import" or msg == "debug" then
+      OptionsUI:OpenTools()
+    else
+      OptionsUI:Open()
+    end
+  end
 end

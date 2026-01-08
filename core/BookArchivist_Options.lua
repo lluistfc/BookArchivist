@@ -52,11 +52,18 @@ end
 
 function Core:IsDebugEnabled()
   local opts = self:GetOptions()
+  -- Read from the actual saved variable that the Settings UI uses
+  if opts.debug ~= nil then
+    return opts.debug and true or false
+  end
+  -- Fallback to old key for migration
   return opts.debugEnabled and true or false
 end
 
 function Core:SetDebugEnabled(state)
   local opts = self:GetOptions()
+  -- Save to both keys for compatibility
+  opts.debug = state and true or false
   opts.debugEnabled = state and true or false
 end
 

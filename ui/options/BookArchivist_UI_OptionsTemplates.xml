@@ -1,0 +1,49 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+    
+    <Frame name="BookArchivistToolsButtonTemplate" virtual="true">
+        <Size x="400" y="60"/>
+        <KeyValues>
+            <KeyValue key="addonName" value="BookArchivist" type="string"/>
+        </KeyValues>
+        <Frames>
+            <Button parentKey="Button" inherits="UIPanelButtonTemplate">
+                <Size x="200" y="30"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="10" y="-10"/>
+                </Anchors>
+            </Button>
+        </Frames>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString parentKey="Label" inherits="GameFontHighlightSmall">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeKey="$parent.Button" relativePoint="BOTTOMLEFT" y="-8"/>
+                    </Anchors>
+                    <Color r="0.7" g="0.7" b="0.7"/>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnLoad>
+                local L = BookArchivist and BookArchivist.L
+                if L then
+                    self.Button:SetText(L["OPTIONS_IMPORT_EXPORT_DEBUG_BUTTON"] or "Import / Export / Debug")
+                    self.Label:SetText(L["OPTIONS_IMPORT_EXPORT_DEBUG_TOOLTIP"] or "Opens a separate window for importing and exporting books.")
+                else
+                    self.Button:SetText("Import / Export / Debug")
+                    self.Label:SetText("Opens a separate window for importing and exporting books.")
+                end
+                
+                self.Button:SetScript("OnClick", function()
+                    local OptionsUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.Options
+                    if OptionsUI and OptionsUI.OpenTools then
+                        OptionsUI:OpenTools()
+                    end
+                end)
+            </OnLoad>
+        </Scripts>
+    </Frame>
+    
+</Ui>
