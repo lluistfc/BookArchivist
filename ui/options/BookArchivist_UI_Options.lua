@@ -226,23 +226,89 @@ function OptionsUI:Ensure()
   -- help text (such as the export/import instructions) never
   -- overflows the visible options area.
   local scrollFrame
+  local scrollBar
   local scrollChild
   if type(_G) == "table" and rawget(_G, "CreateFrame") then
-    scrollFrame = _G.CreateFrame("ScrollFrame", "BookArchivistOptionsScrollFrame", optionsPanel, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 0, -4)
-    scrollFrame:SetPoint("BOTTOMRIGHT", optionsPanel, "BOTTOMRIGHT", -26, 4)
+    -- Use standard ScrollFrame for continuous content, but with modern scrollbar
+    scrollFrame = _G.CreateFrame("ScrollFrame", "BookArchivistOptionsScrollFrame", optionsPanel)
+    scrollFrame:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 4, -4)
+    scrollFrame:SetPoint("BOTTOMLEFT", optionsPanel, "BOTTOMLEFT", 4, 4)
+    
+    scrollBar = _G.CreateFrame("EventFrame", "BookArchivistOptionsScrollBar", optionsPanel, "MinimalScrollBar")
+    scrollBar:SetPoint("TOPRIGHT", optionsPanel, "TOPRIGHT", -4, -4)
+    scrollBar:SetPoint("BOTTOMRIGHT", optionsPanel, "BOTTOMRIGHT", -4, 4)
+    scrollFrame:SetPoint("RIGHT", scrollBar, "LEFT", -4, 0)
 
     scrollChild = createFrame("Frame", nil, scrollFrame)
     -- Give the scroll child a reasonable initial height so that
     -- content can extend and be scrolled without being clipped.
     scrollChild:SetSize(1, 800)
     scrollFrame:SetScrollChild(scrollChild)
+    
+    -- Helper function to update scroll child height based on content
+    local function updateScrollChildHeight()
+      if not scrollChild then return end
+      
+      local maxBottom = 0
+      local children = {scrollChild:GetChildren()}
+      for _, child in ipairs(children) do
+        if child:IsShown() then
+          local bottom = child:GetBottom()
+          local childHeight = child:GetHeight()
+          if bottom and childHeight then
+            local relativeBottom = scrollChild:GetTop() - bottom
+            if relativeBottom > maxBottom then
+              maxBottom = relativeBottom
+            end
+          end
+        end
+      end
+      
+      -- Add padding
+      local newHeight = math.max(800, maxBottom + 40)
+      scrollChild:SetHeight(newHeight)
+    end
+    
+    -- Store helper for external access
+    optionsPanel.updateScrollChildHeight = updateScrollChildHeight
+    
+    -- Initialize scroll controller with ScrollUtil
+    if ScrollUtil and ScrollUtil.InitScrollFrameWithScrollBar then
+      ScrollUtil.InitScrollFrameWithScrollBar(scrollFrame, scrollBar)
+    else
+      -- Manual wiring for scroll functionality
+      scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local current = self:GetVerticalScroll()
+        local maxScroll = self:GetVerticalScrollRange()
+        local newScroll = current - (delta * 20)
+        newScroll = math.max(0, math.min(newScroll, maxScroll))
+        self:SetVerticalScroll(newScroll)
+      end)
+      
+      scrollBar:SetScript("OnMouseWheel", function(self, delta)
+        local current = scrollFrame:GetVerticalScroll()
+        local maxScroll = scrollFrame:GetVerticalScrollRange()
+        local newScroll = current - (delta * 20)
+        newScroll = math.max(0, math.min(newScroll, maxScroll))
+        scrollFrame:SetVerticalScroll(newScroll)
+      end)
+    end
+    
+    -- Auto-hide scrollbar when content fits
+    scrollFrame:SetScript("OnScrollRangeChanged", function(self, xRange, yRange)
+      if scrollBar then
+        local needsScroll = (yRange or 0) > 0
+        scrollBar:SetShown(needsScroll)
+      end
+    end)
 
     scrollFrame:HookScript("OnSizeChanged", function(frame, width)
       if not width or width <= 0 then return end
       if scrollChild and scrollChild.SetWidth then
         scrollChild:SetWidth(width)
       end
+      -- Recalculate height when frame resizes
+      updateScrollChildHeight()
     end)
   else
     -- Fallback: no scroll frame available (e.g. in tests),
@@ -251,6 +317,7 @@ function OptionsUI:Ensure()
   end
 
   optionsPanel.scrollFrame = scrollFrame
+  optionsPanel.scrollBar = scrollBar
   optionsPanel.scrollChild = scrollChild
 
   local logo = scrollChild:CreateTexture(nil, "ARTWORK")
@@ -315,6 +382,10 @@ function OptionsUI:Ensure()
         if optionsPanel.debugWidget and optionsPanel.debugWidget.frame then
           optionsPanel.debugWidget.frame:Show()
         end
+        -- Update scroll child height to accommodate new content
+        if optionsPanel.updateScrollChildHeight then
+          C_Timer.After(0, optionsPanel.updateScrollChildHeight)
+        end
       end
     else
       -- Hide debug log widget
@@ -322,6 +393,10 @@ function OptionsUI:Ensure()
         optionsPanel.debugWidget.frame:Hide()
         optionsPanel.debugWidget.frame:SetParent(nil)
         optionsPanel.debugWidget = nil
+      end
+      -- Update scroll child height after hiding content
+      if optionsPanel.updateScrollChildHeight then
+        C_Timer.After(0, optionsPanel.updateScrollChildHeight)
       end
       -- Provide no-op when disabled
       optionsPanel.AppendDebugLog = function(message) end
@@ -864,6 +939,10 @@ function OptionsUI:Ensure()
       if optionsPanel.debugWidget.frame then
         optionsPanel.debugWidget.frame:Show()
       end
+      -- Update scroll height
+      if optionsPanel.updateScrollChildHeight then
+        C_Timer.After(0, optionsPanel.updateScrollChildHeight)
+      end
       return
     end
     
@@ -894,9 +973,9 @@ function OptionsUI:Ensure()
     optionsPanel.debugWidget = debugWidget
     optionsPanel.debugLogBox = debugWidget.editBox
     
-    -- Expand scroll child height to accommodate debug widget
-    if optionsPanel.scrollChild and optionsPanel.scrollChild.SetHeight then
-      optionsPanel.scrollChild:SetHeight(1200)
+    -- Update scroll child height after adding debug widget
+    if optionsPanel.updateScrollChildHeight then
+      C_Timer.After(0.1, optionsPanel.updateScrollChildHeight)
     end
     
     -- Helper function to append to debug log

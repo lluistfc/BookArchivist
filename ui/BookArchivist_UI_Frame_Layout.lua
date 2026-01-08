@@ -75,33 +75,15 @@ end
 
 local function clampListWidth(container, width)
 	local padOuter = Metrics.PAD_OUTER or Metrics.PAD or 12
-	local padInset = Metrics.PAD_INSET or Metrics.PAD or 10
-	local separatorWidth = Metrics.SEPARATOR_W or math.max(8, math.floor((Metrics.GAP_M or 10) * 0.6))
-	local separatorGap = Metrics.SEPARATOR_GAP or Metrics.GAP_S or 6
+	local gapBetweenPanels = Metrics.GAP_M or Metrics.GUTTER or 10
 	local available = (container and container:GetWidth()) or (DEFAULT_WIDTH - (padOuter * 2))
-	local usable = available - (padInset * 2) - separatorWidth - separatorGap - MIN_READER_WIDTH
+	-- Available space minus the gap and minimum reader width
+	local usable = available - gapBetweenPanels - MIN_READER_WIDTH
 	local maxWidth = math.max(MIN_LIST_WIDTH, usable)
 	return math.max(MIN_LIST_WIDTH, math.min(width, maxWidth))
 end
 
-local function configureSplitter(splitter)
-	local handle = splitter:CreateTexture(nil, "ARTWORK")
-	handle:SetAllPoints(true)
-	handle:SetColorTexture(0.9, 0.75, 0.3, 0.25)
-	local grip = splitter:CreateTexture(nil, "OVERLAY")
-	grip:SetSize(4, 32)
-	grip:SetPoint("CENTER")
-	grip:SetColorTexture(1, 0.82, 0, 0.75)
-	splitter:SetScript("OnEnter", function(self)
-		self:SetAlpha(1)
-	end)
-	splitter:SetScript("OnLeave", function(self)
-		if not self.__isDragging then
-			self:SetAlpha(0.85)
-		end
-	end)
-	splitter:SetAlpha(0.85)
-end
+
 
 local function createContentLayout(frame, safeCreateFrame, opts)
 	local createHeaderBar = FrameUI.CreateHeaderBar
@@ -131,99 +113,34 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 		return nil
 	end
 
+	-- Fixed list width (no resize functionality)
+	local fixedListWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
+	fixedListWidth = clampListWidth(body, fixedListWidth)
+	
+	-- Gap between the two panels
+	local gapBetweenPanels = Metrics.GAP_M or Metrics.GUTTER or 10
+
+	-- Position list inset on the left, flush to body edges
 	ClearAnchors(listInset)
-	listInset:SetPoint("TOPLEFT", body, "TOPLEFT", padInset, -padInset)
-	listInset:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", padInset, padInset)
+	listInset:SetPoint("TOPLEFT", body, "TOPLEFT", 0, 0)
+	listInset:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", 0, 0)
+	listInset:SetWidth(fixedListWidth)
 
+	-- Position reader inset on the right, flush to body edges
 	ClearAnchors(readerInset)
-	readerInset:SetPoint("TOPRIGHT", body, "TOPRIGHT", -padInset, -padInset)
-	readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -padInset, padInset)
-
-	local splitter = safeCreateFrame("Frame", nil, body)
-	local separatorWidth = Metrics.SEPARATOR_W or math.max(8, math.floor((Metrics.GAP_M or 10) * 0.6))
-	splitter:SetWidth(separatorWidth)
-	splitter:EnableMouse(true)
-	splitter:RegisterForDrag("LeftButton")
-	configureSplitter(splitter)
-	frame.SplitterFrame = splitter
-	frame.SeparatorFrame = splitter
+	readerInset:SetPoint("TOPLEFT", body, "TOPLEFT", fixedListWidth + gapBetweenPanels, 0)
+	readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", 0, 0)
 
 	if Internal and Internal.registerGridTarget then
 		Internal.registerGridTarget("list-inset", listInset)
 		Internal.registerGridTarget("reader-inset", readerInset)
-		Internal.registerGridTarget("body-separator", splitter)
 	end
 
 	frame.listBlock = listInset
 	frame.ListInset = listInset
 	frame.readerBlock = readerInset
 	frame.ReaderInset = readerInset
-
-	local separatorGap = Metrics.SEPARATOR_GAP or Metrics.GAP_S or 6
-	local initialWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
-	local layoutState = {
-		currentWidth = 0,
-		separatorWidth = separatorWidth,
-	}
-
-	local function applyWidth(width, skipPersist)
-		layoutState.currentWidth = clampListWidth(body, width)
-		listInset:SetWidth(layoutState.currentWidth)
-
-		local sepOffset = padInset + layoutState.currentWidth
-		ClearAnchors(splitter)
-		splitter:SetPoint("TOPLEFT", body, "TOPLEFT", sepOffset, -padInset)
-		splitter:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", sepOffset, padInset)
-
-		ClearAnchors(readerInset)
-		readerInset:SetPoint("TOPLEFT", body, "TOPLEFT", sepOffset + layoutState.separatorWidth + separatorGap, -padInset)
-		readerInset:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -padInset, padInset)
-
-		frame.currentListWidth = layoutState.currentWidth
-		if not skipPersist and opts.onListWidthChanged then
-			opts.onListWidthChanged(layoutState.currentWidth)
-		end
-	end
-
-	applyWidth(initialWidth, true)
-
-	body:SetScript("OnSizeChanged", function()
-		applyWidth(layoutState.currentWidth, true)
-	end)
-
-	local function finishDrag()
-		splitter.__isDragging = false
-		splitter:SetScript("OnUpdate", nil)
-		splitter:SetAlpha(0.85)
-		applyWidth(layoutState.currentWidth)
-	end
-
-	local function beginDrag()
-		splitter.__isDragging = true
-		splitter:SetAlpha(1)
-		splitter:SetScript("OnUpdate", function()
-			local cursorX = 0
-			local scale = UIParent and UIParent:GetEffectiveScale() or 1
-			if GetCursorPosition then
-				cursorX = select(1, GetCursorPosition()) / scale
-			end
-			local bodyLeft = body:GetLeft()
-			if bodyLeft then
-				local desired = cursorX - bodyLeft - padInset
-				applyWidth(desired, true)
-			end
-		end)
-	end
-
-	splitter:SetScript("OnMouseDown", beginDrag)
-	splitter:SetScript("OnDragStart", beginDrag)
-	splitter:SetScript("OnMouseUp", finishDrag)
-	splitter:SetScript("OnDragStop", finishDrag)
-	splitter:SetScript("OnHide", function()
-		if splitter.__isDragging then
-			finishDrag()
-		end
-	end)
+	frame.currentListWidth = fixedListWidth
 
 	return true
 end
