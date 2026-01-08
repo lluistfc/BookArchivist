@@ -419,6 +419,11 @@ function ListUI:Create(uiFrame)
   -- Link components
   ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, scrollView)
   
+  -- Configure scrollbar to auto-hide when not needed
+  if scrollBar.SetHideIfUnscrollable then
+    scrollBar:SetHideIfUnscrollable(true)
+  end
+  
   -- Define element initializer
   local function InitializeListElement(button, elementData)
     if not button or not elementData then return end
