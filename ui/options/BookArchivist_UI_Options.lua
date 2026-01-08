@@ -468,7 +468,8 @@ function OptionsUI:Ensure()
 
   local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", settingsFrame, "UIDropDownMenuTemplate")
   if dropdown then
-    dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -4)
+    -- Offset by -16 to compensate for UIDropDownMenuTemplate's left padding
+    dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", -16, -4)
     UIDropDownMenu_SetWidth(dropdown, 160)
 
     UIDropDownMenu_Initialize(dropdown, function(frame, level)
