@@ -331,37 +331,59 @@ function OptionsUI:Ensure()
   optionsPanel.scrollBar = scrollBar
   optionsPanel.scrollChild = scrollChild
 
-  local logo = scrollChild:CreateTexture(nil, "ARTWORK")
+  -- Define spacing constants for consistent layout
+  local MARGIN_LEFT = 16
+  local MARGIN_RIGHT = 16
+  local GAP_SECTION = 24  -- Gap between major sections
+  local GAP_ITEMS = 12    -- Gap between items within a section
+  local GAP_SMALL = 8     -- Small gap (checkboxes)
+
+  -- ========================================
+  -- FRAME 1: HEADER (Logo + Title)
+  -- ========================================
+  local headerFrame = createFrame("Frame", nil, scrollChild)
+  headerFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -20)
+  headerFrame:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", 0, -20)
+  headerFrame:SetHeight(104)  -- 64 (logo) + 8 (gap) + 32 (title height estimate)
+  optionsPanel.headerFrame = headerFrame
+
+  local logo = headerFrame:CreateTexture(nil, "ARTWORK")
   logo:SetTexture("Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png")
   logo:SetSize(64, 64)
-  logo:SetPoint("TOP", scrollChild, "TOP", 0, -32)
+  logo:SetPoint("TOP", headerFrame, "TOP", 0, 0)
 
-  local title = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+  local title = headerFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
   title:SetPoint("TOP", logo, "BOTTOM", 0, -8)
-	title:SetText(t("OPTIONS_TITLE"))
+  title:SetText(t("OPTIONS_TITLE"))
   optionsPanel.titleText = title
 
-  local subtitle = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-	subtitle:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
+  -- ========================================
+  -- FRAME 2: DESCRIPTION
+  -- ========================================
+  local descriptionFrame = createFrame("Frame", nil, scrollChild)
+  descriptionFrame:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", MARGIN_LEFT, -GAP_ITEMS)
+  descriptionFrame:SetPoint("TOPRIGHT", headerFrame, "BOTTOMRIGHT", -MARGIN_RIGHT, -GAP_ITEMS)
+  descriptionFrame:SetHeight(20)  -- Estimated height for single-line text
+  optionsPanel.descriptionFrame = descriptionFrame
+
+  local subtitle = descriptionFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  subtitle:SetPoint("TOPLEFT", descriptionFrame, "TOPLEFT", 0, 0)
+  subtitle:SetPoint("TOPRIGHT", descriptionFrame, "TOPRIGHT", 0, 0)
+  subtitle:SetJustifyH("LEFT")
+  subtitle:SetText(t("OPTIONS_SUBTITLE_DEBUG"))
   optionsPanel.subtitleText = subtitle
 
-  -- Left content column anchor (matches Blizzard option panel left margin)
-  local contentLeft = createFrame("Frame", nil, scrollChild)
-  contentLeft:SetSize(1, 1)
-  contentLeft:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 16, -132)
-  optionsPanel.contentLeft = contentLeft
+  -- ========================================
+  -- FRAME 3: SETTINGS (Checkboxes + Language)
+  -- ========================================
+  local settingsFrame = createFrame("Frame", nil, scrollChild)
+  settingsFrame:SetPoint("TOPLEFT", descriptionFrame, "BOTTOMLEFT", 0, -GAP_SECTION)
+  settingsFrame:SetPoint("TOPRIGHT", descriptionFrame, "BOTTOMRIGHT", 0, -GAP_SECTION)
+  settingsFrame:SetHeight(200)  -- Will auto-adjust based on content
+  optionsPanel.settingsFrame = settingsFrame
 
-  -- Right content boundary (matches Settings panel padding)
-  local contentRight = createFrame("Frame", nil, scrollChild)
-  contentRight:SetSize(1, 1)
-  contentRight:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -16, -132)
-  optionsPanel.contentRight = contentRight
-
-  subtitle:ClearAllPoints()
-  subtitle:SetPoint("TOPLEFT", contentLeft, "TOPLEFT", 0, 0)
-
-  local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  checkbox:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -12)
+  local checkbox = createFrame("CheckButton", "BookArchivistDebugCheckbox", settingsFrame, "InterfaceOptionsCheckButtonTemplate")
+  checkbox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 0, 0)
   checkbox.Text:SetText(t("OPTIONS_DEBUG_LABEL"))
   checkbox.tooltipText = t("OPTIONS_DEBUG_TOOLTIP")
   checkbox:SetScript("OnClick", function(self)
@@ -413,11 +435,10 @@ function OptionsUI:Ensure()
       optionsPanel.AppendDebugLog = function(message) end
     end
   end)
-
   optionsPanel.debugCheckbox = checkbox
 
-  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  tooltipCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -8)
+  local tooltipCheckbox = createFrame("CheckButton", "BookArchivistTooltipCheckbox", settingsFrame, "InterfaceOptionsCheckButtonTemplate")
+  tooltipCheckbox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -GAP_SMALL)
   tooltipCheckbox.Text:SetText(t("OPTIONS_TOOLTIP_LABEL"))
   tooltipCheckbox.tooltipText = t("OPTIONS_TOOLTIP_TOOLTIP")
   tooltipCheckbox:SetScript("OnClick", function(self)
@@ -426,30 +447,27 @@ function OptionsUI:Ensure()
       BookArchivist:SetTooltipEnabled(state)
     end
   end)
-
   optionsPanel.tooltipCheckbox = tooltipCheckbox
 
-  local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", scrollChild, "InterfaceOptionsCheckButtonTemplate")
-  resumePageCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -8)
+  local resumePageCheckbox = createFrame("CheckButton", "BookArchivistResumePageCheckbox", settingsFrame, "InterfaceOptionsCheckButtonTemplate")
+  resumePageCheckbox:SetPoint("TOPLEFT", tooltipCheckbox, "BOTTOMLEFT", 0, -GAP_SMALL)
   resumePageCheckbox.Text:SetText(t("OPTIONS_RESUME_LAST_PAGE_LABEL"))
   resumePageCheckbox.tooltipText = t("OPTIONS_RESUME_LAST_PAGE_TOOLTIP")
   resumePageCheckbox:SetScript("OnClick", function(self)
-	  local state = self:GetChecked()
-	  if BookArchivist and type(BookArchivist.SetResumeLastPageEnabled) == "function" then
-		  BookArchivist:SetResumeLastPageEnabled(state)
-	  end
+    local state = self:GetChecked()
+    if BookArchivist and type(BookArchivist.SetResumeLastPageEnabled) == "function" then
+      BookArchivist:SetResumeLastPageEnabled(state)
+    end
   end)
-
   optionsPanel.resumePageCheckbox = resumePageCheckbox
 
-  local langLabel = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  local langLabel = settingsFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   langLabel:SetPoint("TOPLEFT", resumePageCheckbox, "BOTTOMLEFT", 0, -16)
-	langLabel:SetText(t("LANGUAGE_LABEL"))
+  langLabel:SetText(t("LANGUAGE_LABEL"))
   optionsPanel.langLabel = langLabel
 
-  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", scrollChild, "UIDropDownMenuTemplate")
+  local dropdown = CreateFrame and CreateFrame("Frame", "BookArchivistLanguageDropdown", settingsFrame, "UIDropDownMenuTemplate")
   if dropdown then
-    -- Align language dropdown with the main content column
     dropdown:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -4)
     UIDropDownMenu_SetWidth(dropdown, 160)
 
@@ -460,18 +478,18 @@ function OptionsUI:Ensure()
       end
 
       local items = {
-      { value = "enUS", labelKey = "LANGUAGE_NAME_ENGLISH" },
-      { value = "esES", labelKey = "LANGUAGE_NAME_SPANISH" },
-      { value = "caES", labelKey = "LANGUAGE_NAME_CATALAN" },
-      { value = "deDE", labelKey = "LANGUAGE_NAME_GERMAN" },
-      { value = "frFR", labelKey = "LANGUAGE_NAME_FRENCH" },
-      { value = "itIT", labelKey = "LANGUAGE_NAME_ITALIAN" },
-      { value = "ptBR", labelKey = "LANGUAGE_NAME_PORTUGUESE" },
-  }
+        { value = "enUS", labelKey = "LANGUAGE_NAME_ENGLISH" },
+        { value = "esES", labelKey = "LANGUAGE_NAME_SPANISH" },
+        { value = "caES", labelKey = "LANGUAGE_NAME_CATALAN" },
+        { value = "deDE", labelKey = "LANGUAGE_NAME_GERMAN" },
+        { value = "frFR", labelKey = "LANGUAGE_NAME_FRENCH" },
+        { value = "itIT", labelKey = "LANGUAGE_NAME_ITALIAN" },
+        { value = "ptBR", labelKey = "LANGUAGE_NAME_PORTUGUESE" },
+      }
 
       for _, opt in ipairs(items) do
         local info = UIDropDownMenu_CreateInfo()
-	        info.text = t(opt.labelKey)
+        info.text = t(opt.labelKey)
         info.value = opt.value
         info.func = function()
           if BookArchivist and BookArchivist.SetLanguage then
@@ -485,22 +503,25 @@ function OptionsUI:Ensure()
         UIDropDownMenu_AddButton(info, level)
       end
     end)
-
     optionsPanel.languageDropdown = dropdown
   end
 
-  -- Import section (aligned with other options)
-  local importLabel = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  if dropdown then
-    importLabel:SetPoint("TOPLEFT", dropdown, "BOTTOMLEFT", -16, -24)
-  else
-    importLabel:SetPoint("TOPLEFT", langLabel, "BOTTOMLEFT", 0, -24)
-  end
+  -- ========================================
+  -- FRAME 4: ADVANCED (Import + Debug Widgets)
+  -- ========================================
+  local advancedFrame = createFrame("Frame", nil, scrollChild)
+  advancedFrame:SetPoint("TOPLEFT", settingsFrame, "BOTTOMLEFT", 0, -GAP_SECTION)
+  advancedFrame:SetPoint("TOPRIGHT", settingsFrame, "BOTTOMRIGHT", 0, -GAP_SECTION)
+  advancedFrame:SetHeight(300)  -- Will grow based on dynamic widgets
+  optionsPanel.advancedFrame = advancedFrame
+
+  local importLabel = advancedFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+  importLabel:SetPoint("TOPLEFT", advancedFrame, "TOPLEFT", 0, 0)
   importLabel:SetText(t("OPTIONS_IMPORT_LABEL"))
   optionsPanel.importLabel = importLabel
 
   -- Info icon explaining import process
-  local importInfoButton = createFrame("Button", nil, scrollChild)
+  local importInfoButton = createFrame("Button", nil, advancedFrame)
   importInfoButton:SetSize(16, 16)
   importInfoButton:SetPoint("LEFT", importLabel, "RIGHT", 4, 0)
   local importInfoTex = importInfoButton:CreateTexture(nil, "ARTWORK")
@@ -521,18 +542,18 @@ function OptionsUI:Ensure()
     end
   end)
 
-  local importHelp = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  local importHelp = advancedFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   importHelp:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -8)
-  importHelp:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
+  importHelp:SetPoint("RIGHT", advancedFrame, "RIGHT", 0, 0)
   importHelp:SetJustifyH("LEFT")
   importHelp:SetWordWrap(true)
   importHelp:SetText(t("OPTIONS_IMPORT_HELP"))
   optionsPanel.importHelp = importHelp
 
   -- Import status label for user feedback
-  local importStatus = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+  local importStatus = advancedFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
   importStatus:SetPoint("TOPLEFT", importHelp, "BOTTOMLEFT", 0, -8)
-  importStatus:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
+  importStatus:SetPoint("RIGHT", advancedFrame, "RIGHT", 0, 0)
   importStatus:SetJustifyH("LEFT")
   importStatus:SetText("")
   importStatus:SetTextColor(0.8, 0.8, 0.8)
@@ -742,10 +763,10 @@ function OptionsUI:Ensure()
     importWidget:DisableButton(true)
     importWidget:SetNumLines(6)
     importWidget:SetFullWidth(true)
-    importWidget.frame:SetParent(scrollChild)
+    importWidget.frame:SetParent(optionsPanel.advancedFrame or scrollChild)
     importWidget.frame:ClearAllPoints()
     importWidget.frame:SetPoint("TOPLEFT", optionsPanel.importStatus or importHelp, "BOTTOMLEFT", 0, -4)
-    importWidget.frame:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
+    importWidget.frame:SetPoint("RIGHT", optionsPanel.advancedFrame, "RIGHT", 0, 0)
     importWidget.frame:SetFrameLevel(optionsPanel:GetFrameLevel() + 10)
     importWidget.frame:Show()
     
@@ -826,7 +847,7 @@ function OptionsUI:Ensure()
   
   -- Fallback: Create basic EditBox if AceGUI will not be available
   -- (kept for compatibility when AceGUI is missing)
-  local importScroll = createFrame("ScrollFrame", "BookArchivistImportScrollFrame", scrollChild)
+  local importScroll = createFrame("ScrollFrame", "BookArchivistImportScrollFrame", advancedFrame)
   importScroll:SetPoint("TOPLEFT", importStatus, "BOTTOMLEFT", 0, -4)
   importScroll:SetPoint("RIGHT", contentRight, "TOPLEFT", -20, 0)
   importScroll:SetHeight(120)
@@ -966,7 +987,7 @@ function OptionsUI:Ensure()
     debugWidget:SetNumLines(12)
     debugWidget:SetFullWidth(true)
     debugWidget:SetMaxLetters(50000)  -- Prevent overflow
-    debugWidget.frame:SetParent(scrollChild)
+    debugWidget.frame:SetParent(optionsPanel.advancedFrame or scrollChild)
     debugWidget.frame:ClearAllPoints()
     -- Anchor below import widget or fallback scroll frame
     local anchorFrame = (optionsPanel.importWidget and optionsPanel.importWidget.frame) or optionsPanel.importScroll
@@ -976,7 +997,7 @@ function OptionsUI:Ensure()
       -- Last resort: anchor below import status label
       debugWidget.frame:SetPoint("TOPLEFT", optionsPanel.importStatus or importHelp, "BOTTOMLEFT", 0, -150)
     end
-    debugWidget.frame:SetPoint("RIGHT", contentRight, "TOPLEFT", 0, 0)
+    debugWidget.frame:SetPoint("RIGHT", optionsPanel.advancedFrame, "RIGHT", 0, 0)
     debugWidget.frame:SetFrameLevel(optionsPanel:GetFrameLevel() + 10)
     debugWidget.frame:Show()
     debugWidget:SetText("Debug mode enabled. Diagnostics will appear here...")
