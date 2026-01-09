@@ -140,36 +140,61 @@ function ListUI:EnsureListBreadcrumbRow()
   bg:SetAllPoints(row)
   bg:SetColorTexture(0, 0, 0, 0.3) -- Subtle dark background
   
-  -- Create 3 FontString lines for breadcrumb display
+  -- Create 3 clickable button lines for breadcrumb navigation
   local lineHeight = 14
   local lineGap = 2
   local textPadding = 6
   
-  local line1 = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  line1:SetPoint("TOPLEFT", row, "TOPLEFT", textPadding, -textPadding)
-  line1:SetPoint("TOPRIGHT", row, "TOPRIGHT", -textPadding, -textPadding)
-  line1:SetHeight(lineHeight)
-  line1:SetJustifyH("LEFT")
-  line1:SetWordWrap(false)
-  line1:SetMaxLines(1)
+  -- Helper to create a clickable breadcrumb line
+  local function createBreadcrumbButton(name, parent, prevLine)
+    local btn = self:SafeCreateFrame("Button", nil, parent)
+    if not btn then return nil end
+    
+    if prevLine then
+      btn:SetPoint("TOPLEFT", prevLine, "BOTTOMLEFT", 0, -lineGap)
+      btn:SetPoint("TOPRIGHT", prevLine, "BOTTOMRIGHT", 0, -lineGap)
+    else
+      btn:SetPoint("TOPLEFT", parent, "TOPLEFT", textPadding, -textPadding)
+      btn:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -textPadding, -textPadding)
+    end
+    btn:SetHeight(lineHeight)
+    
+    local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    fs:SetAllPoints(btn)
+    fs:SetJustifyH("LEFT")
+    fs:SetWordWrap(false)
+    fs:SetMaxLines(1)
+    btn.text = fs
+    
+    -- Hover effect
+    btn:SetScript("OnEnter", function(self)
+      if self.isClickable then
+        self.text:SetTextColor(1.0, 0.82, 0.0) -- Gold on hover
+        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+        GameTooltip:SetText("Click to navigate to this location", 1, 1, 1)
+        GameTooltip:Show()
+      end
+    end)
+    btn:SetScript("OnLeave", function(self)
+      if self.isClickable then
+        self.text:SetTextColor(0.67, 0.67, 0.67) -- Reset to dim
+      end
+      GameTooltip:Hide()
+    end)
+    
+    return btn
+  end
+  
+  local line1 = createBreadcrumbButton("breadcrumbLine1", row, nil)
+  local line2 = createBreadcrumbButton("breadcrumbLine2", row, line1)
+  local line3 = createBreadcrumbButton("breadcrumbLine3", row, line2)
+  
+  if not (line1 and line2 and line3) then
+    return nil
+  end
+  
   self:SetFrame("breadcrumbLine1", line1)
-  
-  local line2 = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  line2:SetPoint("TOPLEFT", line1, "BOTTOMLEFT", 0, -lineGap)
-  line2:SetPoint("TOPRIGHT", line1, "BOTTOMRIGHT", 0, -lineGap)
-  line2:SetHeight(lineHeight)
-  line2:SetJustifyH("LEFT")
-  line2:SetWordWrap(false)
-  line2:SetMaxLines(1)
   self:SetFrame("breadcrumbLine2", line2)
-  
-  local line3 = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-  line3:SetPoint("TOPLEFT", line2, "BOTTOMLEFT", 0, -lineGap)
-  line3:SetPoint("TOPRIGHT", line2, "BOTTOMRIGHT", 0, -lineGap)
-  line3:SetHeight(lineHeight)
-  line3:SetJustifyH("LEFT")
-  line3:SetWordWrap(false)
-  line3:SetMaxLines(1)
   self:SetFrame("breadcrumbLine3", line3)
   
   return row

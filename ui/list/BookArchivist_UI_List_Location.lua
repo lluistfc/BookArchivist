@@ -333,7 +333,7 @@ function ListUI:UpdateLocationBreadcrumbUI()
   
   breadcrumbRow:Show()
   
-  -- Get font strings
+  -- Get button lines
   local line1 = self:GetFrame("breadcrumbLine1")
   local line2 = self:GetFrame("breadcrumbLine2")
   local line3 = self:GetFrame("breadcrumbLine3")
@@ -342,24 +342,114 @@ function ListUI:UpdateLocationBreadcrumbUI()
     return
   end
   
-  -- Get display lines
+  -- Get current state to calculate navigation targets
+  local state = self.GetLocationState and self:GetLocationState() or nil
+  local segments = state and state.path or {}
   local lines = self:GetLocationBreadcrumbDisplayLines(3)
   
-  -- Dim color for lines 1 and 2, emphasized gold for line 3
-  local dimColor = "|cFFAAAAAA"
-  local emphasizedColor = "|cFFFFD100"
-  local resetColor = "|r"
+  -- Capture module reference for closures
+  local listUI = self
   
-  line1:SetText(lines[1] ~= "" and (dimColor .. lines[1] .. resetColor) or "")
-  line2:SetText(lines[2] ~= "" and (dimColor .. lines[2] .. resetColor) or "")
-  line3:SetText(lines[3] ~= "" and (emphasizedColor .. lines[3] .. resetColor) or "")
+  -- Map line index to actual path depth for navigation
+  local function setupLine(btn, lineIndex, displayText)
+    if not btn or not btn.text then return end
+    
+    if displayText == "" or displayText == "…" then
+      -- Empty or ellipsis - not clickable
+      btn.text:SetText(displayText)
+      btn:SetScript("OnClick", nil)
+      btn:Disable()
+      btn.isClickable = false
+      return
+    end
+    
+    -- Determine navigation depth (number of path segments to keep)
+    local targetDepth
+    local numSegments = #segments
+    
+    if numSegments <= 3 then
+      -- Direct mapping: line 1 = keep 1 segment, line 2 = keep 2 segments, line 3 = keep 3 segments
+      targetDepth = lineIndex
+    else
+      -- Truncated view: line 1 = "…", line 2 = second-to-last, line 3 = last
+      if lineIndex == 1 then
+        targetDepth = nil -- ellipsis, not clickable
+      elseif lineIndex == 2 then
+        targetDepth = numSegments - 1
+      else -- lineIndex == 3
+        targetDepth = numSegments
+      end
+    end
+    
+    -- Current location has depth = numSegments (length of path)
+    -- Line showing current location should not be clickable
+    local isCurrentLocation = (targetDepth == numSegments)
+    
+    if isCurrentLocation or targetDepth == nil then
+      -- Current location or ellipsis - not clickable
+      local color = isCurrentLocation and "|cFFFFD100" or "|cFFAAAAAA"
+      btn.text:SetText(color .. displayText .. "|r")
+      btn:SetScript("OnClick", nil)
+      btn:Disable()
+      btn.isClickable = false
+    else
+      -- Parent location - clickable
+      btn.text:SetText("|cFFAAAAAA" .. displayText .. "|r")
+      btn:Enable()
+      btn.isClickable = true
+      btn:SetScript("OnClick", function()
+        -- Navigate to target depth by truncating path
+        if state and state.path then
+          local newPath = {}
+          for i = 1, targetDepth do
+            newPath[i] = state.path[i]
+          end
+          state.path = newPath
+          state.currentPage = 1
+          
+          -- Ensure path is valid
+          ensureLocationPathValid(state)
+          
+          -- Rebuild location rows
+          local pageSize = listUI:GetPageSize()
+          local page = state.currentPage or 1
+          rebuildLocationRows(state, listUI, pageSize, page)
+          
+          -- Update breadcrumbs
+          if listUI.UpdateLocationBreadcrumbUI then
+            listUI:UpdateLocationBreadcrumbUI()
+          end
+          
+          -- Update list display
+          if listUI.UpdateList then
+            listUI:UpdateList()
+          end
+          
+          -- Update header counts
+          if listUI.UpdateCountsDisplay then
+            listUI:UpdateCountsDisplay()
+          end
+        end
+      end)
+    end
+  end
+  
+  setupLine(line1, 1, lines[1])
+  setupLine(line2, 2, lines[2])
+  setupLine(line3, 3, lines[3])
 end
+
+-- Export helper functions for breadcrumb navigation
+ListUI.RebuildLocationRows = rebuildLocationRows
+ListUI.EnsureLocationPathValid = ensureLocationPathValid
 
 function ListUI:NavigateInto(segment)
   local state = getLocationState(self)
   segment = normalizeLocationLabel(segment)
+  self:DebugPrint(string.format("[BookArchivist] NavigateInto: segment='%s'", segment))
   if segment == "" then return end
   state.path[#state.path + 1] = segment
+  self:DebugPrint(string.format("[BookArchivist] NavigateInto: path now has %d segments", #state.path))
   state.currentPage = 1 -- Reset to page 1 when navigating
   ensureLocationPathValid(state)
   local pageSize = self:GetPageSize()
