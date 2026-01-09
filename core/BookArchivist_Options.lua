@@ -4,16 +4,11 @@ BookArchivist = BookArchivist or {}
 local Core = BookArchivist.Core
 if not Core then return end
 
-local LIST_WIDTH_DEFAULT = 360
-
 local function ensureUIOptions()
   local db = Core:EnsureDB()
   db.options = db.options or {}
   db.options.ui = db.options.ui or {}
   local uiOpts = db.options.ui
-  if type(uiOpts.listWidth) ~= "number" then
-    uiOpts.listWidth = LIST_WIDTH_DEFAULT
-  end
   if uiOpts.virtualCategoriesEnabled == nil then
     uiOpts.virtualCategoriesEnabled = true
   end
@@ -109,17 +104,6 @@ function Core:GetUIFrameOptions()
   return ensureUIOptions()
 end
 
-function Core:GetListWidth()
-  local uiOpts = ensureUIOptions()
-  return uiOpts.listWidth or LIST_WIDTH_DEFAULT
-end
-
-function Core:SetListWidth(width)
-  local uiOpts = ensureUIOptions()
-  if type(width) == "number" then
-    uiOpts.listWidth = math.max(260, math.min(math.floor(width + 0.5), 600))
-  end
-end
 
 function Core:IsVirtualCategoriesEnabled()
   local uiOpts = ensureUIOptions()

@@ -10,7 +10,6 @@
 | `uiDebug` | `options.uiDebug` | UI debug grid | Read by UI_Frame, UI, DevOptions, Options, DB; controls debug grid overlay |
 | `language` | `options.language` | Addon language | Read/written by Core, UI_Options; controls localization |
 | `ui.virtualCategoriesEnabled` | `options.ui.virtualCategoriesEnabled` | Enable virtual categories | Read/written by Options, Core; controls category display |
-| `ui.listWidth` | `options.ui.listWidth` | Left panel width | Read/written by UI_Frame, Options, Core; controls list panel size |
 | `ui.resumeLastPage` | `options.ui.resumeLastPage` | Resume reading position | Read/written by Options, Core; controls bookmark behavior |
 | `tooltip.enabled` | `options.tooltip.enabled` | Show tooltip tags | Read by Tooltip, Options, Core; controls item tooltip injection |
 | `list.sortMode` | `options.list.sortMode` | List sort order | Read/written by Core, ListConfig; controls book ordering |
@@ -34,6 +33,7 @@
 | `gridMode` | `options.gridMode` | v1.0.2 | Only in DevTools | **YES** - Dev-only feature, only meaningful when DevTools loaded. Already cleaned by v2 migration. |
 | `gridVisible` | `options.gridVisible` | v1.0.2 | Only in DevTools | **YES** - Dev-only feature, only meaningful when DevTools loaded. Already cleaned by v2 migration. |
 | `ba_hidden_anchor` | `options.ba_hidden_anchor` | Unknown | Options UI hack | **YES** - Used only as a Settings API hack to disable defaults button. Never actually read. Already cleaned by v2 migration. |
+| `ui.listWidth` | `options.ui.listWidth` | v1.0.2 | Hardcoded constant | **YES** - No UI to change it, setter never called. Hardcoded to 360. Removed from code and cleaned by v2 migration. |
 
 ## Analysis
 
@@ -72,7 +72,7 @@
 ## Recommendations Summary
 
 ### Immediate Actions Taken
-✅ All four legacy options (`debugEnabled`, `gridMode`, `gridVisible`, `ba_hidden_anchor`) are now cleaned by v2 migration in Migrations.lua:180-183
+✅ All five legacy options (`debugEnabled`, `gridMode`, `gridVisible`, `ba_hidden_anchor`, `ui.listWidth`) are now cleaned by v2 migration in Migrations.lua:178-186
 
 ### Future Improvements
 1. **ba_hidden_anchor alternative**: Consider removing the hack entirely and just hiding the defaults button via category API

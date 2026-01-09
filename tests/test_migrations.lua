@@ -497,6 +497,10 @@ run_test("v2 migration removes legacy debug options", function()
   db.options.gridVisible = false
   db.options.ba_hidden_anchor = {x = 100, y = 200}
   
+  -- Add listWidth that should be removed
+  db.options.ui = db.options.ui or {}
+  db.options.ui.listWidth = 360
+  
   local v2_migrated = BookArchivist.Migrations.v2(db)
   
   -- Verify legacy options removed from options table
@@ -504,6 +508,11 @@ run_test("v2 migration removes legacy debug options", function()
   assert_equal(v2_migrated.options.gridMode, nil, "Should remove gridMode")
   assert_equal(v2_migrated.options.gridVisible, nil, "Should remove gridVisible")
   assert_equal(v2_migrated.options.ba_hidden_anchor, nil, "Should remove ba_hidden_anchor")
+  
+  -- Verify listWidth removed from ui options
+  if type(v2_migrated.options.ui) == "table" then
+    assert_equal(v2_migrated.options.ui.listWidth, nil, "Should remove ui.listWidth")
+  end
   
   -- Verify new structure still intact
   assert_type(v2_migrated.booksById, "table", "Should have booksById")

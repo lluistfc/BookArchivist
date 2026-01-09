@@ -113,8 +113,8 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 		return nil
 	end
 
-	-- Fixed list width (no resize functionality)
-	local fixedListWidth = opts.getPreferredListWidth and opts.getPreferredListWidth() or 360
+	-- Fixed list width (hardcoded - no resize functionality)
+	local fixedListWidth = 360
 	fixedListWidth = clampListWidth(body, fixedListWidth)
 	
 	-- Gap between the two panels

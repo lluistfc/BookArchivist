@@ -118,9 +118,6 @@ local function ensureDB()
   BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or { enabled = true }
   BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
   local uiOpts = BookArchivistDB.options.ui
-  if type(uiOpts.listWidth) ~= "number" then
-    uiOpts.listWidth = LIST_WIDTH_DEFAULT
-  end
   if uiOpts.virtualCategoriesEnabled == nil then
     uiOpts.virtualCategoriesEnabled = true
   end
