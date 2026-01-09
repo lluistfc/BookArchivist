@@ -55,17 +55,6 @@ local function buildFrame(safeCreateFrame)
 		listUI = ListUI,
 		readerUI = ReaderUI,
 		title = (BookArchivist and BookArchivist.L and BookArchivist.L["ADDON_TITLE"]) or "Book Archivist",
-		getPreferredListWidth = function()
-			if addonRoot and addonRoot.GetListWidth then
-				return addonRoot:GetListWidth()
-			end
-			return 360
-		end,
-		onListWidthChanged = function(width)
-			if addonRoot and addonRoot.SetListWidth then
-				addonRoot:SetListWidth(width)
-			end
-		end,
 		debugPrint = debugPrint,
 		logError = logError,
 		onOptions = function()
@@ -141,7 +130,8 @@ local function setupUI()
 	-- Don't call updateListModeUI here - list tabs don't exist yet in async build
 	-- It will be called after content is ready (see BuildContent completion)
 
-	Internal.setIsInitialized(true)
+	-- Don't set isInitialized here - wait for async content build to complete
+	-- Otherwise refreshAll will try to update list before data provider exists
 	frame.__BookArchivistInitialized = true
 	if Internal.requestFullRefresh then
 		Internal.requestFullRefresh()
@@ -337,12 +327,10 @@ local function ensureUI()
 	end
 
 	initializationError = nil
-	Internal.setIsInitialized(true)
+	-- Don't mark as initialized yet - let async content build handle it
+	-- Don't flush pending refresh - let async completion trigger the first refresh
 	syncGridOverlayPreference()
-	debugPrint("[BookArchivist] ensureUI: initialized via setup (needsRefresh=" .. tostring(Internal.getNeedsRefresh()) .. ")")
-	if Internal.getNeedsRefresh() and Internal.flushPendingRefresh then
-		Internal.flushPendingRefresh()
-	end
+	debugPrint("[BookArchivist] ensureUI: setup started, waiting for async content build")
 	return true
 end
 
@@ -367,11 +355,6 @@ function FrameUI:ApplyListWidth(width)
 		-- Trigger layout refresh
 		if frame.contentContainer.DoLayout then
 			frame.contentContainer:DoLayout()
-		end
-		
-		-- Call onListWidthChanged callback if it exists
-		if frame.contentContainer.onListWidthChanged then
-			frame.contentContainer.onListWidthChanged(width)
 		end
 	end
 end

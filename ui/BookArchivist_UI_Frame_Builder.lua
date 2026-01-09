@@ -154,8 +154,13 @@ function FrameUI:BuildContent(frame, opts)
 			frame.__contentBuilding = false
 			frame.__contentReady = true
 			
-			-- Update list mode UI now that tabs exist
+			-- Mark UI as fully initialized now that content is ready
 			local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+			if Internal and Internal.setIsInitialized then
+				Internal.setIsInitialized(true)
+			end
+			
+			-- Update list mode UI now that tabs exist
 			if Internal and Internal.updateListModeUI then
 				local ok, err = pcall(Internal.updateListModeUI)
 				if not ok and opts.logError then
@@ -173,8 +178,9 @@ function FrameUI:BuildContent(frame, opts)
 				end
 			end
 			
-			-- Trigger refresh if frame is shown (this will start async filtering)
-			if frame:IsShown() and opts.onShow then
+			-- Trigger refresh now that content is ready (this will start async filtering)
+			-- Call onShow to refresh the list with the newly created data provider
+			if opts.onShow then
 				local ok, err = pcall(opts.onShow, frame)
 				if not ok and opts.logError then
 					opts.logError("Error refreshing UI after build: " .. tostring(err))
