@@ -31,16 +31,14 @@ end
 -- Show the share popup with the export string
 function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
   if not exportStr or exportStr == "" then
-    print("|cFFFF0000[BookArchivist]|r Failed to generate export string.")
+    BookArchivist:DebugPrint("|cFFFF0000[BookArchivist]|r Failed to generate export string.")
     return
   end
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[Share DEBUG]|r Show() called with:")
-    print("  bookTitle:", bookTitle)
-    print("  bookKey:", bookKey)
-    print("  bookData:", bookData and "present" or "nil")
-  end
+BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r Show() called with:")
+BookArchivist:DebugPrint("  bookTitle:", bookTitle)
+BookArchivist:DebugPrint("  bookKey:", bookKey)
+BookArchivist:DebugPrint("  bookData:", bookData and "present" or "nil")
   
   -- Get or create the share modal frame
   if not shareFrame then
@@ -139,23 +137,17 @@ function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
       local bookTitle = shareFrame.bookTitle or "Book"
       local chatLink = string.format("[BookArchivist: %s]", bookTitle)
       
-      if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-        print("|cFF4A7EBB[Share DEBUG]|r Share to Chat clicked:")
-        print("  bookTitle:", bookTitle)
-        print("  bookKey:", shareFrame.bookKey)
-        print("  bookData:", shareFrame.bookData and "present" or "nil")
-      end
+BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r Share to Chat clicked:")
+BookArchivist:DebugPrint("  bookTitle:", bookTitle)
+BookArchivist:DebugPrint("  bookKey:", shareFrame.bookKey)
+BookArchivist:DebugPrint("  bookData:", shareFrame.bookData and "present" or "nil")
       
       -- Register book as linked RIGHT NOW when sending to chat
       if BookArchivist.ChatLinks and shareFrame.bookKey and shareFrame.bookData then
-        if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-          print("|cFF00FF00[Share DEBUG]|r Registering book as linked")
-        end
+BookArchivist:DebugPrint("|cFF00FF00[Share DEBUG]|r Registering book as linked")
         BookArchivist.ChatLinks:RegisterLinkedBook(shareFrame.bookKey, shareFrame.bookData)
       else
-        if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-          print("|cFFFF0000[Share DEBUG]|r Cannot register: missing ChatLinks, bookKey, or bookData")
-        end
+BookArchivist:DebugPrint("|cFFFF0000[Share DEBUG]|r Cannot register: missing ChatLinks, bookKey, or bookData")
       end
       
       -- Insert into active chat editbox
@@ -171,7 +163,7 @@ function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
       end
       
       -- Optional: show confirmation
-      print("|cFF4A7EBBBookArchivist:|r " .. (t("SHARE_LINK_INSERTED") or "Chat link inserted! Press Enter to send."))
+    BookArchivist:DebugPrint("|cFF4A7EBBBookArchivist:|r " .. (t("SHARE_LINK_INSERTED") or "Chat link inserted! Press Enter to send."))
     end)
     shareFrame.shareToChatBtn = shareToChatBtn
     
@@ -195,12 +187,10 @@ function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
   shareFrame.addon = addon
   shareFrame.bookData = bookData
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[Share DEBUG]|r Stored in shareFrame:")
-    print("  bookTitle:", shareFrame.bookTitle)
-    print("  bookKey:", shareFrame.bookKey)
-    print("  bookData:", shareFrame.bookData and "present" or "nil")
-  end
+BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r Stored in shareFrame:")
+BookArchivist:DebugPrint("  bookTitle:", shareFrame.bookTitle)
+BookArchivist:DebugPrint("  bookKey:", shareFrame.bookKey)
+BookArchivist:DebugPrint("  bookData:", shareFrame.bookData and "present" or "nil")
   
   -- Update chat hint with book title if provided
   if shareFrame.chatHint and bookTitle then
@@ -225,25 +215,21 @@ end
 -- Generate export for the currently selected book and show share popup
 function ReaderShare:ShareCurrentBook(addon, bookKey)
   if not (addon and bookKey) then 
-    print("|cFFFF0000[BookArchivist]|r No book selected.")
+    BookArchivist:DebugPrint("|cFFFF0000[BookArchivist]|r No book selected.")
     return
   end
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[Share DEBUG]|r ShareCurrentBook called:")
-    print("  addon:", addon)
-    print("  bookKey:", bookKey)
-  end
+BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r ShareCurrentBook called:")
+BookArchivist:DebugPrint("  addon:", addon)
+BookArchivist:DebugPrint("  bookKey:", bookKey)
   
   -- Get book data directly from DB
   local bookData = BookArchivistDB and BookArchivistDB.booksById and BookArchivistDB.booksById[bookKey]
   local bookTitle = bookData and bookData.title
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[Share DEBUG]|r Retrieved from DB:")
-    print("  bookData:", bookData and "found" or "nil")
-    print("  bookTitle:", bookTitle or "nil")
-  end
+BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r Retrieved from DB:")
+BookArchivist:DebugPrint("  bookData:", bookData and "found" or "nil")
+BookArchivist:DebugPrint("  bookTitle:", bookTitle or "nil")
   
   -- Generate export for single book
   local exportStr, err
@@ -269,7 +255,7 @@ function ReaderShare:ShareCurrentBook(addon, bookKey)
     self:Show(exportStr, bookTitle, bookKey, addon, bookData)
   else
     local errMsg = err or "unknown error"
-    print("|cFFFF0000[BookArchivist]|r Failed to generate export string: " .. tostring(errMsg))
+    BookArchivist:DebugPrint("|cFFFF0000[BookArchivist]|r Failed to generate export string: " .. tostring(errMsg))
   end
 end
 

@@ -34,7 +34,8 @@ local function BookArchivistChatFilter(self, event, msg, sender, ...)
   
   -- Find all [BookArchivist: Title] patterns and convert to hyperlinks
   -- Extract sender name for the link
-  newMsg = msg:gsub("%[BookArchivist: ([^%]]+)%]", function(title)
+  -- Note: Use greedy match (.+) to handle titles that contain brackets
+  newMsg = msg:gsub("%[BookArchivist: (.+)%]", function(title)
     modified = true
     -- Encode title and sender for link data
     local encodedTitle = title:gsub(" ", "_"):gsub("|", "||")
@@ -82,14 +83,10 @@ local originalSetItemRef = SetItemRef
 function SetItemRef(link, text, button, chatFrame)
   -- Check if this is a BookArchivist link
   if link and link:match("^bookarc:") then
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFF4A7EBB[ChatLinks DEBUG]|r Link clicked:", link)
-    end
+    BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Link clicked:", link)
     local senderName, encodedTitle = link:match("^bookarc:([^:]+):(.+)$")
     if not senderName then
-      if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-        print("|cFFFFAA00[ChatLinks DEBUG]|r Old format detected, using fallback")
-      end
+      BookArchivist:DebugPrint("|cFFFFAA00[ChatLinks DEBUG]|r Old format detected, using fallback")
       -- Old format fallback
       encodedTitle = link:sub(9)
       senderName = "Unknown"
@@ -98,11 +95,9 @@ function SetItemRef(link, text, button, chatFrame)
     local title = encodedTitle:gsub("_", " "):gsub("||", "|")
     senderName = senderName:gsub("_", " ")
     
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFF4A7EBB[ChatLinks DEBUG]|r Parsed link:")
-      print("  sender:", senderName)
-      print("  title:", title)
-    end
+    BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Parsed link:")
+    BookArchivist:DebugPrint("  sender:", senderName)
+    BookArchivist:DebugPrint("  title:", title)
     
     if IsShiftKeyDown() then
       -- Shift-click: insert plain text into active editbox
@@ -123,16 +118,12 @@ end
 
 -- Request book data from sender
 function ChatLinks:RequestBookFromSender(senderName, bookTitle)
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r RequestBookFromSender called:")
-    print("  sender:", senderName)
-    print("  title:", bookTitle)
-  end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r RequestBookFromSender called:")
+  BookArchivist:DebugPrint("  sender:", senderName)
+  BookArchivist:DebugPrint("  title:", bookTitle)
   
   if not AceComm then
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFFFF0000[ChatLinks DEBUG]|r AceComm not available, falling back to manual import")
-    end
+    BookArchivist:DebugPrint("|cFFFF0000[ChatLinks DEBUG]|r AceComm not available, falling back to manual import")
     -- Fallback to manual import if AceComm not available
     self:ShowImportPrompt(bookTitle)
     return
@@ -145,9 +136,7 @@ function ChatLinks:RequestBookFromSender(senderName, bookTitle)
   safeSenders[senderName] = true
   safeSenders[senderNameClean] = true
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r Marked sender as safe:", senderNameClean)
-  end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Marked sender as safe:", senderNameClean)
   
   -- Show tooltip with loading state
   tooltipLoading = true
@@ -163,21 +152,15 @@ function ChatLinks:RequestBookFromSender(senderName, bookTitle)
     title = bookTitle
   }
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r Sending request via AceComm:")
-    print("  to:", senderName)
-    print("  request:", request.m, request.title)
-  end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Sending request via AceComm:")
+  BookArchivist:DebugPrint("  to:", senderName)
+  BookArchivist:DebugPrint("  request:", request.m, request.title)
   
   if AceSerializer then
     local serialized = AceSerializer:Serialize(request)
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFF4A7EBB[ChatLinks DEBUG]|r Serialized length:", #serialized)
-    end
+    BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Serialized length:", #serialized)
     AceComm:SendCommMessage("BookArchivist", serialized, "WHISPER", senderName)
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFF4A7EBB[ChatLinks DEBUG]|r SendCommMessage completed")
-    end
+    BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r SendCommMessage completed")
   end
   
   -- Timeout after 10 seconds (addon communication can be slow)
@@ -213,12 +196,10 @@ end
 
 -- Register a book as shareable (called when user clicks share button)
 function ChatLinks:RegisterLinkedBook(bookId, bookData)
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r Registering book as linked:")
-    print("  bookId:", bookId)
-    print("  title:", bookData and bookData.title or "nil")
-    print("  timestamp:", GetTime())
-  end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Registering book as linked:")
+  BookArchivist:DebugPrint("  bookId:", bookId)
+  BookArchivist:DebugPrint("  title:", bookData and bookData.title or "nil")
+  BookArchivist:DebugPrint("  timestamp:", GetTime())
   
   linkedBooks[bookId] = {
     data = bookData,
@@ -233,55 +214,41 @@ function ChatLinks:RegisterLinkedBook(bookId, bookData)
     end
   end
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    local count = 0
-    for _ in pairs(linkedBooks) do count = count + 1 end
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r Total linked books:", count)
-  end
+  local count = 0
+  for _ in pairs(linkedBooks) do count = count + 1 end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Total linked books:", count)
 end
 
 -- Handle incoming comm messages
 local function HandleComm(prefix, message, distribution, sender)
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r HandleComm called:")
-    print("  prefix:", prefix)
-    print("  distribution:", distribution)
-    print("  sender:", sender)
-    print("  message length:", #message)
-  end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r HandleComm called:")
+  BookArchivist:DebugPrint("  prefix:", prefix)
+  BookArchivist:DebugPrint("  distribution:", distribution)
+  BookArchivist:DebugPrint("  sender:", sender)
+  BookArchivist:DebugPrint("  message length:", #message)
   
   if not AceSerializer then 
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFFFF0000[ChatLinks DEBUG]|r AceSerializer not available")
-    end
+    BookArchivist:DebugPrint("|cFFFF0000[ChatLinks DEBUG]|r AceSerializer not available")
     return 
   end
   
   local success, data = AceSerializer:Deserialize(message)
   if not success or type(data) ~= "table" then 
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFFFF0000[ChatLinks DEBUG]|r Deserialize failed or not a table:", success, type(data))
-    end
+    BookArchivist:DebugPrint("|cFFFF0000[ChatLinks DEBUG]|r Deserialize failed or not a table:", success, type(data))
     return 
   end
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r Deserialized message type:", data.m)
-  end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Deserialized message type:", data.m)
   
   local L = BookArchivist.L or {}
   
   if data.m == "request" then
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFF4A7EBB[ChatLinks DEBUG]|r Received request for:", data.title)
-    end
+    BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Received request for:", data.title)
     -- Someone is requesting a book from us
     ChatLinks:HandleBookRequest(sender, data.title)
     
   elseif data.m == "response" then
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFF4A7EBB[ChatLinks DEBUG]|r Received response")
-    end
+    BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Received response")
     -- We received book data - clear loading state immediately
     tooltipLoading = false
     receivedData = true
@@ -292,15 +259,11 @@ local function HandleComm(prefix, message, distribution, sender)
     end
     
     if data.bookData then
-      if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-        print("|cFF00FF00[ChatLinks DEBUG]|r Response contains book data, showing import dialog")
-      end
+      BookArchivist:DebugPrint("|cFF00FF00[ChatLinks DEBUG]|r Response contains book data, showing import dialog")
       ItemRefTooltip:Hide()
       ChatLinks:ShowImportWithData(data.bookData)
     elseif data.error then
-      if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-        print("|cFFFF0000[ChatLinks DEBUG]|r Response contains error:", data.error)
-      end
+      BookArchivist:DebugPrint("|cFFFF0000[ChatLinks DEBUG]|r Response contains error:", data.error)
       ChatLinks:ShowTooltip({
         {1, "BookArchivist", 0.29, 0.49, 0.73},
         {1, data.error, 1, 0, 0}
@@ -311,57 +274,41 @@ end
 
 -- Handle book request from another player
 function ChatLinks:HandleBookRequest(sender, bookTitle)
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    local count = 0
-    for _ in pairs(linkedBooks) do count = count + 1 end
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r HandleBookRequest called:")
-    print("  sender:", sender)
-    print("  bookTitle:", bookTitle)
-    print("  linkedBooks count:", count)
-  end
+  local count = 0
+  for _ in pairs(linkedBooks) do count = count + 1 end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r HandleBookRequest called:")
+  BookArchivist:DebugPrint("  sender:", sender)
+  BookArchivist:DebugPrint("  bookTitle:", bookTitle)
+  BookArchivist:DebugPrint("  linkedBooks count:", count)
   
   -- Find the book by title in our linked books
   local foundBook = nil
   local expiredTime = GetTime() - LINK_VALIDITY_DURATION
   
-  if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-    print("|cFF4A7EBB[ChatLinks DEBUG]|r Searching linkedBooks:")
-  end
+  BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Searching linkedBooks:")
   for bookId, entry in pairs(linkedBooks) do
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("  checking bookId:", bookId)
-      print("    timestamp:", entry.timestamp, "expired at:", expiredTime)
-    end
+    BookArchivist:DebugPrint("  checking bookId:", bookId)
+    BookArchivist:DebugPrint("    timestamp:", entry.timestamp, "expired at:", expiredTime)
     if entry.timestamp > expiredTime then
       local data = entry.data
-      if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-        print("    title:", data and data.title or "nil")
-      end
+      BookArchivist:DebugPrint("    title:", data and data.title or "nil")
       if data and data.title == bookTitle then
-        if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-          print("|cFF00FF00[ChatLinks DEBUG]|r Found matching book!")
-        end
+        BookArchivist:DebugPrint("|cFF00FF00[ChatLinks DEBUG]|r Found matching book!")
         foundBook = data
         break
       end
     else
-      if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-        print("    expired")
-      end
+      BookArchivist:DebugPrint("    expired")
     end
   end
   
   local response = { m = "response" }
   
   if foundBook then
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFF00FF00[ChatLinks DEBUG]|r Sending book data to", sender)
-    end
+    BookArchivist:DebugPrint("|cFF00FF00[ChatLinks DEBUG]|r Sending book data to", sender)
     response.bookData = foundBook
   else
-    if BookArchivist and BookArchivist.IsDebugEnabled and BookArchivist:IsDebugEnabled() then
-      print("|cFFFF0000[ChatLinks DEBUG]|r Book not found, sending error")
-    end
+    BookArchivist:DebugPrint("|cFFFF0000[ChatLinks DEBUG]|r Book not found, sending error")
     local L = BookArchivist.L or {}
     response.error = L["BOOK_NOT_AVAILABLE"] or "Book no longer available for sharing"
   end
@@ -540,7 +487,7 @@ function ChatLinks:DoImport()
     -- For now, show success message
     local bookTitle = self.importPrompt.bookTitle or "book"
     local successMsg = L["IMPORT_SUCCESS"] or "Imported: %s"
-    print("|cFF4A7EBBBookArchivist:|r " .. successMsg:format(bookTitle))
+    BookArchivist:DebugPrint("|cFF4A7EBBBookArchivist:|r " .. successMsg:format(bookTitle))
     
     -- TODO: Actually import the book data
     -- This will require adding the book to the database
@@ -559,12 +506,12 @@ function ChatLinks:DoImport()
   if self.promptEditBox and self.promptEditBox.GetText then
     text = self.promptEditBox:GetText()
   else
-    print("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("No text provided") or "Import failed: No text provided"))
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("No text provided") or "Import failed: No text provided"))
     return
   end
   
   if not text or text == "" then
-    print("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("No text provided") or "Import failed: No text provided"))
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("No text provided") or "Import failed: No text provided"))
     return
   end
   
@@ -574,7 +521,7 @@ function ChatLinks:DoImport()
   -- Use existing import worker
   local ImportWorker = BookArchivist.ImportWorker
   if not ImportWorker then
-    print("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("Import system unavailable") or "Import failed: Import system unavailable"))
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("Import system unavailable") or "Import failed: Import system unavailable"))
     return
   end
   
@@ -584,10 +531,10 @@ function ChatLinks:DoImport()
     local bookTitle = self.importPrompt.bookTitle or "book"
     if stats and (stats.newCount or 0) > 0 then
       local successMsg = L["IMPORT_SUCCESS"] or "Imported: %s"
-      print("|cFF4A7EBBBookArchivist:|r " .. successMsg:format(bookTitle))
+      BookArchivist:DebugPrint("|cFF4A7EBBBookArchivist:|r " .. successMsg:format(bookTitle))
     else
       local warningMsg = L["IMPORT_COMPLETED_WITH_WARNINGS"] or "Import completed with warnings"
-      print("|cFFFFAA00BookArchivist:|r " .. warningMsg)
+      BookArchivist:DebugPrint("|cFFFFAA00BookArchivist:|r " .. warningMsg)
     end
     
     -- Refresh UI if open
@@ -601,7 +548,7 @@ function ChatLinks:DoImport()
   
   worker.onError = function(err)
     local errorMsg = L["IMPORT_FAILED"] or "Import failed: %s"
-    print("|cFFFF0000BookArchivist:|r " .. errorMsg:format(err or "unknown error"))
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. errorMsg:format(err or "unknown error"))
     self.importPrompt:Hide()
     self.importPrompt.pendingBook = nil
   end
