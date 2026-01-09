@@ -971,7 +971,7 @@ CreateDebugModeButtons = function()
 	debugButtonContainer = container
 	
 	local containerWidth = BUTTON_WIDTH + (SPACING_SECTION * 2)
-	local containerHeight = TITLE_HEIGHT + (BUTTON_HEIGHT * 4) + (SPACING_STANDARD * 3) + (SPACING_SECTION * 2)
+	local containerHeight = TITLE_HEIGHT + (BUTTON_HEIGHT * 5) + (SPACING_STANDARD * 4) + (SPACING_SECTION * 3)
 	
 	container:SetSize(containerWidth, containerHeight)
 	container:SetPoint("TOPRIGHT", mainUIFrame, "TOPLEFT", -SPACING_SECTION, 0)
@@ -1048,6 +1048,91 @@ CreateDebugModeButtons = function()
 		
 		table.insert(debugModeButtons, btn)
 	end
+	
+	-- Add "Copy Debug Log" button after a section gap
+	local copyBtn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+	copyBtn:SetSize(BUTTON_WIDTH, BUTTON_HEIGHT)
+	
+	local copyBtnY = firstButtonY - (#buttonData * (BUTTON_HEIGHT + SPACING_STANDARD)) - SPACING_SECTION
+	copyBtn:SetPoint("TOP", container, "TOP", 0, copyBtnY)
+	copyBtn:SetText("Copy Log")
+	
+	-- Distinctive color for utility button
+	local normalTexture = copyBtn:GetNormalTexture()
+	if normalTexture then
+		normalTexture:SetVertexColor(0.8, 0.4, 1, 0.9)
+	end
+	
+	copyBtn:SetScript("OnEnter", function(self)
+		local highlightTexture = self:GetHighlightTexture()
+		if highlightTexture then
+			highlightTexture:SetVertexColor(1, 1, 1, 0.3)
+		end
+		
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:ClearLines()
+		GameTooltip:AddLine("Copy Debug Log", 1, 1, 1)
+		GameTooltip:AddLine("Copy all debug messages to clipboard", 0.7, 0.7, 0.7, true)
+		GameTooltip:Show()
+	end)
+	
+	copyBtn:SetScript("OnLeave", function()
+		GameTooltip:Hide()
+	end)
+	
+	copyBtn:SetScript("OnClick", function()
+		local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+		if not Internal or not Internal.getDebugLog then
+			chatMessage("|cFFFF0000[DEV] Debug log not available|r")
+			return
+		end
+		
+		local log = Internal.getDebugLog()
+		if not log or #log == 0 then
+			chatMessage("|cFFFFFF00[DEV] Debug log is empty|r")
+			return
+		end
+		
+		-- Format log entries with timestamps
+		local lines = {}
+		for _, entry in ipairs(log) do
+			local timeStr = date("%H:%M:%S", entry.timestamp)
+			table.insert(lines, string.format("[%s] %s", timeStr, entry.message))
+		end
+		
+		local logText = table.concat(lines, "\n")
+		
+		-- Copy to clipboard using edit box trick
+		local editBox = CreateFrame("EditBox", nil, UIParent)
+		editBox:SetText(logText)
+		editBox:SetFocus()
+		editBox:HighlightText()
+		editBox:SetScript("OnEscapePressed", function(self)
+			self:ClearFocus()
+			self:Hide()
+		end)
+		
+		-- Give user time to Ctrl+C
+		C_Timer.After(0.1, function()
+			if editBox then
+				editBox:HighlightText()
+				editBox:SetFocus()
+			end
+		end)
+		
+		-- Auto-cleanup after 5 seconds
+		C_Timer.After(5, function()
+			if editBox then
+				editBox:Hide()
+				editBox:SetParent(nil)
+			end
+		end)
+		
+		chatMessage(string.format("|cFF00FF00[DEV] Copied %d debug log entries to clipboard (Ctrl+C)|r", #log))
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+	end)
+	
+	table.insert(debugModeButtons, copyBtn)
 	
 	container:Hide()  -- Start hidden
 	
