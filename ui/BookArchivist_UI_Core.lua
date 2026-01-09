@@ -31,39 +31,39 @@ local function chatMessage(msg)
 end
 Internal.chatMessage = chatMessage
 
-local function pullDebugPreference()
-	if addonRoot and type(addonRoot.IsDebugEnabled) == "function" then
-		local ok, value = pcall(addonRoot.IsDebugEnabled, addonRoot)
-		if ok then
-			return value and true or false
-		end
-	end
-	return false
-end
-
-local DEBUG_LOGGING = pullDebugPreference()
-
+-- Debug functions now delegate to BookArchivist core
 local function debugMessage(msg)
-	if DEBUG_LOGGING then
-		chatMessage(msg)
+	if addonRoot and type(addonRoot.DebugMessage) == "function" then
+		addonRoot:DebugMessage(msg)
 	end
 end
 Internal.debugMessage = debugMessage
 
 local function debugPrint(...)
-	if not DEBUG_LOGGING then
-		return
+	if addonRoot and type(addonRoot.DebugPrint) == "function" then
+		addonRoot:DebugPrint(...)
 	end
-	local parts = {}
-	for i = 1, select("#", ...) do
-		parts[i] = tostring(select(i, ...))
-	end
-	chatMessage(table.concat(parts, " "))
 end
 Internal.debugPrint = debugPrint
 
+function Internal.getDebugLog()
+	if addonRoot and type(addonRoot.GetDebugLog) == "function" then
+		return addonRoot:GetDebugLog()
+	end
+	return {}
+end
+
+function Internal.clearDebugLog()
+	if addonRoot and type(addonRoot.ClearDebugLog) == "function" then
+		addonRoot:ClearDebugLog()
+	end
+end
+
 function addonRoot.EnableDebugLogging(state, skipPersist)
-	DEBUG_LOGGING = state and true or false
+	-- Clear log when disabling debug mode
+	if not state and addonRoot and type(addonRoot.ClearDebugLog) == "function" then
+		addonRoot:ClearDebugLog()
+	end
 	if not skipPersist and type(addonRoot.SetDebugEnabled) == "function" then
 		addonRoot:SetDebugEnabled(DEBUG_LOGGING)
 		return

@@ -13,29 +13,65 @@ local MinimapModule = BookArchivist.Minimap
 local TooltipModule = BookArchivist.Tooltip
 local ChatLinks = BookArchivist.ChatLinks
 
-local function callInternalDebug(method, ...)
-  local ui = BookArchivist.UI
-  local internal = ui and ui.Internal
-  if not internal then
-    return nil
+-- Debug log storage (available before UI loads)
+local debugLog = {}
+local MAX_DEBUG_LOG_ENTRIES = 5000
+
+local function storeDebugMessage(msg)
+  table.insert(debugLog, {
+    timestamp = time(),
+    message = msg
+  })
+  if #debugLog > MAX_DEBUG_LOG_ENTRIES then
+    table.remove(debugLog, 1)
   end
-  local fn = internal[method]
-  if type(fn) == "function" then
-    return fn(...)
+end
+
+local function chatMessage(msg)
+  if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+    DEFAULT_CHAT_FRAME:AddMessage(msg)
+  elseif type(print) == "function" then
+    print(msg)
   end
-  return nil
 end
 
 function BookArchivist:DebugPrint(...)
-  return callInternalDebug("debugPrint", ...)
+  if not self:IsDebugEnabled() then
+    return
+  end
+  local parts = {}
+  for i = 1, select("#", ...) do
+    parts[i] = tostring(select(i, ...))
+  end
+  local msg = table.concat(parts, " ")
+  storeDebugMessage(msg)
+  chatMessage(msg)
 end
 
-function BookArchivist:DebugMessage(...)
-  return callInternalDebug("debugMessage", ...)
+function BookArchivist:DebugMessage(msg)
+  if not self:IsDebugEnabled() then
+    return
+  end
+  storeDebugMessage(msg)
+  chatMessage(msg)
+end
+
+function BookArchivist:GetDebugLog()
+  return debugLog
+end
+
+function BookArchivist:ClearDebugLog()
+  debugLog = {}
 end
 
 function BookArchivist:LogError(...)
-  return callInternalDebug("logError", ...)
+  -- Try UI.Internal first for compatibility, fallback to simple error
+  local ui = self.UI
+  local internal = ui and ui.Internal
+  if internal and type(internal.logError) == "function" then
+    return internal.logError(...)
+  end
+  error(tostring(select(1, ...)) or "Unknown error", 2)
 end
 
 local globalCreateFrame = type(_G) == "table" and rawget(_G, "CreateFrame") or nil
@@ -184,18 +220,6 @@ function BookArchivist:SetResumeLastPageEnabled(state)
   syncOptionsUI()
 end
 
-function BookArchivist:GetListWidth()
-  if Core and Core.GetListWidth then
-    return Core:GetListWidth()
-  end
-  return 360
-end
-
-function BookArchivist:SetListWidth(width)
-  if Core and Core.SetListWidth then
-    Core:SetListWidth(width)
-  end
-end
 
 function BookArchivist:GetListPageSize()
   if Core and Core.GetListPageSize then
