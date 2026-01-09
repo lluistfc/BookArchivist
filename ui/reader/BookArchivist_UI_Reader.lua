@@ -479,6 +479,13 @@ end
 function ReaderUI:RenderSelected()
   local ui = state.readerBlock or (ctx and ctx.getUIFrame and ctx.getUIFrame())
   if not ui then return end
+  
+  -- Wait for content to be ready if using async frame building
+  if ui.__contentReady == false or ui.__contentBuilding then
+    debugPrint("[BookArchivist] renderSelected deferred (content still building)")
+    return
+  end
+  
   if not state.bookTitle then
     state.bookTitle = getWidget("bookTitle")
   end

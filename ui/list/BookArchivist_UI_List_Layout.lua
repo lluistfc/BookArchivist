@@ -105,6 +105,114 @@ function ListUI:EnsureListTipRow()
   return row
 end
 
+function ListUI:EnsureListBreadcrumbRow()
+  local row = self:GetFrame("breadcrumbRow")
+  if row then
+    return row
+  end
+  local listBlock = self:GetFrame("listBlock")
+  if not listBlock then
+    return nil
+  end
+  local headerRow = self:EnsureListHeaderRow()
+  if not headerRow then
+    return nil
+  end
+  
+  row = self:SafeCreateFrame("Frame", nil, listBlock)
+  if not row then
+    return nil
+  end
+  
+  -- Set frame strata to ensure breadcrumbs appear above ScrollBox content
+  row:SetFrameStrata("MEDIUM")
+  row:SetFrameLevel(100) -- Higher than default to appear on top
+  
+  local gap = Metrics.GAP_M or 10
+  local inset = Metrics.PAD_INSET or Metrics.PAD or 8
+  row:SetPoint("TOPLEFT", headerRow, "BOTTOMLEFT", 0, -gap)
+  row:SetPoint("TOPRIGHT", headerRow, "BOTTOMRIGHT", 0, -gap)
+  row:SetHeight(52) -- Fixed height for 3 lines + padding
+  self:SetFrame("breadcrumbRow", row)
+  
+  -- Create a subtle background
+  local bg = row:CreateTexture(nil, "BACKGROUND")
+  bg:SetAllPoints(row)
+  bg:SetColorTexture(0, 0, 0, 0.3) -- Subtle dark background
+  
+  -- Create 3 FontString lines for breadcrumb display
+  local lineHeight = 14
+  local lineGap = 2
+  local textPadding = 6
+  
+  local line1 = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  line1:SetPoint("TOPLEFT", row, "TOPLEFT", textPadding, -textPadding)
+  line1:SetPoint("TOPRIGHT", row, "TOPRIGHT", -textPadding, -textPadding)
+  line1:SetHeight(lineHeight)
+  line1:SetJustifyH("LEFT")
+  line1:SetWordWrap(false)
+  line1:SetMaxLines(1)
+  self:SetFrame("breadcrumbLine1", line1)
+  
+  local line2 = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  line2:SetPoint("TOPLEFT", line1, "BOTTOMLEFT", 0, -lineGap)
+  line2:SetPoint("TOPRIGHT", line1, "BOTTOMRIGHT", 0, -lineGap)
+  line2:SetHeight(lineHeight)
+  line2:SetJustifyH("LEFT")
+  line2:SetWordWrap(false)
+  line2:SetMaxLines(1)
+  self:SetFrame("breadcrumbLine2", line2)
+  
+  local line3 = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  line3:SetPoint("TOPLEFT", line2, "BOTTOMLEFT", 0, -lineGap)
+  line3:SetPoint("TOPRIGHT", line2, "BOTTOMRIGHT", 0, -lineGap)
+  line3:SetHeight(lineHeight)
+  line3:SetJustifyH("LEFT")
+  line3:SetWordWrap(false)
+  line3:SetMaxLines(1)
+  self:SetFrame("breadcrumbLine3", line3)
+  
+  return row
+end
+
+function ListUI:UpdateListScrollRowAnchors()
+  local row = self:GetFrame("listScrollRow")
+  if not row then
+    return
+  end
+  
+  local tipRow = self:GetFrame("listTipRow")
+  if not tipRow then
+    return
+  end
+  
+  local gap = Metrics.LIST_SCROLL_GAP or 0
+  local mode = self:GetListMode()
+  local modes = self:GetListModes()
+  
+  -- Determine top anchor based on mode and breadcrumb visibility
+  local breadcrumbRow = self:GetFrame("breadcrumbRow")
+  local topAnchor
+  
+  if mode == modes.LOCATIONS and breadcrumbRow and breadcrumbRow:IsShown() then
+    -- In locations mode with breadcrumbs visible, anchor below breadcrumbs
+    topAnchor = breadcrumbRow
+  else
+    -- In books mode or no breadcrumbs, anchor below header
+    topAnchor = self:EnsureListHeaderRow()
+  end
+  
+  if not topAnchor then
+    return
+  end
+  
+  ClearAnchors(row)
+  row:SetPoint("TOPLEFT", topAnchor, "BOTTOMLEFT", 0, -gap)
+  row:SetPoint("TOPRIGHT", topAnchor, "BOTTOMRIGHT", 0, -gap)
+  row:SetPoint("BOTTOMLEFT", tipRow, "TOPLEFT", 0, gap * -1)
+  row:SetPoint("BOTTOMRIGHT", tipRow, "TOPRIGHT", 0, gap * -1)
+end
+
 function ListUI:EnsureListScrollRow()
   local row = self:GetFrame("listScrollRow")
   if row then
@@ -122,17 +230,13 @@ function ListUI:EnsureListScrollRow()
   if not row then
     return nil
   end
-  local gap = Metrics.LIST_SCROLL_GAP or 0 -- zero gap so tabs sit directly on the separator line
-  local inset = Metrics.PAD_INSET or Metrics.PAD or 8
-  ClearAnchors(row)
-  row:SetPoint("TOPLEFT", self:EnsureListHeaderRow(), "BOTTOMLEFT", 0, -gap)
-  row:SetPoint("TOPRIGHT", self:EnsureListHeaderRow(), "BOTTOMRIGHT", 0, -gap)
-  row:SetPoint("BOTTOMLEFT", tipRow, "TOPLEFT", 0, gap * -1)
-  row:SetPoint("BOTTOMRIGHT", tipRow, "TOPRIGHT", 0, gap * -1)
   self:SetFrame("listScrollRow", row)
   if Internal and Internal.registerGridTarget then
     Internal.registerGridTarget("list-scroll-row", row)
   end
+  
+  -- Set initial anchors
+  self:UpdateListScrollRowAnchors()
   return row
 end
 
@@ -239,10 +343,12 @@ function ListUI:Create(uiFrame)
   end
   if headerCount then
     headerCount:SetPoint("LEFT", countHost, "LEFT", 0, 0)
+    headerCount:SetPoint("RIGHT", countHost, "RIGHT", 0, 0)
     headerCount:SetJustifyH("LEFT")
     headerCount:SetJustifyV("MIDDLE")
     headerCount:SetText(t("BOOK_LIST_SUBHEADER"))
     headerCount:SetWordWrap(false)
+    headerCount:SetMaxLines(1)
     self:SetFrame("headerCountText", headerCount)
   else
     self:LogError("Unable to create header count text (HeaderLeftBottom missing?)")
@@ -574,5 +680,15 @@ function ListUI:UpdateListModeUI()
 
   if self.UpdateCountsDisplay then
     self:UpdateCountsDisplay()
+  end
+  
+  -- Update breadcrumb display for location mode
+  if self.UpdateLocationBreadcrumbUI then
+    self:UpdateLocationBreadcrumbUI()
+  end
+  
+  -- Re-anchor scroll row based on breadcrumb visibility
+  if self.UpdateListScrollRowAnchors then
+    self:UpdateListScrollRowAnchors()
   end
 end

@@ -54,21 +54,18 @@ local DEFAULT_PORTRAIT = FrameUI.DEFAULT_PORTRAIT or "Interface\\AddOns\\BookArc
 local OPTIONS_TOOLTIP_TITLE = t("Book Archivist Options")
 local OPTIONS_TOOLTIP_DESC = t("Open the settings panel")
 
-local function configureDrag(frame)
-	frame:SetMovable(true)
-	frame:EnableMouse(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-	frame:SetClampedToScreen(true)
-end
-
 local function applyPortrait(frame)
+	-- PortraitFrameTemplate already has the portrait structure
 	if frame.PortraitContainer and frame.PortraitContainer.portrait then
 		frame.portrait = frame.PortraitContainer.portrait
 	end
 	if frame.portrait then
 		frame.portrait:SetTexture(DEFAULT_PORTRAIT)
+	end
+	
+	-- Register portrait container with grid system for UI debugging
+	if frame.PortraitContainer and Internal and Internal.registerGridTarget then
+		Internal.registerGridTarget("portrait-container", frame.PortraitContainer)
 	end
 end
 
@@ -78,15 +75,16 @@ local function configureTitle(frame, title)
 	end
 end
 
-local function tint(texture, r, g, b)
-	if not texture then
-		return
-	end
-	texture:SetTexCoord(0, 1, 0, 1)
-	texture:SetVertexColor(r, g, b, 1)
-end
-
 local function configureOptionsButton(frame, safeCreateFrame, onOptions)
+	-- Local helper for tinting button textures
+	local function tint(texture, r, g, b)
+		if not texture then
+			return
+		end
+		texture:SetTexCoord(0, 1, 0, 1)
+		texture:SetVertexColor(r, g, b, 1)
+	end
+	
 	local button = safeCreateFrame("Button", "BookArchivistCogButton", frame, "UIPanelCloseButton")
 	if not button then
 		return
@@ -247,7 +245,6 @@ local function createHeaderBar(frame, safeCreateFrame)
 	return header
 end
 
-FrameUI.ConfigureDrag = FrameUI.ConfigureDrag or configureDrag
 FrameUI.ApplyPortrait = FrameUI.ApplyPortrait or applyPortrait
 FrameUI.ConfigureTitle = FrameUI.ConfigureTitle or configureTitle
 FrameUI.ConfigureOptionsButton = FrameUI.ConfigureOptionsButton or configureOptionsButton

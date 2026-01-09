@@ -7,6 +7,11 @@ local function t(key)
   return (L and L[key]) or key
 end
 
+-- Location tree cache
+-- Cache key: categoryId|favoritesOnly|searchText
+local treeCache = {}
+local lastCacheKey = nil
+
 local function shouldIncludeEntry(self, entry)
   if not entry then
     return false
@@ -24,15 +29,19 @@ local function normalizeLocationLabel(label)
   return label
 end
 
-local function buildLocationTreeFromDB(self, db)
+local function buildLocationTreeFromDB(self, db, onProgress)
   local root = {
     name = "__ROOT__",
     depth = 0,
     children = {},
     childNames = {},
+    totalBooks = 0, -- Initialize for incremental updates
   }
 
   if not db or not (db.booksById or db.books) then
+    if BookArchivist.LogInfo then
+      BookArchivist:LogInfo("buildLocationTreeFromDB: No db or books")
+    end
     return root
   end
 
@@ -43,73 +52,128 @@ local function buildLocationTreeFromDB(self, db)
   else
     books = db.books or {}
   end
-  for _, key in ipairs(order) do
-	local entry = books[key]
-    if shouldIncludeEntry(self, entry) then
-      local chain = entry.location and entry.location.zoneChain
-      if not chain or #chain == 0 then
-        local fallback = entry.location and entry.location.zoneText
-        if fallback and fallback ~= "" then
-          chain = { fallback }
-        else
-          chain = { "Unknown Location" }
-        end
-      end
+  
+  -- Phase 2: Use async Iterator for tree building
+  local Iterator = BookArchivist and BookArchivist.Iterator
+  if not Iterator then
+    if BookArchivist.LogError then
+      BookArchivist:LogError("Iterator not available! Falling back to empty tree.")
+    end
+    return root
+  end
+  
+  if #order == 0 then
+    if BookArchivist.LogInfo then
+      BookArchivist:LogInfo("buildLocationTreeFromDB: Empty order array")
+    end
+    return root
+  end
+  
+  if BookArchivist.LogInfo then
+    BookArchivist:LogInfo(string.format("buildLocationTreeFromDB: Starting async build for %d books", #order))
+  end
+  
+  -- Build tree asynchronously
+  return {
+    root = root,
+    isAsync = true,
+    order = order,
+    books = books,
+    self = self,
+    onProgress = onProgress,
+  }
+end
 
-      local node = root
-      for _, segment in ipairs(chain) do
-        local name = normalizeLocationLabel(segment)
-        node.children = node.children or {}
-        node.childNames = node.childNames or {}
-        if not node.children[name] then
-          node.children[name] = {
-            name = name,
-            depth = (node.depth or 0) + 1,
-            parent = node,
-            children = {},
-            childNames = {},
-            books = {},
-          }
-          table.insert(node.childNames, name)
-        end
-        node = node.children[name]
-      end
-
-      node.books = node.books or {}
-      table.insert(node.books, key)
+local function processBookIntoTree(idx, bookKey, context)
+  local root = context.root
+  local books = context.books
+  local self = context.self
+  
+  -- In array mode: idx is the index, bookKey is the actual book ID
+  local entry = books[bookKey]
+  if not shouldIncludeEntry(self, entry) then
+    return true -- Continue
+  end
+  
+  local chain = entry.location and entry.location.zoneChain
+  if not chain or #chain == 0 then
+    local fallback = entry.location and entry.location.zoneText
+    if fallback and fallback ~= "" then
+      chain = { fallback }
+    else
+      chain = { "Unknown Location" }
     end
   end
 
-  local function sortNode(node)
-    if not node or not node.childNames or #node.childNames == 0 then
-      return
+  -- Track nodes we visit to update totals incrementally
+  local visitedNodes = {}
+  
+  local node = root
+  table.insert(visitedNodes, node)
+  
+  for _, segment in ipairs(chain) do
+    local name = normalizeLocationLabel(segment)
+    node.children = node.children or {}
+    node.childNames = node.childNames or {}
+    if not node.children[name] then
+      node.children[name] = {
+        name = name,
+        depth = (node.depth or 0) + 1,
+        parent = node,
+        children = {},
+        childNames = {},
+        books = {},
+        totalBooks = 0, -- Initialize total
+      }
+      table.insert(node.childNames, name)
     end
-    table.sort(node.childNames, function(a, b)
-      return a:lower() < b:lower()
-    end)
+    node = node.children[name]
+    table.insert(visitedNodes, node)
+  end
+
+  node.books = node.books or {}
+  table.insert(node.books, bookKey)
+  
+  -- Incrementally update totals for all nodes in the path
+  -- This eliminates the need for recursive markTotals at the end
+  for _, visitedNode in ipairs(visitedNodes) do
+    visitedNode.totalBooks = (visitedNode.totalBooks or 0) + 1
+  end
+  
+  return true -- Continue iteration
+end
+
+-- Phase 2: Lazy sorting - only sort when needed, not during build
+local function sortNodeLazy(node)
+  if not node or not node.childNames or #node.childNames == 0 then
+    return
+  end
+  
+  -- Check if already sorted
+  if node.__sorted then
+    return
+  end
+  
+  table.sort(node.childNames, function(a, b)
+    return a:lower() < b:lower()
+  end)
+  
+  node.__sorted = true
+end
+
+local function markTotals(node)
+  if not node then
+    return 0
+  end
+  local total = node.books and #node.books or 0
+  if node.childNames then
     for _, childName in ipairs(node.childNames) do
-      sortNode(node.children and node.children[childName])
+      local child = node.children and node.children[childName]
+      total = total + markTotals(child)
     end
   end
-
-  sortNode(root)
-  local function markTotals(node)
-    if not node then
-      return 0
-    end
-    local total = node.books and #node.books or 0
-    if node.childNames then
-      for _, childName in ipairs(node.childNames) do
-        local child = node.children and node.children[childName]
-        total = total + markTotals(child)
-      end
-    end
-    node.totalBooks = total
-    return total
-  end
-
-  markTotals(root)
-  return root
+  node.totalBooks = total
+  return total
 end
 
 local function getLocationState(self)
@@ -137,6 +201,8 @@ local function ensureLocationPathValid(state)
     local segment = path[i]
     if node.children and node.children[segment] then
       node = node.children[segment]
+      -- Phase 2: Sort this node lazily before traversing
+      sortNodeLazy(node)
     else
       for j = #path, i, -1 do
         table.remove(path, j)
@@ -147,37 +213,66 @@ local function ensureLocationPathValid(state)
   state.activeNode = node
 end
 
-local function rebuildLocationRows(state)
+local function rebuildLocationRows(state, listUI, pageSize, currentPage)
   local rows = {}
   local node = state.activeNode or state.root
   if not node then
     state.rows = rows
+    state.totalRows = 0
+    state.currentPage = 1
+    state.totalPages = 1
     return
   end
+  
+  -- Phase 2: Sort current node lazily
+  sortNodeLazy(node)
 
   local path = state.path or {}
+  
+  local childNames = node.childNames or {}
+  local books = node.books or {}
+  
+  -- Determine what we're showing
+  local hasChildren = childNames and #childNames > 0
+  local items = hasChildren and childNames or books
+  
+  -- Use shared pagination helper
+  local paginated, totalItems, page, totalPages, startIdx, endIdx = listUI:PaginateArray(items, pageSize, currentPage)
+  
+  -- Add back button if not at root
   if #path > 0 then
     table.insert(rows, { kind = "back" })
   end
 
-  local childNames = node.childNames or {}
-  if childNames and #childNames > 0 then
-    for _, childName in ipairs(childNames) do
+  -- Add paginated items
+  if hasChildren then
+    for _, childName in ipairs(paginated) do
       table.insert(rows, { kind = "location", name = childName, node = node.children and node.children[childName] })
     end
   else
-    local books = node.books or {}
-    for _, key in ipairs(books) do
+    for _, key in ipairs(paginated) do
       table.insert(rows, { kind = "book", key = key })
     end
   end
 
   state.rows = rows
+  state.totalRows = totalItems
+  state.currentPage = page
+  state.totalPages = totalPages
 end
 
 function ListUI:GetLocationRows()
   local state = getLocationState(self)
   return state.rows or {}
+end
+
+function ListUI:GetLocationPagination()
+  local state = getLocationState(self)
+  return {
+    totalRows = state.totalRows or 0,
+    currentPage = state.currentPage or 1,
+    totalPages = state.totalPages or 1
+  }
 end
 
 function ListUI:GetLocationBreadcrumbText()
@@ -189,13 +284,88 @@ function ListUI:GetLocationBreadcrumbText()
   return table.concat(path, " > ")
 end
 
+function ListUI:GetLocationBreadcrumbSegments()
+  local state = getLocationState(self)
+  local path = state.path or {}
+  if #path == 0 then
+    return { t("LOCATIONS_BREADCRUMB_ROOT") }
+  end
+  return path
+end
+
+function ListUI:GetLocationBreadcrumbDisplayLines(maxLines)
+  maxLines = maxLines or 3
+  local segments = self:GetLocationBreadcrumbSegments()
+  local numSegments = #segments
+  
+  if numSegments == 1 then
+    return { segments[1], "", "" }
+  elseif numSegments == 2 then
+    return { segments[1], "› " .. segments[2], "" }
+  elseif numSegments == 3 then
+    return { segments[1], "› " .. segments[2], "› " .. segments[3] }
+  else
+    -- More than 3 segments: show ellipsis + last 2
+    return { "…", "› " .. segments[numSegments - 1], "› " .. segments[numSegments] }
+  end
+end
+
+function ListUI:UpdateLocationBreadcrumbUI()
+  local breadcrumbRow = self:GetFrame("breadcrumbRow")
+  local modes = self:GetListModes()
+  local mode = self:GetListMode()
+  
+  -- Hide breadcrumbs in Books mode
+  if mode ~= modes.LOCATIONS then
+    if breadcrumbRow then
+      breadcrumbRow:Hide()
+    end
+    return
+  end
+  
+  -- Ensure breadcrumb row exists
+  if not breadcrumbRow then
+    breadcrumbRow = self:EnsureListBreadcrumbRow()
+  end
+  if not breadcrumbRow then
+    return
+  end
+  
+  breadcrumbRow:Show()
+  
+  -- Get font strings
+  local line1 = self:GetFrame("breadcrumbLine1")
+  local line2 = self:GetFrame("breadcrumbLine2")
+  local line3 = self:GetFrame("breadcrumbLine3")
+  
+  if not (line1 and line2 and line3) then
+    return
+  end
+  
+  -- Get display lines
+  local lines = self:GetLocationBreadcrumbDisplayLines(3)
+  
+  -- Dim color for lines 1 and 2, emphasized gold for line 3
+  local dimColor = "|cFFAAAAAA"
+  local emphasizedColor = "|cFFFFD100"
+  local resetColor = "|r"
+  
+  line1:SetText(lines[1] ~= "" and (dimColor .. lines[1] .. resetColor) or "")
+  line2:SetText(lines[2] ~= "" and (dimColor .. lines[2] .. resetColor) or "")
+  line3:SetText(lines[3] ~= "" and (emphasizedColor .. lines[3] .. resetColor) or "")
+end
+
 function ListUI:NavigateInto(segment)
   local state = getLocationState(self)
   segment = normalizeLocationLabel(segment)
   if segment == "" then return end
   state.path[#state.path + 1] = segment
+  state.currentPage = 1 -- Reset to page 1 when navigating
   ensureLocationPathValid(state)
-  rebuildLocationRows(state)
+  local pageSize = self:GetPageSize()
+  local page = state.currentPage or 1
+  rebuildLocationRows(state, self, pageSize, page)
+  self:UpdateLocationBreadcrumbUI()
 end
 
 function ListUI:NavigateUp()
@@ -203,9 +373,11 @@ function ListUI:NavigateUp()
   local path = state.path
   if not path or #path == 0 then return end
   table.remove(path)
+  state.currentPage = 1 -- Reset to page 1 when navigating
   ensureLocationPathValid(state)
-  rebuildLocationRows(state)
-end
+  local pageSize = self:GetPageSize()
+  local page = state.currentPage or 1
+  rebuildLocationRows(state, self, pageSize, page)  self:UpdateLocationBreadcrumbUI()end
 
 function ListUI:RebuildLocationTree()
   local addon = self:GetAddon()
@@ -218,9 +390,200 @@ function ListUI:RebuildLocationTree()
   end
 
   local db = addon:GetDB()
-  state.root = buildLocationTreeFromDB(self, db)
-  ensureLocationPathValid(state)
-  rebuildLocationRows(state)
+  
+  -- Phase 2: Generate cache key from current filters
+  local categoryId = "__all__"
+  if self.GetCategoryId then
+    categoryId = self:GetCategoryId() or "__all__"
+  end
+  
+  local filters = {}
+  if self.GetFiltersState then
+    filters = self:GetFiltersState() or {}
+  end
+  
+  local favoritesOnly = filters.favoritesOnly and "true" or "false"
+  local searchText = (self.__state and self.__state.searchText) or ""
+  local cacheKey = categoryId .. "|" .. favoritesOnly .. "|" .. searchText
+  
+  -- Check cache first
+  if lastCacheKey == cacheKey then
+    if BookArchivist.LogInfo then
+      BookArchivist:LogInfo("Using cached location tree")
+    end
+    state.root = treeCache[cacheKey]
+    state.currentPage = 1 -- Reset to page 1
+    ensureLocationPathValid(state)
+    local pageSize = self:GetPageSize()
+    local page = state.currentPage or 1
+    rebuildLocationRows(state, self, pageSize, page)
+    return
+  end
+  
+  -- Phase 2: Show loading progress
+  local mainFrame = _G["BookArchivistFrame"]
+  
+  -- Start async tree build
+  local buildResult = buildLocationTreeFromDB(self, db, nil)
+  
+  if not buildResult.isAsync then
+    -- Fallback: synchronous (empty tree)
+    if BookArchivist.LogInfo then
+      BookArchivist:LogInfo("RebuildLocationTree: Using synchronous fallback")
+    end
+    treeCache[cacheKey] = buildResult
+    lastCacheKey = cacheKey
+    state.currentPage = 1
+    ensureLocationPathValid(state)
+    local pageSize = self:GetPageSize()
+    local page = state.currentPage or 1
+    rebuildLocationRows(state, self, pageSize, page)
+    self:UpdateLocationBreadcrumbUI()
+    
+    -- Enable Locations tab now that tree is built
+    if self.SetLocationsTabEnabled then
+      self:SetLocationsTabEnabled(true)
+    end
+    
+    return
+  end
+  
+  -- Async path: use Iterator
+  local Iterator = BookArchivist.Iterator
+  local root = buildResult.root
+  local order = buildResult.order
+  local books = buildResult.books
+  
+  if BookArchivist.LogInfo then
+    BookArchivist:LogInfo(string.format("RebuildLocationTree: Starting async build with %d books", #order))
+  end
+  
+  -- Show loading indicator
+  if mainFrame and mainFrame.UpdateLoadingProgress then
+    mainFrame:UpdateLoadingProgress("building", nil)
+  end
+  
+  -- Set loading state to prevent tab switches
+  self.__state.isLoading = true
+  
+  -- Disable tabs during async tree build
+  if self.SetTabsEnabled then
+    self:SetTabsEnabled(false)
+  end
+  
+  -- Cancel any existing tree build
+  if Iterator:IsRunning("build_location_tree") then
+    if BookArchivist.LogInfo then
+      BookArchivist:LogInfo("RebuildLocationTree: Cancelling existing build")
+    end
+    Iterator:Cancel("build_location_tree")
+  end
+  
+  Iterator:Start("build_location_tree", order, function(idx, bookKey, context)
+    -- Initialize context on first call
+    if not context.root then
+      context.root = root
+      context.books = books
+      context.self = self
+    end
+    return processBookIntoTree(idx, bookKey, context)
+  end, {
+    chunkSize = 50, -- Process 50 books per chunk
+    budgetMs = 5,   -- Max 5ms per frame
+    isArray = true, -- Phase 3: order is already an array, use fast path
+    onProgress = function(progress, current, total)
+      if mainFrame and mainFrame.UpdateLoadingProgress then
+        mainFrame:UpdateLoadingProgress("filtering", progress)
+      end
+    end,
+    onComplete = function(context)
+      -- Totals already computed incrementally during tree build
+      -- No need for recursive markTotals - eliminating the freeze!
+      
+      if BookArchivist.LogInfo then
+        BookArchivist:LogInfo(string.format("Location tree async build complete: %d books processed, root has %d total", #order, root.totalBooks or 0))
+      end
+      
+      -- Cache the result
+      treeCache[cacheKey] = root
+      lastCacheKey = cacheKey
+      state.currentPage = 1 -- Start at page 1
+      ensureLocationPathValid(state)
+      
+      if BookArchivist.LogInfo then
+        BookArchivist:LogInfo("Rebuilding location rows...")
+      end
+      
+      -- Use pagination parameters from ListUI
+      local pageSize = self.GetPageSize and self:GetPageSize() or 100
+      local page = state.currentPage or 1
+      rebuildLocationRows(state, self, pageSize, page)
+      
+      -- Update breadcrumb UI
+      if self.UpdateLocationBreadcrumbUI then
+        self:UpdateLocationBreadcrumbUI()
+      end
+      
+      -- Clear loading state
+      self.__state.isLoading = false
+      
+      -- Enable Locations tab now that tree is built
+      if self.SetLocationsTabEnabled then
+        self:SetLocationsTabEnabled(true)
+      end
+      
+      -- Re-enable tabs after tree build
+      if self.SetTabsEnabled then
+        self:SetTabsEnabled(true)
+      end
+      
+      if BookArchivist.LogInfo then
+        BookArchivist:LogInfo(string.format("Location rows built: %d rows", #(state.rows or {})))
+      end
+      
+      -- Hide loading indicator
+      if mainFrame and mainFrame.UpdateLoadingProgress then
+        mainFrame:UpdateLoadingProgress("ready")
+      end
+      
+      -- Defer UpdateList to next frame to avoid blocking
+      -- This prevents freeze when adding 1000+ rows to ScrollBox
+      local timerAfter = C_Timer and C_Timer.After
+      if timerAfter and self.UpdateList then
+        if BookArchivist.LogInfo then
+          BookArchivist:LogInfo("Deferring UpdateList to next frame...")
+        end
+        timerAfter(0.05, function()
+          if self.UpdateList then
+            self:UpdateList()
+          end
+          if BookArchivist.LogInfo then
+            BookArchivist:LogInfo("Location tree build complete!")
+          end
+        end)
+      else
+        -- Fallback: immediate update
+        if self.UpdateList then
+          if BookArchivist.LogInfo then
+            BookArchivist:LogInfo("Calling UpdateList immediately (no C_Timer)...")
+          end
+          self:UpdateList()
+        end
+        if BookArchivist.LogInfo then
+          BookArchivist:LogInfo("Location tree build complete!")
+        end
+      end
+    end
+  })
+end
+
+-- Phase 2: Invalidate location tree cache
+function ListUI:InvalidateLocationTreeCache()
+  treeCache = {}
+  lastCacheKey = nil
+  if BookArchivist.LogInfo then
+    BookArchivist:LogInfo("Location tree cache cleared")
+  end
 end
 
 local function collectBooksRecursive(node, results)

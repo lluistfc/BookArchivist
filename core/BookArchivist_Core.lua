@@ -145,64 +145,77 @@ local function ensureDB()
   BookArchivistDB.indexes.titleToBookIds = BookArchivistDB.indexes.titleToBookIds or {}
   
   -- Backfill title index using throttled iteration to prevent UI freezing
-  if not BookArchivistDB.indexes._titleIndexBackfilled then
-    local Iterator = BookArchivist.Iterator
-    if Iterator then
-      local bookCount = 0
-      for _ in pairs(BookArchivistDB.booksById or {}) do
-        bookCount = bookCount + 1
+  -- Defer indexing by 2 seconds after login to reduce initial freeze
+  if not BookArchivistDB.indexes._titleIndexBackfilled and not BookArchivistDB.indexes._titleIndexPending then
+    BookArchivistDB.indexes._titleIndexPending = true
+    
+    C_Timer.After(2.0, function()
+      if BookArchivistDB.indexes._titleIndexBackfilled then
+        -- Already completed (maybe by import or another code path)
+        BookArchivistDB.indexes._titleIndexPending = false
+        return
       end
       
-      print(string.format("|cFF00FF00BookArchivist:|r Starting title index rebuild (%d books)", bookCount))
-      
-      Iterator:Start(
-        "backfill_title_index",
-        BookArchivistDB.booksById or {},
-        function(bookId, entry, context)
+      local Iterator = BookArchivist.Iterator
+      if Iterator then
+        local bookCount = 0
+        for _ in pairs(BookArchivistDB.booksById or {}) do
+          bookCount = bookCount + 1
+        end
+        
+        print(string.format("|cFF00FF00BookArchivist:|r Starting deferred title index rebuild (%d books)", bookCount))
+        
+        Iterator:Start(
+          "backfill_title_index",
+          BookArchivistDB.booksById or {},
+          function(bookId, entry, context)
+            if type(entry) == "table" and entry.title and entry.title ~= "" then
+              local key = normalizeKeyPart(entry.title)
+              if key ~= "" then
+                context.titleIndex = context.titleIndex or {}
+                context.titleIndex[key] = context.titleIndex[key] or {}
+                context.titleIndex[key][bookId] = true
+              end
+            end
+            return true -- continue iteration
+          end,
+          {
+            chunkSize = 50,
+            budgetMs = 5,
+            onProgress = function(progress, current, total)
+              -- Progress reporting every 250 books
+              if current % 250 == 0 then
+                print(string.format("|cFFFFFF00  Indexing:|r %d/%d (%.1f%%)", current, total, progress * 100))
+              end
+            end,
+            onComplete = function(context)
+              -- Merge indexed titles into database
+              BookArchivistDB.indexes.titleToBookIds = context.titleIndex or {}
+              BookArchivistDB.indexes._titleIndexBackfilled = true
+              BookArchivistDB.indexes._titleIndexPending = false
+              print("|cFF00FF00BookArchivist:|r Title index backfill complete")
+            end
+          }
+        )
+      else
+        -- Fallback to immediate indexing if Iterator not available
+        if BookArchivist.LogWarning then
+          BookArchivist:LogWarning("Iterator module not loaded, using immediate title indexing")
+        end
+        local titleIndex = BookArchivistDB.indexes.titleToBookIds
+        for bookId, entry in pairs(BookArchivistDB.booksById or {}) do
           if type(entry) == "table" and entry.title and entry.title ~= "" then
             local key = normalizeKeyPart(entry.title)
             if key ~= "" then
-              context.titleIndex = context.titleIndex or {}
-              context.titleIndex[key] = context.titleIndex[key] or {}
-              context.titleIndex[key][bookId] = true
+              titleIndex[key] = titleIndex[key] or {}
+              titleIndex[key][bookId] = true
             end
-          end
-          return true -- continue iteration
-        end,
-        {
-          chunkSize = 50,
-          budgetMs = 5,
-          onProgress = function(progress, current, total)
-            -- Progress reporting every 250 books
-            if current % 250 == 0 then
-              print(string.format("|cFFFFFF00  Indexing:|r %d/%d (%.1f%%)", current, total, progress * 100))
-            end
-          end,
-          onComplete = function(context)
-            -- Merge indexed titles into database
-            BookArchivistDB.indexes.titleToBookIds = context.titleIndex or {}
-            BookArchivistDB.indexes._titleIndexBackfilled = true
-            print("|cFF00FF00BookArchivist:|r Title index backfill complete")
-          end
-        }
-      )
-    else
-      -- Fallback to immediate indexing if Iterator not available
-      if BookArchivist.LogWarning then
-        BookArchivist:LogWarning("Iterator module not loaded, using immediate title indexing")
-      end
-      local titleIndex = BookArchivistDB.indexes.titleToBookIds
-      for bookId, entry in pairs(BookArchivistDB.booksById or {}) do
-        if type(entry) == "table" and entry.title and entry.title ~= "" then
-          local key = normalizeKeyPart(entry.title)
-          if key ~= "" then
-            titleIndex[key] = titleIndex[key] or {}
-            titleIndex[key][bookId] = true
           end
         end
+        BookArchivistDB.indexes._titleIndexBackfilled = true
+        BookArchivistDB.indexes._titleIndexPending = false
       end
-      BookArchivistDB.indexes._titleIndexBackfilled = true
-    end
+    end)
   end
 
   local minimapDefaults = {

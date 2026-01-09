@@ -75,6 +75,39 @@ local function buildFrame(safeCreateFrame)
 		end,
 		onShow = function()
 			syncGridOverlayPreference()
+			
+			-- Defer refresh if frame is still building content
+			local frame = Internal.getUIFrame()
+			if frame and frame.__contentReady == false then
+				debugPrint("[BookArchivist] onShow: content not ready yet, deferring refresh")
+				-- Retry after content is ready
+				local retryCount = 0
+				local function checkReady()
+					retryCount = retryCount + 1
+					if not frame or not frame:IsShown() then
+						debugPrint("[BookArchivist] onShow: frame closed during content build, aborting refresh")
+						return
+					end
+					if frame.__contentReady then
+						debugPrint(string.format("[BookArchivist] onShow: content ready after %d checks, running refresh", retryCount))
+						local refreshFn = Internal.refreshAll
+						if refreshFn then
+							refreshFn()
+						end
+					elseif retryCount < 50 then -- Max 5 seconds (50 * 100ms)
+						C_Timer.After(0.1, checkReady)
+					else
+						debugPrint("[BookArchivist] onShow: timeout waiting for content, forcing refresh anyway")
+						local refreshFn = Internal.refreshAll
+						if refreshFn then
+							refreshFn()
+						end
+					end
+				end
+				C_Timer.After(0.1, checkReady)
+				return
+			end
+			
 			local refreshFn = Internal.refreshAll
 			if refreshFn then
 				refreshFn()
@@ -104,9 +137,9 @@ local function setupUI()
 
 	Internal.setUIFrame(frame)
 	syncGridOverlayPreference()
-	if Internal.updateListModeUI then
-		Internal.updateListModeUI()
-	end
+	
+	-- Don't call updateListModeUI here - list tabs don't exist yet in async build
+	-- It will be called after content is ready (see BuildContent completion)
 
 	Internal.setIsInitialized(true)
 	frame.__BookArchivistInitialized = true
@@ -115,10 +148,8 @@ local function setupUI()
 	else
 		Internal.setNeedsRefresh(true)
 	end
-	debugPrint("[BookArchivist] setupUI: finished, pending refresh")
-	if Internal.flushPendingRefresh then
-		Internal.flushPendingRefresh()
-	end
+	debugPrint("[BookArchivist] setupUI: finished, pending refresh (will flush in ensureUI)")
+	-- Don't flush here - let ensureUI handle it when everything is ready
 	return true
 end
 

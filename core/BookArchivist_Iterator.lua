@@ -26,6 +26,7 @@ local activeIterations = {}
 ---   budgetMs = number (default 10) - Max milliseconds per frame
 ---   onProgress = function(progress, current, total) - Progress callback
 ---   onComplete = function(context) - Completion callback
+---   isArray = boolean (default false) - If true, treat dataSource as array (numeric keys)
 --- }
 --- @return boolean success, string|nil errorMessage
 function Iterator:Start(operation, dataSource, callback, options)
@@ -51,19 +52,27 @@ function Iterator:Start(operation, dataSource, callback, options)
   local budgetMs = options.budgetMs or 10
   local onProgress = options.onProgress
   local onComplete = options.onComplete
+  local isArray = options.isArray or false
   
-  -- Create deterministic array of keys for stable iteration
-  -- This ensures consistent order and allows resuming
-  local keys = {}
-  for k in pairs(dataSource) do
-    table.insert(keys, k)
+  -- Phase 3: Fast path for arrays - skip pairs enumeration and sorting
+  local keys
+  if isArray then
+    -- Array fast path: dataSource is already array-like with numeric keys
+    -- Just use it directly without enumeration
+    keys = dataSource
+  else
+    -- Map path: enumerate keys and sort for deterministic iteration
+    keys = {}
+    for k in pairs(dataSource) do
+      table.insert(keys, k)
+    end
+    
+    -- Sort keys for deterministic iteration order
+    -- This is important for progress reporting and debugging
+    table.sort(keys, function(a, b)
+      return tostring(a) < tostring(b)
+    end)
   end
-  
-  -- Sort keys for deterministic iteration order
-  -- This is important for progress reporting and debugging
-  table.sort(keys, function(a, b)
-    return tostring(a) < tostring(b)
-  end)
   
   -- Create iteration state
   local state = {
@@ -77,6 +86,7 @@ function Iterator:Start(operation, dataSource, callback, options)
     onProgress = onProgress,
     onComplete = onComplete,
     dataSource = dataSource,
+    isArray = isArray,
     context = {}, -- User-modifiable context passed to callbacks
     startTime = GetTime(),
   }
@@ -92,8 +102,8 @@ function Iterator:Start(operation, dataSource, callback, options)
   
   if BookArchivist.LogInfo then
     BookArchivist:LogInfo(string.format(
-      "Iterator started: %s (%d items, %d per chunk, %dms budget)",
-      operation, state.total, chunkSize, budgetMs
+      "Iterator started: %s (%d items, %d per chunk, %dms budget, %s mode)",
+      operation, state.total, chunkSize, budgetMs, isArray and "array" or "map"
     ))
   end
   
@@ -116,7 +126,16 @@ function Iterator:_ProcessChunk(operation)
   -- Process chunk: up to chunkSize items or budgetMs time
   while state.index <= state.total and processed < state.chunkSize do
     local key = state.keys[state.index]
-    local value = state.dataSource[key]
+    
+    -- Phase 3: For arrays, key is already the value (since keys = dataSource)
+    -- For maps, we need to look up the value in dataSource
+    local value
+    if state.isArray then
+      value = key -- In array mode, keys table IS the data
+      key = state.index -- Use index as key for callback
+    else
+      value = state.dataSource[key]
+    end
     
     -- Call user callback with error protection
     local success, shouldContinue = pcall(state.callback, key, value, state.context)

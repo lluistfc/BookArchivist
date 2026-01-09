@@ -110,6 +110,33 @@ function ListUI:GetPageCount(total)
   return math.max(1, math.ceil(total / pageSize))
 end
 
+-- Shared pagination helper for any array
+-- Returns: sliced array, totalItems, currentPage, totalPages, startIdx, endIdx
+function ListUI:PaginateArray(items, pageSize, currentPage)
+  pageSize = pageSize or self:GetPageSize()
+  currentPage = currentPage or 1
+  
+  local totalItems = #items
+  local totalPages = math.max(1, math.ceil(totalItems / pageSize))
+  
+  -- Clamp current page to valid range
+  currentPage = math.max(1, math.min(currentPage, totalPages))
+  
+  -- Calculate slice indices
+  local startIdx = (currentPage - 1) * pageSize + 1
+  local endIdx = math.min(startIdx + pageSize - 1, totalItems)
+  
+  -- Slice the array
+  local paginated = {}
+  for i = startIdx, endIdx do
+    if items[i] then
+      table.insert(paginated, items[i])
+    end
+  end
+  
+  return paginated, totalItems, currentPage, totalPages, startIdx, endIdx
+end
+
 function ListUI:UpdatePaginationUI(total, pageCount)
   local frame = self:GetFrame("paginationFrame")
   if not frame then
@@ -171,9 +198,9 @@ function ListUI:EnsurePaginationControls()
     return nil
   end
   pagination:ClearAllPoints()
-  pagination:SetPoint("CENTER", tipRow, "CENTER", 0, 0)
-  pagination:SetWidth(320)
-  local gap = Metrics.GAP_S or Metrics.GAP_XS or 4
+  pagination:SetPoint("RIGHT", tipRow, "RIGHT", 0, 0)
+  pagination:SetWidth(360)
+  local gap = Metrics.GAP_M or Metrics.GAP_S or 6
   local btnH = Metrics.BTN_H or 22
   pagination:SetHeight((btnH * 2) + gap)
   self:SetFrame("paginationFrame", pagination)

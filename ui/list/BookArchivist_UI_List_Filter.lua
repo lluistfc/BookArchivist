@@ -39,6 +39,16 @@ end
 
 function ListUI:RebuildFiltered()
   local filtered = self:GetFilteredKeys()
+  
+  -- Set loading state to prevent tab switches BEFORE wiping data
+  self.__state.isLoading = true
+  
+  -- Disable tabs during filtering operation
+  if self.SetTabsEnabled then
+    self:SetTabsEnabled(false)
+  end
+  
+  -- NOW wipe after we've set loading state
   wipe(filtered)
   self:DisableDeleteButton()
 
@@ -46,6 +56,10 @@ function ListUI:RebuildFiltered()
   if not addon then
     self:DebugPrint("[BookArchivist] rebuildFiltered: addon missing")
     self:LogError("BookArchivist addon missing during rebuildFiltered")
+    self.__state.isLoading = false
+    if self.SetTabsEnabled then
+      self:SetTabsEnabled(true)
+    end
     return
   end
 
@@ -53,6 +67,10 @@ function ListUI:RebuildFiltered()
   if not db then
     self:DebugPrint("[BookArchivist] rebuildFiltered: DB missing")
     self:LogError("BookArchivist DB missing during rebuildFiltered")
+    self.__state.isLoading = false
+    if self.SetTabsEnabled then
+      self:SetTabsEnabled(true)
+    end
     return
   end
   local books
@@ -96,6 +114,10 @@ function ListUI:RebuildFiltered()
     -- Prevent concurrent async filtering
     if self.__state.isAsyncFiltering then
       self:DebugPrint("[BookArchivist] rebuildFiltered: async filtering already in progress, skipping")
+      self.__state.isLoading = false
+      if self.SetTabsEnabled then
+        self:SetTabsEnabled(true)
+      end
       return
     end
     
@@ -122,15 +144,10 @@ function ListUI:RebuildFiltered()
       end
     end
     
-    -- Convert array to table for Iterator
-    local keysTable = {}
-    for i, key in ipairs(baseKeys) do
-      keysTable[i] = key
-    end
-    
+    -- Phase 3: Use array fast-path - no need to convert to table
     Iterator:Start(
       "rebuild_filtered",
-      keysTable,
+      baseKeys, -- Pass array directly
       function(idx, key, context)
         -- Initialize context tables on first call
         context.filtered = context.filtered or {}
@@ -169,6 +186,7 @@ function ListUI:RebuildFiltered()
       {
         chunkSize = 50,  -- Reduced from 100 for faster first paint
         budgetMs = 5,     -- Reduced from 8 for more responsive feel
+        isArray = true,   -- Phase 3: baseKeys is an array, use fast path
         onProgress = function(progress, current, total)
           -- Update loading indicator with progress
           if noResults then
@@ -190,11 +208,34 @@ function ListUI:RebuildFiltered()
             -- Get fresh reference to filtered keys and update it
             local filteredKeys = self:GetFilteredKeys()
             wipe(filteredKeys)
+            
+            self:DebugPrint(string.format("[BookArchivist] Async filter complete: context.filtered has %d items", #(context.filtered or {})))
+            
             for _, key in ipairs(context.filtered or {}) do
               table.insert(filteredKeys, key)
             end
             
             self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d (throttled)", #filteredKeys, #baseKeys))
+            
+            -- Clear loading state
+            self.__state.isLoading = false
+            
+            -- Re-enable Books tab after filtering
+            local booksTab = self:GetFrame("booksTabButton")
+            if booksTab then
+              booksTab:Enable()
+              if booksTab.Text then
+                booksTab.Text:SetTextColor(1.0, 0.82, 0.0)
+              end
+            end
+            
+            -- Only enable Locations tab if tree has been built
+            local state = self.GetLocationState and self:GetLocationState() or nil
+            if state and state.root and state.rows and #state.rows > 0 then
+              if self.SetLocationsTabEnabled then
+                self:SetLocationsTabEnabled(true)
+              end
+            end
             
             -- Filtering complete - don't hide overlay yet, UpdateList will handle it
             -- after list has been populated and rendered
@@ -277,6 +318,26 @@ function ListUI:RebuildFiltered()
   end
 
 	self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d", #filtered, #baseKeys))
+
+  -- Clear loading state for synchronous path
+  self.__state.isLoading = false
+  
+  -- Re-enable Books tab
+  local booksTab = self:GetFrame("booksTabButton")
+  if booksTab then
+    booksTab:Enable()
+    if booksTab.Text then
+      booksTab.Text:SetTextColor(1.0, 0.82, 0.0)
+    end
+  end
+  
+  -- Only enable Locations tab if tree has been built
+  local state = self.GetLocationState and self:GetLocationState() or nil
+  if state and state.root and state.rows and #state.rows > 0 then
+    if self.SetLocationsTabEnabled then
+      self:SetLocationsTabEnabled(true)
+    end
+  end
 
   local pageCount = self:GetPageCount(#filtered)
   self.__state.pagination.total = #filtered

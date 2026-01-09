@@ -136,6 +136,11 @@ local function wireTabButton(self, tabButton)
   end
 
   tabButton:SetScript("OnClick", function(btn)
+    -- Prevent tab switching during async operations
+    if self.__state and self.__state.isLoading then
+      return
+    end
+    
     local tabParent = btn and btn:GetParent()
     local tabId = btn and btn:GetID() or 1
     if tabParent and canUsePanelTemplates(tabParent) then
@@ -192,7 +197,63 @@ function ListUI:EnsureListTabs(tabParent, tabsRail)
 
   self:SetFrame("booksTabButton", tab1)
   self:SetFrame("locationsTabButton", tab2)
+  
+  -- Initially disable Locations tab until tree is built
+  self:SetLocationsTabEnabled(false)
+  
   return tab1, tab2
+end
+
+function ListUI:SetLocationsTabEnabled(enabled)
+  local tab = self:GetFrame("locationsTabButton")
+  if not tab then
+    return
+  end
+  
+  if enabled then
+    tab:Enable()
+    if tab.Text then
+      tab.Text:SetTextColor(1.0, 0.82, 0.0) -- Gold
+    end
+  else
+    tab:Disable()
+    if tab.Text then
+      tab.Text:SetTextColor(0.5, 0.5, 0.5) -- Gray
+    end
+  end
+end
+
+function ListUI:SetTabsEnabled(enabled)
+  local booksTab = self:GetFrame("booksTabButton")
+  local locationsTab = self:GetFrame("locationsTabButton")
+  
+  if booksTab then
+    if enabled then
+      booksTab:Enable()
+      if booksTab.Text then
+        booksTab.Text:SetTextColor(1.0, 0.82, 0.0)
+      end
+    else
+      booksTab:Disable()
+      if booksTab.Text then
+        booksTab.Text:SetTextColor(0.5, 0.5, 0.5)
+      end
+    end
+  end
+  
+  if locationsTab then
+    if enabled then
+      locationsTab:Enable()
+      if locationsTab.Text then
+        locationsTab.Text:SetTextColor(1.0, 0.82, 0.0)
+      end
+    else
+      locationsTab:Disable()
+      if locationsTab.Text then
+        locationsTab.Text:SetTextColor(0.5, 0.5, 0.5)
+      end
+    end
+  end
 end
 
 function ListUI:RefreshListTabsSelection()

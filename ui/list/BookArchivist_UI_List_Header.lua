@@ -132,15 +132,23 @@ function ListUI:UpdateCountsDisplay()
     headerCount:SetText(t("LOCATIONS_BROWSE_HEADER"))
     return
   end
+  
+  -- Get leaf location name (last segment in path)
+  local leaf = (state.path and state.path[#state.path]) or t("LOCATIONS_BREADCRUMB_ROOT")
   local locationBooks = node.totalBooks or (node.books and #node.books) or 0
   local childCount = node.childNames and #node.childNames or 0
+  
+  local countText
   if childCount > 0 then
     local key = (childCount == 1) and "COUNT_LOCATION_SINGULAR" or "COUNT_LOCATION_PLURAL"
-    headerCount:SetText(string.format("|cFFFFD100" .. t(key) .. "|r", childCount))
+    countText = string.format(t(key), childCount)
   else
-    local key = (locationBooks == 1) and "COUNT_BOOKS_HERE_SINGULAR" or "COUNT_BOOKS_HERE_PLURAL"
-    headerCount:SetText(string.format("|cFFFFD100" .. t(key) .. "|r", locationBooks))
+    local key = (locationBooks == 1) and "COUNT_BOOKS_IN_LOCATION_SINGULAR" or "COUNT_BOOKS_IN_LOCATION_PLURAL"
+    countText = string.format(t(key), locationBooks)
   end
+  
+  -- Format: "Leaf Location • count" (full path now shown in breadcrumb row)
+  headerCount:SetText(string.format("|cFFCCCCCC%s|r  |cFF666666•|r  |cFFFFD100%s|r", leaf, countText))
 end
 
 function ListUI:UpdateResumeButton()

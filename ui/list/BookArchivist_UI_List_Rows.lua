@@ -22,7 +22,14 @@ function ListUI:UpdateList()
   
   local dataProvider = self:GetDataProvider()
   if not dataProvider then
-    self:DebugPrint("[BookArchivist] updateList skipped (data provider missing)")
+    self:DebugPrint("[BookArchivist] updateList skipped (data provider missing) - UI not fully initialized")
+    -- Clear loading state if it was set
+    if self.__state.isLoading then
+      self.__state.isLoading = false
+      if self.SetTabsEnabled then
+        self:SetTabsEnabled(true)
+      end
+    end
     return
   end
 
@@ -60,28 +67,34 @@ function ListUI:UpdateList()
     local filtered = self:GetFilteredKeys()
     local total = #filtered
     local dbCount = db.order and #db.order or 0
+    
+    -- Safety check: if filtered is empty but DB has books, rebuild
+    if total == 0 and dbCount > 0 then
+      self:DebugPrint(string.format("[BookArchivist] updateList: filtered empty but DB has %d books, forcing rebuild", dbCount))
+      if self.RebuildFiltered then
+        self:RebuildFiltered()
+        -- RebuildFiltered will call UpdateList when done, so return now
+        return
+      end
+    end
+    
     self:DebugPrint(string.format("[BookArchivist] updateList filtered=%d totalDB=%d", total, dbCount))
 
     local pageSize = self:GetPageSize()
-    local pageCount = self:GetPageCount(total)
     local page = self:GetPage()
-    if page > pageCount then
-      page = pageCount
-      self.__state.pagination.page = page
+    
+    -- Use shared pagination helper
+    local paginatedKeys, _, currentPage, pageCount = self:PaginateArray(filtered, pageSize, page)
+    
+    -- Update page state if it changed (e.g., clamped to valid range)
+    if currentPage ~= page then
+      self.__state.pagination.page = currentPage
     end
-    if page < 1 then
-      page = 1
-      self.__state.pagination.page = page
-    end
-
-    local startIndex = (page - 1) * pageSize + 1
-    local endIndex = math.min(total, startIndex + pageSize - 1)
 
     local hasSearch = self.GetSearchQuery and (self:GetSearchQuery() ~= "") or false
     local selectedKey = self:GetSelectedKey()
     
-    for i = startIndex, endIndex do
-      local key = filtered[i]
+    for _, key in ipairs(paginatedKeys) do
       if key then
         local books
         if db and db.booksById and next(db.booksById) ~= nil then
@@ -159,6 +172,16 @@ function ListUI:UpdateList()
   if paginationFrame then
     paginationFrame:Hide()
   end
+  
+  -- Get location pagination info
+  local locPagination = self.GetLocationPagination and self:GetLocationPagination() or { totalRows = 0, currentPage = 1, totalPages = 1 }
+  
+  -- Update pagination for locations mode
+  if paginationFrame and locPagination.totalRows > (self:GetPageSize() or 100) then
+    paginationFrame:Show()
+    self:UpdatePaginationUI(locPagination.totalRows, locPagination.totalPages)
+  end
+  
   local rows = self:GetLocationRows()
   local total = #rows
   local state = self:GetLocationState()
@@ -250,38 +273,9 @@ function ListUI:UpdateList()
   
   self:DebugPrint(string.format("[BookArchivist] UpdateList: Added %d locations to data provider", dataProvider:GetSize()))
 
-  local infoMessage
-  if not activeNode or (total == 0 and (#(state.path or {}) == 0)) then
-    infoMessage = "|cFF888888" .. t("LOCATIONS_EMPTY") .. "|r"
-  else
-    local hasChildren = activeNode.childNames and #activeNode.childNames > 0
-    if hasChildren then
-      local count = #activeNode.childNames
-        local key = (count == 1) and "COUNT_LOCATION_SINGULAR" or "COUNT_LOCATION_PLURAL"
-        infoMessage = string.format("|cFFFFD100" .. t(key) .. "|r", count)
-    else
-      local count = activeNode.books and #activeNode.books or 0
-        local key = (count == 1) and "COUNT_BOOKS_IN_LOCATION_SINGULAR" or "COUNT_BOOKS_IN_LOCATION_PLURAL"
-        infoMessage = string.format("|cFFFFD100" .. t(key) .. "|r", count)
-    end
-  end
-
+  -- Footer info is now minimal since breadcrumb moved to header
   if info then
-    local crumb = self:GetLocationBreadcrumbText()
-    local crumbText = crumb and ("|cFFCCCCCC" .. crumb .. "|r") or nil
-    local detailText = infoMessage
-    if crumbText and detailText then
-      info:SetText(string.format("%s  |cFF666666•|r  %s", crumbText, detailText))
-    else
-	      info:SetText(detailText or crumbText or ("|cFF888888" .. t("LOCATIONS_BROWSE_SAVED") .. "|r"))
-    end
-    local tipRow = self:GetFrame("listTipRow") or self:EnsureListTipRow()
-    if tipRow then
-      info:ClearAllPoints()
-      info:SetPoint("TOPLEFT", tipRow, "TOPLEFT", 0, 0)
-      info:SetPoint("BOTTOMRIGHT", tipRow, "BOTTOMRIGHT", 0, 0)
-    end
-    info:Show()
+    info:SetText("") -- Location info now shown in header
   end
 
   local noResults = self:GetFrame("noResultsText")
