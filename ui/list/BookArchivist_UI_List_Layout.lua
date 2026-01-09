@@ -128,22 +128,45 @@ function ListUI:EnsureListBreadcrumbRow()
   row:SetFrameStrata("MEDIUM")
   row:SetFrameLevel(100) -- Higher than default to appear on top
   
-  local gap = Metrics.GAP_M or 10
+  -- Position directly below header row with minimal gap
+  local gap = 2
   local inset = Metrics.PAD_INSET or Metrics.PAD or 8
   row:SetPoint("TOPLEFT", headerRow, "BOTTOMLEFT", 0, -gap)
   row:SetPoint("TOPRIGHT", headerRow, "BOTTOMRIGHT", 0, -gap)
-  row:SetHeight(52) -- Fixed height for 3 lines + padding
+  row:SetHeight(86) -- Increased for 4 lines of breadcrumbs
   self:SetFrame("breadcrumbRow", row)
   
-  -- Create a subtle background
-  local bg = row:CreateTexture(nil, "BACKGROUND")
-  bg:SetAllPoints(row)
-  bg:SetColorTexture(0, 0, 0, 0.3) -- Subtle dark background
+  -- Create subtle gradient background similar to Blizzard's breadcrumb
+  local bgTop = row:CreateTexture(nil, "BACKGROUND", nil, -1)
+  bgTop:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+  bgTop:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, 0)
+  bgTop:SetHeight(row:GetHeight() / 2)
+  bgTop:SetGradient("VERTICAL", CreateColor(0.1, 0.1, 0.12, 0.8), CreateColor(0.05, 0.05, 0.06, 0.6))
   
-  -- Create 3 clickable button lines for breadcrumb navigation
-  local lineHeight = 14
-  local lineGap = 2
-  local textPadding = 6
+  local bgBottom = row:CreateTexture(nil, "BACKGROUND", nil, -1)
+  bgBottom:SetPoint("TOPLEFT", bgTop, "BOTTOMLEFT", 0, 0)
+  bgBottom:SetPoint("TOPRIGHT", bgTop, "BOTTOMRIGHT", 0, 0)
+  bgBottom:SetPoint("BOTTOM", row, "BOTTOM", 0, 0)
+  bgBottom:SetGradient("VERTICAL", CreateColor(0.05, 0.05, 0.06, 0.6), CreateColor(0.02, 0.02, 0.03, 0.4))
+  
+  -- Add subtle top border
+  local borderTop = row:CreateTexture(nil, "BORDER")
+  borderTop:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+  borderTop:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, 0)
+  borderTop:SetHeight(1)
+  borderTop:SetColorTexture(0.15, 0.15, 0.17, 0.5)
+  
+  -- Add subtle bottom border
+  local borderBottom = row:CreateTexture(nil, "BORDER")
+  borderBottom:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
+  borderBottom:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
+  borderBottom:SetHeight(1)
+  borderBottom:SetColorTexture(0.08, 0.08, 0.09, 0.8)
+  
+  -- Create 4 clickable button lines for breadcrumb navigation
+  local lineHeight = 16
+  local lineGap = 4
+  local textPadding = 8
   
   -- Helper to create a clickable breadcrumb line
   local function createBreadcrumbButton(name, parent, prevLine)
@@ -188,14 +211,16 @@ function ListUI:EnsureListBreadcrumbRow()
   local line1 = createBreadcrumbButton("breadcrumbLine1", row, nil)
   local line2 = createBreadcrumbButton("breadcrumbLine2", row, line1)
   local line3 = createBreadcrumbButton("breadcrumbLine3", row, line2)
+  local line4 = createBreadcrumbButton("breadcrumbLine4", row, line3)
   
-  if not (line1 and line2 and line3) then
+  if not (line1 and line2 and line3 and line4) then
     return nil
   end
   
   self:SetFrame("breadcrumbLine1", line1)
   self:SetFrame("breadcrumbLine2", line2)
   self:SetFrame("breadcrumbLine3", line3)
+  self:SetFrame("breadcrumbLine4", line4)
   
   return row
 end

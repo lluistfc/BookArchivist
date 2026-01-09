@@ -120,7 +120,8 @@ function ListUI:EnsureListTabsRail(tabParent)
   end
 
   ClearAnchors(tabsRail)
-  tabsRail:SetPoint("BOTTOM", tabParent, "BOTTOM", 0, TAB_Y_BIAS)
+  -- Position tabs to sit on the separator line (negative offset to overlap slightly)
+  tabsRail:SetPoint("BOTTOM", tabParent, "BOTTOM", 0, 3)
   tabsRail:SetHeight(TAB_RAIL_H)
   tabsRail:SetWidth(TAB_RAIL_W)
   self:SetFrame("listTabsRail", tabsRail)

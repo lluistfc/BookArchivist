@@ -294,19 +294,21 @@ function ListUI:GetLocationBreadcrumbSegments()
 end
 
 function ListUI:GetLocationBreadcrumbDisplayLines(maxLines)
-  maxLines = maxLines or 3
+  maxLines = maxLines or 4
   local segments = self:GetLocationBreadcrumbSegments()
   local numSegments = #segments
   
   if numSegments == 1 then
-    return { segments[1], "", "" }
+    return { segments[1], "", "", "" }
   elseif numSegments == 2 then
-    return { segments[1], "› " .. segments[2], "" }
+    return { segments[1], "› " .. segments[2], "", "" }
   elseif numSegments == 3 then
-    return { segments[1], "› " .. segments[2], "› " .. segments[3] }
+    return { segments[1], "› " .. segments[2], "› " .. segments[3], "" }
+  elseif numSegments == 4 then
+    return { segments[1], "› " .. segments[2], "› " .. segments[3], "› " .. segments[4] }
   else
-    -- More than 3 segments: show ellipsis + last 2
-    return { "…", "› " .. segments[numSegments - 1], "› " .. segments[numSegments] }
+    -- More than 4 segments: show root + ellipsis + parent + current
+    return { segments[1], "…", "› " .. segments[numSegments - 1], "› " .. segments[numSegments] }
   end
 end
 
@@ -337,15 +339,36 @@ function ListUI:UpdateLocationBreadcrumbUI()
   local line1 = self:GetFrame("breadcrumbLine1")
   local line2 = self:GetFrame("breadcrumbLine2")
   local line3 = self:GetFrame("breadcrumbLine3")
+  local line4 = self:GetFrame("breadcrumbLine4")
   
-  if not (line1 and line2 and line3) then
+  if not (line1 and line2 and line3 and line4) then
     return
   end
   
   -- Get current state to calculate navigation targets
   local state = self.GetLocationState and self:GetLocationState() or nil
   local segments = state and state.path or {}
-  local lines = self:GetLocationBreadcrumbDisplayLines(3)
+  local lines = self:GetLocationBreadcrumbDisplayLines(4)
+  
+  -- Dynamically adjust breadcrumb row height based on actual content
+  local numVisibleLines = 0
+  for i = 1, 4 do
+    if lines[i] and lines[i] ~= "" then
+      numVisibleLines = i
+    end
+  end
+  
+  -- Calculate height: base padding + (lineHeight + gap) per visible line
+  local lineHeight = 16
+  local lineGap = 4
+  local textPadding = 8
+  local rowHeight = (textPadding * 2) + (lineHeight * numVisibleLines) + (lineGap * (numVisibleLines - 1))
+  breadcrumbRow:SetHeight(math.max(rowHeight, 32)) -- Minimum 32px
+  
+  -- Update scroll row anchoring after height change
+  if self.UpdateListScrollRowAnchors then
+    self:UpdateListScrollRowAnchors()
+  end
   
   -- Capture module reference for closures
   local listUI = self
@@ -367,17 +390,23 @@ function ListUI:UpdateLocationBreadcrumbUI()
     local targetDepth
     local numSegments = #segments
     
-    if numSegments <= 3 then
-      -- Direct mapping: line 1 = keep 1 segment, line 2 = keep 2 segments, line 3 = keep 3 segments
+    if numSegments <= 4 then
+      -- Direct mapping: line N = keep N segments
       targetDepth = lineIndex
     else
-      -- Truncated view: line 1 = "…", line 2 = second-to-last, line 3 = last
+      -- Truncated view for >4 segments: 
+      -- Line 1 = root (keep 1 segment)
+      -- Line 2 = ellipsis (not clickable)
+      -- Line 3 = parent of current (numSegments - 1)
+      -- Line 4 = current location (numSegments)
       if lineIndex == 1 then
-        targetDepth = nil -- ellipsis, not clickable
+        targetDepth = 1  -- Navigate to root
       elseif lineIndex == 2 then
-        targetDepth = numSegments - 1
-      else -- lineIndex == 3
-        targetDepth = numSegments
+        targetDepth = nil -- ellipsis, not clickable
+      elseif lineIndex == 3 then
+        targetDepth = numSegments - 1 -- Navigate to parent
+      else -- lineIndex == 4
+        targetDepth = numSegments -- current location
       end
     end
     
@@ -434,6 +463,7 @@ function ListUI:UpdateLocationBreadcrumbUI()
     end
   end
   
+  setupLine(line4, 4, lines[4])
   setupLine(line1, 1, lines[1])
   setupLine(line2, 2, lines[2])
   setupLine(line3, 3, lines[3])
