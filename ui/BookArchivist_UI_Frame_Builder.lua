@@ -181,8 +181,10 @@ function FrameUI:BuildContent(frame, opts)
 				end
 			end
 			
-			-- Loading overlay will be hidden by UpdateList after filtering completes
-			-- and list has been populated with actual data
+			-- Hide loading overlay after content is ready
+			if frame.HideLoadingIndicator then
+				frame.HideLoadingIndicator()
+			end
 			
 			return
 		end

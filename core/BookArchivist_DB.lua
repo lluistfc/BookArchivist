@@ -88,13 +88,18 @@ function DB:Init()
     BookArchivistDB.dbVersion = 1
   end
 
-  -- Migration cleanup: Reset debug mode if dev tools not loaded
+  -- Migration cleanup: Reset debug/uiDebug if dev tools not loaded
   -- This prevents users who had debug enabled in v1.0.2 from being
   -- stuck with debug mode when upgrading to v1.0.3+ without dev files
-  if BookArchivistDB.options and BookArchivistDB.options.debug == true then
-    if not BookArchivist.DevTools then
+  -- NOTE: In local dev, dev files are in TOC but we still check if they initialized
+  if BookArchivistDB.options then
+    if BookArchivistDB.options.debug == true and not BookArchivist.DevTools then
       debug("Debug mode was enabled but dev tools not loaded - resetting to false")
       BookArchivistDB.options.debug = false
+    end
+    -- Always disable uiDebug in release builds (dev tools won't exist)
+    if BookArchivistDB.options.uiDebug == true and not (BookArchivist.DevTools and BookArchivist.DevTools.InitDebugGrid) then
+      debug("UI debug was enabled but debug grid not available - resetting to false")
       BookArchivistDB.options.uiDebug = false
     end
   end
