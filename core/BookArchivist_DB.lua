@@ -93,6 +93,12 @@ function DB:Init()
   -- stuck with debug mode when upgrading to v1.0.3+ without dev files
   -- NOTE: In local dev, dev files are in TOC but we still check if they initialized
   if BookArchivistDB.options then
+    -- Clean up legacy debug options from v1.0.2
+    BookArchivistDB.options.debugEnabled = nil  -- Legacy field, use 'debug' instead
+    BookArchivistDB.options.gridMode = nil      -- Dev-only feature
+    BookArchivistDB.options.gridVisible = nil   -- Dev-only feature
+    BookArchivistDB.options.ba_hidden_anchor = nil  -- Dev-only feature
+    
     if BookArchivistDB.options.debug == true and not BookArchivist.DevTools then
       debug("Debug mode was enabled but dev tools not loaded - resetting to false")
       BookArchivistDB.options.debug = false

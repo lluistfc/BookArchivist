@@ -103,25 +103,6 @@ local function RegisterNativeSettings()
   local category, layout = Settings.RegisterVerticalLayoutCategory(categoryName)
   optionsCategory = category
   
-  -- Register a hidden setting to prevent defaults button from working
-  do
-    local hiddenVar = "ba_hidden_anchor"
-    local setting = Settings.RegisterAddOnSetting(
-      category,
-      hiddenVar,
-      hiddenVar,
-      BookArchivistDB.options,
-      "boolean",
-      "",
-      true
-    )
-    -- Override the GetValue to always return the same value (no defaults to apply)
-    if setting then
-      setting.GetValue = function() return true end
-      setting.SetValue = function() end
-    end
-  end
-
   -- Debug checkbox removed - now in dev/BookArchivist_DevOptions.lua
   -- Only loaded when BookArchivist_Dev.toc is present
 

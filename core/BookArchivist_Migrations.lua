@@ -175,6 +175,14 @@ function MIGRATIONS.v2(db)
   db.order = newOrder
   db.dbVersion = 2
 
+  -- 6) Clean up legacy v1.0.2 debug options
+  if type(db.options) == "table" then
+    db.options.debugEnabled = nil     -- Legacy duplicate of 'debug'
+    db.options.gridMode = nil          -- Dev-only feature
+    db.options.gridVisible = nil       -- Dev-only feature
+    db.options.ba_hidden_anchor = nil  -- Dev-only feature
+  end
+
   return db
 end
 

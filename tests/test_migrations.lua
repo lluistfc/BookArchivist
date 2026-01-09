@@ -486,6 +486,30 @@ run_test("Real v1.0.2 data migrates successfully", function()
   assert_type(v2_migrated.indexes.objectToBookId, "table", "Should create objectToBookId index")
 end)
 
+-- Test 17: v2 migration removes legacy debug options
+run_test("v2 migration removes legacy debug options", function()
+  local db = create_v102_db()
+  db.dbVersion = 1
+  
+  -- Add legacy debug options that existed in v1.0.2 (inside options table)
+  db.options.debugEnabled = true
+  db.options.gridMode = "static"
+  db.options.gridVisible = false
+  db.options.ba_hidden_anchor = {x = 100, y = 200}
+  
+  local v2_migrated = BookArchivist.Migrations.v2(db)
+  
+  -- Verify legacy options removed from options table
+  assert_equal(v2_migrated.options.debugEnabled, nil, "Should remove debugEnabled")
+  assert_equal(v2_migrated.options.gridMode, nil, "Should remove gridMode")
+  assert_equal(v2_migrated.options.gridVisible, nil, "Should remove gridVisible")
+  assert_equal(v2_migrated.options.ba_hidden_anchor, nil, "Should remove ba_hidden_anchor")
+  
+  -- Verify new structure still intact
+  assert_type(v2_migrated.booksById, "table", "Should have booksById")
+  assert_equal(v2_migrated.dbVersion, 2, "Should have dbVersion 2")
+end)
+
 -- Print summary
 print("\n" .. string.rep("=", 60))
 print("Test Summary")
