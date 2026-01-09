@@ -69,7 +69,11 @@ function ListUI:UpdateList()
     local dbCount = db.order and #db.order or 0
     
     -- Safety check: if filtered is empty but DB has books, rebuild
-    if total == 0 and dbCount > 0 then
+    -- BUT: Only do this for "All Books" - filtered categories like Favorites can legitimately be empty
+    local categoryId = (self.GetCategoryId and self:GetCategoryId()) or "__all__"
+    local isFilteredCategory = (categoryId ~= "__all__")
+    
+    if total == 0 and dbCount > 0 and not isFilteredCategory then
       self:DebugPrint(string.format("[BookArchivist] updateList: filtered empty but DB has %d books, forcing rebuild", dbCount))
       if self.RebuildFiltered then
         self:RebuildFiltered()

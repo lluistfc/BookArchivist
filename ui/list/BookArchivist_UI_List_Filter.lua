@@ -111,14 +111,25 @@ function ListUI:RebuildFiltered()
   -- Even small datasets benefit from yielding to game engine
   local Iterator = BookArchivist and BookArchivist.Iterator
   if Iterator and #baseKeys > 0 then
-    -- Prevent concurrent async filtering
+    -- Prevent concurrent async filtering with timeout watchdog
     if self.__state.isAsyncFiltering then
-      self:DebugPrint("[BookArchivist] rebuildFiltered: async filtering already in progress, skipping")
-      self.__state.isLoading = false
-      if self.SetTabsEnabled then
-        self:SetTabsEnabled(true)
+      local now = GetTime()
+      local started = self.__state.asyncFilterStartTime or 0
+      local elapsed = now - started
+      
+      -- If async filter has been running for more than 30 seconds, assume it's stuck
+      if elapsed > 30 then
+        self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: async filter stuck for %.1fs, forcing reset", elapsed))
+        self.__state.isAsyncFiltering = false
+        self.__state.asyncFilterStartTime = nil
+      else
+        self:DebugPrint("[BookArchivist] rebuildFiltered: async filtering already in progress, skipping")
+        self.__state.isLoading = false
+        if self.SetTabsEnabled then
+          self:SetTabsEnabled(true)
+        end
+        return
       end
-      return
     end
     
     -- Throttled path for ALL datasets (not just >100)
@@ -127,6 +138,7 @@ function ListUI:RebuildFiltered()
     
     -- Set async filtering flag to prevent premature UpdateList
     self.__state.isAsyncFiltering = true
+    self.__state.asyncFilterStartTime = GetTime()
     
     -- Show loading indicator
     local noResults = self:GetFrame("noResultsText")
@@ -275,6 +287,7 @@ function ListUI:RebuildFiltered()
           
           -- Clear async filtering flag BEFORE calling UpdateList
           self.__state.isAsyncFiltering = false
+          self.__state.asyncFilterStartTime = nil
           
           -- Trigger UI update (UpdateList will call UpdatePaginationUI internally)
           if self.UpdateList then
