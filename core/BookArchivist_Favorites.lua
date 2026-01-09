@@ -25,17 +25,6 @@ local function now()
   return osTime and osTime() or 0
 end
 
-local function debug(msg)
-  local BA = BookArchivist
-  if not (BA and type(BA.DebugPrint) == "function") then
-    return
-  end
-  if Core and Core.IsDebugEnabled and not Core:IsDebugEnabled() then
-    return
-  end
-  BA:DebugPrint("[Favorites] " .. tostring(msg))
-end
-
 ---Set favorite state for a given bookId.
 ---@param bookId string
 ---@param value boolean
@@ -49,7 +38,7 @@ function Favorites:Set(bookId, value)
   end
   local entry = db.booksById[bookId]
   if not entry then
-    debug("Set called for missing bookId " .. tostring(bookId))
+    BookArchivist:DebugPrint("[Favorites] Set called for missing bookId " .. tostring(bookId))
     return
   end
   local flag = value and true or false
@@ -72,7 +61,7 @@ function Favorites:Toggle(bookId)
   end
   local entry = db.booksById[bookId]
   if not entry then
-    debug("Toggle called for missing bookId " .. tostring(bookId))
+    BookArchivist:DebugPrint("[Favorites] Toggle called for missing bookId " .. tostring(bookId))
     return
   end
   local newValue = not (entry.isFavorite and true or false)

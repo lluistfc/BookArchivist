@@ -25,17 +25,6 @@ local function now()
   return osTime and osTime() or 0
 end
 
-local function debug(msg)
-  local BA = BookArchivist
-  if not (BA and type(BA.DebugPrint) == "function") then
-    return
-  end
-  if Core and Core.IsDebugEnabled and not Core:IsDebugEnabled() then
-    return
-  end
-  BA:DebugPrint("[Recent] " .. tostring(msg))
-end
-
 local function ensureRecentContainer(db)
   if not db then
     return nil
@@ -61,7 +50,7 @@ function Recent:MarkOpened(bookId)
   end
   local entry = db.booksById[bookId]
   if not entry then
-    debug("MarkOpened called for missing bookId " .. tostring(bookId))
+    BookArchivist:DebugPrint("[Recent] MarkOpened called for missing bookId " .. tostring(bookId))
     return
   end
 
