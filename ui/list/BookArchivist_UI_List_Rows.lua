@@ -137,6 +137,22 @@ function ListUI:UpdateList()
     if scrollBox and scrollBox.InvalidateDataProvider then
       scrollBox:InvalidateDataProvider()
     end
+    
+    -- Use C_Timer to defer loading overlay hide and welcome panel render
+    -- This ensures the UI has time to fully update before triggering reader
+    C_Timer.After(0.05, function()
+      local uiFrame = self:GetUIFrame()
+      if uiFrame and uiFrame.__loadingContainer then
+        uiFrame.__loadingContainer:SetAlpha(0)
+        uiFrame.__loadingContainer:Hide()
+      end
+      
+      -- Trigger reader to show welcome panel if no selection
+      local ReaderUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader
+      if ReaderUI and ReaderUI.RenderSelected then
+        ReaderUI:RenderSelected()
+      end
+    end)
     return
   end
 
@@ -285,4 +301,20 @@ function ListUI:UpdateList()
   if scrollBox and scrollBox.InvalidateDataProvider then
     scrollBox:InvalidateDataProvider()
   end
+  
+  -- Use C_Timer to defer loading overlay hide and welcome panel render
+  -- This ensures the UI has time to fully update before triggering reader
+  C_Timer.After(0.05, function()
+    local uiFrame = self:GetUIFrame()
+    if uiFrame and uiFrame.__loadingContainer then
+      uiFrame.__loadingContainer:SetAlpha(0)
+      uiFrame.__loadingContainer:Hide()
+    end
+    
+    -- Trigger reader to show welcome panel if no selection
+    local ReaderUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader
+    if ReaderUI and ReaderUI.RenderSelected then
+      ReaderUI:RenderSelected()
+    end
+  end)
 end

@@ -89,16 +89,18 @@ function ListUI:RebuildFiltered()
 
   local selectedKey = self:GetSelectedKey()
   
-  -- Use Iterator for throttled filtering to prevent UI freeze
+  -- Use Iterator for ALL filtering to prevent game freeze
+  -- Even small datasets benefit from yielding to game engine
   local Iterator = BookArchivist and BookArchivist.Iterator
-  if Iterator and #baseKeys > 100 then
+  if Iterator and #baseKeys > 0 then
     -- Prevent concurrent async filtering
     if self.__state.isAsyncFiltering then
       self:DebugPrint("[BookArchivist] rebuildFiltered: async filtering already in progress, skipping")
       return
     end
     
-    -- Throttled path for large datasets
+    -- Throttled path for ALL datasets (not just >100)
+    -- Small datasets complete quickly but still yield to prevent freeze
     self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: using throttled iteration for %d books", #baseKeys))
     
     -- Set async filtering flag to prevent premature UpdateList
@@ -109,6 +111,15 @@ function ListUI:RebuildFiltered()
     if noResults then
       noResults:SetText("|cFFFFFF00Filtering books...|r")
       noResults:Show()
+    end
+    
+    -- Update main frame loading indicator if available
+    local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+    if Internal and Internal.getUIFrame then
+      local uiFrame = Internal.getUIFrame()
+      if uiFrame and BookArchivist.UI.Frame and BookArchivist.UI.Frame.UpdateLoadingProgress then
+        BookArchivist.UI.Frame:UpdateLoadingProgress(uiFrame, "filtering", 0)
+      end
     end
     
     -- Convert array to table for Iterator
@@ -156,12 +167,21 @@ function ListUI:RebuildFiltered()
         return true -- continue
       end,
       {
-        chunkSize = 100,
-        budgetMs = 8,
+        chunkSize = 50,  -- Reduced from 100 for faster first paint
+        budgetMs = 5,     -- Reduced from 8 for more responsive feel
         onProgress = function(progress, current, total)
           -- Update loading indicator with progress
           if noResults then
             noResults:SetText(string.format("|cFFFFFF00Filtering: %d/%d (%.0f%%)|r", current, total, progress * 100))
+          end
+          
+          -- Update main frame progress
+          local Internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
+          if Internal and Internal.getUIFrame then
+            local uiFrame = Internal.getUIFrame()
+            if uiFrame and BookArchivist.UI.Frame and BookArchivist.UI.Frame.UpdateLoadingProgress then
+              BookArchivist.UI.Frame:UpdateLoadingProgress(uiFrame, "filtering", progress)
+            end
           end
         end,
         onComplete = function(context)
@@ -176,7 +196,9 @@ function ListUI:RebuildFiltered()
             
             self:DebugPrint(string.format("[BookArchivist] rebuildFiltered: %d matched of %d (throttled)", #filteredKeys, #baseKeys))
             
-            -- Hide loading indicator
+            -- Filtering complete - don't hide overlay yet, UpdateList will handle it
+            -- after list has been populated and rendered
+            
             local noResults = self:GetFrame("noResultsText")
             if noResults and #filteredKeys == 0 then
               noResults:SetText("|cFF999999" .. (self.L and self.L["LIST_EMPTY_SEARCH"] or "No results") .. "|r")
