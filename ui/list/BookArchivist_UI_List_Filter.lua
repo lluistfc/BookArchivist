@@ -262,6 +262,11 @@ function ListUI:RebuildFiltered()
             if not context.selectionStillValid and self.ClearSelection then
               self:ClearSelection()
             end
+            
+            -- Apply sorting to the filtered results
+            if db and self.ApplySort then
+              self:ApplySort(filteredKeys, db)
+            end
           end)
           
           if not success then

@@ -122,108 +122,8 @@ local function RegisterNativeSettings()
     end
   end
 
-  -- ----------------------
-  -- Debug checkbox
-  -- ----------------------
-  do
-    local variable = "debug"
-    local variableKey = variable
-    local variableTbl = BookArchivistDB.options
-    local defaultValue = false
-    local name = L("OPTIONS_DEBUG_LABEL")
-
-    local setting = Settings.RegisterAddOnSetting(
-      category,
-      variable,
-      variableKey,
-      variableTbl,
-      "boolean",
-      name,
-      defaultValue
-    )
-    
-    -- Override SetValue to ensure it persists to the database
-    if setting then
-      local originalSetValue = setting.SetValue
-      setting.SetValue = function(self, value)
-        -- Ensure database exists
-        BookArchivistDB = BookArchivistDB or {}
-        BookArchivistDB.options = BookArchivistDB.options or {}
-        
-        -- Convert to boolean and persist
-        local boolValue = value and true or false
-        BookArchivistDB.options.debug = boolValue
-        
-        -- Call original if it exists
-        if originalSetValue then
-          originalSetValue(self, boolValue)
-        end
-        
-        -- Apply runtime changes
-        local state = boolValue
-        
-        -- Update debug logging
-        if BookArchivist and type(BookArchivist.EnableDebugLogging) == "function" then
-          BookArchivist.EnableDebugLogging(state, false)
-        end
-        
-        -- Update UI grid (sync uiDebug with debug)
-        if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
-          BookArchivist:SetUIDebugEnabled(state)
-        else
-          -- Fallback: directly update DB
-          BookArchivistDB.options.uiDebug = state
-          
-          -- Try to update grid visibility directly
-          local internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
-          if internal and internal.setGridOverlayVisible then
-            internal.setGridOverlayVisible(state)
-          end
-        end
-      end
-    end
-
-    Settings.CreateCheckbox(
-      category,
-      setting,
-      L("OPTIONS_DEBUG_TOOLTIP")
-    )
-
-    Settings.SetOnValueChangedCallback(variableKey, function(settingObj, value)
-      -- Get the actual boolean value from the setting
-      local actualValue = value
-      if type(settingObj) == "table" and settingObj.GetValue then
-        actualValue = settingObj:GetValue()
-      end
-      
-      -- Manually persist to ensure it's saved
-      BookArchivistDB = BookArchivistDB or {}
-      BookArchivistDB.options = BookArchivistDB.options or {}
-      BookArchivistDB.options.debug = actualValue and true or false
-      
-      -- Apply runtime state to both debug logging AND UI grid
-      local state = actualValue and true or false
-      
-      -- Update debug logging
-      if BookArchivist and type(BookArchivist.EnableDebugLogging) == "function" then
-        BookArchivist.EnableDebugLogging(state, false)
-      end
-      
-      -- Update UI grid (sync uiDebug with debug)
-      if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
-        BookArchivist:SetUIDebugEnabled(state)
-      else
-        -- Fallback: directly update DB
-        BookArchivistDB.options.uiDebug = state
-        
-        -- Try to update grid visibility directly
-        local internal = BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal
-        if internal and internal.setGridOverlayVisible then
-          internal.setGridOverlayVisible(state)
-        end
-      end
-    end)
-  end
+  -- Debug checkbox removed - now in dev/BookArchivist_DevOptions.lua
+  -- Only loaded when BookArchivist_Dev.toc is present
 
   -- ----------------------
   -- Tooltip checkbox
@@ -622,6 +522,16 @@ function OptionsUI:Open()
     SettingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
     SettingsAPI.OpenToCategory(optionsCategory.ID or optionsCategory)
   end
+end
+
+function OptionsUI:GetCategory()
+  RegisterNativeSettings()
+  return optionsCategory
+end
+
+function OptionsUI:Sync()
+  -- Called by dev tools when settings change
+  -- Currently a no-op, but can be extended
 end
 
 function OptionsUI:OpenTools()

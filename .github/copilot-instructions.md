@@ -34,6 +34,28 @@ These instructions are repository-wide. Follow them unless the user explicitly o
 
 Breaking this rule wastes the user's time with premature commits of broken code.
 
+### ALWAYS verify syntax before ending a task
+**RULE:** Before completing any code modification task, you MUST verify the code for syntax errors.
+
+**How to verify:**
+1. After making changes, check the modified file for obvious syntax errors
+2. Look for common issues:
+   - Malformed comment separators (missing spaces/newlines)
+   - Unmatched parentheses, brackets, or braces
+   - Missing `end` statements for functions/loops/conditionals
+   - Typos in keywords (functoin, locla, retrun, etc.)
+   - String quote mismatches
+3. If uncertain, use grep_search or read_file to verify the affected sections
+4. Only mark task as complete after confirming syntax is valid
+
+**Why this matters:**
+- Syntax errors break the addon immediately on load
+- User wastes time debugging trivial mistakes
+- Erodes trust in AI assistance
+- Forces user to manually fix before testing actual functionality
+
+If you introduce a syntax error, acknowledge it immediately and fix it without being prompted.
+
 ---
 
 ## 📦 Removed Features (for future reference)

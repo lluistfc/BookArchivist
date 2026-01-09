@@ -1,0 +1,27 @@
+package-as: BookArchivist
+
+enable-nolib-creation: no
+
+manual-changelog:
+    filename: CURSE_FORGE_RELEASE_CHANGELOG.md
+    markup-type: markdown
+
+ignore:
+    # Development and test files
+    - dev
+    - tests
+    - docs
+    
+    # Documentation (all markdown except the manual-changelog)
+    - "**/*.md"
+    
+    # Git and IDE
+    - .git
+    - .gitignore
+    - .gitattributes
+    - .vscode
+    - .github
+    
+    # Release process files
+    - .pkgmeta
+    - BookArchivist_logo.png

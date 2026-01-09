@@ -186,16 +186,10 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		return
 	end
 	
-	-- Module status diagnostic
+	-- Module status diagnostic - dev only
 	if verb == "modules" or verb == "modstatus" then
-		print("|cFF00FF00BookArchivist Module Status:|r")
-		print(string.format("  BookArchivist: %s", tostring(BookArchivist ~= nil)))
-		print(string.format("  Profiler: %s", tostring(BookArchivist and BookArchivist.Profiler ~= nil)))
-		print(string.format("  Iterator: %s", tostring(BookArchivist and BookArchivist.Iterator ~= nil)))
-		print(string.format("  FramePool: %s", tostring(BookArchivist and BookArchivist.UI and BookArchivist.UI.FramePool ~= nil)))
-		print(string.format("  TestDataGenerator: %s", tostring(BookArchivist and BookArchivist.TestDataGenerator ~= nil)))
-		print(string.format("  DBSafety: %s", tostring(BookArchivist and BookArchivist.DBSafety ~= nil)))
-		print(string.format("  Core: %s", tostring(BookArchivist and BookArchivist.Core ~= nil)))
+		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
+		print("These commands require BookArchivist_Dev.toc to be loaded")
 		return
 	end
 	
@@ -204,60 +198,40 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		print("|cFF00FF00BookArchivist Commands:|r")
 		print("  |cFFFFFF00/ba|r - Open main UI")
 		print("  |cFFFFFF00/ba help|r - Show this help")
-		print("  |cFFFFFF00/ba modules|r - Check module loading status")
-		print("  |cFFFFFF00/ba pool|r - Show frame pool statistics")
 		print("  |cFFFFFF00/ba options|r - Open options panel")
 		print("  |cFFFFFF00/ba import|r - Open import/export tools")
-		print("")
-		print("|cFF00FF00Profiler Commands:|r")
-		print("  |cFFFFFF00/ba profile on|r - Enable profiler")
-		print("  |cFFFFFF00/ba profile off|r - Disable profiler")
-		print("  |cFFFFFF00/ba profile report|r - Show performance report")
-		print("  |cFFFFFF00/ba profile help|r - More profiler commands")
-		print("")
-		print("|cFF00FF00Iterator Commands:|r")
-		print("  |cFFFFFF00/ba iter test|r - Run slow test iteration")
-		print("  |cFFFFFF00/ba iter status|r - Show active iterations")
-		print("  |cFFFFFF00/ba iter cancel <op>|r - Cancel specific operation")
-		print("")
-		print("|cFF00FF00Test Data Commands:|r")
-		print("  |cFFFFFF00/ba gentest <count>|r - Generate N test books")
-		print("  |cFFFFFF00/ba genpreset <size>|r - Generate preset (small/medium/large)")
-		print("  |cFFFFFF00/ba stats|r - Show database statistics")
-		print("  |cFFFFFF00/ba cleartest|r - Delete all test books")
-		return
-	end
-	
-	-- Frame pool statistics
-	if verb == "pool" or verb == "pools" or verb == "poolstats" then
-		local FramePool = BookArchivist.UI and BookArchivist.UI.FramePool
-		if not FramePool then
-			print("|cFFFF0000BookArchivist:|r FramePool module not loaded!")
-			return
-		end
 		
-		local allStats = FramePool:GetAllStats()
-		if #allStats == 0 then
-			print("|cFF00FF00Frame Pools:|r No pools created yet")
-		else
-			print("|cFF00FF00Frame Pool Statistics:|r")
-			for _, stats in ipairs(allStats) do
-				print(string.format(
-					"  |cFFFFFF00%s:|r %d active, %d available, %d total (%d created, %.1f%% reuse)",
-					stats.name,
-					stats.active,
-					stats.available,
-					stats.total,
-					stats.totalCreated,
-					stats.reuseRatio * 100
-				))
-			end
+		-- Show dev commands only if dev tools are loaded
+		if BookArchivist.DevTools then
+			print("")
+			print("|cFF00FF00Dev Tools Commands:|r")
+			print("  |cFFFFFF00/badev help|r - Show all dev commands")
+			print("  |cFFFFFF00/ba modules|r - Check module loading status")
+			print("  |cFFFFFF00/ba pool|r - Show frame pool statistics")
+			print("  |cFFFFFF00/ba profile|r - Profiler commands")
+			print("  |cFFFFFF00/ba iter|r - Iterator commands")
+			print("  |cFFFFFF00/ba gentest <count>|r - Generate test books")
+			print("  |cFFFFFF00/ba uigrid|r - Toggle UI debug grid")
 		end
 		return
 	end
 	
-	-- Profiler commands
+	-- Frame pool statistics - dev only
+	if verb == "pool" or verb == "pools" or verb == "poolstats" then
+		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
+		print("These commands require BookArchivist_Dev.toc to be loaded")
+		return
+	end
+	
+	-- Profiler commands - dev only
 	if verb == "profile" then
+		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
+		print("These commands require BookArchivist_Dev.toc to be loaded")
+		return
+	end
+	
+	-- Legacy profiler handler (never reached in production)
+	if verb == "_profile_legacy" then
 		local Profiler = BookArchivist.Profiler
 		if not Profiler then
 			print("|cFFFF0000BookArchivist:|r Profiler module not loaded!")
@@ -314,8 +288,15 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		end
 	end
 	
-	-- Iterator commands
+	-- Iterator commands - dev only
 	if verb == "iter" or verb == "iterator" then
+		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
+		print("These commands require BookArchivist_Dev.toc to be loaded")
+		return
+	end
+	
+	-- Legacy iterator handler (never reached in production)
+	if verb == "_iter_legacy" or verb == "_iterator_legacy" then
 		local Iterator = BookArchivist.Iterator
 		if not Iterator then
 			print("|cFFFF0000BookArchivist:|r Iterator module not loaded!")
@@ -394,115 +375,19 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		end
 	end
 	
-	-- Test data generator commands
-	if verb == "gentest" then
-		local Generator = BookArchivist.TestDataGenerator
-		if not Generator then
-			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
-			return
-		end
-		
-		local count = tonumber(rest)
-		if count and count > 0 then
-			Generator:GenerateBooks(count, { uniqueTitles = true })
-		else
-			print("|cFFFF0000Usage:|r /ba gentest <count>")
-			print("Example: /ba gentest 1000")
-		end
+	-- Test data generator commands moved to dev/BookArchivist_DevTools.lua
+	-- UI grid debug commands moved to dev/BookArchivist_DevTools.lua
+	
+	if verb == "uigrid" or verb == "uidebug" or verb == "gentest" or verb == "genpreset" or verb == "cleartest" or verb == "stats" then
+		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
+		print("These commands require BookArchivist_Dev.toc to be loaded")
 		return
 	end
 	
-	if verb == "genpreset" then
-		local Generator = BookArchivist.TestDataGenerator
-		if not Generator then
-			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
-			return
-		end
-		
-		if rest == "" then
-			print("|cFF00FF00Available presets:|r")
-			print("  small (100), medium (500), large (1000)")
-			print("  xlarge (2500), stress (5000)")
-			print("  minimal (50), rich (200)")
-			print("|cFFFFFF00Usage:|r /ba genpreset <preset>")
-		else
-			Generator:GeneratePreset(rest)
-		end
-		return
-	end
-	
-	if verb == "cleartest" then
-		local Generator = BookArchivist.TestDataGenerator
-		if not Generator then
-			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
-			return
-		end
-		
-		StaticPopupDialogs["BOOKARCHIVIST_CLEARTEST"] = {
-			text = "Delete all test books?\n\nThis will remove books matching test patterns.\n\n|cFFFF0000This cannot be undone!|r",
-			button1 = "Delete",
-			button2 = "Cancel",
-			OnAccept = function()
-				Generator:ClearTestData()
-			end,
-			timeout = 0,
-			whileDead = true,
-			hideOnEscape = true,
-			preferredIndex = 3,
-		}
-		StaticPopup_Show("BOOKARCHIVIST_CLEARTEST")
-		return
-	end
-	
-	if verb == "stats" then
-		local Generator = BookArchivist.TestDataGenerator
-		if not Generator then
-			print("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
-			return
-		end
-		
-		Generator:PrintStats()
-		return
-	end
-	
-	-- UI grid debug (existing functionality)
-	if verb == "uigrid" or verb == "uidebug" then
-		local ok = ensureUI()
-		if not ok then
-			return
-		end
-		local desiredState
-		if verb == "uidebug" and rest ~= "" then
-			if rest == "on" then
-				desiredState = true
-			elseif rest == "off" then
-				desiredState = false
-			end
-		end
-		if verb == "uidebug" and desiredState ~= nil then
-			if BookArchivist and type(BookArchivist.SetUIDebugEnabled) == "function" then
-				BookArchivist:SetUIDebugEnabled(desiredState)
-			else
-				BookArchivistDB = BookArchivistDB or {}
-				BookArchivistDB.options = BookArchivistDB.options or {}
-				BookArchivistDB.options.uiDebug = desiredState
-			end
-		end
-		local visible
-		if desiredState == nil then
-			visible = Internal.toggleGridOverlay and Internal.toggleGridOverlay()
-		elseif Internal.setGridOverlayVisible then
-			Internal.setGridOverlayVisible(desiredState)
-			visible = desiredState
-		else
-			visible = Internal.toggleGridOverlay and Internal.toggleGridOverlay() or desiredState
-		end
-		local statusText = (visible and "UI debug grid enabled.") or "UI debug grid hidden. (default is off)"
-		if Internal.chatMessage then
-			Internal.chatMessage("|cFF00FF00BookArchivist:|r " .. statusText)
-		elseif print then
-			print("[BookArchivist] " .. statusText)
-		end
+	-- Legacy UI grid debug (kept for compatibility, but disabled in production)
+	if verb == "_uigrid_legacy" or verb == "_uidebug_legacy" then
+		print("|cFFFF0000BookArchivist:|r UI debug commands moved to dev tools")
+		print("Use /badev grid when BookArchivist_Dev.toc is loaded")
 		return
 	end
 

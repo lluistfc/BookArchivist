@@ -1,9 +1,16 @@
-# Exclude markdown from release archives
+# Exclude development and documentation from git archive
+dev/ export-ignore
+tests/ export-ignore
+docs/ export-ignore
 *.md export-ignore
 
-# Optional: exclude repo-only stuff
+# Exclude repo-only stuff
 .github/ export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+.pkgmeta export-ignore
+.vscode/ export-ignore
 BookArchivist_logo.png export-ignore
-docs/ export-ignore
+
+# Shell scripts should have LF line endings
+*.sh text eol=lf

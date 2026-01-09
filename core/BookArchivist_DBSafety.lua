@@ -25,8 +25,12 @@ function DBSafety:ValidateStructure(db)
   end
   
   -- Check critical structure
-  if type(db.booksById) ~= "table" then
-    return false, "booksById is missing or not a table"
+  -- Accept either modern (booksById) or legacy v1.0.2 (books) structure
+  local hasModernStructure = type(db.booksById) == "table"
+  local hasLegacyStructure = type(db.books) == "table"
+  
+  if not hasModernStructure and not hasLegacyStructure then
+    return false, "Neither booksById nor books table found"
   end
   
   if type(db.order) ~= "table" then
@@ -203,11 +207,15 @@ function DBSafety:HealthCheck()
   local db = BookArchivistDB
   local issues = {}
   
+  -- Determine which structure we're using
+  local booksTable = db.booksById or db.books
+  local isModern = db.booksById ~= nil
+  
   -- Check for orphaned order entries
-  if db.order and db.booksById then
+  if db.order and booksTable then
     local orphanCount = 0
-    for _, bookId in ipairs(db.order) do
-      if not db.booksById[bookId] then
+    for _, bookKey in ipairs(db.order) do
+      if not booksTable[bookKey] then
         orphanCount = orphanCount + 1
       end
     end
@@ -217,9 +225,9 @@ function DBSafety:HealthCheck()
   end
   
   -- Check for books with missing required fields
-  if db.booksById then
+  if booksTable then
     local invalidBooks = 0
-    for bookId, entry in pairs(db.booksById) do
+    for bookKey, entry in pairs(booksTable) do
       if type(entry) ~= "table" then
         invalidBooks = invalidBooks + 1
       elseif not entry.title or not entry.pages then
@@ -231,11 +239,11 @@ function DBSafety:HealthCheck()
     end
   end
   
-  -- Check recent list validity
-  if db.recent and db.recent.list and db.booksById then
+  -- Check recent list validity (only for modern structure)
+  if isModern and db.recent and db.recent.list and booksTable then
     local invalidRecent = 0
     for _, bookId in ipairs(db.recent.list) do
-      if not db.booksById[bookId] then
+      if not booksTable[bookId] then
         invalidRecent = invalidRecent + 1
       end
     end
@@ -263,13 +271,17 @@ function DBSafety:RepairDatabase()
   local repairs = {}
   local repairCount = 0
   
+  -- Determine which structure we're using
+  local booksTable = db.booksById or db.books
+  local isModern = db.booksById ~= nil
+  
   -- Remove orphaned order entries
-  if db.order and db.booksById then
+  if db.order and booksTable then
     local newOrder = {}
     local orphanedCount = 0
-    for _, bookId in ipairs(db.order) do
-      if db.booksById[bookId] then
-        table.insert(newOrder, bookId)
+    for _, bookKey in ipairs(db.order) do
+      if booksTable[bookKey] then
+        table.insert(newOrder, bookKey)
       else
         orphanedCount = orphanedCount + 1
       end
@@ -281,12 +293,12 @@ function DBSafety:RepairDatabase()
     end
   end
   
-  -- Clean up recent list
-  if db.recent and db.recent.list and db.booksById then
+  -- Clean up recent list (only for modern structure)
+  if isModern and db.recent and db.recent.list and booksTable then
     local newRecent = {}
     local invalidCount = 0
     for _, bookId in ipairs(db.recent.list) do
-      if db.booksById[bookId] then
+      if booksTable[bookId] then
         table.insert(newRecent, bookId)
       else
         invalidCount = invalidCount + 1
@@ -299,28 +311,30 @@ function DBSafety:RepairDatabase()
     end
   end
   
-  -- Fix missing uiState
-  if not db.uiState then
-    db.uiState = { lastCategoryId = "__all__" }
-    repairCount = repairCount + 1
-    table.insert(repairs, "Recreated missing uiState")
-  elseif db.uiState.lastBookId and db.booksById and not db.booksById[db.uiState.lastBookId] then
-    db.uiState.lastBookId = nil
-    repairCount = repairCount + 1
-    table.insert(repairs, "Cleared invalid lastBookId from uiState")
+  -- Fix missing uiState (only for modern structure)
+  if isModern then
+    if not db.uiState then
+      db.uiState = { lastCategoryId = "__all__" }
+      repairCount = repairCount + 1
+      table.insert(repairs, "Recreated missing uiState")
+    elseif db.uiState.lastBookId and booksTable and not booksTable[db.uiState.lastBookId] then
+      db.uiState.lastBookId = nil
+      repairCount = repairCount + 1
+      table.insert(repairs, "Cleared invalid lastBookId from uiState")
+    end
   end
   
   -- Remove invalid book entries
-  if db.booksById then
+  if booksTable then
     local removedBooks = 0
     local toRemove = {}
-    for bookId, entry in pairs(db.booksById) do
+    for bookKey, entry in pairs(booksTable) do
       if type(entry) ~= "table" or not entry.title or not entry.pages then
-        table.insert(toRemove, bookId)
+        table.insert(toRemove, bookKey)
       end
     end
-    for _, bookId in ipairs(toRemove) do
-      db.booksById[bookId] = nil
+    for _, bookKey in ipairs(toRemove) do
+      booksTable[bookKey] = nil
       removedBooks = removedBooks + 1
     end
     if removedBooks > 0 then

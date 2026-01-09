@@ -128,15 +128,8 @@ end
 function ListUI:ApplySort(filteredKeys, db)
   local mode = self:GetSortMode()
   local categoryId = (self.GetCategoryId and self:GetCategoryId()) or "__all__"
-  local isRecentView = (categoryId == "__recent__")
 
-  if isRecentView then
-    if self.UpdateSortDropdown then
-      self:UpdateSortDropdown()
-    end
-    return
-  end
-
+  -- Apply user-selected sorting to all views (including Recent and Favorites)
   local comparator = self:GetSortComparator(mode, db)
   if comparator then
     table.sort(filteredKeys, comparator)
@@ -169,6 +162,7 @@ function ListUI:InitializeSortDropdown(dropdown)
       infoAll.text = t("CATEGORY_ALL")
       infoAll.func = function()
         ListUI:SetCategoryId("__all__")
+        ListUI:UpdateSortDropdown()
       end
       infoAll.checked = (currentCategory == "__all__")
       UIDropDownMenu_AddButton(infoAll)
@@ -177,6 +171,7 @@ function ListUI:InitializeSortDropdown(dropdown)
       infoFav.text = t("CATEGORY_FAVORITES")
       infoFav.func = function()
         ListUI:SetCategoryId("__favorites__")
+        ListUI:UpdateSortDropdown()
       end
       infoFav.checked = (currentCategory == "__favorites__")
       UIDropDownMenu_AddButton(infoFav)
@@ -185,6 +180,7 @@ function ListUI:InitializeSortDropdown(dropdown)
       infoRecent.text = t("CATEGORY_RECENT")
       infoRecent.func = function()
         ListUI:SetCategoryId("__recent__")
+        ListUI:UpdateSortDropdown()
       end
       infoRecent.checked = (currentCategory == "__recent__")
       UIDropDownMenu_AddButton(infoRecent)

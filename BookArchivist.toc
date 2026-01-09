@@ -1,11 +1,11 @@
 ## Title: BookArchivist
 ## Notes: Records books/letters read via the default ItemTextFrame and provides a UI to re-read them.
 ## Author: Bettyboom
-## Version: 1.0.2
+## Version: @project-version@
 ## Interface: 110000
 ## SavedVariablesPerCharacter: BookArchivistDB
 ## AddonCompartmentFunc: BookArchivist_ToggleFromCompartment
-## X-Curse-Project-ID: CF_PROJECT_ID_PLACEHOLDER
+## X-Curse-Project-ID: @project-version@
 
 # Ace3 libraries
 libs\LibStub\LibStub.lua
@@ -80,4 +80,10 @@ ui/BookArchivist_UI_Frame_Chrome.lua
 ui/BookArchivist_UI_Frame_Builder.lua
 ui/BookArchivist_UI_Frame.lua
 ui/BookArchivist_UI_Runtime.lua
+#@do-not-package@
+## Dev Tools (optional, excluded from releases via .pkgmeta)
+## These files will be silently ignored if not present
+dev/BookArchivist_DevTools.lua
+dev/BookArchivist_DevOptions.lua
 dev/BookArchivist_TestDataGenerator.lua
+#@end-do-not-package@

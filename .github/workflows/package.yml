@@ -39,7 +39,7 @@ jobs:
             -o "dist/${ADDON_NAME}.zip" \
             HEAD
 
-      - name: Inject CurseForge project ID into TOC
+      - name: Process TOC replacements (CurseForge tokens)
         env:
           CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
         run: |
@@ -48,10 +48,12 @@ jobs:
           ADDON_NAME="BookArchivist"
           ZIP="dist/${ADDON_NAME}.zip"
           PROJECT_ID="${CF_PROJECT_ID:-}"
-
-          if [ -z "$PROJECT_ID" ]; then
-            echo "CF_PROJECT_ID is empty; skipping TOC injection"
-            exit 0
+          
+          # Extract version from tag or commit hash
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"  # Strip 'v' prefix from tag
+          else
+            VERSION="dev-$(git rev-parse --short HEAD)"
           fi
 
           tmpdir="$(mktemp -d)"
@@ -63,14 +65,23 @@ jobs:
             exit 1
           fi
 
-          if grep -q '^## X-Curse-Project-ID:' "$toc_path"; then
-            sed -i "s/^## X-Curse-Project-ID:.*/## X-Curse-Project-ID: ${PROJECT_ID}/" "$toc_path"
-          else
-            awk -v pid="${PROJECT_ID}" '
-              /^## AddonCompartmentFunc:/ && !added { print; print "## X-Curse-Project-ID: " pid; added=1; next }
-              { print }
-              END { if (!added) print "## X-Curse-Project-ID: " pid }
-            ' "$toc_path" > "$toc_path.tmp" && mv "$toc_path.tmp" "$toc_path"
+          # Replace @project-version@ token
+          sed -i "s/@project-version@/${VERSION}/g" "$toc_path"
+          echo "Replaced @project-version@ with ${VERSION}"
+
+          # Replace X-Curse-Project-ID if CF_PROJECT_ID is set
+          if [ -n "$PROJECT_ID" ]; then
+            if grep -q '^## X-Curse-Project-ID:' "$toc_path"; then
+              sed -i "s/^## X-Curse-Project-ID:.*/## X-Curse-Project-ID: ${PROJECT_ID}/" "$toc_path"
+              echo "Updated X-Curse-Project-ID to ${PROJECT_ID}"
+            else
+              awk -v pid="${PROJECT_ID}" '
+                /^## AddonCompartmentFunc:/ && !added { print; print "## X-Curse-Project-ID: " pid; added=1; next }
+                { print }
+                END { if (!added) print "## X-Curse-Project-ID: " pid }
+              ' "$toc_path" > "$toc_path.tmp" && mv "$toc_path.tmp" "$toc_path"
+              echo "Injected X-Curse-Project-ID: ${PROJECT_ID}"
+            fi
           fi
 
           rm -f "$ZIP"
@@ -108,45 +119,3 @@ jobs:
           draft: false
           prerelease: false
           files: dist/BookArchivist.zip
-
-      - name: Compute CurseForge release type
-        id: compute_release_type
-        env:
-          DISPATCH_TAG: ${{ github.event.inputs.tag || '' }}
-        run: |
-          set -euo pipefail
-
-          release_type="beta"
-
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/* ]]; then
-            # Tag push: decide by tag name (e.g. v1.0.3 vs v1.0.3-beta)
-            if [[ "${GITHUB_REF_NAME}" == *beta* ]]; then
-              release_type="beta"
-            else
-              release_type="release"
-            fi
-          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            tag="${DISPATCH_TAG}"
-            if [[ "$tag" == *beta* ]]; then
-              release_type="beta"
-            elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-              release_type="release"
-            else
-              release_type="beta"
-            fi
-          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            release_type="release"
-          fi
-
-          echo "release_type=${release_type}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload to CurseForge
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        uses: itsmeow/curseforge-upload@v3
-        with:
-          token: ${{ secrets.CF_API_KEY }}
-          project_id: ${{ vars.CF_PROJECT_ID }}
-          game_endpoint: "wow"
-          file_path: "dist/BookArchivist.zip"
-          release_type: ${{ steps.compute_release_type.outputs.release_type }}
-          game_versions: "11.2.7"

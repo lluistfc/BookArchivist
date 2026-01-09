@@ -88,6 +88,17 @@ function DB:Init()
     BookArchivistDB.dbVersion = 1
   end
 
+  -- Migration cleanup: Reset debug mode if dev tools not loaded
+  -- This prevents users who had debug enabled in v1.0.2 from being
+  -- stuck with debug mode when upgrading to v1.0.3+ without dev files
+  if BookArchivistDB.options and BookArchivistDB.options.debug == true then
+    if not BookArchivist.DevTools then
+      debug("Debug mode was enabled but dev tools not loaded - resetting to false")
+      BookArchivistDB.options.debug = false
+      BookArchivistDB.options.uiDebug = false
+    end
+  end
+
   if not hasLoggedInitSummary then
     debug("DB init complete; effective dbVersion=" .. tostring(BookArchivistDB.dbVersion or 0)
       .. ", has legacy books=" .. tostring(BookArchivistDB.books and next(BookArchivistDB.books) ~= nil)

@@ -111,12 +111,6 @@ local function ensureDB()
   BookArchivistDB.booksById = BookArchivistDB.booksById or {}
   BookArchivistDB.order = BookArchivistDB.order or {}
   BookArchivistDB.options = BookArchivistDB.options or {}
-  if BookArchivistDB.options.debug == nil then
-	BookArchivistDB.options.debug = false
-  end
-  if BookArchivistDB.options.uiDebug == nil then
-    BookArchivistDB.options.uiDebug = false
-  end
   if type(BookArchivistDB.options.language) ~= "string" or BookArchivistDB.options.language == "" then
     local gameLocale = (type(GetLocale) == "function" and GetLocale()) or "enUS"
     BookArchivistDB.options.language = normalizeLanguageTag(gameLocale)
@@ -532,12 +526,15 @@ function Core:SetLastCategoryId(categoryId)
 
   -- Mirror category choice into the favorites-only list filter so the
   -- list builder can continue to rely on filters for actual selection.
-  local listOpts = ensureListOptions()
-  listOpts.filters = listOpts.filters or {}
-  if id == "__favorites__" then
-    listOpts.filters.favoritesOnly = true
-  else
-    listOpts.filters.favoritesOnly = false
+  local ListConfig = BookArchivist.ListConfig
+  if ListConfig and ListConfig.EnsureListOptions then
+    local listOpts = ListConfig:EnsureListOptions()
+    listOpts.filters = listOpts.filters or {}
+    if id == "__favorites__" then
+      listOpts.filters.favoritesOnly = true
+    else
+      listOpts.filters.favoritesOnly = false
+    end
   end
 end
 
@@ -680,22 +677,5 @@ function Core:Trim(text)
   return trim(text)
 end
 
-function Core:IsDebugEnabled()
-  local db = ensureDB()
-  return db.options.debug and true or false
-end
-
-function Core:SetDebugEnabled(state)
-  local db = ensureDB()
-  db.options.debug = state and true or false
-end
-
-function Core:IsUIDebugEnabled()
-  local db = ensureDB()
-  return db.options.uiDebug and true or false
-end
-
-function Core:SetUIDebugEnabled(state)
-  local db = ensureDB()
-  db.options.uiDebug = state and true or false
-end
+-- Debug functions moved to dev/BookArchivist_DevTools.lua
+-- Production builds have no debug functionality
