@@ -89,6 +89,9 @@ end
 local optionsCategory
 local registered = false
 
+-- Store setting references for language updates
+local settingObjects = {}
+
 local function RegisterNativeSettings()
   if registered then return end
 
@@ -188,6 +191,9 @@ local function RegisterNativeSettings()
       defaultValue
     )
     
+    -- Store reference for language updates
+    settingObjects.resumeLastPage = setting
+    
     -- Override SetValue to ensure it persists to the database
     if setting then
       local originalSetValue = setting.SetValue
@@ -247,6 +253,9 @@ local function RegisterNativeSettings()
       name,
       defaultValue
     )
+
+    -- Store reference for language updates
+    settingObjects.language = setting
 
     -- Override SetValue to ensure it persists and triggers language change
     if setting then
@@ -527,26 +536,30 @@ end
 
 function OptionsUI:Sync()
   -- Called when settings change (e.g., language)
-  -- Blizzard Settings API doesn't support dynamically updating labels,
-  -- so we need to force re-registration with new locale strings
+  -- Update setting labels with new locale strings
+  if settingObjects.tooltip then
+    settingObjects.tooltip.name = L("OPTIONS_TOOLTIP_LABEL")
+  end
+  if settingObjects.resumeLastPage then
+    settingObjects.resumeLastPage.name = L("OPTIONS_RESUME_LAST_PAGE_LABEL")
+  end
+  if settingObjects.language then
+    settingObjects.language.name = L("LANGUAGE_LABEL")
+  end
+  
+  -- Update category name
+  if optionsCategory then
+    optionsCategory.name = L("ADDON_TITLE")
+  end
+  
+  -- If Settings panel is open, close and reopen to refresh display
   if SettingsPanel and SettingsPanel:IsShown() then
-    local wasOpen = true
-    -- Close the settings panel
     HideUIPanel(SettingsPanel)
-    -- Reset registration flag to force re-registration
-    registered = false
-    optionsCategory = nil
-    -- Re-register with new locale strings and reopen
     C_Timer.After(0.1, function()
-      RegisterNativeSettings()
-      if wasOpen and optionsCategory then
+      if optionsCategory then
         Settings.OpenToCategory(optionsCategory:GetID())
       end
     end)
-  else
-    -- Panel not open, just reset so next open will use new locale
-    registered = false
-    optionsCategory = nil
   end
 end
 
