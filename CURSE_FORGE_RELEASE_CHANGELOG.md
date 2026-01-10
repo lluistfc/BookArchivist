@@ -1,3 +1,14 @@
+# 2.0.1
+
+**Hotfix for production mode crash**
+
+## Fixed
+- Fixed critical error preventing addon from loading in production mode (missing `IsDebugEnabled` method)
+- Fixed stack overflow from circular dependency during database initialization
+- Added initialization guard to safely handle debug logging during startup
+
+---
+
 # 2.0.0
 
 **🚨 MAJOR UPDATE:** This version includes breaking database changes with automatic migration. Your data will be preserved, but you cannot downgrade to 1.0.2 after upgrading.

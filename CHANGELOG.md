@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## [2.0.1] - 2026-01-10
+
+**Hotfix release**
+
+### Fixed
+
+- Fixed critical production mode error: `IsDebugEnabled` method not available causing addon to fail on load
+- Fixed stack overflow from circular dependency during database initialization (DebugPrint → IsDebugEnabled → GetOptions → EnsureDB → Init → DebugPrint)
+- Added initialization guard to prevent debug calls from triggering DB access during DB setup
+
 ## [2.0.0] - 2026-01-10
 
 **Major version release with breaking database changes.** This version includes automatic migration from v1.0.2, but **you cannot downgrade** after upgrading. Your data will be preserved during the upgrade.

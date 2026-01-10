@@ -17,6 +17,9 @@ local ChatLinks = BookArchivist.ChatLinks
 local debugLog = {}
 local MAX_DEBUG_LOG_ENTRIES = 5000
 
+-- Guard to prevent circular dependency during DB initialization
+local isInitializing = false
+
 local function storeDebugMessage(msg)
   table.insert(debugLog, {
     timestamp = time(),
@@ -33,6 +36,19 @@ local function chatMessage(msg)
   elseif type(print) == "function" then
     print(msg)
   end
+end
+
+-- Production-safe wrapper for debug state
+-- DevTools may override this; otherwise delegates to Core
+function BookArchivist:IsDebugEnabled()
+  -- Prevent circular dependency during DB initialization
+  if isInitializing then
+    return false
+  end
+  if Core and Core.IsDebugEnabled then
+    return Core:IsDebugEnabled()
+  end
+  return false
 end
 
 function BookArchivist:DebugPrint(...)
@@ -114,9 +130,15 @@ local function handleAddonLoaded(name)
     return
   end
 
+  -- Set initialization guard to prevent circular dependency
+  isInitializing = true
+  
   if Core and Core.EnsureDB then
     Core:EnsureDB()
   end
+  
+  -- Clear initialization guard after DB is ready
+  isInitializing = false
   
   -- Initialize debug logging state from DB
   if type(BookArchivist.EnableDebugLogging) == "function" and Core and Core.IsDebugEnabled then
