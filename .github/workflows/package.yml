@@ -94,18 +94,11 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare folder artifact (no nested zip)
-        run: |
-          set -euo pipefail
-          rm -rf artifact
-          mkdir -p artifact
-          unzip dist/BookArchivist.zip -d artifact
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: curseforge-zip
-          path: artifact/BookArchivist
+          name: BookArchivist-zip
+          path: dist/BookArchivist.zip
 
       - name: Create GitHub Release and upload ZIP
         if: (startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.test_only != 'true'))
