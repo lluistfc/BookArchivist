@@ -134,8 +134,8 @@ Locales.caES = {
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "Ja hi ha una importació en curs.",
   ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importats: %d nous, %d fusionats",
 	["OPTIONS_TOOLTIP_LABEL"] = "Mostra l'etiqueta 'Arxivat' a la descripció",
-	["OPTIONS_TOOLTIP_TOOLTIP"] = "Quan està activat, els elements llegibles el text dels quals s'ha desat per a aquest personatge mostraran una línia addicional 'Book Archivist: Arxivat' a la seva descripció.",	["OPTIONS_RELOAD_REQUIRED"] = "Idioma canviat! Interfície principal actualitzada. Escriu /reload si vols actualitzar aquest panell de configuració també.",	["OPTIONS_RELOAD_NOW"] = "Recarrega ara",
-	["OPTIONS_RELOAD_LATER"] = "Més tard",  ["OPTIONS_DEBUG_LABEL"] = "Mode de depuració",
+	["OPTIONS_TOOLTIP_TOOLTIP"] = "Quan està activat, els elements llegibles el text dels quals s'ha desat per a aquest personatge mostraran una línia addicional 'Book Archivist: Arxivat' a la seva descripció.",	["OPTIONS_RELOAD_REQUIRED"] = "Idioma de la interfície principal actualitzat!\n\nRecarregar ara per actualitzar aquest panell?",	["OPTIONS_RELOAD_NOW"] = "Recarrega ara",
+	["OPTIONS_RELOAD_LATER"] = "Ara no",  ["OPTIONS_DEBUG_LABEL"] = "Mode de depuració",
   ["OPTIONS_DEBUG_TOOLTIP"] = "Quan està activat, mostra un registre de depuració sota el quadre d'importació amb diagnòstics detallats per solucionar problemes.",
 
   -- Location / provenance
