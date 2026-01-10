@@ -97,9 +97,9 @@ function DB:Init()
       debug("Debug mode was enabled but dev tools not loaded - resetting to false")
       BookArchivistDB.options.debug = false
     end
-    -- Always disable uiDebug in release builds (dev tools won't exist)
-    if BookArchivistDB.options.uiDebug == true and not (BookArchivist.DevTools and BookArchivist.DevTools.InitDebugGrid) then
-      debug("UI debug was enabled but debug grid not available - resetting to false")
+    -- Disable uiDebug if dev tools not loaded
+    if BookArchivistDB.options.uiDebug == true and not BookArchivist.DevTools then
+      debug("UI debug was enabled but dev tools not loaded - resetting to false")
       BookArchivistDB.options.uiDebug = false
     end
   end
