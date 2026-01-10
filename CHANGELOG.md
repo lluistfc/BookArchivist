@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented here.
 
+## [2.0.2] - 2026-01-10
+
+**Bug fix release**
+
+### Fixed
+
+- **Search/Filter Issues**
+  - Fixed search getting stuck on "Filtering books..." after searching for text with no results
+  - Iterator operations now properly cancel before starting new ones to prevent collision errors
+  - Empty search results now correctly rebuild filtered list when search is cleared
+
+- **Options Panel Issues**
+  - Fixed tooltip checkbox showing incorrect state after reopening settings panel (schema mismatch: Core expected `options.tooltip.enabled` but UI was using `options.tooltip` directly)
+  - Fixed language change reload dialog appearing when clicking any checkbox (now only shows on actual language changes)
+  - Fixed language dropdown not updating addon UI (invalid "auto" default value, missing validation for saved values, callback not firing for dropdowns)
+  - Fixed options panel labels not updating when language changes (Blizzard Settings API caches labels - added reload confirmation dialog in new language)
+
+- **Code Quality**
+  - Fixed duplicate `Delete` function definition that was breaking book deletion (second definition was actually `IsTooltipEnabled`)
+  - Fixed locale key misuse causing English fallbacks in non-English clients (`LOCATION_UNKNOWN_ZONE` and `LOCATION_UNKNOWN_MOB` were referenced as literal strings)
+  - Fixed DevTools guard referencing non-existent `InitDebugGrid` function
+
+### Removed
+
+- Removed ~510 lines of dead code across 17 files (unused functions, legacy frame builders, informational getters)
+- Removed unused locale keys (`SEARCH_MATCH_TITLE`, `SEARCH_MATCH_CONTENT`)
+
 ## [2.0.1] - 2026-01-10
 
 **Hotfix release**

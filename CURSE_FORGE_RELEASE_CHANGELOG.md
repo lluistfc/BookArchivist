@@ -1,3 +1,23 @@
+# 2.0.2
+
+**Bug fix release addressing search, options panel, and localization issues**
+
+## Fixed
+- **Search & Filtering:** Fixed search getting stuck on "Filtering books..." after no-results searches. Search now properly clears and rebuilds the list when you clear the search text.
+- **Tooltip Option:** Fixed checkbox state not persisting correctly - was showing "checked" after reopening settings even when disabled. (Root cause: schema mismatch between Core and UI code)
+- **Language Dropdown:** Fixed language selector not updating the addon UI (had invalid default, wasn't validating saved values, and callbacks don't work for dropdowns in Blizzard API)
+- **Options Panel Localization:** Fixed labels not updating when changing language. Added reload confirmation dialog (shown in the NEW language) since Blizzard caches UI labels.
+- **Spurious Dialog:** Fixed reload confirmation dialog appearing when clicking any checkbox instead of only when changing language.
+- **Book Deletion:** Fixed broken book deletion caused by duplicate function definition overwriting the real `Delete` function.
+- **Localization:** Fixed English fallback text appearing in Spanish/French/German clients for "Unknown Zone" and "Unknown Mob" (incorrect locale key references).
+
+## Code Cleanup
+- Removed ~510 lines of dead code (unused functions, legacy builders, informational getters) across 17 files
+- Fixed DevTools guard checking for non-existent function
+- Removed unused locale keys
+
+---
+
 # 2.0.1
 
 **Hotfix for production mode crash**
