@@ -628,11 +628,24 @@ function ListUI:Create(uiFrame)
       button.favoriteStar:SetShown(elementData.isFavorite or false)
     end
     
-    if button.badgeTitle then
-      button.badgeTitle:SetShown(elementData.showTitleBadge or false)
+    -- Sync match badges (handles text, positioning, and visibility)
+    local hasBadges = false
+    if elementData.bookKey and (elementData.showTitleBadge or elementData.showTextBadge) then
+      local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
+      if ListUI and ListUI.SyncMatchBadges then
+        ListUI:SyncMatchBadges(button, elementData.bookKey)
+        hasBadges = true
+      end
+    else
+      -- Hide badges if no match
+      if button.badgeTitle then button.badgeTitle:Hide() end
+      if button.badgeText then button.badgeText:Hide() end
     end
-    if button.badgeText then
-      button.badgeText:SetShown(elementData.showTextBadge or false)
+    
+    -- Adjust row content anchors based on badge visibility
+    local ListUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
+    if ListUI and ListUI.SetRowContentAnchors then
+      ListUI:SetRowContentAnchors(button, hasBadges)
     end
     
     -- Set up click handler

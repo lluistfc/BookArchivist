@@ -2,9 +2,9 @@
 
 All notable changes to this project are documented here.
 
-## [1.0.3] - Unreleased
+## [2.0.0] - 2026-01-10
 
-Changes since **v1.0.2** (tag `v1.0.2`) up to the current commit.
+**Major version release with breaking database changes.** This version includes automatic migration from v1.0.2, but **you cannot downgrade** after upgrading. Your data will be preserved during the upgrade.
 
 ### Added
 
@@ -13,42 +13,34 @@ Changes since **v1.0.2** (tag `v1.0.2`) up to the current commit.
     - `core/BookArchivist_DB.lua` initializes `BookArchivistDB` and applies versioned migrations.
     - `core/BookArchivist_Migrations.lua` manages `dbVersion` and performs the BookId v2 migration.
   - Added `core/BookArchivist_BookId.lua` to generate stable v2 book IDs and rewrite the legacy `books`/`order` structures into `booksById` with consistent keys.
-  - Documented DB and BookId behavior in:
-    - `docs/01-db-versioning-and-migration.md`
-    - `docs/02-bookid-and-legacy-migration.md`
 
 - **Favorites and virtual categories**
   - Implemented a per-book favorites system in `core/BookArchivist_Favorites.lua` that tracks `entry.isFavorite` on `booksById`.
   - Extended list UI to:
     - Show a star icon for favorite books in the list.
     - Filter favorites via quick filters and a virtual "Favorites" category.
-  - Captured design details in `docs/03-favorites-and-virtual-categories.md`.
 
 - **Recently read (MRU list)**
   - Added `core/BookArchivist_Recent.lua` to maintain a per-character MRU list of recently-read books (`BookArchivistDB.recent`).
   - Updated the reader and list UI to:
     - Track `lastReadAt` timestamps when a book is opened.
     - Expose a virtual "Recent" category in the sort/category dropdown.
-  - Described behavior in `docs/04-recently-read.md`.
 
 - **Tooltip integration**
   - Introduced `core/BookArchivist_Tooltip.lua` to integrate with GameTooltip and TooltipDataProcessor APIs.
   - Tooltips now show when a readable item/object/title has archived text for the current character.
-  - Added configuration and documentation in `docs/05-tooltip-integration.md` and the options UI.
 
 - **Search and index optimizations**
   - Improved search behavior and performance:
     - Core now builds and maintains a normalized `searchText` field per entry and uses it for queries.
     - Added title and item indexes to speed up lookups for search and tooltips (`indexes.titleToBookIds`, `indexes.itemToBookIds`).
   - Updated list UI to visually distinguish whether matches come from the title or content (badges column in rows).
-  - Captured design in `docs/06-search-optimization.md`.
 
 - **UI state persistence and resume reading**
   - Added per-character UI state in `BookArchivistDB.uiState`:
     - Stores last selected book ID and last selected virtual category.
     - Added an option to resume reading from the last page.
   - Updated the main header to include a "Resume last book" button that jumps back to the last opened book and page.
-  - Documented this in `docs/07-ui-state-persistence.md`.
 
 - **Export / import pipeline**
   - Added export helpers in `core/BookArchivist_Core.lua` to:
@@ -58,7 +50,6 @@ Changes since **v1.0.2** (tag `v1.0.2`) up to the current commit.
     - Parses incoming payloads.
     - Merges books into `booksById` with conflict detection.
     - Reports counts of new vs merged entries.
-  - Documented the flow in `docs/08-export-import.md`.
 
 - **Options UI enhancements**
   - Extended `ui/options/BookArchivist_UI_Options.lua` to surface new settings for:
@@ -100,10 +91,24 @@ Changes since **v1.0.2** (tag `v1.0.2`) up to the current commit.
 - Maintained consistent behavior between the Books and Locations tabs when filtering by favorites, ensuring both views honor the same favorite state and filters.
 - Cleaned up the DB initialization path so migrations run exactly once and do not spam debug logs.
 - Ensured recently-read and favorites logic degrade gracefully when SavedVariables are missing or partially populated.
+- Fixed async filtering deadlock and empty results for filtered categories
+- Fixed books list not visible on first open (async timing issue)
+- Fixed loading overlay stuck on first open
+- Fixed v1.0.2 migration edge cases (added comprehensive test suite)
+- Eliminated visible gap between loading overlay and list appearing
+- Fixed pagination after async filtering
+- Fixed scrollbar appearing when no scroll is needed
+- Fixed text overflow in buttons
+
+### Removed
+
+- Removed resize/splitter functionality (left panel now fixed at 360px width)
+- Removed deprecated planning files and documentation
+- Cleaned up legacy debug options in v2 migration
 
 ---
 
-[1.0.3]: https://github.com/your-org/BookArchivist/releases/tag/v1.0.3
+[2.0.0]: https://github.com/lluistfc/BookArchivist/releases/tag/v2.0.0
 
 ## [1.0.2] - 2026-01-05
 

@@ -1,6 +1,12 @@
-# 1.0.3 (unreleased)
+# 2.0.0
 
-- Safer data storage with a proper database migration system so existing saved books are upgraded without losing data.
+**🚨 MAJOR UPDATE:** This version includes breaking database changes with automatic migration. Your data will be preserved, but you cannot downgrade to 1.0.2 after upgrading.
+
+## What's New
+
+### Database Overhaul
+- Complete database restructure with migration system that automatically upgrades your saved books without data loss
+- New stable book ID system (v2) ensures consistent identification across sessions
 - New Favorites system:
   - Mark books as favorites and see a star icon in the list.
   - Quickly filter the list (or use the Favorites view) to focus on your must-keep texts.

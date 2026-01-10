@@ -232,6 +232,30 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
   local childNames = node.childNames or {}
   local books = node.books or {}
   
+  -- Filter books by current search query if applicable
+  local hasSearch = listUI.GetSearchQuery and listUI:GetSearchQuery() ~= ""
+  if hasSearch and not (childNames and #childNames > 0) then
+    -- We're showing books and have a search query - use filtered keys
+    local filtered = listUI.GetFilteredKeys and listUI:GetFilteredKeys() or {}
+    if listUI.DebugPrint then
+      listUI:DebugPrint(string.format("[BookArchivist] rebuildLocationRows: hasSearch=true, filtered=%d, books=%d", #filtered, #books))
+    end
+    local filteredBooksInLocation = {}
+    for _, key in ipairs(filtered) do
+      -- Check if this book is in the current location
+      for _, locKey in ipairs(books) do
+        if key == locKey then
+          table.insert(filteredBooksInLocation, key)
+          break
+        end
+      end
+    end
+    books = filteredBooksInLocation
+    if listUI.DebugPrint then
+      listUI:DebugPrint(string.format("[BookArchivist] rebuildLocationRows: after filter, books=%d", #books))
+    end
+  end
+  
   -- Determine what we're showing
   local hasChildren = childNames and #childNames > 0
   local items = hasChildren and childNames or books

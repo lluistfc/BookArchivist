@@ -289,6 +289,18 @@ function ListUI:RebuildFiltered()
           self.__state.isAsyncFiltering = false
           self.__state.asyncFilterStartTime = nil
           
+          -- Rebuild location rows if in Locations mode (to apply search filter)
+          local modes = self.GetListModes and self:GetListModes() or nil
+          local mode = self.GetListMode and self:GetListMode() or nil
+          if modes and mode == modes.LOCATIONS then
+            local state = self.GetLocationState and self:GetLocationState() or nil
+            if state and self.RebuildLocationRows then
+              local pageSize = self.GetPageSize and self:GetPageSize() or 100
+              local page = state.currentPage or 1
+              self.RebuildLocationRows(state, self, pageSize, page)
+            end
+          end
+          
           -- Trigger UI update (UpdateList will call UpdatePaginationUI internally)
           if self.UpdateList then
             self:UpdateList()
@@ -371,5 +383,17 @@ function ListUI:RebuildFiltered()
   if selectedKey and not selectionStillValid then
     self:SetSelectedKey(nil)
     self:NotifySelectionChanged()
+  end
+  
+  -- Rebuild location rows if in Locations mode (to apply search filter)
+  local modes = self.GetListModes and self:GetListModes() or nil
+  local mode = self.GetListMode and self:GetListMode() or nil
+  if modes and mode == modes.LOCATIONS then
+    local state = self.GetLocationState and self:GetLocationState() or nil
+    if state and self.RebuildLocationRows then
+      local pageSize = self.GetPageSize and self:GetPageSize() or 100
+      local page = state.currentPage or 1
+      self.RebuildLocationRows(state, self, pageSize, page)
+    end
   end
 end
