@@ -526,8 +526,17 @@ function OptionsUI:GetCategory()
 end
 
 function OptionsUI:Sync()
-  -- Called by dev tools when settings change
-  -- Currently a no-op, but can be extended
+  -- Called when settings change (e.g., language)
+  -- Blizzard Settings API doesn't support dynamically updating labels,
+  -- so we need to close and reopen the panel to show updated localization
+  if SettingsPanel and SettingsPanel:IsShown() then
+    -- Close the settings panel
+    HideUIPanel(SettingsPanel)
+    -- Reopen it after a brief delay to let it fully close
+    C_Timer.After(0.1, function()
+      Settings.OpenToCategory(optionsCategory:GetID())
+    end)
+  end
 end
 
 function OptionsUI:OpenTools()
