@@ -11,6 +11,7 @@ ignore:
     - dev
     - tests
     - docs
+    - libs/WoWUnit
     
     # Development documentation
     - AGENTS.md

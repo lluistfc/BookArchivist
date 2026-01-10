@@ -3,6 +3,7 @@ dev/ export-ignore
 tests/ export-ignore
 docs/ export-ignore
 media/ export-ignore
+libs/WoWUnit/ export-ignore
 *.md export-ignore
 
 # Exclude repo-only stuff
