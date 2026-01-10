@@ -84,10 +84,15 @@ jobs:
           echo "Replaced @project-version@ with ${VERSION}"
 
           rm -f "$ZIP"
-      (cd "$tmpdir" && zip -qr "${GITHUB_WORKSPACE}/dist/${ADDON_NAME}.zip" "${ADDON_NAME}")
+          (cd "$tmpdir" && zip -qr "${GITHUB_WORKSPACE}/dist/${ADDON_NAME}.zip" "${ADDON_NAME}")
+          
+          # Verify TOC exists in final ZIP
           ZIP="dist/${ADDON_NAME}.zip"
-          unzip -l "$ZIP" | grep -E " ${ADDON_NAME}/BookArchivist\.toc$" >/dev/null \
-            || (echo "ERROR: Missing ${ADDON_NAME}/BookArchivist.toc in zip" && unzip -l "$ZIP" && exit 1)
+          if ! unzip -l "$ZIP" | grep -qE " ${ADDON_NAME}/BookArchivist\.toc$"; then
+            echo "ERROR: Missing ${ADDON_NAME}/BookArchivist.toc in zip"
+            unzip -l "$ZIP"
+            exit 1
+          fi
 
       - name: Prepare folder artifact (no nested zip)
         run: |
