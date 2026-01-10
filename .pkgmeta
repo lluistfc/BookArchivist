@@ -12,8 +12,10 @@ ignore:
     - tests
     - docs
     
-    # Documentation (all markdown except the manual-changelog)
-    - "**/*.md"
+    # Development documentation
+    - AGENTS.md
+    - ui/AGENTS.md
+    - CHANGELOG.md
     
     # Git and IDE
     - .git
