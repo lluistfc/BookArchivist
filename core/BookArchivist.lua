@@ -205,7 +205,7 @@ function BookArchivist:Delete(key)
   end
 end
 
-function BookArchivist:Delete(key)
+function BookArchivist:IsTooltipEnabled()
   if Core and Core.IsTooltipEnabled then
     return Core:IsTooltipEnabled()
   end
