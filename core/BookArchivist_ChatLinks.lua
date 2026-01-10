@@ -486,6 +486,8 @@ function ChatLinks:DoImport()
     
     -- For now, show success message
     local bookTitle = self.importPrompt.bookTitle or "book"
+    local successMsg = L["IMPORT_SUCCESS"] or "Imported: %s"
+    BookArchivist:DebugPrint("|cFF4A7EBBBookArchivist:|r " .. successMsg:format(bookTitle))
     StaticPopup_Show("BOOKARCHIVIST_IMPORT_SUCCESS", bookTitle)
     
     -- TODO: Actually import the book data
@@ -505,11 +507,13 @@ function ChatLinks:DoImport()
   if self.promptEditBox and self.promptEditBox.GetText then
     text = self.promptEditBox:GetText()
   else
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("No text provided") or "Import failed: No text provided"))
     StaticPopup_Show("BOOKARCHIVIST_IMPORT_ERROR", "No text provided")
     return
   end
   
   if not text or text == "" then
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("No text provided") or "Import failed: No text provided"))
     StaticPopup_Show("BOOKARCHIVIST_IMPORT_ERROR", "No text provided")
     return
   end
@@ -520,6 +524,7 @@ function ChatLinks:DoImport()
   -- Use existing import worker
   local ImportWorker = BookArchivist.ImportWorker
   if not ImportWorker then
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. (L["IMPORT_FAILED"]:format("Import system unavailable") or "Import failed: Import system unavailable"))
     StaticPopup_Show("BOOKARCHIVIST_IMPORT_ERROR", "Import system unavailable")
     return
   end
@@ -529,7 +534,8 @@ function ChatLinks:DoImport()
   worker.onDone = function(stats)
     local bookTitle = self.importPrompt.bookTitle or "book"
     if stats and (stats.newCount or 0) > 0 then
-      -- Show success dialog
+      local successMsg = L["IMPORT_SUCCESS"] or "Imported: %s"
+      BookArchivist:DebugPrint("|cFF4A7EBBBookArchivist:|r " .. successMsg:format(bookTitle))
       StaticPopup_Show("BOOKARCHIVIST_IMPORT_SUCCESS", bookTitle)
     else
       local warningMsg = L["IMPORT_COMPLETED_WITH_WARNINGS"] or "Import completed with warnings"
@@ -546,7 +552,8 @@ function ChatLinks:DoImport()
   end
   
   worker.onError = function(err)
-    -- Show error dialog
+    local errorMsg = L["IMPORT_FAILED"] or "Import failed: %s"
+    BookArchivist:DebugPrint("|cFFFF0000BookArchivist:|r " .. errorMsg:format(err or "unknown error"))
     StaticPopup_Show("BOOKARCHIVIST_IMPORT_ERROR", err or "unknown error")
     self.importPrompt:Hide()
     self.importPrompt.pendingBook = nil
