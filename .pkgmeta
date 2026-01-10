@@ -16,7 +16,8 @@ ignore:
     - AGENTS.md
     - ui/AGENTS.md
     - CHANGELOG.md
-    
+    - media
+
     # Git and IDE
     - .git
     - .gitignore
