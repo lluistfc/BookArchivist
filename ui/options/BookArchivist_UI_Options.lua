@@ -528,14 +528,25 @@ end
 function OptionsUI:Sync()
   -- Called when settings change (e.g., language)
   -- Blizzard Settings API doesn't support dynamically updating labels,
-  -- so we need to close and reopen the panel to show updated localization
+  -- so we need to force re-registration with new locale strings
   if SettingsPanel and SettingsPanel:IsShown() then
+    local wasOpen = true
     -- Close the settings panel
     HideUIPanel(SettingsPanel)
-    -- Reopen it after a brief delay to let it fully close
+    -- Reset registration flag to force re-registration
+    registered = false
+    optionsCategory = nil
+    -- Re-register with new locale strings and reopen
     C_Timer.After(0.1, function()
-      Settings.OpenToCategory(optionsCategory:GetID())
+      RegisterNativeSettings()
+      if wasOpen and optionsCategory then
+        Settings.OpenToCategory(optionsCategory:GetID())
+      end
     end)
+  else
+    -- Panel not open, just reset so next open will use new locale
+    registered = false
+    optionsCategory = nil
   end
 end
 
