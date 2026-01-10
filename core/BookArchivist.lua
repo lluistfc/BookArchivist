@@ -111,10 +111,10 @@ local function getOptionsUI()
   return BookArchivist.UI.Options
 end
 
-local function syncOptionsUI()
+local function syncOptionsUI(newLang)
   local optionsUI = getOptionsUI()
   if optionsUI and optionsUI.Sync then
-    optionsUI:Sync()
+    optionsUI:Sync(newLang)
   end
 end
 
@@ -339,7 +339,7 @@ function BookArchivist:SetLanguage(lang)
   elseif type(self.RefreshUI) == "function" then
     self:RefreshUI()
   end
-  syncOptionsUI()
+  syncOptionsUI(lang)
 end
 
 function BookArchivist:OpenOptionsPanel()

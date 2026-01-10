@@ -548,7 +548,7 @@ function OptionsUI:GetCategory()
   return optionsCategory
 end
 
-function OptionsUI:Sync()
+function OptionsUI:Sync(newLang)
   -- Called when settings change (e.g., language)
   -- Update setting labels with new locale strings
   if settingObjects.tooltip then
@@ -566,10 +566,25 @@ function OptionsUI:Sync()
     optionsCategory.name = L("ADDON_TITLE")
   end
   
+  -- Get message in the NEW language
+  local locales = BookArchivist and BookArchivist.__Locales
+  local newLangBundle = locales and locales[newLang]
+  
+  -- Update dialog text with new language
+  if StaticPopupDialogs["BOOKARCHIVIST_LANGUAGE_CHANGED"] and newLangBundle then
+    StaticPopupDialogs["BOOKARCHIVIST_LANGUAGE_CHANGED"].text = 
+      newLangBundle["OPTIONS_RELOAD_REQUIRED"] or 
+      "Language changed! Main UI updated. Type /reload if you want to update this settings panel too."
+    StaticPopupDialogs["BOOKARCHIVIST_LANGUAGE_CHANGED"].button1 = 
+      newLangBundle["OPTIONS_RELOAD_NOW"] or "Reload Now"
+    StaticPopupDialogs["BOOKARCHIVIST_LANGUAGE_CHANGED"].button2 = 
+      newLangBundle["OPTIONS_RELOAD_LATER"] or "Later"
+  end
+  
   -- Notify user that options panel labels won't update until UI reload
   -- (Blizzard Settings UI caches label text and doesn't support dynamic updates)
   if SettingsPanel and SettingsPanel:IsShown() then
-    -- Show confirmation dialog with reload option
+    -- Show confirmation dialog with reload option (in NEW language)
     StaticPopup_Show("BOOKARCHIVIST_LANGUAGE_CHANGED")
   end
 end
