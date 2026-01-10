@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## [2.0.3] - 2026-01-10
+
+**Enhancement release**
+
+### Added
+
+- Added confirmation dialogs for chat link imports showing book title on success and error details on failure (previously only visible in debug logs)
+
+### Changed
+
+- Excluded README.md from release packages (GitHub-only documentation)
+
 ## [2.0.2] - 2026-01-10
 
 **Bug fix release**

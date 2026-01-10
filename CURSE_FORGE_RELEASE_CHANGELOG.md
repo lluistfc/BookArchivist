@@ -1,3 +1,12 @@
+# 2.0.3
+
+**Small enhancement for chat link imports**
+
+## Added
+- When you import a book via chat link, you now see a confirmation dialog showing the book title on success or error details if something goes wrong
+
+---
+
 # 2.0.2
 
 **Bug fix release addressing search, settings, and localization issues**
