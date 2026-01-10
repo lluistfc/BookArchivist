@@ -75,6 +75,11 @@ function ListUI:UpdateList()
     
     if total == 0 and dbCount > 0 and not isFilteredCategory then
       self:DebugPrint(string.format("[BookArchivist] updateList: filtered empty but DB has %d books, forcing rebuild", dbCount))
+      -- Clear any stuck async filtering state before forcing rebuild
+      if self.__state then
+        self.__state.isAsyncFiltering = false
+        self.__state.asyncFilterStartTime = nil
+      end
       if self.RebuildFiltered then
         self:RebuildFiltered()
         -- RebuildFiltered will call UpdateList when done, so return now
