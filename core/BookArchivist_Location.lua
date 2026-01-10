@@ -138,6 +138,3 @@ local function resolveGuidName(guid)
   end
   return nil
 end
-
-function Location:GetGuidName(guid)
-end
