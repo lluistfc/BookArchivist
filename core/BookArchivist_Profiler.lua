@@ -197,29 +197,6 @@ function Profiler:Reset()
   startTimes = {}
 end
 
---- Export profile data for analysis
---- @return string JSON-like table
-function Profiler:Export()
-  local export = {
-    timestamp = time(),
-    enabled = enabled,
-    profiles = {},
-  }
-  
-  for label, data in pairs(profiles) do
-    export.profiles[label] = {
-      count = data.count,
-      total = data.total,
-      avg = data.count > 0 and (data.total / data.count) or 0,
-      max = data.max,
-      min = data.min == math.huge and 0 or data.min,
-      last = data.last,
-    }
-  end
-  
-  return BookArchivist.Serialize and BookArchivist.Serialize:Serialize(export) or tostring(export)
-end
-
 --- Get the top N slowest operations
 --- @param n number Number of results to return (default: 10)
 --- @return table List of {label, avgTime, count}
@@ -245,30 +222,6 @@ function Profiler:GetSlowestOperations(n)
   for i = 1, math.min(n, #sorted) do
     table.insert(result, sorted[i])
   end
-  
-  return result
-end
-
---- Get operations that exceed a time threshold
---- @param thresholdMs number Threshold in milliseconds
---- @return table List of operations exceeding threshold
-function Profiler:GetOperationsAboveThreshold(thresholdMs)
-  local result = {}
-  
-  for label, data in pairs(profiles) do
-    if data.max > thresholdMs then
-      table.insert(result, {
-        label = label,
-        max = data.max,
-        avg = data.count > 0 and (data.total / data.count) or 0,
-        count = data.count,
-      })
-    end
-  end
-  
-  table.sort(result, function(a, b)
-    return a.max > b.max
-  end)
   
   return result
 end

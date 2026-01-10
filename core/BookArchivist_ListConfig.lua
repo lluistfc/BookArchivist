@@ -71,18 +71,6 @@ function ListConfig:EnsureListOptions()
   return listOpts
 end
 
-function ListConfig:GetFilterDefaults()
-  return LIST_FILTER_DEFAULTS
-end
-
-function ListConfig:GetValidSortModes()
-  return VALID_SORT_MODES
-end
-
-function ListConfig:GetSortDefault()
-  return LIST_SORT_DEFAULT
-end
-
 function ListConfig:GetSortMode()
   local listOpts = self:EnsureListOptions()
   local mode = listOpts.sortMode or LIST_SORT_DEFAULT
@@ -151,8 +139,4 @@ function ListConfig:GetPageSizes()
   end
   table.sort(sizes)
   return sizes
-end
-
-function ListConfig:GetPageSizeDefault()
-  return LIST_PAGE_SIZE_DEFAULT
 end
