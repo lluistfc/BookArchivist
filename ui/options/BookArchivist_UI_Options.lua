@@ -235,7 +235,7 @@ local function RegisterNativeSettings()
     local variable = "language"
     local variableKey = variable
     local variableTbl = BookArchivistDB.options
-    local defaultValue = "auto"
+    local defaultValue = (type(GetLocale) == "function" and GetLocale()) or "enUS"
     local name = L("LANGUAGE_LABEL")
 
     local setting = Settings.RegisterAddOnSetting(
@@ -247,6 +247,29 @@ local function RegisterNativeSettings()
       name,
       defaultValue
     )
+
+    -- Override SetValue to ensure it persists and triggers language change
+    if setting then
+      local originalSetValue = setting.SetValue
+      setting.SetValue = function(self, value)
+        -- Ensure database exists
+        BookArchivistDB = BookArchivistDB or {}
+        BookArchivistDB.options = BookArchivistDB.options or {}
+        
+        -- Persist to database
+        BookArchivistDB.options.language = value
+        
+        -- Call original if it exists
+        if originalSetValue then
+          originalSetValue(self, value)
+        end
+        
+        -- Apply runtime state (locale switching)
+        if BookArchivist and type(BookArchivist.SetLanguage) == "function" then
+          BookArchivist:SetLanguage(value)
+        end
+      end
+    end
 
     local function GetLanguageOptions()
       local container = Settings.CreateControlTextContainer()
@@ -266,14 +289,6 @@ local function RegisterNativeSettings()
       GetLanguageOptions,
       L("LANGUAGE_LABEL")
     )
-
-    Settings.SetOnValueChangedCallback(variableKey, function(_, value)
-      -- Blizzard already saved to BookArchivistDB.options.language
-      -- Just apply runtime state (locale switching)
-      if BookArchivist and type(BookArchivist.SetLanguage) == "function" then
-        BookArchivist:SetLanguage(value)
-      end
-    end)
   end
 
   -- Add custom button to open tools window

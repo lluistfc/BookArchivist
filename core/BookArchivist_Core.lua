@@ -111,7 +111,7 @@ local function ensureDB()
   BookArchivistDB.booksById = BookArchivistDB.booksById or {}
   BookArchivistDB.order = BookArchivistDB.order or {}
   BookArchivistDB.options = BookArchivistDB.options or {}
-  if type(BookArchivistDB.options.language) ~= "string" or BookArchivistDB.options.language == "" then
+  if type(BookArchivistDB.options.language) ~= "string" or BookArchivistDB.options.language == "" or not SUPPORTED_LANGUAGES[BookArchivistDB.options.language] then
     local gameLocale = (type(GetLocale) == "function" and GetLocale()) or "enUS"
     BookArchivistDB.options.language = normalizeLanguageTag(gameLocale)
   end
