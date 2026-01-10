@@ -163,3 +163,30 @@ Customize your experience with multiple language support, tooltip integration, a
 - Rich HTML rendering is optional; when it fails or is disabled, the reader falls back to SimpleHTML or plain text.
 
 For more detailed contributor guidance and conventions, see `.github/copilot-instructions.md`.
+
+## Development Setup (Live Testing)
+
+For rapid development, create a symbolic link from your WoW AddOns folder to your development directory. This allows WoW to read directly from your dev folder—no copying or building needed. Just edit, save, and `/reload` in-game.
+
+**Windows (PowerShell):**
+```powershell
+# Directory junction (no admin required)
+cmd /c mklink /J "C:\World of Warcraft\_retail_\Interface\AddOns\BookArchivist" "C:\dev\BookArchivist"
+
+# OR symbolic link (requires admin)
+New-Item -ItemType SymbolicLink -Path "C:\World of Warcraft\_retail_\Interface\AddOns\BookArchivist" -Target "C:\dev\BookArchivist"
+```
+
+**Linux / macOS:**
+```bash
+# Symbolic link
+ln -s ~/dev/BookArchivist ~/Games/World\ of\ Warcraft/_retail_/Interface/AddOns/BookArchivist
+
+# Example paths:
+# Linux:  ~/Games/World\ of\ Warcraft/_retail_/Interface/AddOns/
+# macOS:  /Applications/World\ of\ Warcraft/_retail_/Interface/AddOns/
+```
+
+**Verify it worked:**
+- Windows: `dir "C:\World of Warcraft\_retail_\Interface\AddOns\BookArchivist"` (should show `<JUNCTION>` or `<SYMLINK>`)
+- Linux/macOS: `ls -la ~/Games/World\ of\ Warcraft/_retail_/Interface/AddOns/BookArchivist` (should show `->` arrow)
