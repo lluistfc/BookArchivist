@@ -114,8 +114,10 @@ local function RegisterNativeSettings()
   -- ----------------------
   do
     local variable = "tooltip"
-    local variableKey = variable
-    local variableTbl = BookArchivistDB.options
+    local variableKey = "enabled"
+    -- Ensure tooltip table exists
+    BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or { enabled = true }
+    local variableTbl = BookArchivistDB.options.tooltip
     local defaultValue = true
     local name = L("OPTIONS_TOOLTIP_LABEL")
 
@@ -131,25 +133,34 @@ local function RegisterNativeSettings()
     
     -- Override SetValue to ensure it persists to the database
     if setting then
-      local originalSetValue = setting.SetValue
       setting.SetValue = function(self, value)
         -- Ensure database exists
         BookArchivistDB = BookArchivistDB or {}
         BookArchivistDB.options = BookArchivistDB.options or {}
+        BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or {}
         
-        -- Convert to boolean and persist
+        -- Convert to boolean and persist to tooltip.enabled
         local boolValue = value and true or false
-        BookArchivistDB.options.tooltip = boolValue
+        BookArchivistDB.options.tooltip.enabled = boolValue
         
-        -- Call original if it exists
-        if originalSetValue then
-          originalSetValue(self, boolValue)
-        end
-        
-        -- Apply runtime state
+        -- Apply runtime state immediately
         if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
           BookArchivist:SetTooltipEnabled(boolValue)
         end
+      end
+      
+      setting.GetValue = function(self)
+        -- Ensure database exists
+        BookArchivistDB = BookArchivistDB or {}
+        BookArchivistDB.options = BookArchivistDB.options or {}
+        BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or { enabled = true }
+        
+        -- Return current value from database
+        local value = BookArchivistDB.options.tooltip.enabled
+        if value == nil then
+          return defaultValue
+        end
+        return value and true or false
       end
     end
 
@@ -158,14 +169,9 @@ local function RegisterNativeSettings()
       setting,
       L("OPTIONS_TOOLTIP_TOOLTIP")
     )
-
-    Settings.SetOnValueChangedCallback(variableKey, function(_, value)
-      -- Blizzard already saved to BookArchivistDB.options.tooltip
-      -- Just apply runtime state
-      if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
-        BookArchivist:SetTooltipEnabled(value and true or false)
-      end
-    end)
+    
+    -- Store reference for Sync
+    settingObjects.tooltip = setting
   end
 
   -- ----------------------
