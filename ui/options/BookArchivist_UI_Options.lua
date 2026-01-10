@@ -309,6 +309,20 @@ local function RegisterNativeSettings()
   Settings.RegisterAddOnCategory(category)
   registered = true
   
+  -- Register static popup for language change confirmation
+  StaticPopupDialogs["BOOKARCHIVIST_LANGUAGE_CHANGED"] = {
+    text = L("OPTIONS_RELOAD_REQUIRED") or "Language changed! Main UI updated. Type /reload if you want to update this settings panel too.",
+    button1 = L("OPTIONS_RELOAD_NOW") or "Reload",
+    button2 = L("OPTIONS_RELOAD_LATER") or "Later",
+    OnAccept = function()
+      ReloadUI()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+  }
+  
   if SettingsPanel and SettingsPanel.Container.SettingsList.Header.DefaultsButton then
     SettingsPanel.Container.SettingsList.Header.DefaultsButton:Hide()
 end
@@ -555,10 +569,8 @@ function OptionsUI:Sync()
   -- Notify user that options panel labels won't update until UI reload
   -- (Blizzard Settings UI caches label text and doesn't support dynamic updates)
   if SettingsPanel and SettingsPanel:IsShown() then
-    -- Show a message that reload is needed for options panel
-    if BookArchivist and BookArchivist.DebugMessage then
-      BookArchivist:DebugMessage(L("OPTIONS_RELOAD_REQUIRED") or "Language changed. Type /reload to update this settings panel.")
-    end
+    -- Show confirmation dialog with reload option
+    StaticPopup_Show("BOOKARCHIVIST_LANGUAGE_CHANGED")
   end
 end
 

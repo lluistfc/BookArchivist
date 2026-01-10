@@ -134,6 +134,8 @@ Locales.itIT = {
   ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importati: %d nuovi, %d uniti",	["OPTIONS_TOOLTIP_LABEL"] = "Mostra etichetta 'Archiviato' nel tooltip",
 	["OPTIONS_TOOLTIP_TOOLTIP"] = "Quando abilitato, gli oggetti leggibili il cui testo è stato salvato per questo personaggio mostreranno una riga aggiuntiva 'Book Archivist: Archiviato' nel loro tooltip.",
 	["OPTIONS_RELOAD_REQUIRED"] = "Lingua cambiata! Interfaccia principale aggiornata. Digita /reload se vuoi aggiornare anche questo pannello delle impostazioni.",
+	["OPTIONS_RELOAD_NOW"] = "Ricarica ora",
+	["OPTIONS_RELOAD_LATER"] = "Più tardi",
   ["OPTIONS_DEBUG_LABEL"] = "Modalità debug",
   ["OPTIONS_DEBUG_TOOLTIP"] = "Quando abilitato, mostra un log di debug sotto la casella di importazione con diagnostiche dettagliate per la risoluzione dei problemi.",
   -- Location / provenance

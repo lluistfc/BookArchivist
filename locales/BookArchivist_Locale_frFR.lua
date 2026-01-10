@@ -137,6 +137,8 @@ Locales.frFR = {
   ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importé : %d nouveaux, %d fusionnés",	["OPTIONS_TOOLTIP_LABEL"] = "Afficher l'étiquette 'Archivé' dans l'info-bulle",
 	["OPTIONS_TOOLTIP_TOOLTIP"] = "Lorsque cette option est activée, les objets lisibles dont le texte a été enregistré pour ce personnage afficheront une ligne supplémentaire 'Book Archivist : Archivé' dans leur info-bulle.",
 	["OPTIONS_RELOAD_REQUIRED"] = "Langue modifiée ! Interface principale mise à jour. Tapez /reload si vous voulez mettre à jour ce panneau de paramètres aussi.",
+	["OPTIONS_RELOAD_NOW"] = "Recharger maintenant",
+	["OPTIONS_RELOAD_LATER"] = "Plus tard",
   ["OPTIONS_DEBUG_LABEL"] = "Mode débogage",
   ["OPTIONS_DEBUG_TOOLTIP"] = "Lorsque cette option est activée, affiche un journal de débogage sous la zone d'importation avec des diagnostics détaillés pour le dépannage.",
   -- Location / provenance
