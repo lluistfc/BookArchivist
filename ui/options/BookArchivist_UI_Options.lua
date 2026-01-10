@@ -552,14 +552,13 @@ function OptionsUI:Sync()
     optionsCategory.name = L("ADDON_TITLE")
   end
   
-  -- If Settings panel is open, close and reopen to refresh display
+  -- Notify user that options panel labels won't update until UI reload
+  -- (Blizzard Settings UI caches label text and doesn't support dynamic updates)
   if SettingsPanel and SettingsPanel:IsShown() then
-    HideUIPanel(SettingsPanel)
-    C_Timer.After(0.1, function()
-      if optionsCategory then
-        Settings.OpenToCategory(optionsCategory:GetID())
-      end
-    end)
+    -- Show a message that reload is needed for options panel
+    if BookArchivist and BookArchivist.DebugMessage then
+      BookArchivist:DebugMessage(L("OPTIONS_RELOAD_REQUIRED") or "Language changed. Type /reload to update this settings panel.")
+    end
   end
 end
 

@@ -138,6 +138,7 @@ Locales.enUS = {
 	["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Imported: %d new, %d merged",
 	["OPTIONS_TOOLTIP_LABEL"] = "Show tooltip 'Archived' tag",
 	["OPTIONS_TOOLTIP_TOOLTIP"] = "When enabled, readable items whose text has been saved for this character will show an extra 'Book Archivist: Archived' line in their tooltip.",
+	["OPTIONS_RELOAD_REQUIRED"] = "Language changed. Type /reload to update this settings panel.",
   ["OPTIONS_DEBUG_LABEL"] = "Debug mode",
   ["OPTIONS_DEBUG_TOOLTIP"] = "When enabled, shows a debug log below the import box with detailed diagnostics for troubleshooting.",
   ["LOCATION_UNKNOWN_ZONE"] = "Unknown Zone",

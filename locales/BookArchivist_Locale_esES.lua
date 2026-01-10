@@ -134,8 +134,7 @@ Locales.esES = {
   ["OPTIONS_IMPORT_STATUS_IN_PROGRESS"] = "La importación ya está en curso.",
   ["OPTIONS_IMPORT_STATUS_SUMMARY"] = "Importados: %d nuevos, %d combinados",
 	["OPTIONS_TOOLTIP_LABEL"] = "Mostrar etiqueta 'Archivado' en descripción",
-	["OPTIONS_TOOLTIP_TOOLTIP"] = "Cuando está activado, los elementos legibles cuyo texto se ha guardado para este personaje mostrarán una línea adicional 'Book Archivist: Archivado' en su descripción.",
-  ["OPTIONS_DEBUG_LABEL"] = "Modo de depuración",
+	["OPTIONS_TOOLTIP_TOOLTIP"] = "Cuando está activado, los elementos legibles cuyo texto se ha guardado para este personaje mostrarán una línea adicional 'Book Archivist: Archivado' en su descripción.",	["OPTIONS_RELOAD_REQUIRED"] = "Idioma cambiado. Escribe /reload para actualizar este panel de configuración.",  ["OPTIONS_DEBUG_LABEL"] = "Modo de depuración",
   ["OPTIONS_DEBUG_TOOLTIP"] = "Cuando está activado, muestra un registro de depuración debajo del cuadro de importación con diagnósticos detallados para solucionar problemas.",
 
   -- Location / provenance
