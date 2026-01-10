@@ -81,8 +81,11 @@ function ListUI:UpdateList()
         self.__state.asyncFilterStartTime = nil
       end
       if self.RebuildFiltered then
-        self:RebuildFiltered()
-        -- RebuildFiltered will call UpdateList when done, so return now
+        -- Schedule rebuild on next frame to avoid calling it during async completion callback
+        C_Timer.After(0, function()
+          self:RebuildFiltered()
+        end)
+        -- Return now to prevent double-update
         return
       end
     end
