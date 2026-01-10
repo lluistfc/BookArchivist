@@ -59,6 +59,13 @@ function FramePool:CreatePool(poolName, frameType, parent, template)
   return pool
 end
 
+--- Check if a pool exists
+--- @param poolName string Pool identifier
+--- @return boolean exists True if pool exists
+function FramePool:PoolExists(poolName)
+  return pools[poolName] ~= nil
+end
+
 --- Set a custom reset function to clean up frame state
 --- Called automatically when a frame is released back to the pool
 --- @param poolName string Pool identifier
