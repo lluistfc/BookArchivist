@@ -48,28 +48,8 @@ local function ClearAnchors(frame, resetSize)
 	end
 end
 
-local function CreateContainer(name, parent, template, override)
-	local safeCreateFrame = resolveSafeCreateFrame(override)
-	if not safeCreateFrame or not parent then
-		return nil
-	end
-	return safeCreateFrame("Frame", name, parent, template)
-end
-
-local function CreateRow(name, parent, height, template, override)
-	local row = CreateContainer(name, parent, template, override)
-	if row and height then
-		row:SetHeight(height)
-	end
-	return row
-end
-
-FrameUI.CreateContainer = FrameUI.CreateContainer or CreateContainer
-FrameUI.CreateRow = FrameUI.CreateRow or CreateRow
 FrameUI.ClearAnchors = FrameUI.ClearAnchors or ClearAnchors
 if Internal then
-	Internal.CreateContainer = Internal.CreateContainer or CreateContainer
-	Internal.CreateRow = Internal.CreateRow or CreateRow
 	Internal.ClearAnchors = Internal.ClearAnchors or ClearAnchors
 end
 
