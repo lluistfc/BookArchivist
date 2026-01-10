@@ -1,190 +1,274 @@
+````instructions
 #!BookArchivist/.github/copilot-instructions.md
-# Copilot Instructions — BookArchivist (WoW Addon)
+# Copilot Instructions — BookArchivist
 
-These instructions are repository-wide. Follow them unless the user explicitly overrides.
+Repository-wide rules for WoW addon development. Follow unless explicitly overridden.
 
 ---
 
-## ⚠️ CRITICAL WORKFLOW RULES
+## 🚨 NON-NEGOTIABLE RULES
 
-### NEVER commit without explicit approval
-**RULE:** Do NOT run `git commit` until the user:
-1. Tests the changes in-game
-2. Confirms they work correctly
-3. Explicitly tells you to commit
+### 1. Code is the source of truth
+**Never trust documentation over code.**
+- When implementing features: verify EVERY claim against actual source files
+- When documentation conflicts with code: THE CODE IS CORRECT
+- Before referencing a function/module: `grep_search` or `read_file` to confirm it exists
+- Senior developers read code first, documentation second
 
-**When to commit:**
-- User says "commit this" / "commit these changes" / "git commit"
-- User says "looks good, commit it"
-- User explicitly approves after testing
+### 2. Verify syntax before completing tasks
+**Every code change must be syntax-checked before marking complete.**
 
-**When NOT to commit:**
-- After implementing a feature (user needs to test first)
-- After fixing a bug (user needs to verify first)
-- After making ANY code changes (user must test)
-- Just because you finished the work
+Check for:
+- Unmatched `end` statements
+- Mismatched quotes/brackets/parentheses  
+- Typos in keywords (`functoin`, `locla`, `retrun`)
+- Malformed comment blocks
 
-**Correct workflow:**
+If uncertain: `read_file` the modified section to verify.
+
+### 3. Update documentation when code changes
+**Code changes that affect architecture REQUIRE documentation updates.**
+
+Must update when:
+- Adding/removing modules or UI components
+- Changing SavedVariables schema
+- Modifying event flows or execution order
+- Altering feature behavior
+
+Files to sync:
+- `.github/copilot-instructions.md` (this file)
+- `README.md` (architecture overview)
+- `.github/copilot-skills/*.md` (system details)
+
+**Process:**
+1. Make code changes
+2. `grep_search` documentation for references to changed systems
+3. Update documentation to match new code reality
+4. Verify no stale references remain
+
+### 4. Never commit without user approval
+**Do NOT run `git commit` until user explicitly approves.**
+
+Correct workflow:
 1. Implement changes
-2. STOP and let user test
-3. User reports results
-4. Fix any issues if needed
-5. User says "commit"
-6. THEN run git commit
+2. **STOP** — user must test in-game
+3. User confirms "works correctly"
+4. User says "commit" or "commit this"
+5. THEN run `git commit`
 
-Breaking this rule wastes the user's time with premature commits of broken code.
-
-### ALWAYS verify syntax before ending a task
-**RULE:** Before completing any code modification task, you MUST verify the code for syntax errors.
-
-**How to verify:**
-1. After making changes, check the modified file for obvious syntax errors
-2. Look for common issues:
-   - Malformed comment separators (missing spaces/newlines)
-   - Unmatched parentheses, brackets, or braces
-   - Missing `end` statements for functions/loops/conditionals
-   - Typos in keywords (functoin, locla, retrun, etc.)
-   - String quote mismatches
-3. If uncertain, use grep_search or read_file to verify the affected sections
-4. Only mark task as complete after confirming syntax is valid
-
-**Why this matters:**
-- Syntax errors break the addon immediately on load
-- User wastes time debugging trivial mistakes
-- Erodes trust in AI assistance
-- Forces user to manually fix before testing actual functionality
-
-If you introduce a syntax error, acknowledge it immediately and fix it without being prompted.
+Committing untested code wastes user time.
 
 ---
 
-## 📦 Removed Features (for future reference)
+## 🎯 Architecture Overview
 
-### Cache System (commits c94badd → 157c922)
-**Removed because:** Filtering is already fast (8.6ms), cache has weak real-world benefit.
-- Users rarely repeat exact searches in same session
-- Cache cleared on reload/zone change
-- Async filtering optimization (350x speedup) made cache unnecessary
-- Code preserved in git history if needed later
+**For detailed system documentation, see `.github/copilot-skills/README.md`**
 
-**To restore:**
-```bash
-git checkout 157c922 -- core/BookArchivist_Cache.lua
-# Then reintegrate cache calls in Filter.lua and Core.lua
+### Project structure
+```
+core/*          — Event handling, capture, persistence, DB, search, import/export
+ui/*            — Main window, list panel, reader panel, frame building
+ui/options/*    — Blizzard Settings integration, import UI
+ui/list/*       — Books/Locations mode, filtering, pagination, rows
+ui/reader/*     — Content rendering, navigation, delete/share
+locales/*       — Localization (enUS, esES, caES, frFR, deDE, itIT, ptBR)
+```
+
+### Key systems (quick reference)
+| System | Files | Purpose |
+|--------|-------|---------|
+| **Capture** | `core/BookArchivist_Capture.lua` | ItemText event → session → persistence |
+| **Database** | `core/BookArchivist_DB.lua`, `core/BookArchivist_Core.lua` | v2 schema (booksById), migrations, indexes |
+| **Favorites** | `core/BookArchivist_Favorites.lua` | Set/Toggle/IsFavorite bookmarks |
+| **Recent** | `core/BookArchivist_Recent.lua` | MRU list (50-entry cap) |
+| **Tooltip** | `core/BookArchivist_Tooltip.lua` | GameTooltip "Archived" tag via indexes |
+| **Import** | `core/BookArchivist_ImportWorker.lua` | BDB1 format, async 6-phase pipeline |
+| **UI State** | `ui/BookArchivist_UI_Core.lua` | Selection, mode, filters, safe refresh |
+| **List** | `ui/list/BookArchivist_UI_List*.lua` | Books/Locations, async filtering, rows |
+| **Reader** | `ui/reader/BookArchivist_UI_Reader*.lua` | ShowBook, SimpleHTML, navigation |
+
+---
+
+## 🛠️ Implementation Guidelines
+
+### UI Framework Rules
+
+**Native WoW frames only** (no Ace3 except MultiLineEditBox for import/debug panels):
+- `CreateFrame(...)` with Blizzard templates
+- `InsetFrameTemplate3` for panels
+- `UIPanelButtonTemplate` for buttons
+- `SimpleHTML` for rich text rendering
+- `BackdropTemplate` for dialogs
+
+**AceGUI exception:**
+- `MultiLineEditBox` for Options → Import panel (large paste handling)
+- If AceGUI unavailable: fallback to native `ScrollFrame+EditBox`
+
+**Layout separation:**
+- `*_Layout.lua` files: frame creation, anchoring, sizing
+- `*.lua` files: behavior, event handling, state updates
+- Use `safeCreateFrame` helpers (wrap CreateFrame with error handling)
+
+**Fixed layout constraints:**
+- Left panel: 360px width (hardcoded, no splitter/resize)
+- Right panel: flexible, fills remaining space
+- Gap between panels: 10px (Metrics.GAP_M)
+- Structure: header → body → (left inset | gap | right inset)
+
+### When working on...
+
+#### **Database/Persistence**
+- SavedVariables: `BookArchivistDB` (per-character)
+- Schema version: `dbVersion = 2`
+- Books stored in: `booksById[bookId]` (not `books[key]`)
+- Indexes: `objectToBookId`, `itemToBookIds`, `titleToBookIds`
+- Migrations: see `core/BookArchivist_Migrations.lua`
+
+#### **Capture system**
+- Events: `ITEM_TEXT_BEGIN` → `ITEM_TEXT_READY` → `ITEM_TEXT_CLOSED`
+- Session lifecycle: OnBegin → OnReady (per page) → OnClosed
+- Persistence: incremental on READY, final on CLOSED
+- Location: resolved via `BookArchivist.Location:BuildWorldLocation()`
+
+#### **List filtering**
+- **Always use async Iterator** (prevents UI freeze)
+- Budget: 16ms per iteration chunk
+- See: `ui/list/BookArchivist_UI_List_Filter.lua`
+- Filter state: `BookArchivist.UI.Internal.getFilterState()`
+
+#### **Reader rendering**
+- Mode detection: HTML vs plain text
+- HTML path: `BookArchivist_UI_Reader_Rich.lua` (custom renderer)
+- Fallback: `SimpleHTML` widget or plain `FontString`
+- Navigation: page array (`state.pageOrder`), index (`state.currentPageIndex`)
+
+#### **Localization**
+- Strings: `BookArchivist.L[key]` (never hardcode English)
+- New keys: update ALL 7 locale files (enUS, esES, caES, frFR, deDE, itIT, ptBR)
+- Format: `L["KEY_NAME"] = "Translated text"`
+
+---
+
+## ⚠️ Known Pitfalls (Do Not Regress)
+
+### EditBox paste escaping
+- WoW escapes `|` as `||` in pasted text
+- Normalize: `text:gsub("||", "|")`
+- For large paste: use AceGUI `MultiLineEditBox` (handles automatically)
+- Avoid heavy work in `OnTextChanged` without throttling
+
+### List performance
+- **Never create thousands of frame rows**
+- Use pooling: reuse widgets from `state.buttonPool`
+- Render visible range only
+- Pagination default: 25 rows/page
+
+### Frame anchoring
+- Always use explicit anchor points and offsets
+- `InsetFrameTemplate3` has border thickness — account for it
+- Test with `/framestack` to verify anchor hierarchy
+- Clear anchors before repositioning: `frame:ClearAllPoints()`
+
+### Combat lockdown
+- Never modify protected frames during combat
+- Disable sensitive actions when `InCombatLockdown()` returns true
+- Queue updates until `PLAYER_REGEN_ENABLED` event
+
+---
+
+## ✅ Validation Checklist
+
+Before marking work complete:
+
+**Code quality:**
+- [ ] Syntax verified (no missing `end`, unmatched quotes, typos)
+- [ ] No hardcoded English strings (all from `BookArchivist.L`)
+- [ ] Errors logged via `BookArchivist:LogError(...)` (never swallowed)
+- [ ] No global pollution (use `local` or addon namespace)
+
+**Functionality:**
+- [ ] Main window opens without Lua errors
+- [ ] Books/Locations tabs switch correctly
+- [ ] List updates reflect filter/search/sort changes
+- [ ] Reader shows selected book with correct pagination
+- [ ] `/reload` and reopen works without errors
+
+**Documentation:**
+- [ ] If architecture changed: updated copilot-instructions.md
+- [ ] If features added/removed: updated README.md
+- [ ] If data structures changed: updated relevant copilot-skills/*.md
+
+**Testing:**
+- [ ] User tested in-game (NOT assumed to work)
+- [ ] User confirmed functionality works
+- [ ] User explicitly approved commit
+
+---
+
+## 📋 Code Conventions
+
+**Style:**
+- Small, single-purpose functions
+- Early returns (avoid deep nesting)
+- Explicit nil checks: `if not value then return end`
+- Descriptive names: `getBookById` not `get`
+
+**Error handling:**
+- Always log errors: `BookArchivist:LogError(msg)`
+- Use `pcall` for risky operations (frame creation, external calls)
+- Provide fallbacks for missing dependencies
+
+**State management:**
+- UI state: `BookArchivist.UI.Internal` (shared context)
+- Module state: local `state` tables with explicit initialization
+- No side effects in constructors (defer to explicit init calls)
+
+**Module pattern:**
+```lua
+local Module = {}
+BookArchivist.Module = Module
+
+local state = Module.__state or {}
+Module.__state = state
+
+function Module:Init(context)
+  state.ctx = context or {}
+end
+
+function Module:DoWork()
+  local ctx = state.ctx
+  -- implementation
+end
 ```
 
 ---
 
-## Prime directive
+## 🔍 Quick Decision Tree
 
-### UI work
-**When working on the main BookArchivist window UI, use native WoW CreateFrame with Blizzard templates.**
-- The main UI is built with **native frames** using `CreateFrame(...)` and standard templates:
-  - `InsetFrameTemplate3` for panel containers
-  - `UIPanelButtonTemplate` for buttons
-  - `UIPanelScrollFrameTemplate` for scroll areas
-  - `BackdropTemplate` for modal dialogs
-  - `SimpleHTML` frames for rich text rendering
-- **Allowed AceGUI widgets**: `MultiLineEditBox` for Import and Debug Log only
-  - Import textarea in Options → Import panel (for handling large paste operations)
-  - Debug Log textarea in Options → Debug panel (for handling large debug output)
-  - All other AceGUI usage (AceEvent, AceConsole, AceConfigRegistry, etc.) is explicitly disallowed
-  - If AceGUI is missing, fallback to native `ScrollFrame+EditBox`
-- **All other UI uses native CreateFrame + Blizzard templates**
-- Use the `safeCreateFrame` helper functions that wrap `CreateFrame` with error handling
-- Follow the established pattern of separating layout modules (`*_Layout.lua`) from behavior modules (`*.lua`)
+**Need to add a UI component?**
+→ Use native `CreateFrame` + Blizzard template  
+→ Exception: import/debug text areas use AceGUI MultiLineEditBox
 
-### Layout goal
-Rebuild (and keep) the **same structure and spatial relationships as the “old UI screenshots”**:
-- Global top bar across the full width
-- Left inset: tabs + list + footer
-- Right inset: header + nav + content (+ status)
-- Clear split between left/right panels
-- No controls “floating” outside their row/panel
+**Need to filter/search books?**
+→ Use async `BookArchivist.Iterator`  
+→ Never synchronous loops over large datasets
 
-If changes do not preserve this structure, they are incorrect even if “visually acceptable”.
+**Need to access database?**
+→ Use `BookArchivist.Core:GetDB()` (ensures migrations run)  
+→ Schema: `db.booksById[bookId]` (NOT `db.books[key]`)
+
+**Need to show localized text?**
+→ Use `BookArchivist.L["KEY"]`  
+→ Update all 7 locale files if adding new keys
+
+**Need to know what a module does?**
+→ Check `.github/copilot-skills/*.md` first  
+→ Then `read_file` the actual source to verify
+
+**Documentation contradicts code?**
+→ THE CODE IS CORRECT  
+→ Update documentation to match code
 
 ---
 
-## Repository overview (stable runtime flow)
-
-### Core runtime
-- **Capture**: `core/BookArchivist_Capture.lua`
-  - ItemText begin → start session
-  - each text page → sanitize, persist
-  - triggers UI refresh after capture updates
-- **Persistence**: `core/BookArchivist_DB.lua` (and helpers)
-- **Favorites**: `core/BookArchivist_Favorites.lua`
-- **Recent**: `core/BookArchivist_Recent.lua`
-- **Tooltip tag**: `core/BookArchivist_Tooltip.lua`
-- **Import pipeline**: `core/BookArchivist_ImportWorker.lua`
-  - staged phases (decode/parse/merge/search/titles) surfaced to Options UI
-- **Event handling**: Vanilla WoW event frame with `OnEvent` script in `core/BookArchivist.lua`
-- **Slash commands**: Native `SlashCmdList` registration in `ui/BookArchivist_UI_Runtime.lua`
-
-### UI modules (expected separation of concerns)
-- `ui/BookArchivist_UI.lua` / `ui/BookArchivist_UI_Core.lua`
-  - shared UI state (selection, mode, filters), safe refresh pipeline
-  - `safeCreateFrame` helpers for error-safe frame creation
-- `ui/BookArchivist_UI_Frame_Layout.lua`
-  - main window layout with native frames (header, body, left/right insets, splitter)
-- `ui/options/BookArchivist_UI_Options.lua`
-  - Blizzard Options page and Import UI (uses AceGUI MultiLineEditBox for text parsing)
-- `ui/list/*`
-  - left panel behaviour (books/locations mode, list interactions)
-- `ui/reader/*`
-  - right panel behaviour (header actions, navigation, content)
-  - uses native frames with `SimpleHTML` for rich text
-
----
-
-## Current known pitfalls (must not regress)
-
-### 1) WoW EditBox paste quirks
-- EditBox paste escapes `|` as `||`. If you read pasted text, normalize with `gsub("||","|")`.
-- Large paste can be slow; avoid doing heavy work inside `OnTextChanged` without throttling.
-- Use AceGUI MultiLineEditBox for large paste operations (import/export panels) - it handles these quirks better.
-
-### 2) List performance
-When rendering many books:
-- implement pooling/virtualization (reuse row widgets, render visible range)
-- never create thousands of frame rows
-
-### 3) Frame anchoring
-- Use explicit anchor points and offsets for layout
-- When using `InsetFrameTemplate3`, account for the inset's border thickness
-- Test layout with `/framestack` to verify anchor relationships
-
----
-
-## Localization rules
-
-- All user-visible strings must come from `BookArchivist.L` (see `core/BookArchivist_Locale.lua` and `locales/*`).
-- **Do not hardcode English strings** in UI modules.
-- If you add/rename a localization key, you must update **all locale files** (enUS, esES, caES, frFR, deDE, itIT, ptBR).
-- If keys become unused, keep them for compatibility but mark them as deprecated in comments or remove only if you also remove all code paths and verify.
-
----
-
-## How to validate changes (required)
-1) Open main window; compare against the provided “old UI” screenshots:
-   - top bar spans full width
-   - tabs sit inside left panel
-   - reader actions are in right header row (not stacked)
-   - prev/page/next are in a nav row (not under delete/share)
-2) Switch Books ↔ Locations modes:
-   - list updates correctly, selection and breadcrumbs behave
-3) Options → Import:
-   - paste payload; phase status updates; import completes or errors cleanly
-4) Reload UI (`/reload`) and reopen:
-   - no nil errors, no taint, no runaway OnUpdate loops
-
----
-
-## Coding conventions
-- Prefer small functions; avoid deep nesting.
-- Never swallow errors silently; log via `BookArchivist:LogError(...)` when available.
-- Avoid global state unless it’s an addon singleton (`BookArchivist`, `BookArchivistDB`).
-- Keep UI state changes in presenter/controller modules rather than inside widget constructors.
-
----
+````

@@ -82,11 +82,11 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
 
 - `ui/BookArchivist_UI.lua` — shared UI state and `BookArchivist.UI.Internal` helpers (selection, list mode, widget registry).
 - `ui/BookArchivist_UI_Core.lua` — binds list and reader modules to injected helpers; safe wrappers and logging.
-- `ui/BookArchivist_UI_Frame_Layout.lua` — main frame body layout and splitter between list and reader.
+- `ui/BookArchivist_UI_Frame_Layout.lua` — main frame body layout with fixed-width left panel (360px) and flexible right panel using native frames (`CreateFrame`, `InsetFrameTemplate3`).
 - `ui/BookArchivist_UI_Frame_Chrome.lua` — frame chrome (dragging, portrait, title, options button, header blocks).
 - `ui/BookArchivist_UI_Frame_Builder.lua` — creates the main frame using the layout/chrome helpers.
-- `ui/BookArchivist_UI_Frame.lua` — entry point that ensures the frame is built and shown/hidden.
-- `ui/BookArchivist_UI_Runtime.lua` — orchestration, slash commands, and safe refresh sequencing.
+- `ui/BookArchivist_UI_Frame.lua` — entry point that ensures the frame is built and shown/hidden; orchestrates async frame building and OnShow refresh logic.
+- `ui/BookArchivist_UI_Runtime.lua` — orchestration, slash commands (`/ba`, `/bookarchivist`), and safe refresh sequencing.
 
 ### List UI
 
@@ -111,7 +111,7 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
 ### Other UI
 
 - `ui/minimap/BookArchivist_UI_Minimap.lua` — minimap button UI (click handling, toggling the main frame).
-- `ui/options/BookArchivist_UI_Options.lua` — options panel, export/import UI, and integration with Blizzard's Settings.
+- `ui/options/BookArchivist_UI_Options.lua` — options panel, import UI, and integration with Blizzard's Settings.
 
 ## Development notes
 

@@ -1,3 +1,4 @@
+````markdown
 # AGENTS.md — WoW Addon Development (Lua)
 **Target:** World of Warcraft – *The War Within* (TWW) **11.2.7**  
 **API:** Modern WoW Lua API (Retail)
@@ -11,18 +12,66 @@ You are a senior developer for **World of Warcraft Retail addon development** wi
 
 You must assume **Retail WoW only** unless explicitly stated otherwise.
 
-You are brutally honest and despise bad practices
+You are brutally honest and despise bad practices.
+
+---
+
+## Critical Principle (NEVER VIOLATE)
+
+**CODE IS THE SOURCE OF TRUTH. DOCUMENTATION IS ALWAYS SUSPECT.**
+
+Before implementing any feature:
+1. `grep_search` or `read_file` to verify it exists in code
+2. If documentation conflicts with code: **THE CODE IS CORRECT**
+3. Senior developers NEVER trust documentation without verification
+4. When in doubt, read the actual source files
+
+---
+
+## BookArchivist-Specific Architecture
+
+**For detailed system documentation:** `.github/copilot-skills/README.md`
+
+### Database
+- **SavedVariables:** `BookArchivistDB` (per-character)
+- **Schema version:** `dbVersion = 2` (not `version`)
+- **Book storage:** `booksById[bookId]` (NOT `books[key]`)
+- **Indexes:** `objectToBookId`, `itemToBookIds`, `titleToBookIds`
+- **Migrations:** `core/BookArchivist_Migrations.lua` (explicit v1→v2)
+
+### Event Flow
+- **Capture:** `ITEM_TEXT_BEGIN` → `ITEM_TEXT_READY` (per page) → `ITEM_TEXT_CLOSED`
+- **Session:** Incremental persistence on READY, final on CLOSED
+- **Refresh:** UI updates via `BookArchivist.UI.Internal.requestFullRefresh()`
+
+### UI Architecture
+- **Native frames only:** `CreateFrame` + Blizzard templates (`InsetFrameTemplate3`, `UIPanelButtonTemplate`)
+- **AceGUI exception:** `MultiLineEditBox` ONLY for Options → Import panel
+- **Layout:** Fixed 360px left panel, flexible right panel, 10px gap (no splitter/resize)
+- **Async operations:** Filtering uses `BookArchivist.Iterator` (16ms budget per chunk)
+- **State management:** `BookArchivist.UI.Internal` (shared context, safe refresh pipeline)
+
+### Performance Rules
+- **Lists:** Always use async `Iterator`, never sync loops over large datasets
+- **Pooling:** Reuse row widgets from `state.buttonPool`, render visible range only
+- **Pagination:** Default 25 rows/page
+- **Budget:** Max 16ms per iteration chunk to prevent UI freeze
+
+### Localization
+- **All strings:** `BookArchivist.L[key]` (NEVER hardcode English)
+- **New keys:** Update ALL 7 locale files (enUS, esES, caES, frFR, deDE, itIT, ptBR)
 
 ---
 
 ## Hard Constraints (Non-Negotiable)
 
-- ❌ **No Ace3** or other external libraries unless explicitly requested
+- ❌ **No Ace3** (except MultiLineEditBox for Import UI)
 - ❌ **No deprecated API** (Classic-era, pre-DF, or removed globals)
 - ❌ **No taint-prone patterns**
-- ❌ **No XML unless strictly required** (prefer Lua-created frames)
+- ❌ **No XML** (prefer Lua-created frames)
 - ❌ **No globals** (use addon tables / locals)
 - ❌ **No speculative APIs** — only confirmed modern Retail APIs
+- ❌ **No sync loops on large datasets** — always use async Iterator
 
 If an API is uncertain or version-sensitive, **say so explicitly**.
 
@@ -66,6 +115,24 @@ Addon = Addon or {}
   - Event handling
 - No implicit cross-file globals
 
+### Module Pattern (BookArchivist standard)
+```lua
+local Module = {}
+BookArchivist.Module = Module
+
+local state = Module.__state or {}
+Module.__state = state
+
+function Module:Init(context)
+  state.ctx = context or {}
+end
+
+function Module:DoWork()
+  local ctx = state.ctx
+  -- implementation
+end
+```
+
 ---
 
 ## Events & Performance
@@ -75,6 +142,7 @@ Addon = Addon or {}
 - Never poll when events exist
 - Avoid `OnUpdate` unless unavoidable
 - Cache expensive lookups
+- **Use async Iterator for filtering/processing large datasets**
 
 ---
 
@@ -98,6 +166,14 @@ Always state:
 - Explicit parent assignment
 - Use `BackdropTemplateMixin` when required
 - Respect UI scale and pixel snapping
+- **Separate layout (`*_Layout.lua`) from behavior (`*.lua`)**
+- Use `safeCreateFrame` helpers (wrap CreateFrame with error handling)
+
+### Fixed Layout Constraints
+- Left panel: 360px width (hardcoded, no splitter/resize)
+- Right panel: flexible, fills remaining space
+- Gap between panels: 10px (`Metrics.GAP_M`)
+- Structure: header → body → (left inset | gap | right inset)
 
 ---
 
@@ -110,8 +186,30 @@ Always state:
 
 Example:
 ```lua
-AddonDB = AddonDB or CopyTable(DEFAULTS)
+local db = BookArchivist.Core:GetDB() -- Ensures migrations run
+local entry = db.booksById[bookId] -- NOT db.books[key]
 ```
+
+---
+
+## Known Pitfalls (Do Not Regress)
+
+### EditBox paste escaping
+- WoW escapes `|` as `||` in pasted text
+- Normalize: `text:gsub("||", "|")`
+- For large paste: use AceGUI `MultiLineEditBox` (Import UI only)
+- Avoid heavy work in `OnTextChanged` without throttling
+
+### Frame anchoring
+- Always use explicit anchor points and offsets
+- `InsetFrameTemplate3` has border thickness — account for it
+- Test with `/framestack` to verify anchor hierarchy
+- Clear anchors before repositioning: `frame:ClearAllPoints()`
+
+### Combat lockdown
+- Never modify protected frames during combat
+- Disable sensitive actions when `InCombatLockdown()` returns true
+- Queue updates until `PLAYER_REGEN_ENABLED` event
 
 ---
 
@@ -122,6 +220,7 @@ AddonDB = AddonDB or CopyTable(DEFAULTS)
 - Call out incorrect assumptions immediately
 - If something is a bad idea, say so and explain why
 - Provide alternatives when rejecting an approach
+- **If documentation contradicts code: THE CODE IS CORRECT**
 
 ---
 
@@ -132,10 +231,12 @@ When producing code:
 - Mention where the code belongs (file, load order)
 - Clarify Retail-only assumptions
 - Highlight API requirements or pitfalls
+- **Verify against actual source files before claiming features exist**
 
 When explaining:
 - Focus on *why*, not just *how*
 - Prefer correctness over convenience
+- **Always verify against code, never trust documentation alone**
 
 ---
 
@@ -144,9 +245,11 @@ When explaining:
 Unless stated otherwise:
 - Retail WoW
 - English client
-- No third-party libraries
-- No Ace3
+- No third-party libraries (except AceGUI MultiLineEditBox for Import UI)
 - Modern UI pipeline
 - Performance-sensitive environment
+- **Code is source of truth, documentation is suspect**
 
 If any assumption must change, require explicit confirmation.
+
+````
