@@ -17,8 +17,13 @@
   - Small badges in the list show whether a match came from the title or the book’s text.
 - Tooltip integration:
   - Tooltips on readable items and world objects now indicate when their text is already archived by BookArchivist.
+  - New option to toggle tooltip integration on/off
 - Export/import support so you can share or back up your archived books between characters or installations.
-- Options panel updates with new settings for favorites, the Recent view, tooltips, search behavior, and resume-reading features.
+- Options panel with essential settings:
+  - Toggle tooltip "Archived" tag display
+  - Resume on last page when reopening books
+  - Language selector for addon localization
+  - Import/Export/Debug tools for data management
 - Numerous UI polish fixes to make the list and reader more consistent, readable, and reliable.
 
 ## 1.0.2
