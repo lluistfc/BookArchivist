@@ -589,7 +589,8 @@ function OptionsUI:Sync(newLang)
   
   -- Notify user that options panel labels won't update until UI reload
   -- (Blizzard Settings UI caches label text and doesn't support dynamic updates)
-  if SettingsPanel and SettingsPanel:IsShown() then
+  -- Only show dialog if newLang is provided (actual language change)
+  if newLang and SettingsPanel and SettingsPanel:IsShown() then
     -- Show confirmation dialog with reload option (in NEW language)
     StaticPopup_Show("BOOKARCHIVIST_LANGUAGE_CHANGED")
   end
