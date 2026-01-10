@@ -156,8 +156,12 @@ function ListUI:RebuildFiltered()
       end
     end
     
+    -- Cancel any existing rebuild_filtered operation before starting a new one
+    -- This prevents "Operation already in progress" errors
+    Iterator:Cancel("rebuild_filtered")
+    
     -- Phase 3: Use array fast-path - no need to convert to table
-    Iterator:Start(
+    local success, errorMsg = Iterator:Start(
       "rebuild_filtered",
       baseKeys, -- Pass array directly
       function(idx, key, context)
@@ -308,6 +312,27 @@ function ListUI:RebuildFiltered()
         end
       }
     )
+    
+    -- Check if Iterator:Start() failed
+    if not success then
+      self:DebugPrint("[BookArchivist] ERROR: Failed to start async filter: " .. tostring(errorMsg))
+      -- Clear async filtering flag and reset UI
+      self.__state.isAsyncFiltering = false
+      self.__state.asyncFilterStartTime = nil
+      self.__state.isLoading = false
+      
+      if self.SetTabsEnabled then
+        self:SetTabsEnabled(true)
+      end
+      
+      local noResults = self:GetFrame("noResultsText")
+      if noResults then
+        noResults:SetText("|cFFFF0000Error: Could not start filter|r")
+        noResults:Show()
+      end
+      return
+    end
+
     
     -- Early return - completion callback will update UI
     return
