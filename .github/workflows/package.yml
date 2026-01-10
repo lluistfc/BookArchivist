@@ -38,16 +38,22 @@ jobs:
             --prefix="${ADDON_NAME}/" \
             -o "dist/${ADDON_NAME}.zip" \
             HEAD
+          
+          # Verify ZIP was created
+          if [ ! -f "dist/${ADDON_NAME}.zip" ]; then
+            echo "ERROR: ZIP file was not created. Ensure source files exist and are tracked by git."
+            exit 1
+          fi
+          
+          echo "ZIP created successfully: dist/${ADDON_NAME}.zip"
+          ls -lh "dist/${ADDON_NAME}.zip"
 
       - name: Process TOC replacements (CurseForge tokens)
-        env:
-          CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
         run: |
           set -euo pipefail
 
           ADDON_NAME="BookArchivist"
           ZIP="dist/${ADDON_NAME}.zip"
-          PROJECT_ID="${CF_PROJECT_ID:-}"
           
           # Extract version from tag or commit hash
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
@@ -68,21 +74,6 @@ jobs:
           # Replace @project-version@ token
           sed -i "s/@project-version@/${VERSION}/g" "$toc_path"
           echo "Replaced @project-version@ with ${VERSION}"
-
-          # Replace X-Curse-Project-ID if CF_PROJECT_ID is set
-          if [ -n "$PROJECT_ID" ]; then
-            if grep -q '^## X-Curse-Project-ID:' "$toc_path"; then
-              sed -i "s/^## X-Curse-Project-ID:.*/## X-Curse-Project-ID: ${PROJECT_ID}/" "$toc_path"
-              echo "Updated X-Curse-Project-ID to ${PROJECT_ID}"
-            else
-              awk -v pid="${PROJECT_ID}" '
-                /^## AddonCompartmentFunc:/ && !added { print; print "## X-Curse-Project-ID: " pid; added=1; next }
-                { print }
-                END { if (!added) print "## X-Curse-Project-ID: " pid }
-              ' "$toc_path" > "$toc_path.tmp" && mv "$toc_path.tmp" "$toc_path"
-              echo "Injected X-Curse-Project-ID: ${PROJECT_ID}"
-            fi
-          fi
 
           rm -f "$ZIP"
           (cd "$tmpdir" && zip -qr "../${ADDON_NAME}.zip" "${ADDON_NAME}")

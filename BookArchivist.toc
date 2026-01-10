@@ -5,7 +5,6 @@
 ## Interface: 110000
 ## SavedVariablesPerCharacter: BookArchivistDB
 ## AddonCompartmentFunc: BookArchivist_ToggleFromCompartment
-## X-Curse-Project-ID: @project-version@
 
 # Ace3 libraries
 libs\LibStub\LibStub.lua
