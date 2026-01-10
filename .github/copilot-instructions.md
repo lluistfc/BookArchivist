@@ -58,6 +58,36 @@ Correct workflow:
 
 Committing untested code wastes user time.
 
+### 5. One logical change per commit
+**Each commit must contain a single, atomic change.**
+
+Why this matters:
+- Easy to identify what broke when errors occur
+- Simple rollback: `git revert` removes one change cleanly
+- Clear audit trail of what changed and when
+- Easier code review and bisecting bugs
+
+**Good examples:**
+- ✅ One commit: "fix: rename duplicate Delete to IsTooltipEnabled"
+- ✅ One commit: "refactor: remove CreateLegacy function from UI_Frame_Builder"
+- ✅ One commit: "fix: correct locale keys for Unknown Zone/Mob"
+
+**Bad examples:**
+- ❌ One commit: "fix bugs and remove dead code" (combines 2 changes)
+- ❌ One commit: "update all UI files" (too broad, no clear scope)
+
+**When working on complex tasks:**
+1. Break work into logical steps
+2. Implement one step completely
+3. Test that specific change
+4. Commit with descriptive message
+5. Move to next step
+
+If a commit breaks something, we can:
+- Quickly identify the exact change that caused it
+- Revert just that commit without losing other work
+- Review the specific code that changed
+
 ---
 
 ## 🎯 Architecture Overview
