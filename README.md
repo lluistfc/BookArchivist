@@ -37,6 +37,48 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
   - Favorites system to bookmark important books.
   - "Resume last book" feature to return to your most recent read.
 
+## Screenshots
+
+### Main Interface
+<img src="media/bookarchivist_main.jpg" width="600" alt="BookArchivist main window with book list and reader" />
+
+The main two-pane interface showing the searchable book list on the left and the rich text reader on the right.
+
+### Book Reader
+<img src="media/bookarchivist_book_reader.jpg" width="600" alt="Book reader with rich HTML formatting" />
+
+The reader displays book content with proper formatting, images, and page navigation.
+
+### Favorites
+<img src="media/bookarchivist_favorite.jpg" width="600" alt="Favorites system with star icon" />
+
+Mark important books as favorites for quick access.
+
+### Location View
+<img src="media/bookarchivist_location_list.jpg" width="600" alt="Location-based book organization" />
+
+Browse books organized by where you found them in the world.
+
+### Share & Export
+<img src="media/bookarchivist_share_book.jpg" width="600" alt="Share book dialog" />
+<img src="media/bookarchivist_share_chat.jpg" width="600" alt="Share book via chat link" />
+
+Export individual books or your entire library to share with others or backup your collection.
+
+### Import System
+<img src="media/bookarchivist_options_import.jpg" width="600" alt="Import interface" />
+<img src="media/bookarchivist_options_import_data.jpg" width="600" alt="Importing data" />
+<img src="media/bookarchivist_options_import_finished.jpg" width="600" alt="Import complete" />
+
+Easily import books shared by other players or restore from backups.
+
+### Options & Settings
+<img src="media/bookarchivist_options_resume_last_page.jpg" width="600" alt="Resume last page option" />
+<img src="media/bookarchivist_options_supported_languages.jpg" width="600" alt="Language selection" />
+<img src="media/bookarchivist_options_tooltip_integration.jpg" width="600" alt="Tooltip integration setting" />
+
+Customize your experience with multiple language support, tooltip integration, and reading preferences.
+
 ## Installation
 
 1. Download or clone this repository.
