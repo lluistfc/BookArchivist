@@ -512,31 +512,40 @@ function Tests.Run(testId, skipSetup)
 				setupTestDB()
 			end
 			
-			local success, result, message = pcall(test.func)
-
-			-- Teardown creates fresh test DB for next test (unless running from RunAll)
-			if not skipSetup and testMode then
-				teardownTestDB()
-			end
+			-- Wrap test execution to guarantee cleanup
+			local testSuccess, testResult, testMessage
+			local executeSuccess, executeErr = pcall(function()
+				testSuccess, testResult, testMessage = pcall(test.func)
+			end)
 			
-			-- Restore production DB if running single test
+			-- ALWAYS restore production DB if running single test (even on catastrophic failure)
 			if not skipSetup and testMode then
 				restoreProductionDB()
 			end
 
-			if not success then
-				-- Test threw an error
+			-- Handle catastrophic failure (error in test wrapper itself)
+			if not executeSuccess then
 				return {
 					passed = false,
-					message = "Test error: " .. tostring(result),
+					message = "FATAL: Test execution failed: " .. tostring(executeErr),
+					duration = 0,
+					productionDBRestored = not skipSetup and testMode
+				}
+			end
+
+			-- Handle test function error
+			if not testSuccess then
+				return {
+					passed = false,
+					message = "Test error: " .. tostring(testResult),
 					duration = 0,
 				}
 			end
 
-			-- Test returned result
+			-- Test returned result normally
 			return {
-				passed = result,
-				message = message or (result and "Test passed" or "Test failed"),
+				passed = testResult,
+				message = testMessage or (testResult and "Test passed" or "Test failed"),
 				duration = 0, -- TODO: Track actual duration
 			}
 		end
@@ -559,21 +568,36 @@ function Tests.RunAll()
 	-- Initialize test environment ONCE before all tests
 	setupTestDB()
 
-	for _, test in ipairs(allTests) do
-		-- Pass skipSetup=true to prevent per-test setup/teardown
-		local result = Tests.Run(test.id, true)
-		results[test.id] = result
+	-- Wrap test execution in pcall to guarantee production DB restoration
+	local success, err = pcall(function()
+		for _, test in ipairs(allTests) do
+			-- Pass skipSetup=true to prevent per-test setup/teardown
+			local result = Tests.Run(test.id, true)
+			results[test.id] = result
 
-		if result.passed == true then
-			passed = passed + 1
+			if result.passed == true then
+				passed = passed + 1
+			end
+			
+			-- Refresh test DB between tests (nuke and recreate)
+			teardownTestDB()
 		end
-		
-		-- Refresh test DB between tests (nuke and recreate)
-		teardownTestDB()
-	end
+	end)
 
-	-- Restore production DB ONCE after all tests complete
+	-- ALWAYS restore production DB, even if tests crashed
 	restoreProductionDB()
+
+	-- If test execution failed catastrophically, report it
+	if not success then
+		print("|cFFFF0000[BookArchivist Tests] FATAL ERROR during test execution:|r")
+		print(tostring(err))
+		print("|cFF00FF00Production database has been restored.|r")
+		
+		return 0, total, {
+			error = "Test suite crashed: " .. tostring(err),
+			productionDBRestored = true
+		}
+	end
 
 	return passed, total, results
 end
