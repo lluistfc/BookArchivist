@@ -1,0 +1,16 @@
+-- Busted Configuration for BookArchivist
+-- This file tells Busted where to find tests when run from addon root
+-- https://lunarmodules.github.io/busted/
+
+return {
+  _all = {
+    -- Test directories:
+    -- - Sandbox: Pure logic tests (no WoW API)
+    -- - Desktop: Complex tests with Busted mocking
+    -- - InGame: Excluded (need rewriting for in-game execution with real WoW APIs)
+    ROOT = { "Tests/Sandbox/", "Tests/Desktop/" },
+    
+    -- Clean output (all diagnostic prints removed from source code)
+    verbose = false
+  }
+}

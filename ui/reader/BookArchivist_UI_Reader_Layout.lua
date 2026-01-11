@@ -4,16 +4,17 @@ if not ReaderUI then
 	return
 end
 
-local Metrics = BookArchivist.UI.Metrics or {
-	PAD = 12,
-	GUTTER = 10,
-	HEADER_H = 70,
-	SUBHEADER_H = 34,
-	READER_HEADER_H = 54,
-	ROW_H = 36,
-	BTN_H = 22,
-	BTN_W = 90,
-}
+local Metrics = BookArchivist.UI.Metrics
+	or {
+		PAD = 12,
+		GUTTER = 10,
+		HEADER_H = 70,
+		SUBHEADER_H = 34,
+		READER_HEADER_H = 54,
+		ROW_H = 36,
+		BTN_H = 22,
+		BTN_W = 90,
+	}
 local Internal = BookArchivist.UI.Internal
 
 local L = BookArchivist and BookArchivist.L or {}
@@ -81,10 +82,11 @@ local function applyHTMLFont(frame, tag, font)
 	if not font or unsupportedHTMLFontTags[tag] then
 		return
 	end
-	local resolved = resolveFontObject(font)	-- Skip if font didn't resolve to valid object
+	local resolved = resolveFontObject(font) -- Skip if font didn't resolve to valid object
 	if not resolved then
 		return
-	end	if not safeHTMLCall(frame, "SetFontObject", tag, resolved) then
+	end
+	if not safeHTMLCall(frame, "SetFontObject", tag, resolved) then
 		unsupportedHTMLFontTags[tag] = true
 	end
 end
@@ -97,7 +99,6 @@ local function applyHTMLSpacing(frame, tag, amount)
 		unsupportedHTMLSpacingTags[tag] = true
 	end
 end
-
 
 function ReaderUI:Create(uiFrame, anchorFrame)
 	if not uiFrame then
@@ -219,7 +220,8 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	local prevButton = safeCreateFrame and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
+	local prevButton = safeCreateFrame
+		and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
 	if prevButton then
 		prevButton:SetSize(Metrics.BTN_W - 10, 22)
 		prevButton:SetPoint("LEFT", readerNavRow or readerHeaderRow, "LEFT", 0, 0)
@@ -240,7 +242,8 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.prevButton = prevButton
 
-	local nextButton = safeCreateFrame and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
+	local nextButton = safeCreateFrame
+		and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
 	if nextButton then
 		nextButton:SetSize(Metrics.BTN_W - 10, 22)
 		nextButton:SetPoint("RIGHT", readerNavRow or readerHeaderRow, "RIGHT", 0, 0)
@@ -289,7 +292,8 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 	end
 
-	local textScroll = safeCreateFrame and safeCreateFrame("Frame", "BookArchivistTextScroll", readerScrollRow or readerBlock, "WowScrollBox")
+	local textScroll = safeCreateFrame
+		and safeCreateFrame("Frame", "BookArchivistTextScroll", readerScrollRow or readerBlock, "WowScrollBox")
 	if not textScroll then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
 			BookArchivist.UI.Internal.logError("Unable to create reader scroll box.")
@@ -302,41 +306,48 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	state.textScroll = textScroll
 	local innerPad = Metrics.PAD_INSET or Metrics.PAD or 10
 	textScroll:ClearAllPoints()
-	
+
 	-- Create modern scrollbar
-	local scrollBar = safeCreateFrame and safeCreateFrame("EventFrame", "BookArchivistTextScrollBar", readerScrollRow or readerBlock, "MinimalScrollBar")
+	local scrollBar = safeCreateFrame
+		and safeCreateFrame(
+			"EventFrame",
+			"BookArchivistTextScrollBar",
+			readerScrollRow or readerBlock,
+			"MinimalScrollBar"
+		)
 	if not scrollBar then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal and BookArchivist.UI.Internal.logError then
 			BookArchivist.UI.Internal.logError("Unable to create reader scroll bar.")
 		end
 		return
 	end
-	
+
 	local sbW = (scrollBar and scrollBar.GetWidth and scrollBar:GetWidth()) or 12
 	local gutter = Metrics.SCROLLBAR_GUTTER or math.ceil(sbW + 6)
-	
+
 	-- Position scroll box
 	textScroll:SetPoint("TOPLEFT", readerScrollRow or readerBlock, "TOPLEFT", innerPad, -innerPad)
 	textScroll:SetPoint("BOTTOMLEFT", readerScrollRow or readerBlock, "BOTTOMLEFT", innerPad, innerPad)
 	textScroll:SetPoint("RIGHT", scrollBar, "LEFT", -4, 0)
-	
+
 	-- Position scrollbar
 	scrollBar:SetPoint("TOPRIGHT", readerScrollRow or readerBlock, "TOPRIGHT", -innerPad, -innerPad)
 	scrollBar:SetPoint("BOTTOMRIGHT", readerScrollRow or readerBlock, "BOTTOMRIGHT", -innerPad, innerPad)
-	
+
 	-- Store scrollbar reference
 	state.textScrollBar = scrollBar
 	if rememberWidget then
 		rememberWidget("textScrollBar", scrollBar)
 	end
-	
+
 	uiFrame.textScroll = textScroll
 	uiFrame.textScrollBar = scrollBar
 	if Internal and Internal.registerGridTarget then
 		Internal.registerGridTarget("reader-scroll", textScroll)
 	end
 
-	local contentHost = (safeCreateFrame and safeCreateFrame("Frame", nil, textScroll)) or CreateFrame("Frame", nil, textScroll)
+	local contentHost = (safeCreateFrame and safeCreateFrame("Frame", nil, textScroll))
+		or CreateFrame("Frame", nil, textScroll)
 	contentHost:ClearAllPoints()
 	contentHost:SetPoint("TOPLEFT", textScroll, "TOPLEFT", innerPad, -innerPad)
 	contentHost:SetPoint("BOTTOMLEFT", textScroll, "BOTTOMLEFT", innerPad, innerPad)
@@ -351,17 +362,17 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	textChild:SetPoint("TOPLEFT", contentHost, "TOPLEFT", 0, 0)
 	textChild:SetPoint("TOPRIGHT", contentHost, "TOPRIGHT", 0, 0)
 	textChild:SetHeight(1)
-	
+
 	-- Initialize ScrollBox with view and link scrollbar
 	local scrollView = CreateScrollBoxLinearView()
 	scrollView:SetPanExtent(30) -- Allow scrolling with mousewheel
 	ScrollUtil.InitScrollBoxWithScrollBar(textScroll, scrollBar, scrollView)
-	
+
 	-- Set the scroll child as the content
 	if textScroll.SetScrollTarget then
 		textScroll:SetScrollTarget(textChild)
 	end
-	
+
 	if rememberWidget then
 		rememberWidget("textChild", textChild)
 		rememberWidget("textScrollView", scrollView)
@@ -408,7 +419,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		local bodyFont = GameFontHighlight
 		local headingFont = GameFontNormalHuge or GameFontNormalLarge
 		local subHeadingFont = GameFontNormalLarge
-		
+
 		-- Only apply fonts if they resolved to valid objects
 		if bodyFont then
 			applyHTMLFont(htmlFrame, "p", bodyFont)
@@ -421,7 +432,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			applyHTMLFont(htmlFrame, "h2", subHeadingFont)
 			applyHTMLFont(htmlFrame, "h3", subHeadingFont)
 		end
-		
+
 		applyHTMLSpacing(htmlFrame, "h1", 2)
 		applyHTMLSpacing(htmlFrame, "h2", 2)
 		applyHTMLSpacing(htmlFrame, "h3", 2)
@@ -591,10 +602,14 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			icon:SetAllPoints()
 			if icon.SetAtlas then
 				-- Try mail icon first
-				local success = pcall(function() icon:SetAtlas("mailbox", true) end)
+				local success = pcall(function()
+					icon:SetAtlas("mailbox", true)
+				end)
 				if not success then
 					-- Fallback: community invite icon
-					success = pcall(function() icon:SetAtlas("communities-icon-invitemail", true) end)
+					success = pcall(function()
+						icon:SetAtlas("communities-icon-invitemail", true)
+					end)
 					if not success then
 						-- Final fallback: scroll/document icon
 						icon:SetTexture("Interface\\Icons\\INV_Misc_Note_06")
@@ -604,7 +619,9 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			shareButton.icon = icon
 			-- Tooltip
 			shareButton:SetScript("OnEnter", function(self)
-				if not GameTooltip then return end
+				if not GameTooltip then
+					return
+				end
 				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 				GameTooltip:SetText(t("READER_SHARE_BUTTON"), 1, 1, 1)
 				if GameTooltip.AddLine then
@@ -613,22 +630,25 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				GameTooltip:Show()
 			end)
 			shareButton:SetScript("OnLeave", function(self)
-				if GameTooltip then GameTooltip:Hide() end
+				if GameTooltip then
+					GameTooltip:Hide()
+				end
 			end)
 			shareButton:SetScript("OnClick", function()
 				local addon = getAddon and getAddon()
 				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
-				
+
 				-- Delegate to Share module
-				local ReaderShare = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
+				local ReaderShare = BookArchivist
+					and BookArchivist.UI
+					and BookArchivist.UI.Reader
+					and BookArchivist.UI.Reader.Share
 				if ReaderShare and ReaderShare.ShareCurrentBook then
 					ReaderShare:ShareCurrentBook(addon, key)
-				else
-					print("|cFFFF0000[BookArchivist]|r Share module not loaded.")
 				end
 			end)
 		end
-		
+
 		local favoriteBtn = state.favoriteButton
 		if not favoriteBtn or not (favoriteBtn.IsObjectType and favoriteBtn:IsObjectType("Button")) then
 			favoriteBtn = safeCreateFrame("Button", "BookArchivistFavoriteButton", actionsRail)
@@ -663,7 +683,9 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			syncFavoriteVisual(favoriteBtn, false)
 			favoriteBtn:SetMotionScriptsWhileDisabled(true)
 			favoriteBtn:SetScript("OnEnter", function(self)
-				if not GameTooltip then return end
+				if not GameTooltip then
+					return
+				end
 				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 				local addon = getAddon and getAddon()
 				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
@@ -679,7 +701,9 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				GameTooltip:Show()
 			end)
 			favoriteBtn:SetScript("OnLeave", function()
-				if GameTooltip then GameTooltip:Hide() end
+				if GameTooltip then
+					GameTooltip:Hide()
+				end
 			end)
 			favoriteBtn:SetScript("OnClick", function(self)
 				local addon = getAddon and getAddon()
@@ -704,7 +728,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
 			end
 		end
-		
+
 		-- Position share button to the left of favorite button
 		if shareButton then
 			shareButton:ClearAllPoints()

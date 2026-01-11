@@ -64,7 +64,7 @@ local function buildFrame(safeCreateFrame)
 		end,
 		onShow = function()
 			syncGridOverlayPreference()
-			
+
 			-- Defer refresh if frame is still building content
 			local frame = Internal.getUIFrame()
 			if frame and frame.__contentReady == false then
@@ -78,7 +78,12 @@ local function buildFrame(safeCreateFrame)
 						return
 					end
 					if frame.__contentReady then
-						debugPrint(string.format("[BookArchivist] onShow: content ready after %d checks, running refresh", retryCount))
+						debugPrint(
+							string.format(
+								"[BookArchivist] onShow: content ready after %d checks, running refresh",
+								retryCount
+							)
+						)
 						local refreshFn = Internal.refreshAll
 						if refreshFn then
 							refreshFn()
@@ -96,7 +101,7 @@ local function buildFrame(safeCreateFrame)
 				C_Timer.After(0.1, checkReady)
 				return
 			end
-			
+
 			local refreshFn = Internal.refreshAll
 			if refreshFn then
 				refreshFn()
@@ -126,7 +131,7 @@ local function setupUI()
 
 	Internal.setUIFrame(frame)
 	syncGridOverlayPreference()
-	
+
 	-- Don't call updateListModeUI here - list tabs don't exist yet in async build
 	-- It will be called after content is ready (see BuildContent completion)
 
@@ -305,11 +310,13 @@ local function ensureUI()
 			Internal.setIsInitialized(true)
 		end
 		syncGridOverlayPreference()
-		debugPrint(string.format(
-			"[BookArchivist] ensureUI: already initialized (isInitialized=%s needsRefresh=%s)",
-			tostring(Internal.getIsInitialized()),
-			tostring(Internal.getNeedsRefresh())
-		))
+		debugPrint(
+			string.format(
+				"[BookArchivist] ensureUI: already initialized (isInitialized=%s needsRefresh=%s)",
+				tostring(Internal.getIsInitialized()),
+				tostring(Internal.getNeedsRefresh())
+			)
+		)
 		if Internal.flushPendingRefresh then
 			Internal.flushPendingRefresh()
 		end

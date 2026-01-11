@@ -12,7 +12,9 @@ BookArchivist.UI.Reader = ReaderUI
 --
 
 local function isHTMLContent(text)
-	if not text or text == "" then return false end
+	if not text or text == "" then
+		return false
+	end
 	local lowered = text:lower()
 	return lowered:find("<%s*html", 1, false)
 		or lowered:find("<%s*body", 1, false)
@@ -26,7 +28,7 @@ local function stripHTMLTags(text)
 		return text or ""
 	end
 
-	text = text:gsub("<%s*[Ii][Mm][Gg][^>]-src%s*=%s*\"([^\"]+)\"[^>]->", "[Image: %1]")
+	text = text:gsub('<%s*[Ii][Mm][Gg][^>]-src%s*=%s*"([^"]+)"[^>]->', "[Image: %1]")
 	text = text:gsub("<%s*[Ii][Mm][Gg][^>]->", "[Image]")
 
 	local cleaned = text:gsub("<[^>]+>", "")
@@ -53,7 +55,7 @@ local function normalizeHTMLForReader(html, maxWidth)
 	local resizedCount = 0
 
 	local function processImg(tag)
-		local src = tag:match("src%s*=%s*\"([^\"]+)\"") or tag:match("src%s*=%s*'([^']+)'")
+		local src = tag:match('src%s*=%s*"([^"]+)"') or tag:match("src%s*=%s*'([^']+)'")
 		if not src then
 			return tag
 		end
@@ -63,8 +65,12 @@ local function normalizeHTMLForReader(html, maxWidth)
 			return ""
 		end
 
-		local width = tonumber(tag:match("width%s*=%s*\"(%d+)\"") or tag:match("width%s*=%s*'(%d+)'") or tag:match("width%s*=%s*(%d+)"))
-		local height = tonumber(tag:match("height%s*=%s*\"(%d+)\"") or tag:match("height%s*=%s*'(%d+)'") or tag:match("height%s*=%s*(%d+)"))
+		local width = tonumber(
+			tag:match('width%s*=%s*"(%d+)"') or tag:match("width%s*=%s*'(%d+)'") or tag:match("width%s*=%s*(%d+)")
+		)
+		local height = tonumber(
+			tag:match('height%s*=%s*"(%d+)"') or tag:match("height%s*=%s*'(%d+)'") or tag:match("height%s*=%s*(%d+)")
+		)
 
 		local defaultAspect = 145 / 230
 		local w = width or maxWidth
@@ -73,8 +79,8 @@ local function normalizeHTMLForReader(html, maxWidth)
 		w = math.max(64, math.min(w, maxWidth))
 		h = math.max(64, math.min(h, 600))
 
-		local rebuilt = string.format("<IMG src=\"%s\" width=\"%d\" height=\"%d\"/>", src, w, h)
-		return string.format("<P align=\"center\">%s</P>", rebuilt)
+		local rebuilt = string.format('<IMG src="%s" width="%d" height="%d"/>', src, w, h)
+		return string.format('<P align="center">%s</P>', rebuilt)
 	end
 
 	html = html:gsub("<%s*[Ii][Mm][Gg][^>]->", processImg)

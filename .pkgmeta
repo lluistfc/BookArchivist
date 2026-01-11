@@ -9,8 +9,10 @@ manual-changelog:
 ignore:
     # Development and test files
     - dev
-    - tests
+    - Tests
+    - scripts
     - docs
+    - libs/libs.json
     
     # Development documentation
     - AGENTS.md
@@ -18,6 +20,8 @@ ignore:
     - CHANGELOG.md
     - README.md
     - media
+    - Makefile
+    - .busted
 
     # Git and IDE
     - .git

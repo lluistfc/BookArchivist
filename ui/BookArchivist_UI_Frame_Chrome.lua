@@ -13,18 +13,19 @@ local function t(key)
 	return (L and L[key]) or key
 end
 
-local Metrics = BookArchivist.UI.Metrics or {
-	PAD_OUTER = 12,
-	PAD_INSET = 10,
-	GAP_M = 10,
-	HEADER_LEFT_SAFE_X = 54,
-	HEADER_LEFT_W = 260,
-	HEADER_H = 90,
-	BTN_H = 22,
-	BTN_W = 100,
-	HEADER_RIGHT_STACK_W = 360,
-	HEADER_RIGHT_GUTTER = 12,
-}
+local Metrics = BookArchivist.UI.Metrics
+	or {
+		PAD_OUTER = 12,
+		PAD_INSET = 10,
+		GAP_M = 10,
+		HEADER_LEFT_SAFE_X = 54,
+		HEADER_LEFT_W = 260,
+		HEADER_H = 90,
+		BTN_H = 22,
+		BTN_W = 100,
+		HEADER_RIGHT_STACK_W = 360,
+		HEADER_RIGHT_GUTTER = 12,
+	}
 
 local function computeHeaderRowHeights()
 	local headerH = Metrics.HEADER_H or 72
@@ -44,11 +45,18 @@ end
 
 local HEADER_TOP_ROW_H, HEADER_BOTTOM_ROW_H = computeHeaderRowHeights()
 
-local ClearAnchors = FrameUI.ClearAnchors or function(frame, resetSize)
-	if not frame then return end
-	if frame.ClearAllPoints then frame:ClearAllPoints() end
-	if resetSize and frame.SetSize then frame:SetSize(1, 1) end
-end
+local ClearAnchors = FrameUI.ClearAnchors
+	or function(frame, resetSize)
+		if not frame then
+			return
+		end
+		if frame.ClearAllPoints then
+			frame:ClearAllPoints()
+		end
+		if resetSize and frame.SetSize then
+			frame:SetSize(1, 1)
+		end
+	end
 
 local DEFAULT_PORTRAIT = FrameUI.DEFAULT_PORTRAIT or "Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png"
 local OPTIONS_TOOLTIP_TITLE = t("Book Archivist Options")
@@ -62,7 +70,7 @@ local function applyPortrait(frame)
 	if frame.portrait then
 		frame.portrait:SetTexture(DEFAULT_PORTRAIT)
 	end
-	
+
 	-- Register portrait container with grid system for UI debugging
 	if frame.PortraitContainer and Internal and Internal.registerGridTarget then
 		Internal.registerGridTarget("portrait-container", frame.PortraitContainer)
@@ -84,7 +92,7 @@ local function configureOptionsButton(frame, safeCreateFrame, onOptions)
 		texture:SetTexCoord(0, 1, 0, 1)
 		texture:SetVertexColor(r, g, b, 1)
 	end
-	
+
 	local button = safeCreateFrame("Button", "BookArchivistCogButton", frame, "UIPanelCloseButton")
 	if not button then
 		return

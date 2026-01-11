@@ -1,3 +1,27 @@
+# 2.1.0-beta
+
+**Infrastructure and quality improvements (beta release for testing)**
+
+## What's New
+
+This is a **beta release** focused on internal improvements to how BookArchivist is developed and tested. It includes no user-facing feature changes, but represents significant work to ensure the addon remains stable and reliable.
+
+### Behind the Scenes
+
+- Added comprehensive automated test suite (200 tests) to catch bugs before they reach users
+- Implemented professional development tooling (Makefile, CI/CD, testing infrastructure)
+- Enhanced code quality with Test-Driven Development practices
+- Cleaned up production packages (97 essential files instead of 200+)
+- Added multi-platform GitHub Actions testing (Ubuntu, Windows, macOS)
+
+### For Users
+
+This beta release has **no functional changes** to the addon. Your books, settings, and addon behavior remain exactly the same. This is a quality-of-life release for developers to ensure future updates are more stable.
+
+If you're seeing this update, you have **beta releases enabled** on CurseForge. If you prefer to only receive stable releases, you can disable beta updates in CurseForge settings.
+
+---
+
 # 2.0.3
 
 **Small enhancement for chat link imports**

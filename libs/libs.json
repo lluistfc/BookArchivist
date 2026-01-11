@@ -1,0 +1,12 @@
+{
+  "$schema": "https://mechanic.dev/schemas/libs.json",
+  "description": "Library configuration for BookArchivist",
+  "mode": "include",
+  "libraries": {
+    "AceComm-3.0": "latest",
+    "AceGUI-3.0": "latest",
+    "AceSerializer-3.0": "latest",
+    "CallbackHandler-1.0": "latest",
+    "LibStub": "latest"
+  }
+}

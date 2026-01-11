@@ -2,6 +2,63 @@
 
 All notable changes to this project are documented here.
 
+## [2.1.0-beta] - 2026-01-11
+
+**Infrastructure and quality improvements release (internal improvements for development)**
+
+### Added
+
+- **Testing Infrastructure**
+  - Comprehensive test suite with 200 automated tests (execution time: 4.19 seconds)
+  - Test categories: Sandbox (6 tests), Desktop (5 tests), InGame (3 tests)
+  - Implemented Repository pattern with dependency injection for test isolation
+  - Added catastrophic failure protection ensuring production database is always restored
+  - Test runners for Windows (PowerShell) and Unix/macOS (Bash)
+
+- **Development Tooling**
+  - Integrated Mechanic CLI for addon development automation
+  - Cross-platform Makefile build system with 20+ targets:
+    - Validation: `make validate`, `make lint`, `make verify`, `make warnings`
+    - Testing: `make test`, `make test-errors`, `make test-detailed`, `make test-pattern`
+    - Mechanic: `make output`, `make sync`, `make link`, `make unlink`
+    - Dashboard: `make run`, `make stop` (with duplicate detection)
+    - Release: `make release/alpha/beta TAG=x.x.x`
+  - Platform-specific setup scripts: `scripts/setup-mechanic.ps1` (Windows), `scripts/setup-mechanic.sh` (Unix)
+  - Smart Mechanic CLI path detection (system PATH → local venv fallback)
+
+- **Continuous Integration**
+  - GitHub Actions CI/CD pipeline with multi-platform testing (Ubuntu, Windows, macOS)
+  - Automated test execution on every push and pull request
+  - Uses community-maintained GitHub Actions for Lua and LuaRocks
+
+- **Code Quality**
+  - Enforced Test-Driven Development (TDD) practices in development guidelines
+  - Zero lint errors, all 77 files validated
+  - Comprehensive documentation: AGENTS.md, tests/README.md, DEV_SETUP.md
+
+- **Production Build**
+  - Cleaned production packages to 97 files (down from 200+)
+  - Enhanced `.pkgmeta` and `.gitattributes` exclusions (dev/, tests/, scripts/, docs/)
+  - Proper handling of CurseForge release changelog
+
+### Changed
+
+- **Core Architecture**
+  - Implemented Repository pattern for database access (`BookArchivist.Repository:GetDB()`)
+  - All modules now use dependency injection for database access
+  - Production database restoration happens once after all tests complete (even on catastrophic failures)
+
+- **Project Organization**
+  - Moved test runners from `Tests/` to `scripts/` folder
+  - Reorganized documentation with consolidated testing guide
+  - Updated all 7 locale files with consistent structure
+
+### Developer Notes
+
+*This is an infrastructure release focused on improving development workflow, code quality, and testing reliability. All changes are internal improvements with no user-facing feature changes or bug fixes. Users who have opted into beta releases on CurseForge will see this update, but it will not affect gameplay or addon functionality.*
+
+*Key metrics: 200/200 tests passing, 0 lint errors, 2860 style warnings (conventions), 77 files validated, Interface version 120001 (The War Within).*
+
 ## [2.0.3] - 2026-01-10
 
 **Enhancement release**

@@ -16,7 +16,7 @@ local function logError(message)
 	-- elseif print then
 	-- 	print(formatted)
 	-- end
-	
+
 	-- Re-throw the error so BugSack can catch it
 	error(message or "Unknown error", 2)
 end

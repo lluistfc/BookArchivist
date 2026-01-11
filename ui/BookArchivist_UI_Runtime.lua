@@ -30,13 +30,17 @@ end
 
 local function refreshAllImpl()
 	local Profiler = BookArchivist.Profiler
-	if Profiler then Profiler:Start("UI_refreshAll") end
-	
+	if Profiler then
+		Profiler:Start("UI_refreshAll")
+	end
+
 	BookArchivist:DebugMessage("|cFFFFFF00BookArchivist UI (refreshAllImpl) refreshing...|r")
 	local ui = call(Internal.getUIFrame)
 	if not ui or not call(Internal.getIsInitialized) then
 		BookArchivist:DebugPrint("[BookArchivist] refreshAll skipped (UI not initialized)")
-		if Profiler then Profiler:Stop("UI_refreshAll") end
+		if Profiler then
+			Profiler:Stop("UI_refreshAll")
+		end
 		return
 	end
 
@@ -47,14 +51,21 @@ local function refreshAllImpl()
 	local needsReader = flags.reader
 
 	if needsList then
-		if Profiler then Profiler:Start("UI_rebuildFiltered") end
+		if Profiler then
+			Profiler:Start("UI_rebuildFiltered")
+		end
 		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildFiltered")
-		if not Internal.safeStep or not Internal.safeStep("BookArchivist rebuildFiltered", function()
-			call(Internal.rebuildFiltered)
-		end) then
+		if
+			not Internal.safeStep
+			or not Internal.safeStep("BookArchivist rebuildFiltered", function()
+				call(Internal.rebuildFiltered)
+			end)
+		then
 			BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildFiltered failed")
 		end
-		if Profiler then Profiler:Stop("UI_rebuildFiltered") end
+		if Profiler then
+			Profiler:Stop("UI_rebuildFiltered")
+		end
 		if Internal.markRefreshComplete then
 			Internal.markRefreshComplete("list")
 		end
@@ -62,9 +73,12 @@ local function refreshAllImpl()
 
 	if needsLocation then
 		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildLocationView")
-		if not Internal.safeStep or not Internal.safeStep("BookArchivist rebuildLocationView", function()
-			call(Internal.rebuildLocationView)
-		end) then
+		if
+			not Internal.safeStep
+			or not Internal.safeStep("BookArchivist rebuildLocationView", function()
+				call(Internal.rebuildLocationView)
+			end)
+		then
 			BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildLocationView failed")
 			return
 		end
@@ -75,9 +89,12 @@ local function refreshAllImpl()
 
 	if needsList or needsLocation then
 		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting updateList")
-		if not Internal.safeStep or not Internal.safeStep("BookArchivist updateList", function()
-			call(Internal.updateList)
-		end) then
+		if
+			not Internal.safeStep
+			or not Internal.safeStep("BookArchivist updateList", function()
+				call(Internal.updateList)
+			end)
+		then
 			BookArchivist:DebugPrint("[BookArchivist] refreshAll: updateList failed")
 			return
 		end
@@ -100,8 +117,10 @@ local function refreshAllImpl()
 	if not (needsList or needsLocation or needsReader) and Internal.setNeedsRefresh then
 		Internal.setNeedsRefresh(false)
 	end
-	
-	if Profiler then Profiler:Stop("UI_refreshAll") end
+
+	if Profiler then
+		Profiler:Stop("UI_refreshAll")
+	end
 end
 
 Internal.refreshAll = refreshAllImpl
@@ -113,8 +132,11 @@ function addonRoot.RefreshUI()
 		Internal.setNeedsRefresh(true)
 	end
 	BookArchivist:DebugPrint(
-		"[BookArchivist] RefreshUI: invoked (UI exists=" .. tostring(call(Internal.getUIFrame) ~= nil)
-			.. ", initialized=" .. tostring(call(Internal.getIsInitialized)) .. ")"
+		"[BookArchivist] RefreshUI: invoked (UI exists="
+			.. tostring(call(Internal.getUIFrame) ~= nil)
+			.. ", initialized="
+			.. tostring(call(Internal.getIsInitialized))
+			.. ")"
 	)
 	if not call(Internal.getUIFrame) then
 		if Internal.chatMessage then
@@ -127,20 +149,26 @@ end
 
 local function toggleUI()
 	local Profiler = BookArchivist.Profiler
-	if Profiler then Profiler:Start("UI_toggle") end
-	
+	if Profiler then
+		Profiler:Start("UI_toggle")
+	end
+
 	local ok, err = ensureUI()
 	if not ok then
 		if Internal.logError then
 			Internal.logError(err or "BookArchivist UI unavailable.")
 		end
-		if Profiler then Profiler:Stop("UI_toggle") end
+		if Profiler then
+			Profiler:Stop("UI_toggle")
+		end
 		return
 	end
 
 	local frame = call(Internal.getUIFrame)
 	if not frame then
-		if Profiler then Profiler:Stop("UI_toggle") end
+		if Profiler then
+			Profiler:Stop("UI_toggle")
+		end
 		return
 	end
 
@@ -151,8 +179,10 @@ local function toggleUI()
 		-- This prevents duplicate refreshAll calls
 		frame:Show()
 	end
-	
-	if Profiler then Profiler:Stop("UI_toggle") end
+
+	if Profiler then
+		Profiler:Stop("UI_toggle")
+	end
 end
 
 addonRoot.ToggleUI = toggleUI
@@ -166,33 +196,28 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 	local verb, rest = cleaned:match("^(%S+)%s*(.*)$")
 	verb = (verb or ""):lower()
 	rest = trim(rest or "")
-	
+
 	-- Options/Tools window commands
 	if verb == "options" or verb == "settings" or verb == "config" then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.OptionsUI then
 			BookArchivist.UI.OptionsUI:Open()
-		else
-			print("|cFFFF0000BookArchivist:|r Options UI not available")
 		end
 		return
 	end
-	
+
 	if verb == "tools" or verb == "import" or verb == "export" then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.OptionsUI then
 			BookArchivist.UI.OptionsUI:OpenTools()
-		else
-			print("|cFFFF0000BookArchivist:|r Tools UI not available")
 		end
 		return
 	end
-	
+
 	-- Module status diagnostic - dev only
 	if verb == "modules" or verb == "modstatus" then
-		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
-		print("These commands require BookArchivist_Dev.toc to be loaded")
+		-- Module diagnostic requires dev tools
 		return
 	end
-	
+
 	-- Help command
 	if verb == "help" or verb == "?" or verb == "commands" then
 		print("|cFF00FF00BookArchivist Commands:|r")
@@ -200,7 +225,7 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		print("  |cFFFFFF00/ba help|r - Show this help")
 		print("  |cFFFFFF00/ba options|r - Open options panel")
 		print("  |cFFFFFF00/ba import|r - Open import/export tools")
-		
+
 		-- Show dev commands only if dev tools are loaded
 		if BookArchivist.DevTools then
 			print("")
@@ -215,21 +240,21 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		end
 		return
 	end
-	
+
 	-- Frame pool statistics - dev only
 	if verb == "pool" or verb == "pools" or verb == "poolstats" then
 		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
 		print("These commands require BookArchivist_Dev.toc to be loaded")
 		return
 	end
-	
+
 	-- Profiler commands - dev only
 	if verb == "profile" then
 		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
 		print("These commands require BookArchivist_Dev.toc to be loaded")
 		return
 	end
-	
+
 	-- Legacy profiler handler (never reached in production)
 	if verb == "_profile_legacy" then
 		local Profiler = BookArchivist.Profiler
@@ -237,9 +262,9 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 			print("|cFFFF0000BookArchivist:|r Profiler module not loaded!")
 			return
 		end
-		
+
 		local subCmd = rest:lower()
-		
+
 		if subCmd == "" or subCmd == "report" then
 			-- Print full report
 			local report = Profiler:Report("total")
@@ -287,14 +312,14 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 			return
 		end
 	end
-	
+
 	-- Iterator commands - dev only
 	if verb == "iter" or verb == "iterator" then
 		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
 		print("These commands require BookArchivist_Dev.toc to be loaded")
 		return
 	end
-	
+
 	-- Legacy iterator handler (never reached in production)
 	if verb == "_iter_legacy" or verb == "_iterator_legacy" then
 		local Iterator = BookArchivist.Iterator
@@ -302,34 +327,29 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 			print("|cFFFF0000BookArchivist:|r Iterator module not loaded!")
 			return
 		end
-		
+
 		local subCmd, opName = rest:match("^(%S+)%s*(.*)$")
 		subCmd = (subCmd or ""):lower()
 		opName = trim(opName or "")
-		
+
 		if subCmd == "test" then
 			-- Test iteration with visible progress
 			print("|cFF00FF00Iterator Test:|r Starting slow test iteration...")
-			Iterator:Start(
-				"test_iteration",
-				BookArchivistDB.booksById or {},
-				function(bookId, entry, context)
-					context.count = (context.count or 0) + 1
-					return true
-				end,
-				{
-					chunkSize = 25,
-					budgetMs = 3,
-					onProgress = function(progress, current, total)
-						if current % 100 == 0 then
-							print(string.format("|cFFFFFF00  Progress:|r %d/%d (%.1f%%)", current, total, progress * 100))
-						end
-					end,
-					onComplete = function(context)
-						print(string.format("|cFF00FF00Iterator Test:|r Complete! Processed %d books", context.count or 0))
+			Iterator:Start("test_iteration", BookArchivistDB.booksById or {}, function(bookId, entry, context)
+				context.count = (context.count or 0) + 1
+				return true
+			end, {
+				chunkSize = 25,
+				budgetMs = 3,
+				onProgress = function(progress, current, total)
+					if current % 100 == 0 then
+						print(string.format("|cFFFFFF00  Progress:|r %d/%d (%.1f%%)", current, total, progress * 100))
 					end
-				}
-			)
+				end,
+				onComplete = function(context)
+					print(string.format("|cFF00FF00Iterator Test:|r Complete! Processed %d books", context.count or 0))
+				end,
+			})
 			return
 		elseif subCmd == "" or subCmd == "status" then
 			-- Show all active iterations
@@ -341,14 +361,16 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 				for _, op in ipairs(operations) do
 					local status = Iterator:GetStatus(op)
 					if status then
-						print(string.format(
-							"  %s: %d/%d (%.1f%%) - %.1fs elapsed",
-							op,
-							status.current,
-							status.total,
-							status.progress * 100,
-							status.elapsedSeconds
-						))
+						print(
+							string.format(
+								"  %s: %d/%d (%.1f%%) - %.1fs elapsed",
+								op,
+								status.current,
+								status.total,
+								status.progress * 100,
+								status.elapsedSeconds
+							)
+						)
 					end
 				end
 			end
@@ -374,16 +396,23 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 			return
 		end
 	end
-	
+
 	-- Test data generator commands moved to dev/BookArchivist_DevTools.lua
 	-- UI grid debug commands moved to dev/BookArchivist_DevTools.lua
-	
-	if verb == "uigrid" or verb == "uidebug" or verb == "gentest" or verb == "genpreset" or verb == "cleartest" or verb == "stats" then
+
+	if
+		verb == "uigrid"
+		or verb == "uidebug"
+		or verb == "gentest"
+		or verb == "genpreset"
+		or verb == "cleartest"
+		or verb == "stats"
+	then
 		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
 		print("These commands require BookArchivist_Dev.toc to be loaded")
 		return
 	end
-	
+
 	-- Legacy UI grid debug (kept for compatibility, but disabled in production)
 	if verb == "_uigrid_legacy" or verb == "_uidebug_legacy" then
 		print("|cFFFF0000BookArchivist:|r UI debug commands moved to dev tools")
@@ -418,7 +447,9 @@ SlashCmdList["BOOKARCHIVISTLIST"] = function()
 				pageCount = pageCount + 1
 			end
 		end
-		print(string.format(" #%d key='%s' pages=%d title='%s'", i, tostring(key), pageCount, entry and entry.title or ""))
+		print(
+			string.format(" #%d key='%s' pages=%d title='%s'", i, tostring(key), pageCount, entry and entry.title or "")
+		)
 	end
 end
 
@@ -440,7 +471,15 @@ SlashCmdList["BOOKARCHIVISTDB"] = function()
 	local newBooks = db.booksById or {}
 	local order = db.order or {}
 	local dbVersion = tostring(db.dbVersion or "?")
-	print(string.format("[BookArchivist] DB debug: dbVersion=%s legacyBooks=%d booksById=%d order=%d", dbVersion, legacyBooks and (#{legacyBooks} or 0) or 0, newBooks and (#{newBooks} or 0) or 0, #order))
+	print(
+		string.format(
+			"[BookArchivist] DB debug: dbVersion=%s legacyBooks=%d booksById=%d order=%d",
+			dbVersion,
+			legacyBooks and (#{ legacyBooks } or 0) or 0,
+			newBooks and (#{ newBooks } or 0) or 0,
+			#order
+		)
+	)
 
 	local shown = 0
 	for i, key in ipairs(order) do
