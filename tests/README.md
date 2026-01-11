@@ -45,12 +45,13 @@ make test-errors       # With full error traces
 ## �📂 Directory Structure
 
 ```
-Tests/
-├── Sandbox/           # Pure logic tests (5 tests)
+tests/
+├── Sandbox/           # Pure logic tests (6 tests)
 │   ├── Base64_spec.lua
 │   ├── BookId_spec.lua
 │   ├── CRC32_spec.lua
 │   ├── Order_spec.lua
+│   ├── Repository_spec.lua
 │   └── Serialize_spec.lua
 ├── Desktop/           # Complex Busted tests (5 tests)
 │   ├── DBSafety_spec.lua
@@ -66,10 +67,10 @@ Tests/
 
 ## 🎯 Test Categories
 
-### 1. Sandbox Tests - Pure Logic (5 tests)
+### 1. Sandbox Tests - Pure Logic (6 tests)
 **Run:** `mech call sandbox.test '{"addon": "BookArchivist"}'`  
 **Speed:** ~30ms  
-**Tests:** Base64, BookId, CRC32, Order, Serialize
+**Tests:** Base64, BookId, CRC32, Order, Repository, Serialize
 
 ### 2. Desktop Tests - Complex Mocking (5 tests)
 **Run:** `busted` from addon root  
@@ -134,20 +135,20 @@ _dev_/
 **Windows (PowerShell):**
 ```powershell
 cd G:\development\WorldOfWarcraft\BookArchivist
-.\Tests\run-tests.ps1
+.\scripts\run-tests.ps1
 
-# Or from Tests folder:
-cd Tests
+# Or from scripts folder:
+cd scripts
 .\run-tests.ps1
 ```
 
 **Unix/macOS (Bash):**
 ```bash
 cd /path/to/BookArchivist
-./Tests/run-tests.sh
+./scripts/run-tests.sh
 
-# Or from Tests folder:
-cd Tests
+# Or from scripts folder:
+cd scripts
 chmod +x run-tests.sh  # First time only
 ./run-tests.sh
 ```
@@ -161,22 +162,22 @@ chmod +x run-tests.sh  # First time only
 **Options:**
 ```bash
 # Windows PowerShell:
-.\Tests\run-tests.ps1                    # Summary only (fast)
-.\Tests\run-tests.ps1 -Detailed          # Show all test results (JUnit-style)
-.\Tests\run-tests.ps1 -ShowErrors        # Display full error stack traces
-.\Tests\run-tests.ps1 -Verbose           # Full busted output (raw)
-.\Tests\run-tests.ps1 -Pattern "Base64"  # Run specific test suites
+.\scripts\run-tests.ps1                    # Summary only (fast)
+.\scripts\run-tests.ps1 -Detailed          # Show all test results (JUnit-style)
+.\scripts\run-tests.ps1 -ShowErrors        # Display full error stack traces
+.\scripts\run-tests.ps1 -Verbose           # Full busted output (raw)
+.\scripts\run-tests.ps1 -Pattern "Base64"  # Run specific test suites
 
 # Unix/macOS Bash:
-./Tests/run-tests.sh                     # Summary only (fast)
-./Tests/run-tests.sh -d                  # Show all test results (JUnit-style)
-./Tests/run-tests.sh -e                  # Display full error stack traces
-./Tests/run-tests.sh -v                  # Full busted output (raw)
-./Tests/run-tests.sh -p "Base64"         # Run specific test suites
+./scripts/run-tests.sh                     # Summary only (fast)
+./scripts/run-tests.sh -d                  # Show all test results (JUnit-style)
+./scripts/run-tests.sh -e                  # Display full error stack traces
+./scripts/run-tests.sh -v                  # Full busted output (raw)
+./scripts/run-tests.sh -p "Base64"         # Run specific test suites
 
 # Combine flags:
-.\Tests\run-tests.ps1 -Detailed -ShowErrors  # Full test list + error details
-./Tests/run-tests.sh -d -e                   # Full test list + error details
+.\scripts\run-tests.ps1 -Detailed -ShowErrors  # Full test list + error details
+./scripts/run-tests.sh -d -e                   # Full test list + error details
 ```
 
 **Requirements (Unix/macOS):**
@@ -206,7 +207,7 @@ mech call addon.test '{"addon": "BookArchivist"}'
 
 | Category | Count | Working | In Mechanic UI? |
 |----------|-------|---------|-----------------|
-| Sandbox | 5 | ✅ Yes | ❌ No (CLI only) |
+| Sandbox | 6 | ✅ Yes | ❌ No (CLI only) |
 | Desktop | 5 | ✅ Yes | ❌ No (CLI only) |
 | InGame | 3 | ⚠️ Needs work | ✅ Yes (when done) |
 
@@ -368,7 +369,7 @@ chmod +x .git/hooks/pre-commit
 Typical execution times:
 - Single test file: ~100-300ms
 - Desktop tests (5): ~2 seconds
-- Sandbox tests (5): ~30ms
+- Sandbox tests (6): ~30ms
 - All tests (200): ~4-5 seconds
 
 Fast enough for TDD workflows and pre-commit hooks.
