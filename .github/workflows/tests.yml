@@ -24,8 +24,8 @@ jobs:
         with:
           luaVersion: "5.1"
 
-      - name: Install LuaRocks via Chocolatey
-        run: choco install luarocks -y
+      - name: Install build tools via Chocolatey
+        run: choco install make luarocks -y
         shell: pwsh
 
       - name: Install Busted
