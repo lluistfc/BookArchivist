@@ -61,45 +61,24 @@ local function createTestDB()
 	}
 end
 
--- Test database isolation (TestContainers pattern)
+-- Test database isolation (Repository pattern)
 local testDB = nil
-local originalGetDB = nil
-local originalBookArchivistDB = nil
 local debugLog = {}
 
 local function setupTestDB()
-	-- Save original GetDB function AND global DB
-	originalGetDB = BookArchivist.Core.GetDB
-	originalBookArchivistDB = BookArchivistDB
-	
 	-- Create isolated test database
 	testDB = createTestDB()
 	
 	-- Clear debug log
 	debugLog = {}
 	
-	-- CRITICAL: Override BOTH the function AND the global
-	-- Modules use local getDB() that falls back to BookArchivistDB global
-	BookArchivistDB = testDB
-	BookArchivist.Core.GetDB = function(self)
-		table.insert(debugLog, "GetDB called, returning testDB")
-		return testDB
-	end
+	-- Use Repository to set test DB (no global overrides needed!)
+	BookArchivist.Repository:SetTestDB(testDB)
 end
 
 local function teardownTestDB()
-	-- Restore original GetDB function AND global DB
-	if originalGetDB then
-		BookArchivist.Core.GetDB = originalGetDB
-		originalGetDB = nil
-	end
-	if originalBookArchivistDB ~= nil then
-		BookArchivistDB = originalBookArchivistDB
-		originalBookArchivistDB = nil
-	elseif originalBookArchivistDB == nil then
-		-- DB was nil before, restore to nil
-		BookArchivistDB = nil
-	end
+	-- Clear test DB from Repository
+	BookArchivist.Repository:ClearTestDB()
 	
 	-- Discard test database
 	testDB = nil

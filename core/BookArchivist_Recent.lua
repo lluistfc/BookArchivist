@@ -10,13 +10,6 @@ BookArchivist.Recent = Recent
 
 local Core = BookArchivist.Core
 
-local function getDB()
-	if Core and Core.GetDB then
-		return Core:GetDB()
-	end
-	return rawget(_G or {}, "BookArchivistDB")
-end
-
 local function now()
 	if Core and Core.Now then
 		return Core:Now()
@@ -44,7 +37,7 @@ function Recent:MarkOpened(bookId)
 	if not bookId then
 		return
 	end
-	local db = getDB()
+	local db = BookArchivist.Repository:GetDB()
 	if not db or type(db.booksById) ~= "table" then
 		return
 	end
@@ -81,7 +74,7 @@ end
 ---Return the sanitized MRU list of recently-read bookIds.
 ---@return string[]
 function Recent:GetList()
-	local db = getDB()
+	local db = BookArchivist.Repository:GetDB()
 	if not db or type(db.booksById) ~= "table" then
 		return {}
 	end

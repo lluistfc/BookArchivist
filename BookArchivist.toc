@@ -13,6 +13,7 @@ libs\AceSerializer-3.0\AceSerializer-3.0.xml
 libs\AceComm-3.0\AceComm-3.0.xml
 libs\AceGUI-3.0\AceGUI-3.0.xml
 
+core/BookArchivist_Repository.lua
 core/BookArchivist_BookId.lua
 core/BookArchivist_Migrations.lua
 core/BookArchivist_DBSafety.lua

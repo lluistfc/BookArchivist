@@ -10,13 +10,6 @@ BookArchivist.Favorites = Favorites
 
 local Core = BookArchivist.Core
 
-local function getDB()
-	if Core and Core.GetDB then
-		return Core:GetDB()
-	end
-	return rawget(_G or {}, "BookArchivistDB")
-end
-
 local function now()
 	if Core and Core.Now then
 		return Core:Now()
@@ -32,7 +25,7 @@ function Favorites:Set(bookId, value)
 	if not bookId then
 		return
 	end
-	local db = getDB()
+	local db = BookArchivist.Repository:GetDB()
 	if not db or type(db.booksById) ~= "table" then
 		return
 	end
@@ -55,7 +48,7 @@ function Favorites:Toggle(bookId)
 	if not bookId then
 		return
 	end
-	local db = getDB()
+	local db = BookArchivist.Repository:GetDB()
 	if not db or type(db.booksById) ~= "table" then
 		return
 	end
@@ -75,7 +68,7 @@ function Favorites:IsFavorite(bookId)
 	if not bookId then
 		return false
 	end
-	local db = getDB()
+	local db = BookArchivist.Repository:GetDB()
 	if not db or type(db.booksById) ~= "table" then
 		return false
 	end
