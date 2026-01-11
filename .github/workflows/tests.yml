@@ -84,8 +84,22 @@ jobs:
       - name: Add LuaRocks bin to PATH
         run: |
           $luaRocksBin = Join-Path $env:APPDATA "luarocks\bin"
+          $luaRocksShare = Join-Path $env:APPDATA "luarocks\share\lua\5.1"
+          $luaRocksLib = Join-Path $env:APPDATA "luarocks\lib\lua\5.1"
+          
           Write-Host "Adding to PATH: $luaRocksBin"
           "$luaRocksBin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          
+          # Set LUA_PATH and LUA_CPATH for current session
+          $env:LUA_PATH = "$luaRocksShare\?.lua;$luaRocksShare\?\init.lua;;"
+          $env:LUA_CPATH = "$luaRocksLib\?.dll;;"
+          
+          Write-Host "LUA_PATH: $env:LUA_PATH"
+          Write-Host "LUA_CPATH: $env:LUA_CPATH"
+          
+          # Set for subsequent steps
+          "LUA_PATH=$env:LUA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "LUA_CPATH=$env:LUA_CPATH" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
 
       - name: Verify installations
