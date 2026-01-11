@@ -1,0 +1,14 @@
+-- Busted Configuration for BookArchivist
+-- This file tells Busted where to find tests when run from addon root
+-- https://lunarmodules.github.io/busted/
+
+return {
+  _all = {
+    -- Default root directory for tests  
+    ROOT = { "Tests/" },
+    
+    -- Suppress WoW addon print output that breaks JSON parsing
+    -- (Busted captures stdout, so print() from tested modules appears in output)
+    verbose = false
+  }
+}

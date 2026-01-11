@@ -2,48 +2,60 @@
 
 ## Overview
 
-BookArchivist has two testing approaches:
+BookArchivist uses **Busted** for testing - a mature, industry-standard testing framework for Lua.
 
-1. **Standalone Runner** (recommended) - Direct Lua execution, fast and simple
-2. **Mechanic Sandbox** (WIP) - Full WoW addon environment simulation
+## Requirements
 
-## Standalone Testing (Current)
+- **Lua 5.1.5** (64-bit) - Install via `choco install lua51`
+- **LuaRocks 3.13+** - Package manager for Lua
+- **Busted 2.3.0+** - Testing framework (`luarocks install busted`)
+- **MinGW** (for compiling dependencies) - `choco install mingw`
 
-### Requirements
-- Lua 5.1 installed
-- Mechanic framework available (for test_framework.lua)
+All requirements are cross-platform compatible (Windows, Linux, macOS).
+
+## Installation
+
+### Windows (via Chocolatey)
+
+```powershell
+# Install Lua 5.1 64-bit
+choco install lua51 -y
+
+# Install MinGW for compiling native dependencies
+choco install mingw -y
+
+# Install LuaRocks (download from luarocks.org)
+# Then configure it to use Lua 5.1:
+luarocks config --lua-version=5.1 variables.LUA "C:\ProgramData\chocolatey\lib\lua51\tools\lua5.1.exe"
+
+# Install Busted
+luarocks install busted
+```
+
+### Verification
+
+```powershell
+lua5.1 -v        # Should show: Lua 5.1.5
+luarocks --version  # Should show: 3.13.0 or higher
+busted --version    # Should show: 2.3.0
+```
+
+## Running Tests
 
 ### Quick Start
 
-**Run single test:**
 ```powershell
-# Set Mechanic path (first time only)
-$env:MECHANIC_PATH = "G:/development/_dev_/Mechanic"
+# Run all tests
+busted Tests/
 
-# Run a test
-lua.exe run_tests.lua Tests/Core/BookId_spec.lua
-```
+# Run Core tests only (196 tests, ~4 seconds)
+busted Tests/Core/
 
-**Run all tests:**
-```powershell
-./run_all_tests.ps1
-```
+# Run specific test file
+busted Tests/Core/BookId_spec.lua
 
-### Environment Variable
-
-Set `MECHANIC_PATH` to your Mechanic installation:
-
-```powershell
-# Windows PowerShell
-$env:MECHANIC_PATH = "G:/development/_dev_/Mechanic"
-
-# Or set permanently:
-[System.Environment]::SetEnvironmentVariable("MECHANIC_PATH", "G:/development/_dev_/Mechanic", "User")
-```
-
-```bash
-# Linux/Mac
-export MECHANIC_PATH="/path/to/Mechanic"
+# Run Integration tests (some require UI modules)
+busted Tests/Integration/
 ```
 
 ### Test Files Structure
@@ -61,55 +73,57 @@ Tests/
 │   ├── Order_spec.lua
 │   ├── Export_spec.lua
 │   └── DBSafety_spec.lua
-├── Integration/        # Integration tests (12 tests)
-│   └── Async_Filtering_Integration_spec.lua
-├── UI/                 # UI tests (not yet updated for standalone)
+├── Integration/        # Integration tests (25 tests, 21 need UI modules)
+│   ├── Async_Filtering_Integration_spec.lua
+│   └── List_Reader_Integration_spec.lua
+├── UI/                 # UI tests (28 tests, need frame mocks)
 │   └── Reader_spec.lua
-└── stubs/              # Test stubs (bit library, etc.)
-    ├── bit_library.lua
-    └── README.md
+├── stubs/              # Test stubs (bit library for portability)
+│   ├── bit_library.lua
+│   └── README.md
+└── test_helper.lua     # Cross-platform path resolution
 ```
 
-## Why Not Mechanic's Test Commands?
+## Configuration
 
-Mechanic provides two test commands, but neither is ideal for BookArchivist:
+The `.busted` file in the addon root configures Busted to find tests:
 
-### 1. `sandbox.test` - Incompatible Structure
-**Issue:** Hardcoded to load files from `Core/` folder only (capital C)  
-**BookArchivist uses:** `core/`, `ui/`, `dev/` (lowercase, multi-folder structure)  
-**Result:** Finds test files but can't load source modules
-
-### 2. `addon.test` - Requires Busted Installation
-**Issue:** Requires Busted (LuaRocks package with C compilation dependencies)  
-**Requirements:** Visual Studio Build Tools, modern LuaRocks, C compiler setup  
-**Result:** Complex installation process, platform-specific
-
-### BookArchivist's Approach: Better by Design
-
-Our standalone test runner is **intentionally simpler** and more portable:
-
-| Feature | Standalone Runner | Mechanic Tests |
-|---------|------------------|----------------|
-| **Installation** | None (just Lua 5.1) | Requires Busted + C compiler |
-| **Structure** | Works with any folder layout | Expects `Core/` (capital C) |
-| **Speed** | ~2-3 seconds for 208 tests | Similar |
-| **Cross-platform** | Pure Lua (Windows/Linux/Mac) | Requires native compilation |
-| **Maintenance** | Zero external dependencies | Tied to Mechanic updates |
-
-This is a **feature, not a limitation**. Enterprise testing frameworks often favor simplicity over tooling lock-in.
+```lua
+-- .busted
+return {
+  _all = {
+    ROOT = { "Tests/" },  -- Search for tests in Tests/ folder
+    verbose = false       -- Suppress debug output (cleaner JSON)
+  }
+}
+```
 
 ## Test Statistics
 
-### Currently Working (Standalone)
-- **Total:** 208/208 tests passing (100%)
-- **Core:** 196 tests across 10 modules
-- **Integration:** 12 tests
+### Core Tests (Business Logic)
+- **Status:** ✅ 196/196 passing (~4 seconds)
+- **Coverage:** All core modules fully tested
+- **Modules:** BookId, CRC32, Serialize, Base64, Export, DBSafety, Favorites, Recent, Search, Order
 
-### Portable Features
+### Integration Tests
+- **Status:** ⚠️ 4/25 passing (21 need UI module loading)
+- **Expected:** Iterator and filtering tests work, UI integration tests need mocks
+
+### UI Tests  
+- **Status:** ⚠️ 0/28 passing (all need frame mocks)
+- **Expected:** Require WoW frame environment or proper mocking
+
+## Busted Features Used
 ✅ Cross-platform path resolution  
 ✅ Pure Lua bit operations (no C extensions)  
 ✅ Zero runtime dependencies (just Lua 5.1)  
-✅ Self-healing addon (auto-loads test stubs)  
+## Busted Features Used
+
+- **BDD style:** `describe()` and `it()` blocks
+- **Assertions:** `assert.are.equal()`, `assert.is_true()`, `assert.is_nil()`
+- **Setup/teardown:** `before_each()` and `after_each()` hooks
+- **JSON output:** `--output json` for CI/CD integration
+- **Recursive search:** Automatically finds `*_spec.lua` files in Tests/ folder
 
 ## Adding New Tests
 
@@ -129,44 +143,79 @@ describe("MyModule", function()
 end)
 ```
 
-3. Add to `run_all_tests.ps1` if creating new core test
+3. Run the new test: `busted Tests/Core/MyModule_spec.lua`
 
 ## Troubleshooting
 
-### "Cannot find test_framework.lua"
-Set `MECHANIC_PATH` environment variable to your Mechanic installation directory.
+### "Busted not found"
+Install Busted: `luarocks install busted`
 
-### "bit library unavailable"
-The addon should auto-load Tests/stubs/bit_library.lua. If it doesn't:
-1. Check file exists at Tests/stubs/bit_library.lua
-2. Check you're running from BookArchivist root directory
+Verify installation: `busted --version`
 
-### Tests pass standalone but fail in Mechanic
-This is the current known issue. Standalone testing is the recommended approach until Mechanic integration is fixed.
+### "Module not found" errors
+Tests use `test_helper.lua` for cross-platform path resolution. Make sure you're:
+1. Running from BookArchivist root directory
+2. Using `helper.loadFile()` to load modules
+
+### Debug print statements break JSON output
+Wrap debug prints in conditional checks:
+```lua
+local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+if debugMode and type(print) == "function" then
+  print("[Debug] Message")
+end
+```
+
+### Integration/UI tests fail
+Expected behavior - these tests need:
+- **Integration:** Full addon module loading (BookArchivist.Iterator, etc.)
+- **UI:** WoW frame environment or proper mocks
+
+Core tests (196) should always pass.
 
 ## CI/CD Integration
 
-For GitHub Actions or other CI systems:
+### GitHub Actions
 
 ```yaml
-- name: Install Lua
-  run: |
-    # Install Lua 5.1 for your platform
-    
-- name: Clone Mechanic
-  run: git clone https://github.com/YOUR_ORG/Mechanic.git ../Mechanic
+name: Tests
 
-- name: Run tests
-  env:
-    MECHANIC_PATH: ../Mechanic
-  run: lua run_tests.lua Tests/Core/BookId_spec.lua
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 luarocks
+      
+      - name: Install Busted
+        run: sudo luarocks install busted
+      
+      - name: Run tests
+        run: busted Tests/Core/
+```
+
+### Local Pre-commit Hook
+
+```bash
+#!/bin/sh
+# .git/hooks/pre-commit
+
+echo "Running tests..."
+busted Tests/Core/ || exit 1
+echo "✓ All tests passed"
 ```
 
 ## Performance
 
-Typical test execution times:
+Typical execution times:
 - Single test file: ~100-300ms
-- All 11 test files: ~2-3 seconds total
-- Per-test overhead: <1ms
+- All Core tests (196): ~4 seconds
+- Full test suite: ~5 seconds
 
 Fast enough for TDD workflows and pre-commit hooks.

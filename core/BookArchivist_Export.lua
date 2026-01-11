@@ -159,7 +159,7 @@ local function DecodeBDB1Envelope(raw)
 
   local serialized = compressed
   if expectedSize > 0 and #serialized ~= expectedSize then
-    if type(print) == "function" then
+    if debugMode and type(print) == "function" then
       print("[BA Decode] Size mismatch: got " .. #serialized .. ", expected " .. expectedSize)
     end
     return nil, nil, "Size mismatch; data may be corrupt"
