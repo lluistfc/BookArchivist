@@ -24,8 +24,18 @@ jobs:
         with:
           luaVersion: "5.1"
 
-      - name: Install build tools via Chocolatey
-        run: choco install make luarocks -y
+      - name: Install make via Chocolatey
+        run: choco install make -y
+        shell: pwsh
+
+      - name: Install LuaRocks (Windows 64-bit)
+        run: |
+          $luarocksVersion = "3.11.1"
+          $url = "https://luarocks.github.io/luarocks/releases/luarocks-$luarocksVersion-windows-64.zip"
+          Invoke-WebRequest -Uri $url -OutFile luarocks.zip
+          Expand-Archive luarocks.zip -DestinationPath C:\luarocks
+          $env:PATH = "C:\luarocks;$env:PATH"
+          echo "C:\luarocks" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         shell: pwsh
 
       - name: Install Busted
