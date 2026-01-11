@@ -92,6 +92,7 @@ jobs:
           $env:PATH = "$luaLib;$env:PATH"
           $luaRocksBin = Join-Path $env:APPDATA "luarocks\bin"
           $env:PATH = "$luaRocksBin;$env:PATH"
+          "$luaRocksBin" | Out-File -FilePath $env:GITHUB_PATH -Append
           $luaPath = (luarocks --lua-version 5.1 path --lr-path 2>&1 | Out-String).Trim()
           $luaCPath = (luarocks --lua-version 5.1 path --lr-cpath 2>&1 | Out-String).Trim()
           $env:LUA_PATH = "$luaPath;;"
