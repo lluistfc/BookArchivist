@@ -61,32 +61,27 @@ local function createTestDB()
 	}
 end
 
--- Test database isolation (Repository pattern)
+-- Test database isolation
+-- Tests temporarily replace BookArchivistDB global with test data
 local testDB = nil
-local debugLog = {}
+local originalDB = nil
 
 local function setupTestDB()
-	-- Create isolated test database
+	-- Backup production database
+	originalDB = BookArchivistDB
+	
+	-- Create and install isolated test database
 	testDB = createTestDB()
-	
-	-- Clear debug log
-	debugLog = {}
-	
-	-- Use Repository to set test DB (no global overrides needed!)
-	BookArchivist.Repository:SetTestDB(testDB)
+	BookArchivistDB = testDB
 end
 
 local function teardownTestDB()
-	-- Clear test DB from Repository
-	BookArchivist.Repository:ClearTestDB()
+	-- Restore production database
+	BookArchivistDB = originalDB
 	
 	-- Discard test database
 	testDB = nil
-	debugLog = {}
-end
-
-local function getDebugLog()
-	return table.concat(debugLog, " | ")
+	originalDB = nil
 end
 
 -- ============================================================================
@@ -122,23 +117,11 @@ function Tests.test_favorites_set_true()
 		return false, "Book disappeared after Favorites:Set()"
 	end
 	
-	-- Check if book objects are same reference
-	local sameBookRef = (bookBefore == bookAfter)
-
-	-- Also check what the production DB says
-	local prodDB = BookArchivistDB
-	local prodBook = prodDB and prodDB.booksById and prodDB.booksById["test_book_1"]
-	local prodFav = prodBook and prodBook.isFavorite or "NO_PROD_BOOK"
-
 	if bookAfter.isFavorite ~= true then
 		return false, string.format(
-			"Favorites:Set did not work: expected true, got %s (initial=%s, sameDB=%s, sameBook=%s, prodFav=%s, dbCalls=%s)",
+			"Expected isFavorite=true, got %s (initial=%s)",
 			tostring(bookAfter.isFavorite),
-			tostring(initialFav),
-			tostring(sameDBRef),
-			tostring(sameBookRef),
-			tostring(prodFav),
-			getDebugLog()
+			tostring(initialFav)
 		)
 	end
 
