@@ -59,7 +59,7 @@ tests/
 │   ├── Favorites_spec.lua
 │   ├── Recent_spec.lua
 │   └── Search_spec.lua
-└── InGame/            # WoW API tests (3 tests - need rewriting)
+└── InGame/            # WoW API tests (3 tests - in Mechanic UI)
     ├── Reader_spec.lua
     ├── Async_Filtering_Integration_spec.lua
     └── List_Reader_Integration_spec.lua
@@ -77,9 +77,10 @@ tests/
 **Speed:** ~5s  
 **Tests:** DBSafety, Export, Favorites, Recent, Search
 
-### 3. In-Game Tests - WoW Runtime (0 tests currently)
+### 3. In-Game Tests - WoW Runtime (3 tests)
 **Run:** Mechanic UI → Tests tab  
-**Status:** ⚠️ Need rewriting from Busted format
+**Status:** ✅ All passing in Mechanic
+**Tests:** Reader, Async_Filtering_Integration, List_Reader_Integration
 
 ---
 
@@ -209,7 +210,7 @@ mech call addon.test '{"addon": "BookArchivist"}'
 |----------|-------|---------|-----------------|
 | Sandbox | 6 | ✅ Yes | ❌ No (CLI only) |
 | Desktop | 5 | ✅ Yes | ❌ No (CLI only) |
-| InGame | 3 | ⚠️ Needs work | ✅ Yes (when done) |
+| InGame | 3 | ✅ Yes | ✅ Yes (Mechanic UI) |
 
 **Total:** 200 tests passing (~4-5 seconds execution time)
 
