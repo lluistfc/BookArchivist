@@ -162,26 +162,9 @@ endif
 
 setup-mechanic:
 ifeq ($(DETECTED_OS),Windows)
-	@pwsh -NoProfile -Command "Write-Host 'Setting up Mechanic...' -ForegroundColor Cyan"
-	@pwsh -NoProfile -Command "if (-not (Test-Path '$(MECHANIC_DIR)')) { Write-Host 'Cloning Mechanic from $(MECHANIC_REPO)...' -ForegroundColor Yellow; git clone $(MECHANIC_REPO) $(MECHANIC_DIR) } else { Write-Host '✓ Mechanic directory already exists' -ForegroundColor Green }"
-	@pwsh -NoProfile -Command "Write-Host 'Installing Mechanic Desktop (editable mode)...' -ForegroundColor Yellow"
-	@pwsh -NoProfile -Command "cd $(MECHANIC_DIR)/desktop; python -m pip install --upgrade pip; python -m pip install -e ."
-	@pwsh -NoProfile -Command "Write-Host '✓ Mechanic setup complete!' -ForegroundColor Green"
-	@pwsh -NoProfile -Command "Write-Host 'Start dashboard: mech' -ForegroundColor Cyan"
-	@pwsh -NoProfile -Command "Write-Host 'Check installation: mech --version' -ForegroundColor Cyan"
+	@pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-mechanic.ps1 "$(MECHANIC_DIR)" "$(MECHANIC_REPO)"
 else
-	@echo "Setting up Mechanic..."
-	@if [ ! -d "$(MECHANIC_DIR)" ]; then \
-		echo "Cloning Mechanic from $(MECHANIC_REPO)..."; \
-		git clone $(MECHANIC_REPO) $(MECHANIC_DIR); \
-	else \
-		echo "✓ Mechanic directory already exists"; \
-	fi
-	@echo "Installing Mechanic Desktop (editable mode)..."
-	@cd $(MECHANIC_DIR)/desktop && \
-		python3 -m pip install --upgrade pip && \
-		python3 -m pip install -e .
-	@echo "✓ Mechanic setup complete!"
-	@echo "Start dashboard: mech"
-	@echo "Check installation: mech --version"
+	@chmod +x scripts/setup-mechanic.sh
+	@./scripts/setup-mechanic.sh "$(MECHANIC_DIR)" "$(MECHANIC_REPO)"
 endif
+
