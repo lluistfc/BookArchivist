@@ -16,29 +16,74 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache Lua installation
+        id: cache-lua
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.lua
+          key: lua-5.1-windows-${{ runner.os }}-${{ hashFiles('.github/workflows/tests.yml') }}
+          restore-keys: |
+            lua-5.1-windows-${{ runner.os }}-
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup Lua
+        if: steps.cache-lua.outputs.cache-hit != 'true'
         uses: leafo/gh-actions-lua@v10
         with:
           luaVersion: "5.1"
+
+      - name: Add Lua to PATH (cached or fresh)
+        run: |
+          $luaBin = Join-Path $env:GITHUB_WORKSPACE ".lua\bin"
+          $luaLib = Join-Path $env:GITHUB_WORKSPACE ".lua\lib"
+          Write-Host "Adding Lua bin to PATH: $luaBin"
+          Write-Host "Adding Lua lib to PATH (for DLL dependencies): $luaLib"
+          "$luaBin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          "$luaLib" | Out-File -FilePath $env:GITHUB_PATH -Append
+        shell: pwsh
+
+      - name: Cache LuaRocks binary
+        id: cache-luarocks-bin
+        uses: actions/cache@v4
+        with:
+          path: C:\luarocks-3.11.1-windows-64
+          key: luarocks-3.11.1-windows-64
+          restore-keys: |
+            luarocks-3.11.1-windows-
 
       - name: Install make via Chocolatey
         run: choco install make -y
         shell: pwsh
 
-      - name: Install LuaRocks (Windows 64-bit)
+      - name: Download and extract LuaRocks
+        if: steps.cache-luarocks-bin.outputs.cache-hit != 'true'
         run: |
           $luarocksVersion = "3.11.1"
           $url = "https://luarocks.github.io/luarocks/releases/luarocks-$luarocksVersion-windows-64.zip"
           Invoke-WebRequest -Uri $url -OutFile luarocks.zip
           Expand-Archive luarocks.zip -DestinationPath C:\
-          $luarocksPath = "C:\luarocks-$luarocksVersion-windows-64"
+        shell: pwsh
+
+      - name: Add LuaRocks to PATH
+        run: |
+          $luarocksPath = "C:\luarocks-3.11.1-windows-64"
           echo $luarocksPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         shell: pwsh
 
+      - name: Cache LuaRocks packages
+        id: cache-luarocks-packages
+        uses: actions/cache@v4
+        with:
+          path: C:\Users\runneradmin\AppData\Roaming\luarocks
+          key: luarocks-packages-lua-5.1-busted-2.3.0-${{ hashFiles('.github/workflows/tests.yml') }}
+          restore-keys: |
+            luarocks-packages-lua-5.1-busted-2.3.0-
+            luarocks-packages-lua-5.1-
+
       - name: Configure LuaRocks to use Lua 5.1
+        if: steps.cache-luarocks-packages.outputs.cache-hit != 'true'
         run: |
           $luaPath = (Get-Command lua.exe).Source
           $luaDir = Split-Path $luaPath
@@ -78,11 +123,16 @@ jobs:
         shell: pwsh
 
       - name: Install Busted
+        if: steps.cache-luarocks-packages.outputs.cache-hit != 'true'
         run: luarocks --lua-version 5.1 install busted
         shell: pwsh
 
       - name: Configure Lua paths
         run: |
+          # Add Lua lib directory to current session PATH for DLL dependencies
+          $luaLib = Join-Path $env:GITHUB_WORKSPACE ".lua\lib"
+          $env:PATH = "$luaLib;$env:PATH"
+          
           $luaRocksBin = Join-Path $env:APPDATA "luarocks\bin"
           Write-Host "Adding to PATH: $luaRocksBin"
           
@@ -108,15 +158,7 @@ jobs:
           "LUA_PATH=$luaPath" | Out-File -FilePath $env:GITHUB_ENV -Append
           "LUA_CPATH=$luaCPath" | Out-File -FilePath $env:GITHUB_ENV -Append
           
-          # Debug: Check if lfs.dll exists
-          Write-Host "`nSearching for lfs.dll:"
-          Get-ChildItem "$env:APPDATA\luarocks" -Recurse -Filter "*.dll" -ErrorAction SilentlyContinue | Format-Table FullName
-          
-          # Test loading lfs directly
-          Write-Host "`nTesting direct lfs load:"
-          lua -e "print('LUA_CPATH:', package.cpath); local lfs = require('lfs'); print('LFS loaded successfully')"
-          
-          Write-Host "`nTesting busted with configured paths:"
+          Write-Host "`nVerifying busted:"
           busted --version
         shell: pwsh
 
