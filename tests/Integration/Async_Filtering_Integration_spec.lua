@@ -74,7 +74,7 @@ BookArchivist.LogError = function(self, msg)
 end
 
 -- Load test helper for cross-platform path resolution
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 
 -- Load REAL modules
 helper.loadFile("core/BookArchivist_Iterator.lua")

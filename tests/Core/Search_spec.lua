@@ -2,7 +2,7 @@
 -- Sandbox tests for search text processing
 
 -- Load test helper
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 helper.setupNamespace()
 
 -- Mock Core module

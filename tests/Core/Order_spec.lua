@@ -2,7 +2,7 @@
 -- Tests order management (TouchOrder, AppendOrder, Delete) and sorting comparators
 
 -- Load test helper for cross-platform path resolution
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 
 -- Setup BookArchivist namespace
 helper.setupNamespace()

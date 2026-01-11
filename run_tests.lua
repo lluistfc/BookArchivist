@@ -1,8 +1,10 @@
 -- Test runner for BookArchivist tests
 -- Usage: lua run_tests.lua [test_file]
 
--- Load test framework from Mechanic
-dofile("G:/development/_dev_/Mechanic/sandbox/generated/test_framework.lua")
+-- Load test framework from Mechanic (relative path)
+local mechanicPath = os.getenv("MECHANIC_PATH") or "../Mechanic"
+local frameworkPath = mechanicPath .. "/sandbox/generated/test_framework.lua"
+dofile(frameworkPath)
 
 -- Get test file from command line
 local testFile = arg[1]

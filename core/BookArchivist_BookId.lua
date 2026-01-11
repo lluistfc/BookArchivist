@@ -13,10 +13,12 @@ BookArchivist = BookArchivist or {}
 -- 2. No need to modify Mechanic's generated files after updates
 -- 3. Self-contained - addon brings everything it needs for testing
 if not (bit or bit32) then
+  --@do-not-package@
   -- Try to load test stub for sandbox/test environments
   pcall(function()
-    dofile("tests/stubs/bit_library.lua")
+    dofile("Tests/stubs/bit_library.lua")
   end)
+  --@end-do-not-package@
 end
 
 local BookId = BookArchivist.BookId or {}

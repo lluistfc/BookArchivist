@@ -2,7 +2,7 @@
 -- Pure Lua module - no WoW dependencies needed
 
 -- Load test helper for cross-platform path resolution
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 
 -- Setup BookArchivist namespace
 helper.setupNamespace()

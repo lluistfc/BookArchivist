@@ -2,7 +2,7 @@
 -- Tests SavedVariables structure validation and corruption handling
 
 -- Load test helper for cross-platform path resolution
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 
 -- Load bit library for hashing operations
 helper.loadFile("tests/stubs/bit_library.lua")

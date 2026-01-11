@@ -2,7 +2,7 @@
 -- Sandbox tests for CRC32 checksum computation
 
 -- Load test helper
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 helper.loadFile("tests/stubs/bit_library.lua")
 helper.setupNamespace()
 

@@ -15,23 +15,23 @@ local function getHelperDir()
         -- File path
         local path = source:sub(2):gsub("\\", "/")
         if path:match("test_helper%.lua$") then
-          return path:match("^(.+)/test_helper%.lua$") or "tests"
+          return path:match("^(.+)/test_helper%.lua$") or "Tests"
         end
       end
     end
   end
   -- Fallback
-  return "tests"
+  return "Tests"
 end
 
 local helperDir = getHelperDir()
 
--- Calculate project root (test_helper.lua is in tests/, so go up one level)
+-- Calculate project root (test_helper.lua is in Tests/, so go up one level)
 local projectRoot
-if helperDir == "tests" then
+if helperDir == "Tests" or helperDir == "tests" then
   projectRoot = "."
-elseif helperDir:match("/tests$") then
-  projectRoot = helperDir:match("^(.+)/tests$")
+elseif helperDir:match("/[Tt]ests$") then
+  projectRoot = helperDir:match("^(.+)/[Tt]ests$")
 else
   projectRoot = helperDir
 end

@@ -2,7 +2,7 @@
 -- Integration tests for BookList and Reader interaction
 
 -- Load test helper
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 
 -- Setup localization BEFORE loading modules
 BookArchivist = BookArchivist or {}

@@ -2,7 +2,7 @@
 -- Tests the export envelope format used for sharing books
 
 -- Load test helper for cross-platform path resolution
-local helper = dofile("tests/test_helper.lua")
+local helper = dofile("Tests/test_helper.lua")
 
 -- Load bit library for CRC32 operations
 helper.loadFile("tests/stubs/bit_library.lua")

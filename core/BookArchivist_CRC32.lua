@@ -14,16 +14,18 @@ BookArchivist = BookArchivist or {}
 -- 3. Self-contained - addon brings everything it needs for testing
 local bitLib = _G and (_G.bit32 or _G.bit) or bit32 or bit
 if not bitLib then
+  --@do-not-package@
   -- Try to load test stub for sandbox/test environments
   local success = pcall(function()
     -- Try relative path from addon root
-    local stubPath = "tests/stubs/bit_library.lua"
+    local stubPath = "Tests/stubs/bit_library.lua"
     dofile(stubPath)
   end)
   
   if success then
     bitLib = bit or bit32
   end
+  --@end-do-not-package@
   
   -- If still not available, error
   if not bitLib then
