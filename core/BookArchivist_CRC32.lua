@@ -4,6 +4,14 @@
 
 BookArchivist = BookArchivist or {}
 
+-- Bit library handling:
+-- In WoW: bit32 or bit is provided by the game client
+-- In tests: We auto-load our own stub to avoid external dependencies
+--
+-- Why not require Mechanic to provide this?
+-- 1. Tests become portable - work on any machine with Lua 5.1
+-- 2. No need to modify Mechanic's generated files after updates
+-- 3. Self-contained - addon brings everything it needs for testing
 local bitLib = _G and (_G.bit32 or _G.bit) or bit32 or bit
 if not bitLib then
   -- Try to load test stub for sandbox/test environments
