@@ -38,20 +38,21 @@ jobs:
           echo $luarocksPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         shell: pwsh
 
-      - name: Configure LuaRocks to use leafo Lua
+      - name: Configure LuaRocks to use Lua 5.1
         run: |
           $luaPath = (Get-Command lua.exe).Source
           $luaDir = Split-Path $luaPath
           Write-Host "Lua found at: $luaPath"
           Write-Host "Lua directory: $luaDir"
-          luarocks config variables.LUA "$luaPath"
-          luarocks config variables.LUA_DIR "$luaDir"
-          luarocks config variables.LUA_INCDIR "$luaDir"
-          luarocks config variables.LUA_LIBDIR "$luaDir"
+          luarocks config --lua-version 5.1 variables.LUA "$luaPath"
+          luarocks config --lua-version 5.1 variables.LUA_DIR "$luaDir"
+          luarocks config --lua-version 5.1 variables.LUA_INCDIR "$luaDir"
+          luarocks config --lua-version 5.1 variables.LUA_LIBDIR "$luaDir"
+          luarocks config --lua-version 5.1 lua_version "5.1"
         shell: pwsh
 
       - name: Install Busted
-        run: luarocks install busted
+        run: luarocks --lua-version 5.1 install busted
         shell: pwsh
 
       - name: Verify installations
