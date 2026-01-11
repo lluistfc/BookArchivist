@@ -293,13 +293,13 @@ endif
 beta:
 ifeq ($(DETECTED_OS),Windows)
 	@if "$(TAG)"=="" (echo Error: TAG required. Usage: make beta TAG=x.x.x && exit 1)
-	@git tag -a "$(TAG)-beta" -m "Beta release $(TAG)-beta"
-	@echo ✓ Created tag: $(TAG)-beta
-	@echo To push: git push origin $(TAG)-beta
+	@git tag -a "v$(TAG)-beta" -m "Beta release v$(TAG)-beta"
+	@echo ✓ Created tag: v$(TAG)-beta
+	@echo To push: git push origin v$(TAG)-beta
 else
 	@if [ -z "$(TAG)" ]; then echo "Error: TAG required. Usage: make beta TAG=x.x.x"; exit 1; fi
-	@git tag -a "$(TAG)-beta" -m "Beta release $(TAG)-beta"
-	@echo "✓ Created tag: $(TAG)-beta"
-	@echo "To push: git push origin $(TAG)-beta"
+	@git tag -a "v$(TAG)-beta" -m "Beta release v$(TAG)-beta"
+	@echo "✓ Created tag: v$(TAG)-beta"
+	@echo "To push: git push origin v$(TAG)-beta"
 endif
 
