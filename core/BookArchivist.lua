@@ -132,12 +132,18 @@ local function handleAddonLoaded(name)
 
 	-- Set initialization guard to prevent circular dependency
 	isInitializing = true
+	
+	-- Initialize Repository early (before EnsureDB needs it)
+	-- Start with nil, EnsureDB will create/migrate the actual DB
+	if BookArchivist.Repository and BookArchivist.Repository.Init then
+		BookArchivist.Repository:Init(BookArchivistDB)
+	end
 
 	if Core and Core.EnsureDB then
 		Core:EnsureDB()
 	end
 	
-	-- Initialize Repository with production database
+	-- Re-initialize Repository with the ensured/migrated database
 	if BookArchivist.Repository and BookArchivist.Repository.Init then
 		BookArchivist.Repository:Init(BookArchivistDB)
 	end
