@@ -301,6 +301,12 @@ function Core:EnsureDB()
 end
 
 function Core:GetDB()
+	-- Delegate to Repository for test isolation support
+	local Repository = BookArchivist.Repository
+	if Repository and Repository.GetDB then
+		return Repository:GetDB()
+	end
+	-- Fallback for early initialization before Repository is loaded
 	return ensureDB()
 end
 
