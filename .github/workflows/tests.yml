@@ -81,25 +81,31 @@ jobs:
         run: luarocks --lua-version 5.1 install busted
         shell: pwsh
 
-      - name: Add LuaRocks bin to PATH
+      - name: Configure Lua paths
         run: |
           $luaRocksBin = Join-Path $env:APPDATA "luarocks\bin"
-          $luaRocksShare = Join-Path $env:APPDATA "luarocks\share\lua\5.1"
-          $luaRocksLib = Join-Path $env:APPDATA "luarocks\lib\lua\5.1"
-          
           Write-Host "Adding to PATH: $luaRocksBin"
           "$luaRocksBin" | Out-File -FilePath $env:GITHUB_PATH -Append
           
-          # Set LUA_PATH and LUA_CPATH for current session
-          $env:LUA_PATH = "$luaRocksShare\?.lua;$luaRocksShare\?\init.lua;;"
-          $env:LUA_CPATH = "$luaRocksLib\?.dll;;"
+          # Use luarocks path to get proper paths
+          $pathOutput = luarocks --lua-version 5.1 path --lr-path 2>&1
+          $cpathOutput = luarocks --lua-version 5.1 path --lr-cpath 2>&1
           
-          Write-Host "LUA_PATH: $env:LUA_PATH"
-          Write-Host "LUA_CPATH: $env:LUA_CPATH"
+          Write-Host "LuaRocks LUA_PATH: $pathOutput"
+          Write-Host "LuaRocks LUA_CPATH: $cpathOutput"
           
-          # Set for subsequent steps
-          "LUA_PATH=$env:LUA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "LUA_CPATH=$env:LUA_CPATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+          # Extract and set the paths
+          if ($pathOutput -match "export LUA_PATH='([^']+)'") {
+            $luaPath = $matches[1]
+            "LUA_PATH=$luaPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "Set LUA_PATH to: $luaPath"
+          }
+          
+          if ($cpathOutput -match "export LUA_CPATH='([^']+)'") {
+            $luaCPath = $matches[1]
+            "LUA_CPATH=$luaCPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "Set LUA_CPATH to: $luaCPath"
+          }
         shell: pwsh
 
       - name: Verify installations
