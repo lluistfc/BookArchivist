@@ -95,7 +95,7 @@ end
 
 -- Test: Favorites.Set marks a book as favorite
 function Tests.test_favorites_set_true()
-	local dbBefore = BookArchivist.Core:GetDB()
+	local dbBefore = BookArchivist.Repository:GetDB()
 	local bookBefore = dbBefore.booksById["test_book_1"]
 	if not bookBefore then
 		return false, "Test DB setup failed: test_book_1 not found"
@@ -112,7 +112,7 @@ function Tests.test_favorites_set_true()
 	BookArchivist.Favorites:Set("test_book_1", true)
 
 	-- Verify - call GetDB again to see if it's still the same reference
-	local dbAfter = BookArchivist.Core:GetDB()
+	local dbAfter = BookArchivist.Repository:GetDB()
 	
 	-- Check if they're literally the same table
 	local sameDBRef = (dbBefore == dbAfter)
@@ -147,7 +147,7 @@ end
 
 -- Test: Favorites.Set removes favorite
 function Tests.test_favorites_set_false()
-	local dbBefore = BookArchivist.Core:GetDB()
+	local dbBefore = BookArchivist.Repository:GetDB()
 	local bookBefore = dbBefore.booksById["favorite_book"]
 	if not bookBefore then
 		return false, "Test DB setup failed: favorite_book not found"
@@ -158,7 +158,7 @@ function Tests.test_favorites_set_false()
 	BookArchivist.Favorites:Set("favorite_book", false)
 
 	-- Verify
-	local dbAfter = BookArchivist.Core:GetDB()
+	local dbAfter = BookArchivist.Repository:GetDB()
 	local bookAfter = dbAfter.booksById["favorite_book"]
 	if not bookAfter then
 		return false, "Book disappeared after Favorites:Set()"
@@ -179,7 +179,7 @@ end
 
 -- Test: Favorites.Toggle toggles favorite state
 function Tests.test_favorites_toggle()
-	local dbBefore = BookArchivist.Core:GetDB()
+	local dbBefore = BookArchivist.Repository:GetDB()
 	local bookBefore = dbBefore.booksById["test_book_1"]
 	if not bookBefore then
 		return false, "Test DB setup failed: test_book_1 not found"
@@ -192,7 +192,7 @@ function Tests.test_favorites_toggle()
 	BookArchivist.Favorites:Toggle("test_book_1")
 
 	-- Verify
-	local dbAfter = BookArchivist.Core:GetDB()
+	local dbAfter = BookArchivist.Repository:GetDB()
 	local bookAfter = dbAfter.booksById["test_book_1"]
 	if not bookAfter then
 		return false, "Book disappeared after Favorites:Toggle()"
@@ -213,7 +213,7 @@ end
 
 -- Test: Recent.MarkOpened adds book to recent list
 function Tests.test_recent_mark_opened()
-	local db = BookArchivist.Core:GetDB()
+	local db = BookArchivist.Repository:GetDB()
 
 	-- Mark as opened
 	BookArchivist.Recent:MarkOpened("test_book_1")
@@ -232,7 +232,7 @@ end
 
 -- Test: Recent.GetList returns MRU order
 function Tests.test_recent_get_list_mru()
-	local db = BookArchivist.Core:GetDB()
+	local db = BookArchivist.Repository:GetDB()
 
 	-- Mark multiple books as opened
 	BookArchivist.Recent:MarkOpened("test_book_1")
@@ -308,7 +308,7 @@ end
 
 -- Test: Order.TouchOrder moves book to beginning
 function Tests.test_order_touch_moves_to_beginning()
-	local db = BookArchivist.Core:GetDB()
+	local db = BookArchivist.Repository:GetDB()
 
 	-- Initial order: test_book_1, test_book_2, favorite_book
 	-- Touch test_book_2 (middle)
@@ -328,7 +328,7 @@ end
 
 -- Test: Order.AppendOrder moves book to end
 function Tests.test_order_append_moves_to_end()
-	local db = BookArchivist.Core:GetDB()
+	local db = BookArchivist.Repository:GetDB()
 
 	-- Append test_book_1 (currently first)
 	BookArchivist.Core:AppendOrder("test_book_1")
