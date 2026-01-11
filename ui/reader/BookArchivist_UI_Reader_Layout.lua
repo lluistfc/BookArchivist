@@ -623,8 +623,8 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				local ReaderShare = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
 				if ReaderShare and ReaderShare.ShareCurrentBook then
 					ReaderShare:ShareCurrentBook(addon, key)
-
-			end
+				end
+			end)
 			-- Replace the default checkbox textures with a star-style favorite
 			-- icon, similar to the mounts/collections UIs.
 			local size = Metrics.BTN_H or 22
