@@ -93,7 +93,12 @@ local function DecodeBDB1Envelope(raw)
   local headerStart = raw:find("BDB1|S|", 1, true)
   local footerStart = raw:find("BDB1|E", 1, true)
   
-  -- Diagnostic data available for debugging if needed
+  -- Diagnostic data for debugging import issues
+  if BookArchivist and BookArchivist.DebugPrint then
+    BookArchivist:DebugPrint("[BA Decode] Raw length: " .. #raw)
+    BookArchivist:DebugPrint("[BA Decode] Has header: " .. tostring(headerStart ~= nil))
+    BookArchivist:DebugPrint("[BA Decode] Has footer: " .. tostring(footerStart ~= nil))
+  end
   
   local body
   if headerStart and footerStart then
@@ -108,6 +113,9 @@ local function DecodeBDB1Envelope(raw)
   else
     -- Last-resort fallback: no header/footer found, treat
     -- entire string as potential base64 body
+    if BookArchivist and BookArchivist.DebugPrint then
+      BookArchivist:DebugPrint("[BA Decode] WARNING: Missing header or footer, attempting fallback decode")
+    end
     body = raw
     body = body:gsub("BDB%d+|S|[^\n]*", "")
     body = body:gsub("BDB%d+|C|%d+|", "")
@@ -116,6 +124,12 @@ local function DecodeBDB1Envelope(raw)
   
   -- Remove everything that isn't valid base64
   body = body:gsub("[^A-Za-z0-9+/=]+", "")
+  
+  if BookArchivist and BookArchivist.DebugPrint then
+    BookArchivist:DebugPrint("[BA Decode] Base64 length: " .. #body)
+    BookArchivist:DebugPrint("[BA Decode] Expected CRC: " .. tostring(expectedCRC))
+    BookArchivist:DebugPrint("[BA Decode] Expected size: " .. tostring(expectedSize))
+  end
   
   if body == "" then
     return nil, nil, "Invalid header (empty body)"
@@ -127,9 +141,16 @@ local function DecodeBDB1Envelope(raw)
   if not compressed then
     return nil, nil, "Decode failed: " .. tostring(err)
   end
+  
+  if BookArchivist and BookArchivist.DebugPrint then
+    BookArchivist:DebugPrint("[BA Decode] Decoded length: " .. #compressed)
+  end
 
   if CRC32 and CRC32.Compute and expectedCRC ~= 0 then
     local actual = CRC32:Compute(compressed)
+    if BookArchivist and BookArchivist.DebugPrint then
+      BookArchivist:DebugPrint("[BA Decode] CRC actual: " .. tostring(actual))
+    end
     if actual ~= expectedCRC then
       return nil, nil, "CRC mismatch; data may be corrupt"
     end
@@ -137,6 +158,9 @@ local function DecodeBDB1Envelope(raw)
 
   local serialized = compressed
   if expectedSize > 0 and #serialized ~= expectedSize then
+    if BookArchivist and BookArchivist.DebugPrint then
+      BookArchivist:DebugPrint("[BA Decode] Size mismatch: got " .. #serialized .. ", expected " .. expectedSize)
+    end
     return nil, nil, "Size mismatch; data may be corrupt"
   end
 

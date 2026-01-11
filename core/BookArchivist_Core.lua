@@ -154,7 +154,10 @@ local function ensureDB()
           bookCount = bookCount + 1
         end
         
-        -- Start deferred title index rebuild (silent background operation)
+        -- Start deferred title index rebuild
+        if BookArchivist and BookArchivist.DebugPrint then
+          BookArchivist:DebugPrint(string.format("[BookArchivist] Starting title index rebuild (%d books)", bookCount))
+        end
         
         Iterator:Start(
           "backfill_title_index",
@@ -174,14 +177,19 @@ local function ensureDB()
             chunkSize = 50,
             budgetMs = 5,
             onProgress = function(progress, current, total)
-              -- Silent progress tracking
+              -- Progress reporting every 250 books (debug mode only)
+              if current % 250 == 0 and BookArchivist and BookArchivist.DebugPrint then
+                BookArchivist:DebugPrint(string.format("[Indexing] %d/%d (%.1f%%)", current, total, progress * 100))
+              end
             end,
             onComplete = function(context)
               -- Merge indexed titles into database
               BookArchivistDB.indexes.titleToBookIds = context.titleIndex or {}
               BookArchivistDB.indexes._titleIndexBackfilled = true
               BookArchivistDB.indexes._titleIndexPending = false
-              -- Index rebuild complete (silent)
+              if BookArchivist and BookArchivist.DebugPrint then
+                BookArchivist:DebugPrint("[BookArchivist] Title index rebuild complete")
+              end
             end
           }
         )
