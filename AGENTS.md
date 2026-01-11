@@ -28,6 +28,55 @@ Before implementing any feature:
 
 ---
 
+## Test-Driven Development (INVIOLABLE)
+
+**ALL CODE CHANGES MUST BE VERIFIED BY TESTS. NO EXCEPTIONS.**
+
+This is a **non-negotiable, inviolable rule**:
+
+### Before Writing Code
+1. **Understand the requirement** - What should the code do?
+2. **Check existing tests** - `grep_search` for related test files
+3. **Identify test category:**
+   - **Sandbox** (`tests/Sandbox/`) - Pure logic, no WoW API
+   - **Desktop** (`tests/Desktop/`) - Complex mocking, Busted tests
+   - **InGame** (`tests/InGame/`) - WoW runtime, Mechanic UI
+
+### After Writing Code
+1. **Run tests IMMEDIATELY** - `make test` or `make test-errors`
+2. **Verify all 200 tests pass** - Zero tolerance for failures
+3. **If tests fail:**
+   - ❌ **DO NOT COMMIT**
+   - Fix the code or fix the tests
+   - Run again until all pass
+4. **Write new tests for new features:**
+   - New function? → New test
+   - Bug fix? → Regression test
+   - New module? → Full test suite
+
+### Test Execution Commands
+```bash
+make test              # Quick summary (200 tests in ~4s)
+make test-errors       # Full error stack traces
+make test-detailed     # All test results (JUnit-style)
+make test-pattern PATTERN=Module  # Run specific tests
+```
+
+### CI/CD Integration
+- **GitHub Actions** runs `make test-errors` on every push to `main`
+- **All PRs** must have passing tests
+- **No merge** without green checkmarks
+
+### Why This Matters
+- **200 tests** protect against regressions
+- **4-second feedback loop** enables TDD workflow
+- **Repository pattern** allows isolated test database
+- **Production DB restored** even after catastrophic test failures
+
+**REMEMBER: If you didn't test it, it doesn't work. Test first, code second.**
+
+---
+
 ## BookArchivist-Specific Architecture
 
 **For detailed system documentation:** `.github/copilot-skills/README.md`
