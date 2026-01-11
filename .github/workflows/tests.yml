@@ -108,6 +108,14 @@ jobs:
           "LUA_PATH=$luaPath" | Out-File -FilePath $env:GITHUB_ENV -Append
           "LUA_CPATH=$luaCPath" | Out-File -FilePath $env:GITHUB_ENV -Append
           
+          # Debug: Check if lfs.dll exists
+          Write-Host "`nSearching for lfs.dll:"
+          Get-ChildItem "$env:APPDATA\luarocks" -Recurse -Filter "*.dll" -ErrorAction SilentlyContinue | Format-Table FullName
+          
+          # Test loading lfs directly
+          Write-Host "`nTesting direct lfs load:"
+          lua -e "print('LUA_CPATH:', package.cpath); local lfs = require('lfs'); print('LFS loaded successfully')"
+          
           Write-Host "`nTesting busted with configured paths:"
           busted --version
         shell: pwsh
