@@ -56,9 +56,11 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host ''"
 	@pwsh -NoProfile -Command "Write-Host 'Detected OS: $(DETECTED_OS)' -ForegroundColor Yellow"
 	@pwsh -NoProfile -Command "Write-Host ''"
-	@pwsh -NoProfile -Command "Write-Host 'Available targets:' -ForegroundColor White"
-	@pwsh -NoProfile -Command "Write-Host '  make setup-mechanic  - Install/setup Mechanic if not found' -ForegroundColor Gray"
-	@pwsh -NoProfile -Command "Write-Host '  make check-mechanic  - Verify Mechanic installation' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host 'Mechanic Integration:' -ForegroundColor White"
+	@pwsh -NoProfile -Command "Write-Host '  make check-mechanic  - Verify Mechanic CLI is available' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make setup-mechanic  - Clone and install Mechanic (if needed)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host ''"
+	@pwsh -NoProfile -Command "Write-Host 'Test Targets:' -ForegroundColor White"
 	@pwsh -NoProfile -Command "Write-Host '  make test            - Run all tests (summary only)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-detailed   - Show all test results (JUnit-style)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-errors     - Show full error stack traces' -ForegroundColor Gray"
@@ -76,9 +78,11 @@ else
 	@echo ""
 	@echo "Detected OS: $(DETECTED_OS)"
 	@echo ""
-	@echo "Available targets:"
-	@echo "  make setup-mechanic  - Install/setup Mechanic if not found"
-	@echo "  make check-mechanic  - Verify Mechanic installation"
+	@echo "Mechanic Integration:"
+	@echo "  make check-mechanic  - Verify Mechanic CLI is available"
+	@echo "  make setup-mechanic  - Clone and install Mechanic (if needed)"
+	@echo ""
+	@echo "Test Targets:"
 	@echo "  make test            - Run all tests (summary only)"
 	@echo "  make test-detailed   - Show all test results (JUnit-style)"
 	@echo "  make test-errors     - Show full error stack traces"
@@ -159,25 +163,25 @@ endif
 setup-mechanic:
 ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host 'Setting up Mechanic...' -ForegroundColor Cyan"
-	@pwsh -NoProfile -Command "if (Test-Path '$(MECHANIC_DIR)') { Write-Host '✓ Mechanic directory already exists' -ForegroundColor Green } else { Write-Host 'Cloning Mechanic from $(MECHANIC_REPO)...' -ForegroundColor Yellow; git clone $(MECHANIC_REPO) $(MECHANIC_DIR) }"
-	@pwsh -NoProfile -Command "Write-Host 'Installing Python dependencies...' -ForegroundColor Yellow"
-	@pwsh -NoProfile -Command "cd $(MECHANIC_DIR)/desktop; if (-not (Test-Path 'venv')) { python -m venv venv }; .\\venv\\Scripts\\Activate.ps1; pip install --upgrade pip; pip install -e ."
+	@pwsh -NoProfile -Command "if (-not (Test-Path '$(MECHANIC_DIR)')) { Write-Host 'Cloning Mechanic from $(MECHANIC_REPO)...' -ForegroundColor Yellow; git clone $(MECHANIC_REPO) $(MECHANIC_DIR) } else { Write-Host '✓ Mechanic directory already exists' -ForegroundColor Green }"
+	@pwsh -NoProfile -Command "Write-Host 'Installing Mechanic Desktop (editable mode)...' -ForegroundColor Yellow"
+	@pwsh -NoProfile -Command "cd $(MECHANIC_DIR)/desktop; python -m pip install --upgrade pip; python -m pip install -e ."
 	@pwsh -NoProfile -Command "Write-Host '✓ Mechanic setup complete!' -ForegroundColor Green"
-	@pwsh -NoProfile -Command "Write-Host 'Mechanic CLI available at: $(MECHANIC_CLI)' -ForegroundColor Cyan"
+	@pwsh -NoProfile -Command "Write-Host 'Start dashboard: mech' -ForegroundColor Cyan"
+	@pwsh -NoProfile -Command "Write-Host 'Check installation: mech --version' -ForegroundColor Cyan"
 else
 	@echo "Setting up Mechanic..."
-	@if [ -d "$(MECHANIC_DIR)" ]; then \
-		echo "✓ Mechanic directory already exists"; \
-	else \
+	@if [ ! -d "$(MECHANIC_DIR)" ]; then \
 		echo "Cloning Mechanic from $(MECHANIC_REPO)..."; \
 		git clone $(MECHANIC_REPO) $(MECHANIC_DIR); \
+	else \
+		echo "✓ Mechanic directory already exists"; \
 	fi
-	@echo "Installing Python dependencies..."
+	@echo "Installing Mechanic Desktop (editable mode)..."
 	@cd $(MECHANIC_DIR)/desktop && \
-		if [ ! -d "venv" ]; then python3 -m venv venv; fi && \
-		. venv/bin/activate && \
-		pip install --upgrade pip && \
-		pip install -e .
+		python3 -m pip install --upgrade pip && \
+		python3 -m pip install -e .
 	@echo "✓ Mechanic setup complete!"
-	@echo "Mechanic CLI available at: $(MECHANIC_CLI)"
+	@echo "Start dashboard: mech"
+	@echo "Check installation: mech --version"
 endif
