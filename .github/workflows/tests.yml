@@ -85,6 +85,10 @@ jobs:
         run: |
           $luaRocksBin = Join-Path $env:APPDATA "luarocks\bin"
           Write-Host "Adding to PATH: $luaRocksBin"
+          
+          # Add to current session PATH immediately
+          $env:PATH = "$luaRocksBin;$env:PATH"
+          # Add to GITHUB_PATH for subsequent steps
           "$luaRocksBin" | Out-File -FilePath $env:GITHUB_PATH -Append
           
           # Get LuaRocks paths directly (Windows format)
@@ -98,16 +102,21 @@ jobs:
           $luaPath = "$luaPath;;"
           $luaCPath = "$luaCPath;;"
           
-          # Set environment variables
+          # Set for current session AND subsequent steps
+          $env:LUA_PATH = $luaPath
+          $env:LUA_CPATH = $luaCPath
           "LUA_PATH=$luaPath" | Out-File -FilePath $env:GITHUB_ENV -Append
           "LUA_CPATH=$luaCPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+          
+          Write-Host "`nTesting busted with configured paths:"
+          busted --version
         shell: pwsh
 
-      - name: Verify installations
+      - name: Verify installation (Lua and LuaRocks only)s
         run: |
           lua -v
           luarocks --version
-          busted --version
+
         shell: pwsh
 
       - name: Run tests with error details
