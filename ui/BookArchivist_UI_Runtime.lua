@@ -171,8 +171,6 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 	if verb == "options" or verb == "settings" or verb == "config" then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.OptionsUI then
 			BookArchivist.UI.OptionsUI:Open()
-		else
-			print("|cFFFF0000BookArchivist:|r Options UI not available")
 		end
 		return
 	end
@@ -180,16 +178,13 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 	if verb == "tools" or verb == "import" or verb == "export" then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.OptionsUI then
 			BookArchivist.UI.OptionsUI:OpenTools()
-		else
-			print("|cFFFF0000BookArchivist:|r Tools UI not available")
 		end
 		return
 	end
 	
 	-- Module status diagnostic - dev only
 	if verb == "modules" or verb == "modstatus" then
-		print("|cFFFF0000BookArchivist:|r Dev commands not available in production build")
-		print("These commands require BookArchivist_Dev.toc to be loaded")
+		-- Module diagnostic requires dev tools
 		return
 	end
 	

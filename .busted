@@ -7,8 +7,7 @@ return {
     -- Default root directory for tests  
     ROOT = { "Tests/" },
     
-    -- Suppress WoW addon print output that breaks JSON parsing
-    -- (Busted captures stdout, so print() from tested modules appears in output)
+    -- Clean output (all diagnostic prints removed from source code)
     verbose = false
   }
 }

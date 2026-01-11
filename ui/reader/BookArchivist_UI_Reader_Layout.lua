@@ -623,18 +623,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				local ReaderShare = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
 				if ReaderShare and ReaderShare.ShareCurrentBook then
 					ReaderShare:ShareCurrentBook(addon, key)
-				else
-					print("|cFFFF0000[BookArchivist]|r Share module not loaded.")
-				end
-			end)
-		end
-		
-		local favoriteBtn = state.favoriteButton
-		if not favoriteBtn or not (favoriteBtn.IsObjectType and favoriteBtn:IsObjectType("Button")) then
-			favoriteBtn = safeCreateFrame("Button", "BookArchivistFavoriteButton", actionsRail)
-			state.favoriteButton = favoriteBtn
-			if rememberWidget then
-				rememberWidget("favoriteBtn", favoriteBtn)
+
 			end
 			-- Replace the default checkbox textures with a star-style favorite
 			-- icon, similar to the mounts/collections UIs.

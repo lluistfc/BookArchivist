@@ -93,13 +93,7 @@ local function DecodeBDB1Envelope(raw)
   local headerStart = raw:find("BDB1|S|", 1, true)
   local footerStart = raw:find("BDB1|E", 1, true)
   
-  -- Diagnostic: check if we have complete envelope (only in debug mode)
-  local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
-  if debugMode and type(print) == "function" then
-    print("[BA Decode] Raw length: " .. #raw)
-    print("[BA Decode] Has header: " .. tostring(headerStart ~= nil))
-    print("[BA Decode] Has footer: " .. tostring(footerStart ~= nil))
-  end
+  -- Diagnostic data available for debugging if needed
   
   local body
   if headerStart and footerStart then
@@ -114,9 +108,6 @@ local function DecodeBDB1Envelope(raw)
   else
     -- Last-resort fallback: no header/footer found, treat
     -- entire string as potential base64 body
-    if debugMode and type(print) == "function" then
-      print("[BA Decode] WARNING: Missing header or footer, attempting fallback decode")
-    end
     body = raw
     body = body:gsub("BDB%d+|S|[^\n]*", "")
     body = body:gsub("BDB%d+|C|%d+|", "")
@@ -125,12 +116,6 @@ local function DecodeBDB1Envelope(raw)
   
   -- Remove everything that isn't valid base64
   body = body:gsub("[^A-Za-z0-9+/=]+", "")
-  
-  if debugMode and type(print) == "function" then
-    print("[BA Decode] Base64 length: " .. #body)
-    print("[BA Decode] Expected CRC: " .. tostring(expectedCRC))
-    print("[BA Decode] Expected size: " .. tostring(expectedSize))
-  end
   
   if body == "" then
     return nil, nil, "Invalid header (empty body)"
@@ -142,16 +127,9 @@ local function DecodeBDB1Envelope(raw)
   if not compressed then
     return nil, nil, "Decode failed: " .. tostring(err)
   end
-  
-  if debugMode and type(print) == "function" then
-    print("[BA Decode] Decoded length: " .. #compressed)
-  end
 
   if CRC32 and CRC32.Compute and expectedCRC ~= 0 then
     local actual = CRC32:Compute(compressed)
-    if debugMode and type(print) == "function" then
-      print("[BA Decode] CRC actual: " .. tostring(actual))
-    end
     if actual ~= expectedCRC then
       return nil, nil, "CRC mismatch; data may be corrupt"
     end
@@ -159,9 +137,6 @@ local function DecodeBDB1Envelope(raw)
 
   local serialized = compressed
   if expectedSize > 0 and #serialized ~= expectedSize then
-    if debugMode and type(print) == "function" then
-      print("[BA Decode] Size mismatch: got " .. #serialized .. ", expected " .. expectedSize)
-    end
     return nil, nil, "Size mismatch; data may be corrupt"
   end
 

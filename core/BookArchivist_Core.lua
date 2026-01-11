@@ -154,7 +154,7 @@ local function ensureDB()
           bookCount = bookCount + 1
         end
         
-        print(string.format("|cFF00FF00BookArchivist:|r Starting deferred title index rebuild (%d books)", bookCount))
+        -- Start deferred title index rebuild (silent background operation)
         
         Iterator:Start(
           "backfill_title_index",
@@ -174,17 +174,14 @@ local function ensureDB()
             chunkSize = 50,
             budgetMs = 5,
             onProgress = function(progress, current, total)
-              -- Progress reporting every 250 books
-              if current % 250 == 0 then
-                print(string.format("|cFFFFFF00  Indexing:|r %d/%d (%.1f%%)", current, total, progress * 100))
-              end
+              -- Silent progress tracking
             end,
             onComplete = function(context)
               -- Merge indexed titles into database
               BookArchivistDB.indexes.titleToBookIds = context.titleIndex or {}
               BookArchivistDB.indexes._titleIndexBackfilled = true
               BookArchivistDB.indexes._titleIndexPending = false
-              print("|cFF00FF00BookArchivist:|r Title index backfill complete")
+              -- Index rebuild complete (silent)
             end
           }
         )
