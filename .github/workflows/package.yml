@@ -4,15 +4,6 @@ permissions:
   contents: write
 
 on:
-  workflow_run:
-    workflows: ["Run Tests"]
-    types:
-      - completed
-    branches:
-      - main
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       tag:
