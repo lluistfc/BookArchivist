@@ -2,6 +2,9 @@
 -- Repository_spec.lua
 -- Tests for the Repository pattern - single source of truth for DB access
 
+-- Load test helper
+local helper = dofile("Tests/test_helper.lua")
+
 describe("BookArchivist.Repository", function()
 	local Repository
 	local originalDB
@@ -10,15 +13,17 @@ describe("BookArchivist.Repository", function()
 		-- Backup original global DB
 		originalDB = BookArchivistDB
 		
-		-- Reset BookArchivist namespace
-		BookArchivist = {
-			Repository = {}
-		}
+		-- Setup namespace
+		helper.setupNamespace()
 		
 		-- Load the Repository module
-		dofile("core/BookArchivist_Repository.lua")
+		helper.loadFile("core/BookArchivist_Repository.lua")
+		
 		Repository = BookArchivist.Repository
-		Repository:Init()
+		
+		-- Create a test database for initialization
+		BookArchivistDB = { booksById = {}, order = {} }
+		Repository:Init(BookArchivistDB)
 	end)
 
 	after_each(function()
@@ -27,9 +32,9 @@ describe("BookArchivist.Repository", function()
 	end)
 
 	describe("GetDB", function()
-		it("should return the BookArchivistDB global", function()
+		it("should return the injected database", function()
 			local testDB = { test = true, booksById = {} }
-			BookArchivistDB = testDB
+			Repository:Init(testDB)
 			
 			local result = Repository:GetDB()
 			
@@ -37,53 +42,58 @@ describe("BookArchivist.Repository", function()
 			assert.is_true(result.test)
 		end)
 
-		it("should error if BookArchivistDB is nil", function()
-			BookArchivistDB = nil
+		it("should error if not initialized", function()
+			-- Create fresh Repository without initialization
+			helper.setupNamespace()
+			helper.loadFile("core/BookArchivist_Repository.lua")
+			local freshRepo = BookArchivist.Repository
 			
 			assert.has_error(function()
-				Repository:GetDB()
-			end, "BookArchivist.Repository: BookArchivistDB not initialized - database not available")
+				freshRepo:GetDB()
+			end, "BookArchivist.Repository: Not initialized - call Init(db) first")
 		end)
 	end)
 
-	describe("Test isolation via global replacement", function()
-		it("should allow tests to replace global DB temporarily", function()
+	describe("Test isolation via dependency injection", function()
+		it("should allow tests to inject different databases", function()
 			local prodDB = { production = true, booksById = {} }
 			local testDB = { test = true, booksById = {} }
 			
-			BookArchivistDB = prodDB
+			-- Production init
+			Repository:Init(prodDB)
 			assert.are.equal(prodDB, Repository:GetDB())
+			assert.is_true(Repository:GetDB().production)
 			
-			-- Simulate test setup
-			BookArchivistDB = testDB
+			-- Test init (replaces production)
+			Repository:Init(testDB)
 			assert.are.equal(testDB, Repository:GetDB())
+			assert.is_true(Repository:GetDB().test)
 			
-			-- Simulate test teardown
-			BookArchivistDB = prodDB
+			-- Restore production
+			Repository:Init(prodDB)
 			assert.are.equal(prodDB, Repository:GetDB())
+			assert.is_true(Repository:GetDB().production)
 		end)
 
-		it("should not leak test data between tests", function()
+		it("should not leak test data between tests via dependency injection", function()
 			local prodDB = { production = true, booksById = {} }
-			BookArchivistDB = prodDB
 			
 			-- Test 1
 			local testDB1 = { test = 1, booksById = {} }
-			BookArchivistDB = testDB1
+			Repository:Init(testDB1)
 			Repository:GetDB().booksById["book1"] = { title = "Book 1" }
-			BookArchivistDB = prodDB
 			
-			-- Test 2
+			-- Test 2 with fresh database
 			local testDB2 = { test = 2, booksById = {} }
-			BookArchivistDB = testDB2
+			Repository:Init(testDB2)
 			local db2 = Repository:GetDB()
 			
 			-- Test 2 should not see Test 1's data
 			assert.is_nil(db2.booksById["book1"])
 			assert.are.equal(testDB2, db2)
-			BookArchivistDB = prodDB
 			
-			-- Production should be clean
+			-- Production should be clean (never modified)
+			Repository:Init(prodDB)
 			assert.is_nil(prodDB.booksById["book1"])
 		end)
 	end)

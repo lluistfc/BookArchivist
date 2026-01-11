@@ -9,6 +9,9 @@ helper.setupNamespace()
 BookArchivist.Core = BookArchivist.Core or {}
 BookArchivist.DebugPrint = function(self, ...) end
 
+-- Load Repository module (required by Recent)
+helper.loadFile("core/BookArchivist_Repository.lua")
+
 -- Load Recent module
 helper.loadFile("core/BookArchivist_Recent.lua")
 
@@ -29,6 +32,9 @@ local function setupMockDB()
 			list = {},
 		},
 	}
+
+	-- Initialize Repository with mock database
+	BookArchivist.Repository:Init(mockDB)
 
 	BookArchivist.Core.GetDB = function()
 		return mockDB

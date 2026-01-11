@@ -9,6 +9,9 @@ helper.setupNamespace()
 BookArchivist.Core = BookArchivist.Core or {}
 BookArchivist.DebugPrint = function(self, ...) end
 
+-- Load Repository module (required by Favorites)
+helper.loadFile("core/BookArchivist_Repository.lua")
+
 -- Load Favorites module
 helper.loadFile("core/BookArchivist_Favorites.lua")
 
@@ -33,6 +36,9 @@ local function setupMockDB()
 			},
 		},
 	}
+
+	-- Initialize Repository with mock database
+	BookArchivist.Repository:Init(mockDB)
 
 	BookArchivist.Core.GetDB = function()
 		return mockDB
