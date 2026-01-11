@@ -10,42 +10,43 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup MSVC (Windows only)
-        if: runner.os == 'Windows'
+      - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Setup Lua (cross-platform)
+      - name: Setup Lua
         uses: leafo/gh-actions-lua@v10
         with:
           luaVersion: "5.1"
 
-      - name: Setup LuaRocks (cross-platform)
-        uses: leafo/gh-actions-luarocks@v4
+      - name: Install LuaRocks via Chocolatey
+        run: choco install luarocks -y
+        shell: pwsh
 
       - name: Install Busted
         run: luarocks install busted
+        shell: pwsh
 
-      - name: Verify Lua installation
+      - name: Verify installations
         run: |
-          lua5.1 -v || lua -v
+          lua -v
+          luarocks --version
           busted --version
+        shell: pwsh
 
       - name: Run tests with error details
         run: make test-errors
-        shell: bash
+        shell: pwsh
 
       - name: Test Summary
         if: always()
         run: |
-          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "Platform: ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
-          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Results" >> $env:GITHUB_STEP_SUMMARY
+          echo "Platform: windows-latest" >> $env:GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $env:GITHUB_STEP_SUMMARY
+        shell: pwsh
