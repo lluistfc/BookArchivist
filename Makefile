@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync sandbox
+.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -63,7 +63,6 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host '  make lint            - Run Luacheck linter' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make output          - Get addon output (errors, tests, logs)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make sync            - Sync addon to WoW clients' -ForegroundColor Gray"
-	@pwsh -NoProfile -Command "Write-Host '  make sandbox         - Run sandbox tests (fast ~30ms)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host ''"
 	@pwsh -NoProfile -Command "Write-Host 'Test Targets:' -ForegroundColor White"
 	@pwsh -NoProfile -Command "Write-Host '  make test            - Run all tests (summary only)' -ForegroundColor Gray"
@@ -81,16 +80,15 @@ ifeq ($(DETECTED_OS),Windows)
 else
 	@echo "BookArchivist Test Suite - Makefile"
 	@echo ""
-	@echo "  make validate        - Validate addon structure (.toc, files)"
-	@echo "  make lint            - Run Luacheck linter"
-	@echo "  make output          - Get addon output (errors, tests, logs)"
-	@echo "  make sync            - Sync addon to WoW clients"
-	@echo "  make sandbox         - Run sandbox tests (fast ~30ms)"
 	@echo "Detected OS: $(DETECTED_OS)"
 	@echo ""
 	@echo "Mechanic Integration:"
 	@echo "  make check-mechanic  - Verify Mechanic CLI is available"
 	@echo "  make setup-mechanic  - Clone and install Mechanic (if needed)"
+	@echo "  make validate        - Validate addon structure (.toc, files)"
+	@echo "  make lint            - Run Luacheck linter"
+	@echo "  make output          - Get addon output (errors, tests, logs)"
+	@echo "  make sync            - Sync addon to WoW clients"
 	@echo ""
 	@echo "Test Targets:"
 	@echo "  make test            - Run all tests (summary only)"
@@ -190,7 +188,4 @@ output:
 
 sync:
 	@$(MECHANIC_CLI) call addon.sync "{\"addon\": \"BookArchivist\"}"
-
-sandbox:
-	@$(MECHANIC_CLI) call sandbox.test "{\"addon\": \"BookArchivist\"}"
 
