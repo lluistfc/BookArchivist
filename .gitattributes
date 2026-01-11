@@ -8,7 +8,13 @@ media/ export-ignore
 libs/WoWUnit/ export-ignore
 Makefile export-ignore
 .busted export-ignore
-*.md export-ignore
+
+# Exclude markdown except release changelog
+AGENTS.md export-ignore
+ui/AGENTS.md export-ignore
+README.md export-ignore
+CHANGELOG.md export-ignore
+# CURSE_FORGE_RELEASE_CHANGELOG.md is kept for CurseForge packaging
 
 # Exclude repo-only stuff
 .github/ export-ignore
