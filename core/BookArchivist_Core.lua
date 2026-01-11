@@ -297,7 +297,7 @@ local function removeFromOrder(order, key)
 end
 
 function Core:EnsureDB()
-	return ensureDB()
+	return self:GetDB()
 end
 
 function Core:GetDB()

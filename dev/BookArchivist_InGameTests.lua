@@ -61,20 +61,32 @@ local function createTestDB()
 	}
 end
 
--- Backup and restore original DB
-local originalDB = nil
+-- Test database isolation (TestContainers pattern)
+local testDB = nil
+local originalGetDB = nil
 
-local function backupDB()
-	if BookArchivistDB then
-		originalDB = BookArchivist.DBSafety.CloneTable(BookArchivistDB)
+local function setupTestDB()
+	-- Save original GetDB function
+	originalGetDB = BookArchivist.Core.GetDB
+	
+	-- Create isolated test database
+	testDB = createTestDB()
+	
+	-- Override GetDB to return test database (preserve method signature)
+	BookArchivist.Core.GetDB = function(self)
+		return testDB
 	end
 end
 
-local function restoreDB()
-	if originalDB then
-		BookArchivistDB = originalDB
-		originalDB = nil
+local function teardownTestDB()
+	-- Restore original GetDB function
+	if originalGetDB then
+		BookArchivist.Core.GetDB = originalGetDB
+		originalGetDB = nil
 	end
+	
+	-- Discard test database
+	testDB = nil
 end
 
 -- ============================================================================
@@ -83,14 +95,13 @@ end
 
 -- Test: Favorites.Set marks a book as favorite
 function Tests.test_favorites_set_true()
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
+	local db = BookArchivist.Core:GetDB()
 
 	-- Set book as favorite
 	BookArchivist.Favorites:Set("test_book_1", true)
 
 	-- Verify
-	local book = testDB.booksById["test_book_1"]
+	local book = db.booksById["test_book_1"]
 	if not book then
 		return false, "Book not found in database"
 	end
@@ -104,14 +115,13 @@ end
 
 -- Test: Favorites.Set removes favorite
 function Tests.test_favorites_set_false()
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
+	local db = BookArchivist.Core:GetDB()
 
 	-- Remove favorite
 	BookArchivist.Favorites:Set("favorite_book", false)
 
 	-- Verify
-	local book = testDB.booksById["favorite_book"]
+	local book = db.booksById["favorite_book"]
 	if book.isFavorite ~= false then
 		return false, "Book isFavorite should be false, got " .. tostring(book.isFavorite)
 	end
@@ -121,17 +131,16 @@ end
 
 -- Test: Favorites.Toggle toggles favorite state
 function Tests.test_favorites_toggle()
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
+	local db = BookArchivist.Core:GetDB()
 
 	-- Get initial state
-	local wasFavorite = testDB.booksById["test_book_1"].isFavorite
+	local wasFavorite = db.booksById["test_book_1"].isFavorite
 
 	-- Toggle
 	BookArchivist.Favorites:Toggle("test_book_1")
 
 	-- Verify
-	local book = testDB.booksById["test_book_1"]
+	local book = db.booksById["test_book_1"]
 	if book.isFavorite == wasFavorite then
 		return false, "Favorite state should have toggled"
 	end
@@ -141,18 +150,17 @@ end
 
 -- Test: Recent.MarkOpened adds book to recent list
 function Tests.test_recent_mark_opened()
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
+	local db = BookArchivist.Core:GetDB()
 
 	-- Mark as opened
 	BookArchivist.Recent:MarkOpened("test_book_1")
 
 	-- Verify
-	if #testDB.recent.list == 0 then
+	if #db.recent.list == 0 then
 		return false, "Recent list should not be empty"
 	end
 
-	if testDB.recent.list[1] ~= "test_book_1" then
+	if db.recent.list[1] ~= "test_book_1" then
 		return false, "test_book_1 should be first in recent list"
 	end
 
@@ -161,8 +169,7 @@ end
 
 -- Test: Recent.GetList returns MRU order
 function Tests.test_recent_get_list_mru()
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
+	local db = BookArchivist.Core:GetDB()
 
 	-- Mark multiple books as opened
 	BookArchivist.Recent:MarkOpened("test_book_1")
@@ -238,20 +245,19 @@ end
 
 -- Test: Order.TouchOrder moves book to beginning
 function Tests.test_order_touch_moves_to_beginning()
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
+	local db = BookArchivist.Core:GetDB()
 
 	-- Initial order: test_book_1, test_book_2, favorite_book
 	-- Touch test_book_2 (middle)
 	BookArchivist.Core:TouchOrder("test_book_2")
 
 	-- Verify test_book_2 is now first
-	if testDB.order[1] ~= "test_book_2" then
-		return false, "test_book_2 should be first, got " .. tostring(testDB.order[1])
+	if db.order[1] ~= "test_book_2" then
+		return false, "test_book_2 should be first, got " .. tostring(db.order[1])
 	end
 
-	if #testDB.order ~= 3 then
-		return false, "Order should still have 3 books, got " .. #testDB.order
+	if #db.order ~= 3 then
+		return false, "Order should still have 3 books, got " .. #db.order
 	end
 
 	return true, "Book moved to beginning"
@@ -259,15 +265,14 @@ end
 
 -- Test: Order.AppendOrder moves book to end
 function Tests.test_order_append_moves_to_end()
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
+	local db = BookArchivist.Core:GetDB()
 
 	-- Append test_book_1 (currently first)
 	BookArchivist.Core:AppendOrder("test_book_1")
 
 	-- Verify test_book_1 is now last
-	if testDB.order[3] ~= "test_book_1" then
-		return false, "test_book_1 should be last, got " .. tostring(testDB.order[3])
+	if db.order[3] ~= "test_book_1" then
+		return false, "test_book_1 should be last, got " .. tostring(db.order[3])
 	end
 
 	return true, "Book moved to end"
@@ -284,20 +289,11 @@ function Tests.test_reader_display_book()
 		return nil, "UI not loaded (test requires in-game)"
 	end
 
-	-- Backup current state
-	backupDB()
-
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
-
 	-- Try to render a book
 	local success = pcall(function()
 		BookArchivist.UI.Internal.setSelectedKey("test_book_1")
 		BookArchivist.UI.Reader:RenderSelected()
 	end)
-
-	-- Restore
-	restoreDB()
 
 	if not success then
 		return false, "Failed to render book in reader"
@@ -312,11 +308,6 @@ function Tests.test_reader_page_navigation()
 		return nil, "UI not loaded (test requires in-game)"
 	end
 
-	backupDB()
-
-	local testDB = createTestDB()
-	BookArchivistDB = testDB
-
 	local success = pcall(function()
 		-- Show book with 3 pages
 		BookArchivist.UI.Internal.setSelectedKey("test_book_1")
@@ -329,10 +320,8 @@ function Tests.test_reader_page_navigation()
 		BookArchivist.UI.Reader:ChangePage(-1)
 	end)
 
-	restoreDB()
-
 	if not success then
-		return false, "Page navigation failed"
+		return false, "Failed to navigate pages"
 	end
 
 	return true, "Page navigation works"
@@ -465,7 +454,13 @@ function Tests.Run(testId)
 
 	for _, test in ipairs(allTests) do
 		if test.id == testId then
+			-- Setup isolated test database (NEVER touch production DB)
+			setupTestDB()
+			
 			local success, result, message = pcall(test.func)
+
+			-- Always teardown test database
+			teardownTestDB()
 
 			if not success then
 				-- Test threw an error
