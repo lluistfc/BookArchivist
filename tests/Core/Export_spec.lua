@@ -1,25 +1,25 @@
 -- Export tests (BDB1 format encoding/decoding)
 -- Tests the export envelope format used for sharing books
 
--- Load WoW stubs (includes bit library)
-dofile("g:/development/_dev_/Mechanic/sandbox/generated/wow_stubs.lua")
+-- Load test helper for cross-platform path resolution
+local helper = dofile("tests/test_helper.lua")
+
+-- Load bit library for CRC32 operations
+helper.loadFile("tests/stubs/bit_library.lua")
 
 -- Setup BookArchivist namespace
-BookArchivist = BookArchivist or {}
-BookArchivist.L = BookArchivist.L or setmetatable({}, {
-  __index = function(t, key) return key end
-})
+helper.setupNamespace()
 
 -- Load dependencies
-dofile("g:/development/WorldOfWarcraft/BookArchivist/core/BookArchivist_CRC32.lua")
-dofile("g:/development/WorldOfWarcraft/BookArchivist/core/BookArchivist_Base64.lua")
-dofile("g:/development/WorldOfWarcraft/BookArchivist/core/BookArchivist_Serialize.lua")
+helper.loadFile("core/BookArchivist_CRC32.lua")
+helper.loadFile("core/BookArchivist_Base64.lua")
+helper.loadFile("core/BookArchivist_Serialize.lua")
 
 -- Mock Core for Export module dependency
 BookArchivist.Core = BookArchivist.Core or {}
 
 -- Load Export module
-dofile("g:/development/WorldOfWarcraft/BookArchivist/core/BookArchivist_Export.lua")
+helper.loadFile("core/BookArchivist_Export.lua")
 
 describe("Export (BDB1 Format)", function()
   

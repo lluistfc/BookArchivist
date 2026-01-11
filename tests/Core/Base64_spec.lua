@@ -1,11 +1,14 @@
 -- Base64 encoder/decoder tests
 -- Pure Lua module - no WoW dependencies needed
 
+-- Load test helper for cross-platform path resolution
+local helper = dofile("tests/test_helper.lua")
+
 -- Setup BookArchivist namespace
-BookArchivist = BookArchivist or {}
+helper.setupNamespace()
 
 -- Load Base64 module
-dofile("g:/development/WorldOfWarcraft/BookArchivist/core/BookArchivist_Base64.lua")
+helper.loadFile("core/BookArchivist_Base64.lua")
 
 describe("Base64 (Core Module)", function()
   

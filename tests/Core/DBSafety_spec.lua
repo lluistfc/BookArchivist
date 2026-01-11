@@ -1,21 +1,21 @@
 -- DBSafety tests (corruption detection and database validation)
 -- Tests SavedVariables structure validation and corruption handling
 
--- Load WoW stubs
-dofile("g:/development/_dev_/Mechanic/sandbox/generated/wow_stubs.lua")
+-- Load test helper for cross-platform path resolution
+local helper = dofile("tests/test_helper.lua")
+
+-- Load bit library for hashing operations
+helper.loadFile("tests/stubs/bit_library.lua")
 
 -- Setup BookArchivist namespace
-BookArchivist = BookArchivist or {}
-BookArchivist.L = BookArchivist.L or setmetatable({}, {
-  __index = function(t, key) return key end
-})
+helper.setupNamespace()
 
 -- Mock functions
 BookArchivist.DebugPrint = function(self, ...) end
 _G.time = function() return 1234567890 end
 
 -- Load DBSafety module
-dofile("g:/development/WorldOfWarcraft/BookArchivist/core/BookArchivist_DBSafety.lua")
+helper.loadFile("core/BookArchivist_DBSafety.lua")
 
 describe("DBSafety (Corruption Detection)", function()
   

@@ -1,11 +1,11 @@
 -- Order and Sorting tests
 -- Tests order management (TouchOrder, AppendOrder, Delete) and sorting comparators
 
+-- Load test helper for cross-platform path resolution
+local helper = dofile("tests/test_helper.lua")
+
 -- Setup BookArchivist namespace
-BookArchivist = BookArchivist or {}
-BookArchivist.L = BookArchivist.L or setmetatable({}, {
-  __index = function(t, key) return key end
-})
+helper.setupNamespace()
 
 -- Mock Core for Order module dependency
 BookArchivist.Core = {
@@ -27,7 +27,7 @@ BookArchivist.Core = {
 }
 
 -- Load Order module
-dofile("g:/development/WorldOfWarcraft/BookArchivist/core/BookArchivist_Order.lua")
+helper.loadFile("core/BookArchivist_Order.lua")
 
 -- Helper to reset database
 local function resetDB()

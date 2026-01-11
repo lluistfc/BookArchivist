@@ -73,10 +73,12 @@ BookArchivist.LogError = function(self, msg)
   print("[ERROR] " .. tostring(msg))
 end
 
+-- Load test helper for cross-platform path resolution
+local helper = dofile("tests/test_helper.lua")
+
 -- Load REAL modules
-local coreBase = "g:/development/WorldOfWarcraft/BookArchivist/core/"
-dofile(coreBase .. "BookArchivist_Iterator.lua")
-dofile(coreBase .. "BookArchivist_Search.lua")
+helper.loadFile("core/BookArchivist_Iterator.lua")
+helper.loadFile("core/BookArchivist_Search.lua")
 
 -- Now test the actual filtering logic inline (simplified from List_Filter.lua)
 local FilterTester = {}
