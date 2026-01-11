@@ -145,11 +145,27 @@ BookArchivist.DB:Init()
 ```
 
 ### Core Database Operations
+
+**Repository Pattern (Central Access):**
+All database access goes through the Repository pattern to enable dependency injection and test isolation.
+
+**File:** `core/BookArchivist_Repository.lua`
+```lua
+-- Initialize Repository with database (production or test)
+Repository:Init(database)
+
+-- Access current database (errors if not initialized)
+Repository:GetDB() → database
+
+-- Production: Repository:Init(BookArchivistDB) on ADDON_LOADED
+-- Tests: Repository:Init(testDB) in setup, Repository:Init(BookArchivistDB) in teardown
+```
+
 **File:** `core/BookArchivist_Core.lua`
 
 ```lua
--- Access database (auto-initializes)
-Core:GetDB() → BookArchivistDB
+-- Access database via Repository
+Core:GetDB() → Repository:GetDB()
 
 -- Persist a capture session to booksById
 Core:PersistSession(session) → persistedEntry
@@ -192,7 +208,8 @@ BookId.MakeBookIdV2(book) → "b2:<hash>"
 
 ### Read Path
 1. User opens BookArchivist UI
-2. `Core:GetDB()` ensures DB is initialized/migrated
+2. `Repository:GetDB()` returns active database (BookArchivistDB in production)
+3. UI reads from `db.booksById`, `db.order`, `db.uiState`
 3. UI reads from `booksById`, `order`, `uiState`
 4. Indexes used for fast lookups (tooltips, item detection)
 
@@ -240,7 +257,7 @@ BookId.MakeBookIdV2(book) → "b2:<hash>"
 
 ### Check if book exists by ID
 ```lua
-local db = Core:GetDB()
+local db = BookArchivist.Repository:GetDB()
 local book = db.booksById[bookId]
 if book then
   -- Book exists
@@ -249,7 +266,7 @@ end
 
 ### Get all books in order
 ```lua
-local db = Core:GetDB()
+local db = BookArchivist.Repository:GetDB()
 for _, bookId in ipairs(db.order) do
   local book = db.booksById[bookId]
   -- Process book
@@ -258,7 +275,7 @@ end
 
 ### Find books by item ID
 ```lua
-local db = Core:GetDB()
+local db = BookArchivist.Repository:GetDB()
 local bookIds = db.indexes.itemToBookIds[itemID]
 if bookIds then
   for bookId in pairs(bookIds) do
@@ -270,11 +287,24 @@ end
 
 ### Update book metadata
 ```lua
-local db = Core:GetDB()
+local db = BookArchivist.Repository:GetDB()
 local book = db.booksById[bookId]
 if book then
   book.isFavorite = true
   book.updatedAt = time()
   -- Changes are automatically persisted (SavedVariables)
 end
+```
+
+### Test isolation pattern
+```lua
+-- In test setup:
+local testDB = createTestDB()
+BookArchivist.Repository:Init(testDB)
+
+-- Run test with isolated database
+-- ...
+
+-- In test teardown:
+BookArchivist.Repository:Init(BookArchivistDB)
 ```

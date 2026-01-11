@@ -79,13 +79,15 @@ This directory contains comprehensive documentation of BookArchivist's architect
 
 **Key Topics:**
 - `BookArchivistDB` schema (v2)
+- Repository pattern: `Repository:Init(db)` and `Repository:GetDB()`
 - `booksById` structure (main storage)
 - `order`, `uiState`, `options`, `recent` tables
 - Index system: `objectToBookId`, `itemToBookIds`, `titleToBookIds`
 - BookEntry schema (pages, metadata, source, location, stats, flags)
 - Migration system (v1 → v2)
 - Book ID generation (FNV-1a hash)
-- Database initialization (`DB:Init()`, `Core:GetDB()`)
+- Database initialization (Repository → Core:EnsureDB())
+- Test isolation via dependency injection
 - Common patterns and edge cases
 
 **When to use:**

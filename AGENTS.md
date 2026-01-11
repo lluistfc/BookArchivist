@@ -33,11 +33,15 @@ Before implementing any feature:
 **For detailed system documentation:** `.github/copilot-skills/README.md`
 
 ### Database
+- **Repository Pattern:** All DB access via `BookArchivist.Repository:GetDB()`
+- **Dependency Injection:** `Repository:Init(database)` sets active database
 - **SavedVariables:** `BookArchivistDB` (per-character)
 - **Schema version:** `dbVersion = 2` (not `version`)
 - **Book storage:** `booksById[bookId]` (NOT `books[key]`)
 - **Indexes:** `objectToBookId`, `itemToBookIds`, `titleToBookIds`
 - **Migrations:** `core/BookArchivist_Migrations.lua` (explicit v1→v2)
+- **Production:** `Repository:Init(BookArchivistDB)` on ADDON_LOADED
+- **Tests:** `Repository:Init(testDB)` in setup, `Repository:Init(BookArchivistDB)` in teardown
 
 ### Event Flow
 - **Capture:** `ITEM_TEXT_BEGIN` → `ITEM_TEXT_READY` (per page) → `ITEM_TEXT_CLOSED`

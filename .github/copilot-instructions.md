@@ -107,6 +107,7 @@ locales/*       — Localization (enUS, esES, caES, frFR, deDE, itIT, ptBR)
 ### Key systems (quick reference)
 | System | Files | Purpose |
 |--------|-------|---------|
+| **Repository** | `core/BookArchivist_Repository.lua` | **Central DB access via dependency injection** |
 | **Capture** | `core/BookArchivist_Capture.lua` | ItemText event → session → persistence |
 | **Database** | `core/BookArchivist_DB.lua`, `core/BookArchivist_Core.lua` | v2 schema (booksById), migrations, indexes |
 | **Favorites** | `core/BookArchivist_Favorites.lua` | Set/Toggle/IsFavorite bookmarks |
@@ -148,11 +149,19 @@ locales/*       — Localization (enUS, esES, caES, frFR, deDE, itIT, ptBR)
 ### When working on...
 
 #### **Database/Persistence**
+- **Repository Pattern**: All DB access goes through `BookArchivist.Repository:GetDB()`
+- **Dependency Injection**: `Repository:Init(database)` injects the active database
 - SavedVariables: `BookArchivistDB` (per-character)
 - Schema version: `dbVersion = 2`
 - Books stored in: `booksById[bookId]` (not `books[key]`)
 - Indexes: `objectToBookId`, `itemToBookIds`, `titleToBookIds`
 - Migrations: see `core/BookArchivist_Migrations.lua`
+
+**Repository Architecture:**
+- Production: `Repository:Init(BookArchivistDB)` on ADDON_LOADED
+- Tests: `Repository:Init(testDB)` in setup, `Repository:Init(BookArchivistDB)` in teardown
+- All modules use `Repository:GetDB()` instead of accessing global directly
+- Zero test-specific code in Repository (pure dependency injection)
 
 #### **Capture system**
 - Events: `ITEM_TEXT_BEGIN` → `ITEM_TEXT_READY` → `ITEM_TEXT_CLOSED`
@@ -284,7 +293,8 @@ end
 → Never synchronous loops over large datasets
 
 **Need to access database?**
-→ Use `BookArchivist.Core:GetDB()` (ensures migrations run)  
+→ Use `BookArchivist.Repository:GetDB()` (central access point)  
+→ Production code: Repository initialized on ADDON_LOADED  
 → Schema: `db.booksById[bookId]` (NOT `db.books[key]`)
 
 **Need to show localized text?**
