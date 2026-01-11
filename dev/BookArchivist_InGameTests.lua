@@ -64,29 +64,50 @@ end
 -- Test database isolation (TestContainers pattern)
 local testDB = nil
 local originalGetDB = nil
+local originalBookArchivistDB = nil
+local debugLog = {}
 
 local function setupTestDB()
-	-- Save original GetDB function
+	-- Save original GetDB function AND global DB
 	originalGetDB = BookArchivist.Core.GetDB
+	originalBookArchivistDB = BookArchivistDB
 	
 	-- Create isolated test database
 	testDB = createTestDB()
 	
-	-- Override GetDB to return test database (preserve method signature)
+	-- Clear debug log
+	debugLog = {}
+	
+	-- CRITICAL: Override BOTH the function AND the global
+	-- Modules use local getDB() that falls back to BookArchivistDB global
+	BookArchivistDB = testDB
 	BookArchivist.Core.GetDB = function(self)
+		table.insert(debugLog, "GetDB called, returning testDB")
 		return testDB
 	end
 end
 
 local function teardownTestDB()
-	-- Restore original GetDB function
+	-- Restore original GetDB function AND global DB
 	if originalGetDB then
 		BookArchivist.Core.GetDB = originalGetDB
 		originalGetDB = nil
 	end
+	if originalBookArchivistDB ~= nil then
+		BookArchivistDB = originalBookArchivistDB
+		originalBookArchivistDB = nil
+	elseif originalBookArchivistDB == nil then
+		-- DB was nil before, restore to nil
+		BookArchivistDB = nil
+	end
 	
 	-- Discard test database
 	testDB = nil
+	debugLog = {}
+end
+
+local function getDebugLog()
+	return table.concat(debugLog, " | ")
 end
 
 -- ============================================================================
@@ -95,19 +116,51 @@ end
 
 -- Test: Favorites.Set marks a book as favorite
 function Tests.test_favorites_set_true()
-	local db = BookArchivist.Core:GetDB()
+	local dbBefore = BookArchivist.Core:GetDB()
+	local bookBefore = dbBefore.booksById["test_book_1"]
+	if not bookBefore then
+		return false, "Test DB setup failed: test_book_1 not found"
+	end
+	local initialFav = bookBefore.isFavorite
+	
+	-- Trace: Check what Favorites module will see
+	local FavoritesModule = BookArchivist.Favorites
+	if not FavoritesModule then
+		return false, "Favorites module not loaded"
+	end
 
 	-- Set book as favorite
 	BookArchivist.Favorites:Set("test_book_1", true)
 
-	-- Verify
-	local book = db.booksById["test_book_1"]
-	if not book then
-		return false, "Book not found in database"
+	-- Verify - call GetDB again to see if it's still the same reference
+	local dbAfter = BookArchivist.Core:GetDB()
+	
+	-- Check if they're literally the same table
+	local sameDBRef = (dbBefore == dbAfter)
+	
+	local bookAfter = dbAfter.booksById["test_book_1"]
+	if not bookAfter then
+		return false, "Book disappeared after Favorites:Set()"
 	end
+	
+	-- Check if book objects are same reference
+	local sameBookRef = (bookBefore == bookAfter)
 
-	if book.isFavorite ~= true then
-		return false, "Book isFavorite should be true, got " .. tostring(book.isFavorite)
+	-- Also check what the production DB says
+	local prodDB = BookArchivistDB
+	local prodBook = prodDB and prodDB.booksById and prodDB.booksById["test_book_1"]
+	local prodFav = prodBook and prodBook.isFavorite or "NO_PROD_BOOK"
+
+	if bookAfter.isFavorite ~= true then
+		return false, string.format(
+			"Favorites:Set did not work: expected true, got %s (initial=%s, sameDB=%s, sameBook=%s, prodFav=%s, dbCalls=%s)",
+			tostring(bookAfter.isFavorite),
+			tostring(initialFav),
+			tostring(sameDBRef),
+			tostring(sameBookRef),
+			tostring(prodFav),
+			getDebugLog()
+		)
 	end
 
 	return true, "Book marked as favorite successfully"
@@ -115,15 +168,31 @@ end
 
 -- Test: Favorites.Set removes favorite
 function Tests.test_favorites_set_false()
-	local db = BookArchivist.Core:GetDB()
+	local dbBefore = BookArchivist.Core:GetDB()
+	local bookBefore = dbBefore.booksById["favorite_book"]
+	if not bookBefore then
+		return false, "Test DB setup failed: favorite_book not found"
+	end
+	local initialFav = bookBefore.isFavorite
 
 	-- Remove favorite
 	BookArchivist.Favorites:Set("favorite_book", false)
 
 	-- Verify
-	local book = db.booksById["favorite_book"]
-	if book.isFavorite ~= false then
-		return false, "Book isFavorite should be false, got " .. tostring(book.isFavorite)
+	local dbAfter = BookArchivist.Core:GetDB()
+	local bookAfter = dbAfter.booksById["favorite_book"]
+	if not bookAfter then
+		return false, "Book disappeared after Favorites:Set()"
+	end
+
+	if bookAfter.isFavorite ~= false then
+		return false, string.format(
+			"Expected isFavorite=false, got %s (initial=%s, dbBefore=%s, dbAfter=%s)",
+			tostring(bookAfter.isFavorite),
+			tostring(initialFav),
+			tostring(dbBefore),
+			tostring(dbAfter)
+		)
 	end
 
 	return true, "Favorite removed successfully"
@@ -131,18 +200,33 @@ end
 
 -- Test: Favorites.Toggle toggles favorite state
 function Tests.test_favorites_toggle()
-	local db = BookArchivist.Core:GetDB()
+	local dbBefore = BookArchivist.Core:GetDB()
+	local bookBefore = dbBefore.booksById["test_book_1"]
+	if not bookBefore then
+		return false, "Test DB setup failed: test_book_1 not found"
+	end
 
 	-- Get initial state
-	local wasFavorite = db.booksById["test_book_1"].isFavorite
+	local wasFavorite = bookBefore.isFavorite
 
 	-- Toggle
 	BookArchivist.Favorites:Toggle("test_book_1")
 
 	-- Verify
-	local book = db.booksById["test_book_1"]
-	if book.isFavorite == wasFavorite then
-		return false, "Favorite state should have toggled"
+	local dbAfter = BookArchivist.Core:GetDB()
+	local bookAfter = dbAfter.booksById["test_book_1"]
+	if not bookAfter then
+		return false, "Book disappeared after Favorites:Toggle()"
+	end
+
+	if bookAfter.isFavorite == wasFavorite then
+		return false, string.format(
+			"Toggle failed: was %s, still %s (dbBefore=%s, dbAfter=%s)",
+			tostring(wasFavorite),
+			tostring(bookAfter.isFavorite),
+			tostring(dbBefore),
+			tostring(dbAfter)
+		)
 	end
 
 	return true, "Favorite toggled successfully"
