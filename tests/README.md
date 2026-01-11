@@ -1,6 +1,15 @@
 # Test Organization
 
-BookArchivist tests are organized into three categories based on execution environment.
+BookArchivist uses **Busted** - a mature, industry-standard testing framework for Lua.
+
+## 📋 Requirements
+
+- **Lua 5.1.5** (64-bit) - Install via `choco install lua51`
+- **LuaRocks 3.13+** - Package manager for Lua
+- **Busted 2.3.0+** - Testing framework (`luarocks install busted`)
+- **MinGW** (for compiling dependencies) - `choco install mingw`
+
+All requirements are cross-platform compatible (Windows, Linux, macOS).
 
 ## � Quick Start
 
@@ -201,6 +210,183 @@ mech call addon.test '{"addon": "BookArchivist"}'
 | Desktop | 5 | ✅ Yes | ❌ No (CLI only) |
 | InGame | 3 | ⚠️ Needs work | ✅ Yes (when done) |
 
+**Total:** 200 tests passing (~4-5 seconds execution time)
+
 ---
 
-For detailed documentation, see full README in this directory.
+## 🔧 Installation (Manual Setup)
+
+### Windows (via Chocolatey)
+
+```powershell
+# Install Lua 5.1 64-bit
+choco install lua51 -y
+
+# Install MinGW for compiling native dependencies
+choco install mingw -y
+
+# Install LuaRocks (download from luarocks.org)
+# Then configure it to use Lua 5.1:
+luarocks config --lua-version=5.1 variables.LUA "C:\ProgramData\chocolatey\lib\lua51\tools\lua5.1.exe"
+
+# Install Busted
+luarocks install busted
+```
+
+### Unix/Linux
+
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y lua5.1 luarocks
+sudo luarocks install busted
+
+# Arch Linux
+sudo pacman -S lua51 luarocks
+sudo luarocks install busted
+```
+
+### macOS
+
+```bash
+# Using Homebrew
+brew install lua@5.1 luarocks
+luarocks install busted
+```
+
+### Verification
+
+```powershell
+lua5.1 -v        # Should show: Lua 5.1.5
+luarocks --version  # Should show: 3.13.0 or higher
+busted --version    # Should show: 2.3.0+
+```
+
+---
+
+## 🧪 Adding New Tests
+
+1. Create test file in appropriate folder (`Tests/Sandbox/`, `Tests/Desktop/`, `Tests/InGame/`)
+2. Use `test_helper.lua` for portable paths:
+
+```lua
+local helper = dofile("tests/test_helper.lua")
+
+-- Load modules
+local MyModule = helper.loadFile("core/MyModule.lua")
+
+describe("MyModule", function()
+  it("does something", function()
+    assert.are.equal("expected", MyModule:DoSomething())
+  end)
+end)
+```
+
+3. Run the new test:
+```bash
+make test-pattern PATTERN=MyModule
+# or directly:
+busted tests/Desktop/MyModule_spec.lua
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### "Busted not found"
+**Solution:** Install Busted: `luarocks install busted`  
+**Verify:** `busted --version`
+
+### PATH issues (Windows)
+**Solution:** Add LuaRocks bin to PATH:
+```
+C:\Users\<username>\AppData\Roaming\luarocks\bin
+```
+
+### "Module not found" errors
+**Cause:** Tests use `test_helper.lua` for cross-platform path resolution.  
+**Solution:** 
+1. Run from BookArchivist root directory
+2. Use `helper.loadFile()` to load modules
+
+### Debug prints break JSON output
+Wrap debug prints in conditional checks:
+```lua
+local debugMode = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.debugMode
+if debugMode and type(print) == "function" then
+  print("[Debug] Message")
+end
+```
+
+### Integration/InGame tests fail
+**Expected behavior** - these tests need:
+- **Integration:** Full addon module loading (BookArchivist.Iterator, etc.)
+- **InGame:** WoW frame environment or proper mocks
+
+Desktop and Sandbox tests (200 total) should always pass.
+
+---
+
+## 🔄 CI/CD Integration
+
+### GitHub Actions
+
+BookArchivist uses GitHub Actions to run tests automatically on every push to `main` and every pull request.
+
+See `.github/workflows/tests.yml` for the full configuration.
+
+**What it does:**
+- Runs on Windows, Linux, and macOS
+- Installs Lua 5.1, LuaRocks, and Busted
+- Executes `make test-errors` for detailed error reporting
+- Reports results in GitHub Actions summary
+
+**Manual trigger:**
+```bash
+gh workflow run tests.yml
+```
+
+### Local Pre-commit Hook
+
+Create `.git/hooks/pre-commit`:
+```bash
+#!/bin/sh
+echo "Running tests..."
+make test || exit 1
+echo "✓ All tests passed"
+```
+
+Make it executable:
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+---
+
+## ⚡ Performance
+
+Typical execution times:
+- Single test file: ~100-300ms
+- Desktop tests (5): ~2 seconds
+- Sandbox tests (5): ~30ms
+- All tests (200): ~4-5 seconds
+
+Fast enough for TDD workflows and pre-commit hooks.
+
+---
+
+## 📚 Test Configuration
+
+The `.busted` file in the addon root configures Busted:
+
+```lua
+-- .busted
+return {
+  _all = {
+    ROOT = { "tests/" },  -- Search for tests in tests/ folder
+    verbose = false       -- Suppress debug output (cleaner JSON)
+  }
+}
+```
+
+---
