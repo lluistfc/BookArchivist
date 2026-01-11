@@ -14,28 +14,21 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            install-cmd: |
-              sudo apt-get update
-              sudo apt-get install -y lua5.1 luarocks
-              sudo luarocks install busted
-          - os: windows-latest
-            install-cmd: |
-              choco install lua51 -y
-              choco install mingw -y
-              luarocks install busted
-          - os: macos-latest
-            install-cmd: |
-              brew install lua@5.1 luarocks
-              luarocks install busted
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Lua 5.1 and Busted
-        run: ${{ matrix.install-cmd }}
+      - name: Setup Lua (cross-platform)
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
+
+      - name: Setup LuaRocks (cross-platform)
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install Busted
+        run: luarocks install busted
 
       - name: Verify Lua installation
         run: |
