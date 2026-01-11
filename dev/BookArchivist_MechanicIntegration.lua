@@ -111,28 +111,18 @@ local testResults = {}  -- Store test results for retrieval
 -- Get all available IN-GAME test suites
 -- These are tests that MUST run inside WoW with real APIs
 function testCapability.getAll()
-	local tests = {}
+	-- Use the in-game tests from BookArchivist_InGameTests.lua
+	if BookArchivist.InGameTests then
+		return BookArchivist.InGameTests.GetAll()
+	end
 	
-	-- TODO: In-game tests need to be rewritten from Busted format
-	-- to use actual WoW APIs. The current InGame/*.lua files are
-	-- Busted tests that fail because they mock WoW APIs.
-	--
-	-- When you're ready to add in-game tests, uncomment and implement:
-	--
-	-- table.insert(tests, {
-	--     id = "ingame_reader_rendering",
-	--     name = "Reader Rendering",
-	--     category = "UI",
-	--     type = "auto",
-	--     description = "Tests actual book reader frame rendering"
-	-- })
-	
-	return tests
+	-- Fallback if tests not loaded yet
+	return {}
 end
 
 -- Get test categories
 function testCapability.getCategories()
-	return { "UI" }  -- Only in-game test categories
+	return { "Core", "UI" }  -- Core tests + UI tests
 end
 
 -- Run a specific test
@@ -144,18 +134,15 @@ function testCapability.run(testId)
 		}
 	end
 	
-	-- These tests require Busted (offline test runner)
-	-- Return a result indicating the test is pending external execution
-	local result = {
-		passed = nil,  -- nil = pending/not run
-		message = "This test requires Busted CLI. Run: mech call addon.test --addon BookArchivist",
-		duration = 0,
-		logs = {
-			"BookArchivist tests are implemented in Busted (offline test framework)",
-			"They cannot be executed in-game due to WoW API limitations",
-			"Run them via Mechanic CLI or Busted directly from command line"
+	-- Use the in-game test runner
+	if not BookArchivist.InGameTests then
+		return {
+			passed = false,
+			message = "In-game tests not loaded"
 		}
-	}
+	end
+	
+	local result = BookArchivist.InGameTests.Run(testId)
 	
 	-- Store result for retrieval
 	testResults[testId] = result
@@ -165,21 +152,16 @@ end
 
 -- Run all tests
 function testCapability.runAll()
-	-- Mechanic expects: return passed (number), total (number)
-	-- We need to actually run each test and count results
-	local tests = testCapability.getAll()
-	local passed = 0
-	local total = #tests
+	-- Use the in-game test runner
+	if not BookArchivist.InGameTests then
+		return 0, 0  -- No tests available
+	end
 	
-	for _, test in ipairs(tests) do
-		if test.id then
-			local result = testCapability.run(test.id)
-			-- Count as passed if result.passed == true
-			-- nil or false means not passed
-			if result and result.passed == true then
-				passed = passed + 1
-			end
-		end
+	local passed, total, results = BookArchivist.InGameTests.RunAll()
+	
+	-- Store all results
+	for testId, result in pairs(results) do
+		testResults[testId] = result
 	end
 	
 	return passed, total
