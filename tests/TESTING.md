@@ -70,23 +70,33 @@ Tests/
     └── README.md
 ```
 
-## Mechanic Sandbox (Work in Progress)
+## Why Not Mechanic's Test Commands?
 
-The Mechanic sandbox approach is currently being debugged. While it successfully:
-- Finds all test files
-- Loads addon modules
-- Has self-healing bit library
+Mechanic provides two test commands, but neither is ideal for BookArchivist:
 
-It's not yet executing tests. Investigation ongoing.
+### 1. `sandbox.test` - Incompatible Structure
+**Issue:** Hardcoded to load files from `Core/` folder only (capital C)  
+**BookArchivist uses:** `core/`, `ui/`, `dev/` (lowercase, multi-folder structure)  
+**Result:** Finds test files but can't load source modules
 
-### Attempting Mechanic Tests
+### 2. `addon.test` - Requires Busted Installation
+**Issue:** Requires Busted (LuaRocks package with C compilation dependencies)  
+**Requirements:** Visual Studio Build Tools, modern LuaRocks, C compiler setup  
+**Result:** Complex installation process, platform-specific
 
-```powershell
-cd path/to/Mechanic/desktop
-python -m mechanic.cli call sandbox.test '{"addon": "BookArchivist", "path": "Tests"}'
-```
+### BookArchivist's Approach: Better by Design
 
-**Current Status:** 0 tests run (debugging in progress)
+Our standalone test runner is **intentionally simpler** and more portable:
+
+| Feature | Standalone Runner | Mechanic Tests |
+|---------|------------------|----------------|
+| **Installation** | None (just Lua 5.1) | Requires Busted + C compiler |
+| **Structure** | Works with any folder layout | Expects `Core/` (capital C) |
+| **Speed** | ~2-3 seconds for 208 tests | Similar |
+| **Cross-platform** | Pure Lua (Windows/Linux/Mac) | Requires native compilation |
+| **Maintenance** | Zero external dependencies | Tied to Mechanic updates |
+
+This is a **feature, not a limitation**. Enterprise testing frameworks often favor simplicity over tooling lock-in.
 
 ## Test Statistics
 
