@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync run stop
+.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync run stop link unlink release alpha beta
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -65,6 +65,13 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host '  make lint            - Run Luacheck linter' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make output          - Get addon output (errors, tests, logs)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make sync            - Sync addon to WoW clients' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make link            - Link addon to WoW (via addon.sync)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make unlink          - Unlink addon from WoW clients' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host ''"
+	@pwsh -NoProfile -Command "Write-Host 'Release Targets:' -ForegroundColor White"
+	@pwsh -NoProfile -Command "Write-Host '  make release TAG=x.x.x  - Create release tag' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make alpha TAG=x.x.x    - Create alpha tag (x.x.x-alpha)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make beta TAG=x.x.x     - Create beta tag (x.x.x-beta)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host ''"
 	@pwsh -NoProfile -Command "Write-Host 'Test Targets:' -ForegroundColor White"
 	@pwsh -NoProfile -Command "Write-Host '  make test            - Run all tests (summary only)' -ForegroundColor Gray"
@@ -93,6 +100,13 @@ else
 	@echo "  make lint            - Run Luacheck linter"
 	@echo "  make output          - Get addon output (errors, tests, logs)"
 	@echo "  make sync            - Sync addon to WoW clients"
+	@echo "  make link            - Link addon to WoW (via addon.sync)"
+	@echo "  make unlink          - Unlink addon from WoW clients"
+	@echo ""
+	@echo "Release Targets:"
+	@echo "  make release TAG=x.x.x  - Create release tag"
+	@echo "  make alpha TAG=x.x.x    - Create alpha tag (x.x.x-alpha)"
+	@echo "  make beta TAG=x.x.x     - Create beta tag (x.x.x-beta)"
 	@echo ""
 	@echo "Test Targets:"
 	@echo "  make test            - Run all tests (summary only)"
@@ -208,4 +222,57 @@ endif
 
 stop:
 	@$(MECHANIC_CLI) stop
+
+# Addon linking
+link:
+	@$(MECHANIC_CLI) call addon.sync "{\"addon\": \"BookArchivist\"}"
+
+unlink:
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -NoProfile -Command "Get-ChildItem 'D:\World of Warcraft\_retail_\Interface\AddOns' -Directory | Where-Object { $$_.LinkType -eq 'Junction' -and $$_.Name -eq 'BookArchivist' } | ForEach-Object { Write-Host 'Removing junction:' $$_.FullName -ForegroundColor Yellow; Remove-Item $$_.FullName -Force; Write-Host '✓ Unlinked BookArchivist from' (Split-Path $$_.FullName) -ForegroundColor Green }"
+else
+	@find /d/World\ of\ Warcraft/_retail_/Interface/AddOns -maxdepth 1 -type l -name 'BookArchivist' -exec sh -c 'echo "Removing symlink: {}" && rm "{}" && echo "✓ Unlinked BookArchivist"' \;
+endif
+
+# Release tagging
+TAG ?=
+
+release:
+ifeq ($(DETECTED_OS),Windows)
+	@if "$(TAG)"=="" (echo Error: TAG required. Usage: make release TAG=x.x.x && exit 1)
+	@git tag -a "$(TAG)" -m "Release $(TAG)"
+	@echo ✓ Created tag: $(TAG)
+	@echo To push: git push origin $(TAG)
+else
+	@if [ -z "$(TAG)" ]; then echo "Error: TAG required. Usage: make release TAG=x.x.x"; exit 1; fi
+	@git tag -a "$(TAG)" -m "Release $(TAG)"
+	@echo "✓ Created tag: $(TAG)"
+	@echo "To push: git push origin $(TAG)"
+endif
+
+alpha:
+ifeq ($(DETECTED_OS),Windows)
+	@if "$(TAG)"=="" (echo Error: TAG required. Usage: make alpha TAG=x.x.x && exit 1)
+	@git tag -a "$(TAG)-alpha" -m "Alpha release $(TAG)-alpha"
+	@echo ✓ Created tag: $(TAG)-alpha
+	@echo To push: git push origin $(TAG)-alpha
+else
+	@if [ -z "$(TAG)" ]; then echo "Error: TAG required. Usage: make alpha TAG=x.x.x"; exit 1; fi
+	@git tag -a "$(TAG)-alpha" -m "Alpha release $(TAG)-alpha"
+	@echo "✓ Created tag: $(TAG)-alpha"
+	@echo "To push: git push origin $(TAG)-alpha"
+endif
+
+beta:
+ifeq ($(DETECTED_OS),Windows)
+	@if "$(TAG)"=="" (echo Error: TAG required. Usage: make beta TAG=x.x.x && exit 1)
+	@git tag -a "$(TAG)-beta" -m "Beta release $(TAG)-beta"
+	@echo ✓ Created tag: $(TAG)-beta
+	@echo To push: git push origin $(TAG)-beta
+else
+	@if [ -z "$(TAG)" ]; then echo "Error: TAG required. Usage: make beta TAG=x.x.x"; exit 1; fi
+	@git tag -a "$(TAG)-beta" -m "Beta release $(TAG)-beta"
+	@echo "✓ Created tag: $(TAG)-beta"
+	@echo "To push: git push origin $(TAG)-beta"
+endif
 
