@@ -63,20 +63,31 @@ end
 
 -- Test database isolation via dependency injection
 local testDB = nil
+local testMode = false
 
 local function setupTestDB()
-	-- Create isolated test database
+	-- Create fresh isolated test database
 	testDB = createTestDB()
+	testMode = true
 	
 	-- Inject test database into Repository
 	BookArchivist.Repository:Init(testDB)
 end
 
 local function teardownTestDB()
-	-- Discard test database
+	-- Nuke test database and recreate for next test
 	testDB = nil
+	testDB = createTestDB()
 	
-	-- Re-initialize Repository with production DB
+	-- Re-inject fresh test DB (NEVER restore production DB between tests)
+	BookArchivist.Repository:Init(testDB)
+end
+
+local function restoreProductionDB()
+	-- ONLY called after ALL tests complete
+	-- Restore production database
+	testDB = nil
+	testMode = false
 	BookArchivist.Repository:Init(BookArchivistDB)
 end
 
@@ -491,18 +502,27 @@ function Tests.GetAll()
 end
 
 -- Run a specific test by ID
-function Tests.Run(testId)
+function Tests.Run(testId, skipSetup)
 	local allTests = Tests.GetAll()
 
 	for _, test in ipairs(allTests) do
 		if test.id == testId then
-			-- Setup isolated test database (NEVER touch production DB)
-			setupTestDB()
+			-- Setup isolated test database (unless running from RunAll)
+			if not skipSetup and not testMode then
+				setupTestDB()
+			end
 			
 			local success, result, message = pcall(test.func)
 
-			-- Always teardown test database
-			teardownTestDB()
+			-- Teardown creates fresh test DB for next test (unless running from RunAll)
+			if not skipSetup and testMode then
+				teardownTestDB()
+			end
+			
+			-- Restore production DB if running single test
+			if not skipSetup and testMode then
+				restoreProductionDB()
+			end
 
 			if not success then
 				-- Test threw an error
@@ -536,14 +556,24 @@ function Tests.RunAll()
 	local total = #allTests
 	local results = {}
 
+	-- Initialize test environment ONCE before all tests
+	setupTestDB()
+
 	for _, test in ipairs(allTests) do
-		local result = Tests.Run(test.id)
+		-- Pass skipSetup=true to prevent per-test setup/teardown
+		local result = Tests.Run(test.id, true)
 		results[test.id] = result
 
 		if result.passed == true then
 			passed = passed + 1
 		end
+		
+		-- Refresh test DB between tests (nuke and recreate)
+		teardownTestDB()
 	end
+
+	-- Restore production DB ONCE after all tests complete
+	restoreProductionDB()
 
 	return passed, total, results
 end
