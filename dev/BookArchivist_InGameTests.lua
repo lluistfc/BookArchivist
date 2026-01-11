@@ -23,41 +23,41 @@ local function createTestDB()
 				pages = {
 					[1] = "First page content",
 					[2] = "Second page content",
-					[3] = "Third page content"
+					[3] = "Third page content",
 				},
 				lastSeenAt = time(),
 				isFavorite = false,
-				location = {zone = "Stormwind", object = "Test Object"}
+				location = { zone = "Stormwind", object = "Test Object" },
 			},
 			["test_book_2"] = {
 				bookId = "test_book_2",
 				title = "Test Book 2",
 				pages = {
-					[1] = "Single page book"
+					[1] = "Single page book",
 				},
 				lastSeenAt = time(),
-				isFavorite = false
+				isFavorite = false,
 			},
 			["favorite_book"] = {
 				bookId = "favorite_book",
 				title = "Favorite Book",
 				pages = {
-					[1] = "Favorite content"
+					[1] = "Favorite content",
 				},
 				lastSeenAt = time(),
-				isFavorite = true
-			}
+				isFavorite = true,
+			},
 		},
-		order = {"test_book_1", "test_book_2", "favorite_book"},
+		order = { "test_book_1", "test_book_2", "favorite_book" },
 		objectToBookId = {},
 		itemToBookIds = {},
 		titleToBookIds = {},
 		recent = {
 			cap = 50,
-			list = {}
+			list = {},
 		},
 		uiState = {},
-		options = {}
+		options = {},
 	}
 end
 
@@ -85,20 +85,20 @@ end
 function Tests.test_favorites_set_true()
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Set book as favorite
 	BookArchivist.Favorites:Set("test_book_1", true)
-	
+
 	-- Verify
 	local book = testDB.booksById["test_book_1"]
 	if not book then
 		return false, "Book not found in database"
 	end
-	
+
 	if book.isFavorite ~= true then
 		return false, "Book isFavorite should be true, got " .. tostring(book.isFavorite)
 	end
-	
+
 	return true, "Book marked as favorite successfully"
 end
 
@@ -106,16 +106,16 @@ end
 function Tests.test_favorites_set_false()
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Remove favorite
 	BookArchivist.Favorites:Set("favorite_book", false)
-	
+
 	-- Verify
 	local book = testDB.booksById["favorite_book"]
 	if book.isFavorite ~= false then
 		return false, "Book isFavorite should be false, got " .. tostring(book.isFavorite)
 	end
-	
+
 	return true, "Favorite removed successfully"
 end
 
@@ -123,19 +123,19 @@ end
 function Tests.test_favorites_toggle()
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Get initial state
 	local wasFavorite = testDB.booksById["test_book_1"].isFavorite
-	
+
 	-- Toggle
 	BookArchivist.Favorites:Toggle("test_book_1")
-	
+
 	-- Verify
 	local book = testDB.booksById["test_book_1"]
 	if book.isFavorite == wasFavorite then
 		return false, "Favorite state should have toggled"
 	end
-	
+
 	return true, "Favorite toggled successfully"
 end
 
@@ -143,19 +143,19 @@ end
 function Tests.test_recent_mark_opened()
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Mark as opened
 	BookArchivist.Recent:MarkOpened("test_book_1")
-	
+
 	-- Verify
 	if #testDB.recent.list == 0 then
 		return false, "Recent list should not be empty"
 	end
-	
+
 	if testDB.recent.list[1] ~= "test_book_1" then
 		return false, "test_book_1 should be first in recent list"
 	end
-	
+
 	return true, "Book added to recent list"
 end
 
@@ -163,24 +163,24 @@ end
 function Tests.test_recent_get_list_mru()
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Mark multiple books as opened
 	BookArchivist.Recent:MarkOpened("test_book_1")
 	BookArchivist.Recent:MarkOpened("test_book_2")
 	BookArchivist.Recent:MarkOpened("favorite_book")
-	
+
 	-- Get list
 	local list = BookArchivist.Recent:GetList()
-	
+
 	-- Verify MRU order (most recent first)
 	if #list ~= 3 then
 		return false, "Expected 3 books in recent list, got " .. #list
 	end
-	
+
 	if list[1] ~= "favorite_book" then
 		return false, "Most recent book should be first, got " .. tostring(list[1])
 	end
-	
+
 	return true, "Recent list in correct MRU order"
 end
 
@@ -191,22 +191,22 @@ end
 -- Test: Search.NormalizeSearchText lowercases input
 function Tests.test_search_normalize_lowercase()
 	local result = BookArchivist.Search.NormalizeSearchText("Hello WORLD")
-	
+
 	if result ~= "hello world" then
 		return false, "Expected 'hello world', got '" .. result .. "'"
 	end
-	
+
 	return true, "Text normalized to lowercase"
 end
 
 -- Test: Search.NormalizeSearchText strips color codes
 function Tests.test_search_normalize_strips_colors()
 	local result = BookArchivist.Search.NormalizeSearchText("|cFFFF0000Red|r Text")
-	
+
 	if result ~= "red text" then
 		return false, "Expected 'red text', got '" .. result .. "'"
 	end
-	
+
 	return true, "Color codes stripped"
 end
 
@@ -214,21 +214,21 @@ end
 function Tests.test_search_build_from_title_and_pages()
 	local pages = {
 		[1] = "Page One Content",
-		[2] = "Page Two Content"
+		[2] = "Page Two Content",
 	}
-	
+
 	local searchText = BookArchivist.Search.BuildSearchText("Test Title", pages)
-	
+
 	-- Should contain lowercase title
 	if not searchText:find("test title", 1, true) then
 		return false, "SearchText should contain lowercase title"
 	end
-	
+
 	-- Should contain lowercase page content
 	if not searchText:find("page one content", 1, true) then
 		return false, "SearchText should contain page content"
 	end
-	
+
 	return true, "SearchText built correctly"
 end
 
@@ -240,20 +240,20 @@ end
 function Tests.test_order_touch_moves_to_beginning()
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Initial order: test_book_1, test_book_2, favorite_book
 	-- Touch test_book_2 (middle)
 	BookArchivist.Core:TouchOrder("test_book_2")
-	
+
 	-- Verify test_book_2 is now first
 	if testDB.order[1] ~= "test_book_2" then
 		return false, "test_book_2 should be first, got " .. tostring(testDB.order[1])
 	end
-	
+
 	if #testDB.order ~= 3 then
 		return false, "Order should still have 3 books, got " .. #testDB.order
 	end
-	
+
 	return true, "Book moved to beginning"
 end
 
@@ -261,15 +261,15 @@ end
 function Tests.test_order_append_moves_to_end()
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Append test_book_1 (currently first)
 	BookArchivist.Core:AppendOrder("test_book_1")
-	
+
 	-- Verify test_book_1 is now last
 	if testDB.order[3] ~= "test_book_1" then
 		return false, "test_book_1 should be last, got " .. tostring(testDB.order[3])
 	end
-	
+
 	return true, "Book moved to end"
 end
 
@@ -283,26 +283,26 @@ function Tests.test_reader_display_book()
 	if not BookArchivist.UI or not BookArchivist.UI.Reader then
 		return nil, "UI not loaded (test requires in-game)"
 	end
-	
+
 	-- Backup current state
 	backupDB()
-	
+
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	-- Try to render a book
 	local success = pcall(function()
 		BookArchivist.UI.Internal.setSelectedKey("test_book_1")
 		BookArchivist.UI.Reader:RenderSelected()
 	end)
-	
+
 	-- Restore
 	restoreDB()
-	
+
 	if not success then
 		return false, "Failed to render book in reader"
 	end
-	
+
 	return true, "Reader displayed book without errors"
 end
 
@@ -311,30 +311,30 @@ function Tests.test_reader_page_navigation()
 	if not BookArchivist.UI or not BookArchivist.UI.Reader then
 		return nil, "UI not loaded (test requires in-game)"
 	end
-	
+
 	backupDB()
-	
+
 	local testDB = createTestDB()
 	BookArchivistDB = testDB
-	
+
 	local success = pcall(function()
 		-- Show book with 3 pages
 		BookArchivist.UI.Internal.setSelectedKey("test_book_1")
 		BookArchivist.UI.Reader:RenderSelected()
-		
+
 		-- Navigate forward
 		BookArchivist.UI.Reader:ChangePage(1)
-		
+
 		-- Navigate backward
 		BookArchivist.UI.Reader:ChangePage(-1)
 	end)
-	
+
 	restoreDB()
-	
+
 	if not success then
 		return false, "Page navigation failed"
 	end
-	
+
 	return true, "Page navigation works"
 end
 
@@ -345,7 +345,7 @@ end
 -- Get all available tests
 function Tests.GetAll()
 	local allTests = {}
-	
+
 	-- Core module tests (no UI required)
 	table.insert(allTests, {
 		id = "favorites_set_true",
@@ -353,90 +353,90 @@ function Tests.GetAll()
 		category = "Core",
 		type = "auto",
 		description = "Tests marking a book as favorite",
-		func = Tests.test_favorites_set_true
+		func = Tests.test_favorites_set_true,
 	})
-	
+
 	table.insert(allTests, {
 		id = "favorites_set_false",
 		name = "Favorites: Set favorite false",
 		category = "Core",
 		type = "auto",
 		description = "Tests removing favorite status",
-		func = Tests.test_favorites_set_false
+		func = Tests.test_favorites_set_false,
 	})
-	
+
 	table.insert(allTests, {
 		id = "favorites_toggle",
 		name = "Favorites: Toggle favorite",
 		category = "Core",
 		type = "auto",
 		description = "Tests toggling favorite state",
-		func = Tests.test_favorites_toggle
+		func = Tests.test_favorites_toggle,
 	})
-	
+
 	table.insert(allTests, {
 		id = "recent_mark_opened",
 		name = "Recent: Mark book opened",
 		category = "Core",
 		type = "auto",
 		description = "Tests adding book to recent list",
-		func = Tests.test_recent_mark_opened
+		func = Tests.test_recent_mark_opened,
 	})
-	
+
 	table.insert(allTests, {
 		id = "recent_get_list_mru",
 		name = "Recent: Get MRU list",
 		category = "Core",
 		type = "auto",
 		description = "Tests recent list ordering",
-		func = Tests.test_recent_get_list_mru
+		func = Tests.test_recent_get_list_mru,
 	})
-	
+
 	table.insert(allTests, {
 		id = "search_normalize_lowercase",
 		name = "Search: Normalize to lowercase",
 		category = "Core",
 		type = "auto",
 		description = "Tests text normalization",
-		func = Tests.test_search_normalize_lowercase
+		func = Tests.test_search_normalize_lowercase,
 	})
-	
+
 	table.insert(allTests, {
 		id = "search_normalize_strips_colors",
 		name = "Search: Strip color codes",
 		category = "Core",
 		type = "auto",
 		description = "Tests color code removal",
-		func = Tests.test_search_normalize_strips_colors
+		func = Tests.test_search_normalize_strips_colors,
 	})
-	
+
 	table.insert(allTests, {
 		id = "search_build_searchtext",
 		name = "Search: Build search text",
 		category = "Core",
 		type = "auto",
 		description = "Tests search text generation",
-		func = Tests.test_search_build_from_title_and_pages
+		func = Tests.test_search_build_from_title_and_pages,
 	})
-	
+
 	table.insert(allTests, {
 		id = "order_touch_moves_to_beginning",
 		name = "Order: Touch moves to beginning",
 		category = "Core",
 		type = "auto",
 		description = "Tests TouchOrder functionality",
-		func = Tests.test_order_touch_moves_to_beginning
+		func = Tests.test_order_touch_moves_to_beginning,
 	})
-	
+
 	table.insert(allTests, {
 		id = "order_append_moves_to_end",
 		name = "Order: Append moves to end",
 		category = "Core",
 		type = "auto",
 		description = "Tests AppendOrder functionality",
-		func = Tests.test_order_append_moves_to_end
+		func = Tests.test_order_append_moves_to_end,
 	})
-	
+
 	-- UI tests (require addon UI to be loaded)
 	table.insert(allTests, {
 		id = "reader_display_book",
@@ -444,51 +444,51 @@ function Tests.GetAll()
 		category = "UI",
 		type = "auto",
 		description = "Tests reader can display a book",
-		func = Tests.test_reader_display_book
+		func = Tests.test_reader_display_book,
 	})
-	
+
 	table.insert(allTests, {
 		id = "reader_page_navigation",
 		name = "Reader: Page navigation",
 		category = "UI",
 		type = "auto",
 		description = "Tests reader page navigation",
-		func = Tests.test_reader_page_navigation
+		func = Tests.test_reader_page_navigation,
 	})
-	
+
 	return allTests
 end
 
 -- Run a specific test by ID
 function Tests.Run(testId)
 	local allTests = Tests.GetAll()
-	
+
 	for _, test in ipairs(allTests) do
 		if test.id == testId then
 			local success, result, message = pcall(test.func)
-			
+
 			if not success then
 				-- Test threw an error
 				return {
 					passed = false,
 					message = "Test error: " .. tostring(result),
-					duration = 0
+					duration = 0,
 				}
 			end
-			
+
 			-- Test returned result
 			return {
 				passed = result,
 				message = message or (result and "Test passed" or "Test failed"),
-				duration = 0  -- TODO: Track actual duration
+				duration = 0, -- TODO: Track actual duration
 			}
 		end
 	end
-	
+
 	return {
 		passed = false,
 		message = "Test not found: " .. testId,
-		duration = 0
+		duration = 0,
 	}
 end
 
@@ -498,16 +498,16 @@ function Tests.RunAll()
 	local passed = 0
 	local total = #allTests
 	local results = {}
-	
+
 	for _, test in ipairs(allTests) do
 		local result = Tests.Run(test.id)
 		results[test.id] = result
-		
+
 		if result.passed == true then
 			passed = passed + 1
 		end
 	end
-	
+
 	return passed, total, results
 end
 

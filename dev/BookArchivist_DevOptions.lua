@@ -13,28 +13,28 @@ local DevTools = BookArchivist.DevTools
 -- ============================================================================
 
 local function L(key)
-  local t = BookArchivist and BookArchivist.L
-  return (t and t[key]) or key
+	local t = BookArchivist and BookArchivist.L
+	return (t and t[key]) or key
 end
 
 local function EnsureDB()
-  BookArchivistDB = BookArchivistDB or {}
-  BookArchivistDB.options = BookArchivistDB.options or {}
-  return BookArchivistDB
+	BookArchivistDB = BookArchivistDB or {}
+	BookArchivistDB.options = BookArchivistDB.options or {}
+	return BookArchivistDB
 end
 
 -- Initialize debug options in database if needed
 local function ensureDebugOptions()
-  local db = EnsureDB()
-  if db.options.debug == nil then
-    db.options.debug = false
-  end
-  if db.options.uiDebug == nil then
-    db.options.uiDebug = false
-  end
-  if db.options.gridVisible == nil then
-    db.options.gridVisible = false
-  end
+	local db = EnsureDB()
+	if db.options.debug == nil then
+		db.options.debug = false
+	end
+	if db.options.uiDebug == nil then
+		db.options.uiDebug = false
+	end
+	if db.options.gridVisible == nil then
+		db.options.gridVisible = false
+	end
 end
 
 -- ============================================================================
@@ -43,79 +43,79 @@ end
 
 -- Provide Core functions that production expects but no longer has
 if BookArchivist.Core then
-  local Core = BookArchivist.Core
-  
-  function Core:IsDebugEnabled()
-    local db = EnsureDB()
-    return db.options.debug and true or false
-  end
-  
-  function Core:SetDebugEnabled(state)
-    local db = EnsureDB()
-    db.options.debug = state and true or false
-  end
-  
-  function Core:IsUIDebugEnabled()
-    local db = EnsureDB()
-    return db.options.uiDebug and true or false
-  end
-  
-  function Core:SetUIDebugEnabled(state)
-    local db = EnsureDB()
-    db.options.uiDebug = state and true or false
-  end
+	local Core = BookArchivist.Core
+
+	function Core:IsDebugEnabled()
+		local db = EnsureDB()
+		return db.options.debug and true or false
+	end
+
+	function Core:SetDebugEnabled(state)
+		local db = EnsureDB()
+		db.options.debug = state and true or false
+	end
+
+	function Core:IsUIDebugEnabled()
+		local db = EnsureDB()
+		return db.options.uiDebug and true or false
+	end
+
+	function Core:SetUIDebugEnabled(state)
+		local db = EnsureDB()
+		db.options.uiDebug = state and true or false
+	end
 end
 
 -- Provide main addon functions that production expects but no longer has
 local function syncOptionsUI()
-  local optionsUI = BookArchivist.UI and BookArchivist.UI.Options
-  if optionsUI and optionsUI.Sync then
-    optionsUI:Sync()
-  end
+	local optionsUI = BookArchivist.UI and BookArchivist.UI.Options
+	if optionsUI and optionsUI.Sync then
+		optionsUI:Sync()
+	end
 end
 
 function BookArchivist:IsDebugEnabled()
-  local Core = BookArchivist.Core
-  if Core and Core.IsDebugEnabled then
-    return Core:IsDebugEnabled()
-  end
-  return false
+	local Core = BookArchivist.Core
+	if Core and Core.IsDebugEnabled then
+		return Core:IsDebugEnabled()
+	end
+	return false
 end
 
 function BookArchivist:SetDebugEnabled(state)
-  local Core = BookArchivist.Core
-  if Core and Core.SetDebugEnabled then
-    Core:SetDebugEnabled(state)
-  end
-  syncOptionsUI()
+	local Core = BookArchivist.Core
+	if Core and Core.SetDebugEnabled then
+		Core:SetDebugEnabled(state)
+	end
+	syncOptionsUI()
 end
 
 function BookArchivist:IsUIDebugEnabled()
-  local Core = BookArchivist.Core
-  if Core and Core.IsUIDebugEnabled then
-    return Core:IsUIDebugEnabled()
-  end
-  local db = self:GetDB() or {}
-  local opts = db.options or {}
-  return opts.uiDebug and true or false
+	local Core = BookArchivist.Core
+	if Core and Core.IsUIDebugEnabled then
+		return Core:IsUIDebugEnabled()
+	end
+	local db = self:GetDB() or {}
+	local opts = db.options or {}
+	return opts.uiDebug and true or false
 end
 
 function BookArchivist:SetUIDebugEnabled(state)
-  local Core = BookArchivist.Core
-  if Core and Core.SetUIDebugEnabled then
-    Core:SetUIDebugEnabled(state)
-  else
-    local db = self:GetDB() or {}
-    db.options = db.options or {}
-    db.options.uiDebug = state and true or false
-  end
-  
-  local internal = self.UI and self.UI.Internal
-  if internal and internal.setGridOverlayVisible then
-    internal.setGridOverlayVisible(state and true or false)
-  end
-  
-  syncOptionsUI()
+	local Core = BookArchivist.Core
+	if Core and Core.SetUIDebugEnabled then
+		Core:SetUIDebugEnabled(state)
+	else
+		local db = self:GetDB() or {}
+		db.options = db.options or {}
+		db.options.uiDebug = state and true or false
+	end
+
+	local internal = self.UI and self.UI.Internal
+	if internal and internal.setGridOverlayVisible then
+		internal.setGridOverlayVisible(state and true or false)
+	end
+
+	syncOptionsUI()
 end
 
 -- ============================================================================
@@ -123,116 +123,97 @@ end
 -- ============================================================================
 
 local function InjectDebugSettingIntoOptionsPanel()
-  -- Wait for addon to fully load and Settings API to be available
-  if not BookArchivist or not BookArchivist.UI or not BookArchivist.UI.Options then
-    return
-  end
-  
-  if not Settings or not Settings.RegisterAddOnSetting then
-    return
-  end
-  
-  -- Find the BookArchivist category
-  local category = BookArchivist.UI.Options.GetCategory and BookArchivist.UI.Options:GetCategory()
-  if not category then
-    -- Try to find it by name
-    if Settings.GetCategory then
-      category = Settings.GetCategory(L("ADDON_TITLE"))
-    end
-  end
-  
-  if not category then
-    return
-  end
-  
-  ensureDebugOptions()
-  
-  local db = BookArchivistDB
-  
-  -- Ensure gridMode setting exists
-  if not db.options.gridMode then
-    db.options.gridMode = "border"
-  end
-  
-  -- Register debug checkbox
-  do
-    local variable = "debug"
-    local variableKey = variable
-    local variableTbl = BookArchivistDB.options
-    local defaultValue = false
-    local name = L("OPTIONS_DEBUG_LABEL") or "Enable Debug Mode"
-    
-    local setting = Settings.RegisterAddOnSetting(
-      category,
-      variable,
-      variableKey,
-      variableTbl,
-      "boolean",
-      name,
-      defaultValue
-    )
-    
-    Settings.CreateCheckbox(
-      category,
-      setting,
-      L("OPTIONS_DEBUG_TOOLTIP") or "Enable debug logging and UI grid overlays (dev mode)"
-    )
-    
-    -- The Settings API automatically updates variableTbl.debug
-    -- We just need to apply the dev tools state when it changes
-    -- Callback signature: function(callbackId, setting)
-    Settings.SetOnValueChangedCallback(variableKey, function(callbackId, setting)
-      -- Get the actual current value from the setting object
-      local currentValue = setting:GetValue()
-      local state = currentValue and true or false
-      
-      -- Debug mode only controls chat logging
-      -- Grid visibility is controlled separately via /badev grid
-      DevTools.EnableDebugChat(state)
-    end)
-  end
-  
-  -- Register grid mode dropdown
-  do
-    local variable = "gridMode"
-    local variableKey = variable
-    local variableTbl = BookArchivistDB.options
-    local defaultValue = "none"
-    local name = "Grid Display Mode"
-    
-    local setting = Settings.RegisterAddOnSetting(
-      category,
-      variable,
-      variableKey,
-      variableTbl,
-      "string",
-      name,
-      defaultValue
-    )
-    
-    local function GetOptions()
-      local container = Settings.CreateControlTextContainer()
-      container:Add("none", "None (Disabled)")
-      container:Add("border", "Border Only")
-      container:Add("fill", "Fill Only")
-      container:Add("both", "Border + Fill")
-      return container:GetData()
-    end
-    
-    Settings.CreateDropdown(
-      category,
-      setting,
-      GetOptions,
-      "Controls how debug grid overlays are displayed"
-    )
-    
-    Settings.SetOnValueChangedCallback(variableKey, function(callbackId, setting)
-      local mode = setting:GetValue()
-      if DevTools.SetGridMode then
-        DevTools.SetGridMode(mode)
-      end
-    end)
-  end
+	-- Wait for addon to fully load and Settings API to be available
+	if not BookArchivist or not BookArchivist.UI or not BookArchivist.UI.Options then
+		return
+	end
+
+	if not Settings or not Settings.RegisterAddOnSetting then
+		return
+	end
+
+	-- Find the BookArchivist category
+	local category = BookArchivist.UI.Options.GetCategory and BookArchivist.UI.Options:GetCategory()
+	if not category then
+		-- Try to find it by name
+		if Settings.GetCategory then
+			category = Settings.GetCategory(L("ADDON_TITLE"))
+		end
+	end
+
+	if not category then
+		return
+	end
+
+	ensureDebugOptions()
+
+	local db = BookArchivistDB
+
+	-- Ensure gridMode setting exists
+	if not db.options.gridMode then
+		db.options.gridMode = "border"
+	end
+
+	-- Register debug checkbox
+	do
+		local variable = "debug"
+		local variableKey = variable
+		local variableTbl = BookArchivistDB.options
+		local defaultValue = false
+		local name = L("OPTIONS_DEBUG_LABEL") or "Enable Debug Mode"
+
+		local setting =
+			Settings.RegisterAddOnSetting(category, variable, variableKey, variableTbl, "boolean", name, defaultValue)
+
+		Settings.CreateCheckbox(
+			category,
+			setting,
+			L("OPTIONS_DEBUG_TOOLTIP") or "Enable debug logging and UI grid overlays (dev mode)"
+		)
+
+		-- The Settings API automatically updates variableTbl.debug
+		-- We just need to apply the dev tools state when it changes
+		-- Callback signature: function(callbackId, setting)
+		Settings.SetOnValueChangedCallback(variableKey, function(callbackId, setting)
+			-- Get the actual current value from the setting object
+			local currentValue = setting:GetValue()
+			local state = currentValue and true or false
+
+			-- Debug mode only controls chat logging
+			-- Grid visibility is controlled separately via /badev grid
+			DevTools.EnableDebugChat(state)
+		end)
+	end
+
+	-- Register grid mode dropdown
+	do
+		local variable = "gridMode"
+		local variableKey = variable
+		local variableTbl = BookArchivistDB.options
+		local defaultValue = "none"
+		local name = "Grid Display Mode"
+
+		local setting =
+			Settings.RegisterAddOnSetting(category, variable, variableKey, variableTbl, "string", name, defaultValue)
+
+		local function GetOptions()
+			local container = Settings.CreateControlTextContainer()
+			container:Add("none", "None (Disabled)")
+			container:Add("border", "Border Only")
+			container:Add("fill", "Fill Only")
+			container:Add("both", "Border + Fill")
+			return container:GetData()
+		end
+
+		Settings.CreateDropdown(category, setting, GetOptions, "Controls how debug grid overlays are displayed")
+
+		Settings.SetOnValueChangedCallback(variableKey, function(callbackId, setting)
+			local mode = setting:GetValue()
+			if DevTools.SetGridMode then
+				DevTools.SetGridMode(mode)
+			end
+		end)
+	end
 end
 
 -- ============================================================================
@@ -246,6 +227,5 @@ ensureDebugOptions()
 
 -- Inject debug checkbox after a short delay to ensure Settings UI is loaded
 C_Timer.After(0.5, function()
-  InjectDebugSettingIntoOptionsPanel()
+	InjectDebugSettingIntoOptionsPanel()
 end)
-

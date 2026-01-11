@@ -95,16 +95,20 @@ local function configureDeleteButton(button)
 	button:RegisterForClicks("LeftButtonUp")
 	button:Disable()
 	button:SetMotionScriptsWhileDisabled(true)
-	
+
 	-- Create icon texture for delete/trash
 	local icon = button:CreateTexture(nil, "ARTWORK")
 	icon:SetAllPoints()
 	if icon.SetAtlas then
 		-- Try red X icon first
-		local success = pcall(function() icon:SetAtlas("common-icon-redx", true) end)
+		local success = pcall(function()
+			icon:SetAtlas("common-icon-redx", true)
+		end)
 		if not success then
 			-- Fallback: close/X button
-			success = pcall(function() icon:SetAtlas("transmog-icon-remove", true) end)
+			success = pcall(function()
+				icon:SetAtlas("transmog-icon-remove", true)
+			end)
 			if not success then
 				-- Final fallback: use X button texture
 				icon:SetTexture("Interface\\Buttons\\UI-StopButton")
@@ -114,7 +118,7 @@ local function configureDeleteButton(button)
 		end
 	end
 	button.icon = icon
-	
+
 	button:SetScript("OnEnter", function(self)
 		if not GameTooltip then
 			return

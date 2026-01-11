@@ -114,7 +114,7 @@ function FrameUI:CreateShell(opts)
 	frame.UpdateLoadingProgress = function(stage, progress)
 		FrameUI:UpdateLoadingProgress(frame, stage, progress)
 	end
-	
+
 	frame.HideLoadingIndicator = function()
 		FrameUI:HideLoadingIndicator(frame)
 	end

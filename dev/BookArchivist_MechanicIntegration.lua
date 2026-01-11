@@ -25,16 +25,16 @@ end
 
 -- Map BookArchivist debug categories to Mechanic log categories
 local categoryMap = {
-	["CAPTURE"] = "EVENT",     -- Book capture events
-	["SEARCH"] = "CORE",       -- Search operations
-	["FILTER"] = "CORE",       -- List filtering
-	["RENDER"] = "PERF",       -- UI rendering
-	["DB"] = "CORE",           -- Database operations
-	["IMPORT"] = "CORE",       -- Import operations
-	["EXPORT"] = "CORE",       -- Export operations
-	["UI"] = "TRIGGER",        -- UI interactions
-	["PERFORMANCE"] = "PERF",  -- Performance metrics
-	["ERROR"] = "VALIDATION",  -- Errors and validation
+	["CAPTURE"] = "EVENT", -- Book capture events
+	["SEARCH"] = "CORE", -- Search operations
+	["FILTER"] = "CORE", -- List filtering
+	["RENDER"] = "PERF", -- UI rendering
+	["DB"] = "CORE", -- Database operations
+	["IMPORT"] = "CORE", -- Import operations
+	["EXPORT"] = "CORE", -- Export operations
+	["UI"] = "TRIGGER", -- UI interactions
+	["PERFORMANCE"] = "PERF", -- Performance metrics
+	["ERROR"] = "VALIDATION", -- Errors and validation
 }
 
 -- Parse category from debug message prefix
@@ -50,15 +50,15 @@ local function hookDebugPrint()
 	if not MechanicLib or not MechanicLib:IsEnabled() then
 		return
 	end
-	
+
 	-- Store original
 	originalDebugPrint = BookArchivist.DebugPrint
-	
+
 	-- Replace with hooked version
 	function BookArchivist:DebugPrint(...)
 		-- Call original to maintain existing behavior
 		originalDebugPrint(self, ...)
-		
+
 		-- Also send to Mechanic if available
 		local MechanicLib = getMechanicLib()
 		if MechanicLib and MechanicLib:IsEnabled() then
@@ -86,7 +86,7 @@ end
 -- ============================================================================
 --
 -- TEST CATEGORIZATION:
--- 
+--
 -- 1. SANDBOX TESTS (Tests/Sandbox/) - Pure logic, fast, no WoW API needed
 --    - Base64, BookId, CRC32, Order, Serialize
 --    - Run via: mech call sandbox.test '{"addon": "BookArchivist"}'
@@ -106,7 +106,7 @@ end
 -- ============================================================================
 
 local testCapability = {}
-local testResults = {}  -- Store test results for retrieval
+local testResults = {} -- Store test results for retrieval
 
 -- Get all available IN-GAME test suites
 -- These are tests that MUST run inside WoW with real APIs
@@ -115,14 +115,14 @@ function testCapability.getAll()
 	if BookArchivist.InGameTests then
 		return BookArchivist.InGameTests.GetAll()
 	end
-	
+
 	-- Fallback if tests not loaded yet
 	return {}
 end
 
 -- Get test categories
 function testCapability.getCategories()
-	return { "Core", "UI" }  -- Core tests + UI tests
+	return { "Core", "UI" } -- Core tests + UI tests
 end
 
 -- Run a specific test
@@ -130,23 +130,23 @@ function testCapability.run(testId)
 	if not testId then
 		return {
 			passed = false,
-			message = "Test ID required"
+			message = "Test ID required",
 		}
 	end
-	
+
 	-- Use the in-game test runner
 	if not BookArchivist.InGameTests then
 		return {
 			passed = false,
-			message = "In-game tests not loaded"
+			message = "In-game tests not loaded",
 		}
 	end
-	
+
 	local result = BookArchivist.InGameTests.Run(testId)
-	
+
 	-- Store result for retrieval
 	testResults[testId] = result
-	
+
 	return result
 end
 
@@ -154,26 +154,27 @@ end
 function testCapability.runAll()
 	-- Use the in-game test runner
 	if not BookArchivist.InGameTests then
-		return 0, 0  -- No tests available
+		return 0, 0 -- No tests available
 	end
-	
+
 	local passed, total, results = BookArchivist.InGameTests.RunAll()
-	
+
 	-- Store all results
 	for testId, result in pairs(results) do
 		testResults[testId] = result
 	end
-	
+
 	return passed, total
 end
 
 -- Get test result
 function testCapability.getResult(testId)
 	-- Return stored result or indicate no result available
-	return testResults[testId] or {
-		passed = nil,
-		message = "Test not yet run. Click 'Run Selected' or 'Run All Auto' to execute."
-	}
+	return testResults[testId]
+		or {
+			passed = nil,
+			message = "Test not yet run. Click 'Run Selected' or 'Run All Auto' to execute.",
+		}
 end
 
 -- Clear test results
@@ -194,12 +195,12 @@ function performanceCapability.getSubMetrics()
 	if not db then
 		return {}
 	end
-	
+
 	-- Calculate database statistics
 	local bookCount = 0
 	local pageCount = 0
 	local totalBytes = 0
-	
+
 	if db.booksById then
 		for bookId, book in pairs(db.booksById) do
 			bookCount = bookCount + 1
@@ -213,32 +214,32 @@ function performanceCapability.getSubMetrics()
 			end
 		end
 	end
-	
+
 	return {
 		{
 			name = "Books",
 			value = bookCount,
 			unit = "count",
-			category = "Database"
+			category = "Database",
 		},
 		{
 			name = "Pages",
 			value = pageCount,
 			unit = "count",
-			category = "Database"
+			category = "Database",
 		},
 		{
 			name = "Storage",
 			value = string.format("%.2f KB", totalBytes / 1024),
 			unit = "size",
-			category = "Database"
+			category = "Database",
 		},
 		{
 			name = "Avg Pages/Book",
 			value = bookCount > 0 and string.format("%.1f", pageCount / bookCount) or "0",
 			unit = "average",
-			category = "Database"
-		}
+			category = "Database",
+		},
 	}
 end
 
@@ -254,25 +255,25 @@ function toolsCapability.createPanel(parent)
 	if toolsPanel then
 		return toolsPanel
 	end
-	
+
 	toolsPanel = CreateFrame("Frame", nil, parent)
 	toolsPanel:SetAllPoints()
-	
+
 	-- Title
 	local title = toolsPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 10, -10)
 	title:SetText("BookArchivist Dev Tools")
-	
+
 	-- Database stats section
 	local statsHeader = toolsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	statsHeader:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -20)
 	statsHeader:SetText("Database Statistics:")
-	
+
 	local statsText = toolsPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	statsText:SetPoint("TOPLEFT", statsHeader, "BOTTOMLEFT", 10, -5)
 	statsText:SetJustifyH("LEFT")
 	statsText:SetWidth(400)
-	
+
 	-- Update stats function
 	local function updateStats()
 		local metrics = performanceCapability.getSubMetrics()
@@ -282,14 +283,14 @@ function toolsCapability.createPanel(parent)
 		end
 		statsText:SetText(table.concat(lines, "\n"))
 	end
-	
+
 	-- Refresh button
 	local refreshBtn = CreateFrame("Button", nil, toolsPanel, "UIPanelButtonTemplate")
 	refreshBtn:SetSize(100, 22)
 	refreshBtn:SetPoint("TOPLEFT", statsText, "BOTTOMLEFT", -5, -10)
 	refreshBtn:SetText("Refresh")
 	refreshBtn:SetScript("OnClick", updateStats)
-	
+
 	-- Export button
 	local exportBtn = CreateFrame("Button", nil, toolsPanel, "UIPanelButtonTemplate")
 	exportBtn:SetSize(120, 22)
@@ -301,7 +302,7 @@ function toolsCapability.createPanel(parent)
 			print("|cff00ff00[BookArchivist]|r Export started. Check export window.")
 		end
 	end)
-	
+
 	-- Clear debug log button
 	local clearLogBtn = CreateFrame("Button", nil, toolsPanel, "UIPanelButtonTemplate")
 	clearLogBtn:SetSize(120, 22)
@@ -313,12 +314,12 @@ function toolsCapability.createPanel(parent)
 			print("|cff00ff00[BookArchivist]|r Debug log cleared.")
 		end
 	end)
-	
+
 	-- Debug info section
 	local debugHeader = toolsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	debugHeader:SetPoint("TOPLEFT", refreshBtn, "BOTTOMLEFT", 5, -20)
 	debugHeader:SetText("Debug Settings:")
-	
+
 	local debugCheckbox = CreateFrame("CheckButton", nil, toolsPanel, "UICheckButtonTemplate")
 	debugCheckbox:SetPoint("TOPLEFT", debugHeader, "BOTTOMLEFT", 0, -5)
 	debugCheckbox:SetSize(24, 24)
@@ -331,10 +332,10 @@ function toolsCapability.createPanel(parent)
 			BookArchivist:SetDebugEnabled(self:GetChecked())
 		end
 	end)
-	
+
 	-- Initial stats
 	updateStats()
-	
+
 	return toolsPanel
 end
 
@@ -355,18 +356,18 @@ function Integration:Register()
 	if not MechanicLib then
 		return false, "MechanicLib not available"
 	end
-	
+
 	if not MechanicLib:IsEnabled() then
 		return false, "Mechanic not enabled"
 	end
-	
+
 	if isRegistered then
 		return true, "Already registered"
 	end
-	
+
 	-- Get addon version from TOC (use modern API)
 	local version = C_AddOns and C_AddOns.GetAddOnMetadata("BookArchivist", "Version") or "dev"
-	
+
 	-- Register with Mechanic (void function, doesn't return success)
 	MechanicLib:Register("BookArchivist", {
 		version = version,
@@ -374,7 +375,7 @@ function Integration:Register()
 		performance = performanceCapability,
 		tools = toolsCapability,
 	})
-	
+
 	isRegistered = true
 	hookDebugPrint()
 	print("|cff00ff00[BookArchivist]|r Registered with Mechanic v" .. version)
@@ -385,15 +386,15 @@ function Integration:Unregister()
 	if not isRegistered then
 		return false, "Not registered"
 	end
-	
+
 	unhookDebugPrint()
 	isRegistered = false
-	
+
 	local MechanicLib = getMechanicLib()
 	if MechanicLib then
 		MechanicLib:Unregister("BookArchivist")
 	end
-	
+
 	print("|cff00ff00[BookArchivist]|r Unregistered from Mechanic")
 	return true, "Unregistered successfully"
 end

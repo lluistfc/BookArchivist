@@ -391,4 +391,3 @@ end
 function Internal.getGridOverlayVisible()
 	return gridOverlay.visible
 end
-

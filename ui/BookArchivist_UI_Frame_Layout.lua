@@ -8,16 +8,17 @@ local FrameUI = BookArchivist.UI.Frame or {}
 BookArchivist.UI.Frame = FrameUI
 local Internal = BookArchivist.UI.Internal
 
-local Metrics = BookArchivist.UI.Metrics or {
-	PAD = 12,
-	PAD_OUTER = 12,
-	PAD_INSET = 10,
-	GUTTER = 10,
-	GAP_S = 6,
-	GAP_M = 10,
-	SEPARATOR_W = 10,
-	SEPARATOR_GAP = 6,
-}
+local Metrics = BookArchivist.UI.Metrics
+	or {
+		PAD = 12,
+		PAD_OUTER = 12,
+		PAD_INSET = 10,
+		GUTTER = 10,
+		GAP_S = 6,
+		GAP_M = 10,
+		SEPARATOR_W = 10,
+		SEPARATOR_GAP = 6,
+	}
 
 local DEFAULT_WIDTH = FrameUI.DEFAULT_WIDTH or 1080
 local MIN_LIST_WIDTH = 260
@@ -63,8 +64,6 @@ local function clampListWidth(container, width)
 	return math.max(MIN_LIST_WIDTH, math.min(width, maxWidth))
 end
 
-
-
 local function createContentLayout(frame, safeCreateFrame, opts)
 	local createHeaderBar = FrameUI.CreateHeaderBar
 	local header = frame.HeaderFrame or (createHeaderBar and createHeaderBar(frame, safeCreateFrame))
@@ -96,7 +95,7 @@ local function createContentLayout(frame, safeCreateFrame, opts)
 	-- Fixed list width (hardcoded - no resize functionality)
 	local fixedListWidth = 360
 	fixedListWidth = clampListWidth(body, fixedListWidth)
-	
+
 	-- Gap between the two panels
 	local gapBetweenPanels = Metrics.GAP_M or Metrics.GUTTER or 10
 
@@ -129,10 +128,10 @@ local function attachListUI(listUI, frame, listWrapper)
 	if not listUI or type(listUI.Create) ~= "function" then
 		return
 	end
-	
+
 	-- Use the wrapper frame (traditional frame inside AceGUI container)
 	local listContainer = listWrapper or frame
-	
+
 	local ok, err = pcall(listUI.Create, listUI, listContainer)
 	if not ok and BookArchivist and BookArchivist.LogError then
 		BookArchivist:LogError("BookArchivist list UI failed: " .. tostring(err))
@@ -143,10 +142,10 @@ local function attachReaderUI(readerUI, listUI, frame, readerWrapper)
 	if not readerUI or type(readerUI.Create) ~= "function" then
 		return
 	end
-	
+
 	-- Use the wrapper frame (traditional frame inside AceGUI container)
 	local readerContainer = readerWrapper or frame
-	
+
 	-- CRITICAL: Do NOT pass list block as anchor to prevent cross-anchoring.
 	-- Reader should fill readerContainer and be 100% wrapper-relative.
 	local ok, err = pcall(readerUI.Create, readerUI, readerContainer, readerContainer)

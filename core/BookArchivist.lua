@@ -21,101 +21,101 @@ local MAX_DEBUG_LOG_ENTRIES = 5000
 local isInitializing = false
 
 local function storeDebugMessage(msg)
-  table.insert(debugLog, {
-    timestamp = time(),
-    message = msg
-  })
-  if #debugLog > MAX_DEBUG_LOG_ENTRIES then
-    table.remove(debugLog, 1)
-  end
+	table.insert(debugLog, {
+		timestamp = time(),
+		message = msg,
+	})
+	if #debugLog > MAX_DEBUG_LOG_ENTRIES then
+		table.remove(debugLog, 1)
+	end
 end
 
 local function chatMessage(msg)
-  if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-    DEFAULT_CHAT_FRAME:AddMessage(msg)
-  elseif type(print) == "function" then
-    print(msg)
-  end
+	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+		DEFAULT_CHAT_FRAME:AddMessage(msg)
+	elseif type(print) == "function" then
+		print(msg)
+	end
 end
 
 -- Production-safe wrapper for debug state
 -- DevTools may override this; otherwise delegates to Core
 function BookArchivist:IsDebugEnabled()
-  -- Prevent circular dependency during DB initialization
-  if isInitializing then
-    return false
-  end
-  if Core and Core.IsDebugEnabled then
-    return Core:IsDebugEnabled()
-  end
-  return false
+	-- Prevent circular dependency during DB initialization
+	if isInitializing then
+		return false
+	end
+	if Core and Core.IsDebugEnabled then
+		return Core:IsDebugEnabled()
+	end
+	return false
 end
 
 function BookArchivist:DebugPrint(...)
-  if not self:IsDebugEnabled() then
-    return
-  end
-  local parts = {}
-  for i = 1, select("#", ...) do
-    parts[i] = tostring(select(i, ...))
-  end
-  local msg = table.concat(parts, " ")
-  storeDebugMessage(msg)
-  chatMessage(msg)
+	if not self:IsDebugEnabled() then
+		return
+	end
+	local parts = {}
+	for i = 1, select("#", ...) do
+		parts[i] = tostring(select(i, ...))
+	end
+	local msg = table.concat(parts, " ")
+	storeDebugMessage(msg)
+	chatMessage(msg)
 end
 
 function BookArchivist:DebugMessage(msg)
-  if not self:IsDebugEnabled() then
-    return
-  end
-  storeDebugMessage(msg)
-  chatMessage(msg)
+	if not self:IsDebugEnabled() then
+		return
+	end
+	storeDebugMessage(msg)
+	chatMessage(msg)
 end
 
 function BookArchivist:GetDebugLog()
-  return debugLog
+	return debugLog
 end
 
 function BookArchivist:ClearDebugLog()
-  debugLog = {}
+	debugLog = {}
 end
 
 function BookArchivist:LogError(...)
-  -- Try UI.Internal first for compatibility, fallback to simple error
-  local ui = self.UI
-  local internal = ui and ui.Internal
-  if internal and type(internal.logError) == "function" then
-    return internal.logError(...)
-  end
-  error(tostring(select(1, ...)) or "Unknown error", 2)
+	-- Try UI.Internal first for compatibility, fallback to simple error
+	local ui = self.UI
+	local internal = ui and ui.Internal
+	if internal and type(internal.logError) == "function" then
+		return internal.logError(...)
+	end
+	error(tostring(select(1, ...)) or "Unknown error", 2)
 end
 
 local globalCreateFrame = type(_G) == "table" and rawget(_G, "CreateFrame") or nil
 local function createFrameShim(...)
-  if globalCreateFrame then
-    return globalCreateFrame(...)
-  end
+	if globalCreateFrame then
+		return globalCreateFrame(...)
+	end
 
-  local dummy = {}
-  function dummy:RegisterEvent(...) end
-  function dummy:SetScript(...) end
-  return dummy
+	local dummy = {}
+	function dummy:RegisterEvent(...) end
+	function dummy:SetScript(...) end
+	return dummy
 end
 
 BookArchivist.__createFrame = createFrameShim
 
 local function getOptionsUI()
-  if not BookArchivist.UI then
-    return nil
-  end
-  return BookArchivist.UI.Options
+	if not BookArchivist.UI then
+		return nil
+	end
+	return BookArchivist.UI.Options
 end
 
 local function syncOptionsUI(newLang)
-  local optionsUI = getOptionsUI()
-  if optionsUI and optionsUI.Sync then
-    optionsUI:Sync(newLang)
-  end
+	local optionsUI = getOptionsUI()
+	if optionsUI and optionsUI.Sync then
+		optionsUI:Sync(newLang)
+	end
 end
 
 local eventFrame = createFrameShim("Frame")
@@ -126,67 +126,67 @@ eventFrame:RegisterEvent("ITEM_TEXT_CLOSED")
 -- Simplified: treat all captures as item text books only
 
 local function handleAddonLoaded(name)
-  if name ~= ADDON_NAME then
-    return
-  end
+	if name ~= ADDON_NAME then
+		return
+	end
 
-  -- Set initialization guard to prevent circular dependency
-  isInitializing = true
-  
-  if Core and Core.EnsureDB then
-    Core:EnsureDB()
-  end
-  
-  -- Clear initialization guard after DB is ready
-  isInitializing = false
-  
-  -- Initialize debug logging state from DB
-  if type(BookArchivist.EnableDebugLogging) == "function" and Core and Core.IsDebugEnabled then
-    local debugState = Core:IsDebugEnabled()
-    BookArchivist.EnableDebugLogging(debugState, true)
-  end
-  
-  local optionsUI = getOptionsUI()
-  if optionsUI and optionsUI.OnAddonLoaded then
-    optionsUI:OnAddonLoaded(name)
-  end
-  if MinimapModule and MinimapModule.Initialize then
-    MinimapModule:Initialize()
-  end
-  if TooltipModule and TooltipModule.Initialize then
-    TooltipModule:Initialize()
-  end
-  if ChatLinks and ChatLinks.Init then
-    ChatLinks:Init()
-  end
+	-- Set initialization guard to prevent circular dependency
+	isInitializing = true
+
+	if Core and Core.EnsureDB then
+		Core:EnsureDB()
+	end
+
+	-- Clear initialization guard after DB is ready
+	isInitializing = false
+
+	-- Initialize debug logging state from DB
+	if type(BookArchivist.EnableDebugLogging) == "function" and Core and Core.IsDebugEnabled then
+		local debugState = Core:IsDebugEnabled()
+		BookArchivist.EnableDebugLogging(debugState, true)
+	end
+
+	local optionsUI = getOptionsUI()
+	if optionsUI and optionsUI.OnAddonLoaded then
+		optionsUI:OnAddonLoaded(name)
+	end
+	if MinimapModule and MinimapModule.Initialize then
+		MinimapModule:Initialize()
+	end
+	if TooltipModule and TooltipModule.Initialize then
+		TooltipModule:Initialize()
+	end
+	if ChatLinks and ChatLinks.Init then
+		ChatLinks:Init()
+	end
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
-  if event == "ADDON_LOADED" then
-    handleAddonLoaded(...)
-    return
-  end
+	if event == "ADDON_LOADED" then
+		handleAddonLoaded(...)
+		return
+	end
 
-  if event == "ITEM_TEXT_BEGIN" then
-    if Capture and Capture.OnBegin then
-      Capture:OnBegin()
-    end
-  elseif event == "ITEM_TEXT_READY" then
-    if Capture and Capture.OnReady then
-      Capture:OnReady()
-    end
-  elseif event == "ITEM_TEXT_CLOSED" then
-    if Capture and Capture.OnClosed then
-      Capture:OnClosed()
-    end
-  end
+	if event == "ITEM_TEXT_BEGIN" then
+		if Capture and Capture.OnBegin then
+			Capture:OnBegin()
+		end
+	elseif event == "ITEM_TEXT_READY" then
+		if Capture and Capture.OnReady then
+			Capture:OnReady()
+		end
+	elseif event == "ITEM_TEXT_CLOSED" then
+		if Capture and Capture.OnClosed then
+			Capture:OnClosed()
+		end
+	end
 end)
 
 function BookArchivist:GetDB()
-  if Core and Core.GetDB then
-    return Core:GetDB()
-  end
-  return {}
+	if Core and Core.GetDB then
+		return Core:GetDB()
+	end
+	return {}
 end
 
 function BookArchivist:ExportBook(bookId)
@@ -197,160 +197,158 @@ function BookArchivist:ExportBook(bookId)
 end
 
 function BookArchivist:Delete(key)
-  if Core and Core.Delete then
-    Core:Delete(key)
-  end
-  if type(self.RefreshUI) == "function" then
-    self:RefreshUI()
-  end
+	if Core and Core.Delete then
+		Core:Delete(key)
+	end
+	if type(self.RefreshUI) == "function" then
+		self:RefreshUI()
+	end
 end
 
 function BookArchivist:IsTooltipEnabled()
-  if Core and Core.IsTooltipEnabled then
-    return Core:IsTooltipEnabled()
-  end
-  local db = self:GetDB() or {}
-  local opts = db.options or {}
-  if opts.tooltip == nil then
-    return true
-  end
-  return opts.tooltip and true or false
+	if Core and Core.IsTooltipEnabled then
+		return Core:IsTooltipEnabled()
+	end
+	local db = self:GetDB() or {}
+	local opts = db.options or {}
+	if opts.tooltip == nil then
+		return true
+	end
+	return opts.tooltip and true or false
 end
 
 function BookArchivist:SetTooltipEnabled(state)
-  if Core and Core.SetTooltipEnabled then
-    Core:SetTooltipEnabled(state)
-  else
-    local db = self:GetDB() or {}
-    db.options = db.options or {}
-    db.options.tooltip = state and true or false
-  end
+	if Core and Core.SetTooltipEnabled then
+		Core:SetTooltipEnabled(state)
+	else
+		local db = self:GetDB() or {}
+		db.options = db.options or {}
+		db.options.tooltip = state and true or false
+	end
 end
 
-
 function BookArchivist:IsResumeLastPageEnabled()
-  if Core and Core.IsResumeLastPageEnabled then
-    return Core:IsResumeLastPageEnabled()
-  end
-  return true
+	if Core and Core.IsResumeLastPageEnabled then
+		return Core:IsResumeLastPageEnabled()
+	end
+	return true
 end
 
 function BookArchivist:SetResumeLastPageEnabled(state)
-  if Core and Core.SetResumeLastPageEnabled then
-    Core:SetResumeLastPageEnabled(state)
-  end
-  syncOptionsUI()
+	if Core and Core.SetResumeLastPageEnabled then
+		Core:SetResumeLastPageEnabled(state)
+	end
+	syncOptionsUI()
 end
 
-
 function BookArchivist:GetListPageSize()
-  if Core and Core.GetListPageSize then
-    return Core:GetListPageSize()
-  end
-  return 25
+	if Core and Core.GetListPageSize then
+		return Core:GetListPageSize()
+	end
+	return 25
 end
 
 function BookArchivist:SetListPageSize(size)
-  if Core and Core.SetListPageSize then
-    Core:SetListPageSize(size)
-  end
+	if Core and Core.SetListPageSize then
+		Core:SetListPageSize(size)
+	end
 end
 
 function BookArchivist:GetListSortMode()
-  if Core and Core.GetSortMode then
-    return Core:GetSortMode()
-  end
+	if Core and Core.GetSortMode then
+		return Core:GetSortMode()
+	end
 	return "lastSeen"
 end
 
 function BookArchivist:SetListSortMode(mode)
-  if Core and Core.SetSortMode then
-    Core:SetSortMode(mode)
-  end
+	if Core and Core.SetSortMode then
+		Core:SetSortMode(mode)
+	end
 end
 
 function BookArchivist:ExportLibrary()
-  if Core and Core.ExportToString then
-    return Core:ExportToString()
-  end
-  return nil, "export unavailable"
+	if Core and Core.ExportToString then
+		return Core:ExportToString()
+	end
+	return nil, "export unavailable"
 end
 
 function BookArchivist:GetListFilters()
-  if Core and Core.GetListFilters then
-    return Core:GetListFilters()
-  end
-  return {}
+	if Core and Core.GetListFilters then
+		return Core:GetListFilters()
+	end
+	return {}
 end
 
 function BookArchivist:SetListFilter(filterKey, state)
-  if Core and Core.SetListFilter then
-    Core:SetListFilter(filterKey, state)
-  end
+	if Core and Core.SetListFilter then
+		Core:SetListFilter(filterKey, state)
+	end
 end
 
 function BookArchivist:IsVirtualCategoriesEnabled()
-  if Core and Core.IsVirtualCategoriesEnabled then
-    return Core:IsVirtualCategoriesEnabled()
-  end
-  return true
+	if Core and Core.IsVirtualCategoriesEnabled then
+		return Core:IsVirtualCategoriesEnabled()
+	end
+	return true
 end
 
 function BookArchivist:GetLastCategoryId()
-  if Core and Core.GetLastCategoryId then
-    return Core:GetLastCategoryId()
-  end
-  return "__all__"
+	if Core and Core.GetLastCategoryId then
+		return Core:GetLastCategoryId()
+	end
+	return "__all__"
 end
 
 function BookArchivist:SetLastCategoryId(categoryId)
-  if Core and Core.SetLastCategoryId then
-    Core:SetLastCategoryId(categoryId)
-  end
+	if Core and Core.SetLastCategoryId then
+		Core:SetLastCategoryId(categoryId)
+	end
 end
 
 function BookArchivist:GetLastBookId()
-  if Core and Core.GetLastBookId then
-    return Core:GetLastBookId()
-  end
-  return nil
+	if Core and Core.GetLastBookId then
+		return Core:GetLastBookId()
+	end
+	return nil
 end
 
 function BookArchivist:SetLastBookId(bookId)
-  if Core and Core.SetLastBookId then
-    Core:SetLastBookId(bookId)
-  end
+	if Core and Core.SetLastBookId then
+		Core:SetLastBookId(bookId)
+	end
 end
 
 function BookArchivist:GetLanguage()
-  if Core and Core.GetLanguage then
-    return Core:GetLanguage()
-  end
-  return "enUS"
+	if Core and Core.GetLanguage then
+		return Core:GetLanguage()
+	end
+	return "enUS"
 end
 
 function BookArchivist:SetLanguage(lang)
-  if Core and Core.SetLanguage then
-    Core:SetLanguage(lang)
-  end
-  local internal = self.UI and self.UI.Internal
-  if internal and internal.rebuildUIForLanguageChange then
-    internal.rebuildUIForLanguageChange()
-  elseif type(self.RefreshUI) == "function" then
-    self:RefreshUI()
-  end
-  syncOptionsUI(lang)
+	if Core and Core.SetLanguage then
+		Core:SetLanguage(lang)
+	end
+	local internal = self.UI and self.UI.Internal
+	if internal and internal.rebuildUIForLanguageChange then
+		internal.rebuildUIForLanguageChange()
+	elseif type(self.RefreshUI) == "function" then
+		self:RefreshUI()
+	end
+	syncOptionsUI(lang)
 end
 
 function BookArchivist:OpenOptionsPanel()
-  local optionsUI = getOptionsUI()
-  if optionsUI and optionsUI.Open then
-    optionsUI:Open()
-  end
+	local optionsUI = getOptionsUI()
+	if optionsUI and optionsUI.Open then
+		optionsUI:Open()
+	end
 end
 
 function BookArchivist_ToggleFromCompartment()
-  if BookArchivist and type(BookArchivist.ToggleUI) == "function" then
-    BookArchivist:ToggleUI()
-  end
+	if BookArchivist and type(BookArchivist.ToggleUI) == "function" then
+		BookArchivist:ToggleUI()
+	end
 end
