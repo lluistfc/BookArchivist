@@ -197,4 +197,3 @@ jobs:
               workflow_id: 'package.yml',
               ref: context.ref
             });
-        shell: pwsh
