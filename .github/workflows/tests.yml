@@ -64,7 +64,7 @@ jobs:
           
           # Find include and lib directories
           $luaIncDir = Join-Path $luaRoot "include"
-          $luaLibDir = $luaDir
+          $luaLibDir = Join-Path $luaRoot "lib"
           
           Write-Host "`nSetting:"
           Write-Host "  LUA_INCDIR: $luaIncDir"
