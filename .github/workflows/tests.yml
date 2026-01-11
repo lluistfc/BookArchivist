@@ -42,21 +42,33 @@ jobs:
         run: |
           $luaPath = (Get-Command lua.exe).Source
           $luaDir = Split-Path $luaPath
+          $luaRoot = Split-Path $luaDir
+          
           Write-Host "Lua found at: $luaPath"
-          Write-Host "Lua directory: $luaDir"
+          Write-Host "Lua bin directory: $luaDir"
+          Write-Host "Lua root directory: $luaRoot"
+          
+          # List entire Lua directory structure to find headers and libs
+          Write-Host "`n=== Lua bin directory contents ==="
+          Get-ChildItem $luaDir | Format-Table Name, Length
+          
+          Write-Host "`n=== Lua root directory structure ==="
+          Get-ChildItem $luaRoot -Recurse -Depth 1 | Format-Table FullName, Length
+          
+          # Search for lua.h and lua51.lib
+          Write-Host "`n=== Searching for lua.h ==="
+          Get-ChildItem $luaRoot -Recurse -Filter "lua.h" -ErrorAction SilentlyContinue | Format-Table FullName
+          
+          Write-Host "`n=== Searching for *.lib files ==="
+          Get-ChildItem $luaRoot -Recurse -Filter "*.lib" -ErrorAction SilentlyContinue | Format-Table FullName
           
           # Find include and lib directories
-          $luaIncDir = Join-Path (Split-Path $luaDir) "include"
+          $luaIncDir = Join-Path $luaRoot "include"
           $luaLibDir = $luaDir
           
-          Write-Host "Include directory: $luaIncDir"
-          Write-Host "Lib directory: $luaLibDir"
-          
-          # List contents to verify
-          Write-Host "Contents of bin dir:"
-          Get-ChildItem $luaDir | Select-Object Name
-          Write-Host "Contents of include dir (if exists):"
-          if (Test-Path $luaIncDir) { Get-ChildItem $luaIncDir | Select-Object Name }
+          Write-Host "`nSetting:"
+          Write-Host "  LUA_INCDIR: $luaIncDir"
+          Write-Host "  LUA_LIBDIR: $luaLibDir"
           
           luarocks config --lua-version 5.1 variables.LUA "$luaPath"
           luarocks config --lua-version 5.1 variables.LUA_DIR "$luaDir"
