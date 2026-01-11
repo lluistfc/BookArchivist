@@ -18,23 +18,30 @@ Write-Host "Dev folder: $DevFolder" -ForegroundColor Gray
 Write-Host "Addon folder: $AddonFolder" -ForegroundColor Gray
 Write-Host ""
 
-# Create junction link from _dev_/BookArchivist to actual addon folder
-$JunctionPath = Join-Path $DevFolder "BookArchivist"
-if (Test-Path $JunctionPath) {
-    $item = Get-Item $JunctionPath
-    if ($item.LinkType -eq "Junction") {
-        Write-Host "✓ BookArchivist junction already exists in dev folder" -ForegroundColor Green
-    } else {
-        Write-Host "⚠ BookArchivist exists but is not a junction" -ForegroundColor Yellow
-    }
+# Check if addon is already in dev folder
+$AddonInDevFolder = $AddonFolder.StartsWith($DevFolder, [StringComparison]::OrdinalIgnoreCase)
+
+if ($AddonInDevFolder) {
+    Write-Host "✓ BookArchivist is already in dev folder, no junction needed" -ForegroundColor Green
 } else {
-    Write-Host "Creating junction: $JunctionPath -> $AddonFolder" -ForegroundColor Yellow
-    New-Item -ItemType Junction -Path $JunctionPath -Target $AddonFolder | Out-Null
-    if ($LASTEXITCODE -eq 0 -or (Test-Path $JunctionPath)) {
-        Write-Host "✓ Created BookArchivist junction in dev folder" -ForegroundColor Green
+    # Create junction link from _dev_/BookArchivist to actual addon folder
+    $JunctionPath = Join-Path $DevFolder "BookArchivist"
+    if (Test-Path $JunctionPath) {
+        $item = Get-Item $JunctionPath
+        if ($item.LinkType -eq "Junction") {
+            Write-Host "✓ BookArchivist junction already exists in dev folder" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ BookArchivist exists but is not a junction" -ForegroundColor Yellow
+        }
     } else {
-        Write-Host "✗ Failed to create junction. Run as Administrator?" -ForegroundColor Red
-        exit 1
+        Write-Host "Creating junction: $JunctionPath -> $AddonFolder" -ForegroundColor Yellow
+        New-Item -ItemType Junction -Path $JunctionPath -Target $AddonFolder | Out-Null
+        if ($LASTEXITCODE -eq 0 -or (Test-Path $JunctionPath)) {
+            Write-Host "✓ Created BookArchivist junction in dev folder" -ForegroundColor Green
+        } else {
+            Write-Host "✗ Failed to create junction. Run as Administrator?" -ForegroundColor Red
+            exit 1
+        }
     }
 }
 

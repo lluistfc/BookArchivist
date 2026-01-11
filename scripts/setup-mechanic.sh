@@ -18,22 +18,30 @@ echo "Dev folder: $DEV_FOLDER"
 echo "Addon folder: $ADDON_FOLDER"
 echo ""
 
-# Create symlink from _dev_/BookArchivist to actual addon folder
-LINK_PATH="$DEV_FOLDER/BookArchivist"
-if [ -L "$LINK_PATH" ]; then
-    echo "✓ BookArchivist symlink already exists in dev folder"
-elif [ -e "$LINK_PATH" ]; then
-    echo "⚠ BookArchivist exists but is not a symlink"
-else
-    echo "Creating symlink: $LINK_PATH -> $ADDON_FOLDER"
-    ln -s "$ADDON_FOLDER" "$LINK_PATH"
-    if [ $? -eq 0 ]; then
-        echo "✓ Created BookArchivist symlink in dev folder"
-    else
-        echo "✗ Failed to create symlink"
-        exit 1
-    fi
-fi
+# Check if addon is already in dev folder
+case "$ADDON_FOLDER" in
+    "$DEV_FOLDER"*)
+        echo "✓ BookArchivist is already in dev folder, no symlink needed"
+        ;;
+    *)
+        # Create symlink from _dev_/BookArchivist to actual addon folder
+        LINK_PATH="$DEV_FOLDER/BookArchivist"
+        if [ -L "$LINK_PATH" ]; then
+            echo "✓ BookArchivist symlink already exists in dev folder"
+        elif [ -e "$LINK_PATH" ]; then
+            echo "⚠ BookArchivist exists but is not a symlink"
+        else
+            echo "Creating symlink: $LINK_PATH -> $ADDON_FOLDER"
+            ln -s "$ADDON_FOLDER" "$LINK_PATH"
+            if [ $? -eq 0 ]; then
+                echo "✓ Created BookArchivist symlink in dev folder"
+            else
+                echo "✗ Failed to create symlink"
+                exit 1
+            fi
+        fi
+        ;;
+esac
 
 echo ""
 
