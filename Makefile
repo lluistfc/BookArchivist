@@ -38,11 +38,11 @@ endif
 
 # Set test command based on OS
 ifeq ($(DETECTED_OS),Windows)
-    TEST_CMD := pwsh -ExecutionPolicy Bypass -File Tests/run-tests.ps1
+    TEST_CMD := pwsh -ExecutionPolicy Bypass -File scripts/run-tests.ps1
     CHMOD :=
 else
-    TEST_CMD := ./Tests/run-tests.sh
-    CHMOD := chmod +x Tests/run-tests.sh &&
+    TEST_CMD := ./scripts/run-tests.sh
+    CHMOD := chmod +x scripts/run-tests.sh &&
 endif
 
 # Pattern variable for filtering tests

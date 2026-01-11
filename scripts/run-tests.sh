@@ -45,7 +45,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Script is in Tests/ folder, addon root is parent
+# Script is in scripts/ folder, addon root is parent
 ADDON_PATH="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

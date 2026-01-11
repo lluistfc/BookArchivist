@@ -10,7 +10,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-# Script is in Tests/ folder, addon root is parent
+# Script is in scripts/ folder, addon root is parent
 $addonPath = Split-Path -Parent $PSScriptRoot
 
 Write-Host "`n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
