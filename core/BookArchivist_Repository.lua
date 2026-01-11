@@ -22,15 +22,20 @@ function Repository:GetDB()
 	if activeDB then
 		return activeDB
 	end
-	-- Delegate to Core for production DB with migrations
+	-- Delegate to Core.ensureDB for production DB with migrations
+	-- Note: We call the internal ensureDB() directly to avoid circular dependency
+	-- (Core:GetDB() delegates to Repository:GetDB())
 	local Core = BookArchivist.Core
-	if not Core or not Core.GetDB then
-		error("BookArchivist.Repository: Core.GetDB not available - addon not properly initialized")
+	if not Core then
+		error("BookArchivist.Repository: Core not available - addon not properly initialized")
 	end
-	local db = Core:GetDB()
+	
+	-- Access the internal ensureDB function directly
+	local db = BookArchivistDB
 	if not db then
-		error("BookArchivist.Repository: Core.GetDB returned nil - database not initialized")
+		error("BookArchivist.Repository: BookArchivistDB not initialized - database not available")
 	end
+	
 	return db
 end
 
