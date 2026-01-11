@@ -7,18 +7,20 @@ BookArchivist = BookArchivist or {}
 local Repository = {}
 BookArchivist.Repository = Repository
 
----Initialize repository (called on addon load)
-function Repository:Init()
-	-- Nothing to initialize in production
+-- The database instance to use (injected via Init)
+local db = nil
+
+---Initialize repository with a database instance
+---@param database table The database to use
+function Repository:Init(database)
+	db = database
 end
 
 ---Get current database
----@return table db The active database
+---@return table The active database
 function Repository:GetDB()
-	-- Access production database global
-	local db = BookArchivistDB
 	if not db then
-		error("BookArchivist.Repository: BookArchivistDB not initialized - database not available")
+		error("BookArchivist.Repository: Not initialized - call Init(db) first")
 	end
 	return db
 end

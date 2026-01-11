@@ -136,6 +136,11 @@ local function handleAddonLoaded(name)
 	if Core and Core.EnsureDB then
 		Core:EnsureDB()
 	end
+	
+	-- Initialize Repository with production database
+	if BookArchivist.Repository and BookArchivist.Repository.Init then
+		BookArchivist.Repository:Init(BookArchivistDB)
+	end
 
 	-- Clear initialization guard after DB is ready
 	isInitializing = false

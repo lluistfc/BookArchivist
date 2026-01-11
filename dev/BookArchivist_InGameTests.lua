@@ -61,27 +61,23 @@ local function createTestDB()
 	}
 end
 
--- Test database isolation
--- Tests temporarily replace BookArchivistDB global with test data
+-- Test database isolation via dependency injection
 local testDB = nil
-local originalDB = nil
 
 local function setupTestDB()
-	-- Backup production database
-	originalDB = BookArchivistDB
-	
-	-- Create and install isolated test database
+	-- Create isolated test database
 	testDB = createTestDB()
-	BookArchivistDB = testDB
+	
+	-- Inject test database into Repository
+	BookArchivist.Repository:Init(testDB)
 end
 
 local function teardownTestDB()
-	-- Restore production database
-	BookArchivistDB = originalDB
-	
 	-- Discard test database
 	testDB = nil
-	originalDB = nil
+	
+	-- Re-initialize Repository with production DB
+	BookArchivist.Repository:Init(BookArchivistDB)
 end
 
 -- ============================================================================
