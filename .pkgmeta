@@ -10,6 +10,7 @@ ignore:
     # Development and test files
     - dev
     - tests
+    - Tests
     - docs
     - libs/WoWUnit
     
@@ -19,6 +20,7 @@ ignore:
     - CHANGELOG.md
     - README.md
     - media
+    - Makefile
 
     # Git and IDE
     - .git

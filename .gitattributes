@@ -1,9 +1,11 @@
 # Exclude development and documentation from git archive
 dev/ export-ignore
 tests/ export-ignore
+Tests/ export-ignore
 docs/ export-ignore
 media/ export-ignore
 libs/WoWUnit/ export-ignore
+Makefile export-ignore
 *.md export-ignore
 
 # Exclude repo-only stuff
