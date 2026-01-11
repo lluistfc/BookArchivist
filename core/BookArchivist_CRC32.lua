@@ -6,7 +6,21 @@ BookArchivist = BookArchivist or {}
 
 local bitLib = _G and (_G.bit32 or _G.bit) or bit32 or bit
 if not bitLib then
-  error("BookArchivist: bit library unavailable for CRC32")
+  -- Try to load test stub for sandbox/test environments
+  local success = pcall(function()
+    -- Try relative path from addon root
+    local stubPath = "tests/stubs/bit_library.lua"
+    dofile(stubPath)
+  end)
+  
+  if success then
+    bitLib = bit or bit32
+  end
+  
+  -- If still not available, error
+  if not bitLib then
+    error("BookArchivist: bit library unavailable for CRC32")
+  end
 end
 local band = bitLib.band
 local bxor = bitLib.bxor

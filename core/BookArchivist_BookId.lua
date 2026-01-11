@@ -4,6 +4,14 @@
 
 BookArchivist = BookArchivist or {}
 
+-- Ensure bit library is available (for fnv1a32 hash)
+if not (bit or bit32) then
+  -- Try to load test stub for sandbox/test environments
+  pcall(function()
+    dofile("tests/stubs/bit_library.lua")
+  end)
+end
+
 local BookId = BookArchivist.BookId or {}
 BookArchivist.BookId = BookId
 
