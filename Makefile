@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync run stop link unlink release alpha beta
+.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync verify run stop link unlink release alpha beta
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -63,6 +63,7 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host '  make stop            - Stop Mechanic dashboard' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make validate        - Validate addon structure (.toc, files)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make lint            - Run Luacheck linter' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make verify          - Run full verification (validate + lint + test)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make output          - Get addon output (errors, tests, logs)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make sync            - Sync addon to WoW clients' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make link            - Link addon to WoW (via addon.sync)' -ForegroundColor Gray"
@@ -98,6 +99,7 @@ else
 	@echo "  make stop            - Stop Mechanic dashboard"
 	@echo "  make validate        - Validate addon structure (.toc, files)"
 	@echo "  make lint            - Run Luacheck linter"
+	@echo "  make verify          - Run full verification (validate + lint + test)"
 	@echo "  make output          - Get addon output (errors, tests, logs)"
 	@echo "  make sync            - Sync addon to WoW clients"
 	@echo "  make link            - Link addon to WoW (via addon.sync)"
@@ -203,6 +205,20 @@ lint:
 
 output:
 	@$(MECHANIC_CLI) call addon.output "{\"addon\": \"BookArchivist\", \"agent_mode\": true}"
+
+verify:
+	@echo "Running full verification..."
+	@echo ""
+	@echo "[1/3] Validating addon structure..."
+	@$(MECHANIC_CLI) call addon.validate "{\"addon\": \"BookArchivist\"}"
+	@echo ""
+	@echo "[2/3] Running Luacheck linter..."
+	@$(MECHANIC_CLI) call addon.lint "{\"addon\": \"BookArchivist\"}"
+	@echo ""
+	@echo "[3/3] Running test suite..."
+	@$(MAKE) test
+	@echo ""
+	@echo "✓ All verification checks passed!"
 
 sync:
 	@$(MECHANIC_CLI) call addon.sync "{\"addon\": \"BookArchivist\"}"
