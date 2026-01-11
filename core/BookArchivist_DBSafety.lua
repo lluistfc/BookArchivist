@@ -201,14 +201,16 @@ function DBSafety:SafeLoad()
 end
 
 --- Perform a safety check on the database (can be called periodically)
+--- @param db table|nil Database to check (defaults to BookArchivistDB global)
 --- @return boolean isHealthy
 --- @return string|nil issue Description of any issues found
-function DBSafety:HealthCheck()
-	if not BookArchivistDB or type(BookArchivistDB) ~= "table" then
+function DBSafety:HealthCheck(db)
+	-- Default to global BookArchivistDB if no parameter provided
+	db = db or BookArchivistDB
+	
+	if not db or type(db) ~= "table" then
 		return false, "Database is missing or not a table"
 	end
-
-	local db = BookArchivistDB
 	local issues = {}
 
 	-- Determine which structure we're using

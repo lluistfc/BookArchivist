@@ -647,6 +647,15 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 					ReaderShare:ShareCurrentBook(addon, key)
 				end
 			end)
+		end
+
+		local favoriteBtn = state.favoriteButton
+		if not favoriteBtn or not (favoriteBtn.IsObjectType and favoriteBtn:IsObjectType("Button")) then
+			favoriteBtn = safeCreateFrame("Button", "BookArchivistFavoriteButton", actionsRail)
+			state.favoriteButton = favoriteBtn
+			if rememberWidget then
+				rememberWidget("favoriteBtn", favoriteBtn)
+			end
 			-- Replace the default checkbox textures with a star-style favorite
 			-- icon, similar to the mounts/collections UIs.
 			local size = Metrics.BTN_H or 22

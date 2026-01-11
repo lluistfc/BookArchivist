@@ -1,5 +1,18 @@
 -- test_migrations.lua
 -- Unit tests for BookArchivist database migrations
+--
+-- ✅ PROPER TEST ISOLATION ✅
+-- These tests use isolated test databases passed as parameters.
+-- BookArchivistDB global is NEVER modified during normal test execution.
+--
+-- SAFE:   Run via CLI: `mech call addon.test` (full 17 tests, isolated sandbox)
+-- SAFE:   Run in-game manually (16 tests, Test 16 auto-skipped for safety)
+--
+-- Design Pattern: TestContainers approach
+-- - Tests create isolated test databases (like containerized DBs)
+-- - Functions accept database parameters instead of reading globals
+-- - No corruption risk from test execution
+-- - Test 16 skipped in-game (requires global modification to load legacy file)
 
 local test_results = {
 	passed = 0,
@@ -388,13 +401,8 @@ end)
 run_test("HealthCheck accepts legacy structure", function()
 	local db = create_v102_db()
 
-	-- Temporarily set global for health check
-	local old_db = BookArchivistDB
-	BookArchivistDB = db
-
-	local healthy, issue = BookArchivist.DBSafety:HealthCheck()
-
-	BookArchivistDB = old_db
+	-- Pass test database directly as parameter (no global modification)
+	local healthy, issue = BookArchivist.DBSafety:HealthCheck(db)
 
 	assert_equal(healthy, true, "Legacy structure should be healthy")
 end)
@@ -405,30 +413,31 @@ run_test("HealthCheck accepts modern structure", function()
 	db.dbVersion = 1
 	local migrated = BookArchivist.Migrations.v2(db)
 
-	-- Temporarily set global for health check
-	local old_db = BookArchivistDB
-	BookArchivistDB = migrated
-
-	local healthy, issue = BookArchivist.DBSafety:HealthCheck()
-
-	BookArchivistDB = old_db
+	-- Pass test database directly as parameter (no global modification)
+	local healthy, issue = BookArchivist.DBSafety:HealthCheck(migrated)
 
 	assert_equal(healthy, true, "Modern structure should be healthy")
 end)
 
 -- Test 16: Real v1.0.2 data migration (from dev/BookArchivist_v1_0_2.lua)
-run_test("Real v1.0.2 data migrates successfully", function()
-	-- Load actual v1.0.2 data (file sets global BookArchivistDB)
-	local old_global_db = BookArchivistDB
-	BookArchivistDB = nil
-	dofile("../dev/BookArchivist_v1_0_2.lua")
-	local real_v102_data = BookArchivistDB
-	BookArchivistDB = old_global_db
+-- ⚠️ SKIP IN-GAME: This test loads a file that sets BookArchivistDB global.
+-- Even with save/restore, there's a moment where real user data is overwritten.
+-- This test is ONLY safe in CLI sandbox where BookArchivistDB is isolated.
+local isInGame = type(GetLocale) == "function"
+if not isInGame then
+	run_test("Real v1.0.2 data migrates successfully", function()
+		-- Load actual v1.0.2 data (file sets global BookArchivistDB)
+		-- Save and restore global to maintain isolation
+		local old_global_db = BookArchivistDB
+		BookArchivistDB = nil
+		dofile("../dev/BookArchivist_v1_0_2.lua")
+		local real_v102_data = BookArchivistDB
+		BookArchivistDB = old_global_db
 
-	assert_not_nil(real_v102_data, "Should load real v1.0.2 data")
+		assert_not_nil(real_v102_data, "Should load real v1.0.2 data")
 
-	-- Validate original structure
-	local valid, error = BookArchivist.DBSafety:ValidateStructure(real_v102_data)
+		-- Validate original structure (using parameter)
+		local valid, error = BookArchivist.DBSafety:ValidateStructure(real_v102_data)
 	assert_equal(valid, true, "Real v1.0.2 data should be valid: " .. tostring(error))
 
 	-- Count original books
@@ -493,7 +502,13 @@ run_test("Real v1.0.2 data migrates successfully", function()
 	-- Verify indexes created
 	assert_type(v2_migrated.indexes, "table", "Should create indexes")
 	assert_type(v2_migrated.indexes.objectToBookId, "table", "Should create objectToBookId index")
-end)
+	end)
+else
+	-- Test 16 skipped in-game for safety
+	print("⚠️  Test 16 skipped: 'Real v1.0.2 data migrates successfully'")
+	print("    Reason: Test modifies BookArchivistDB global (unsafe in-game)")
+	print("    Run via CLI for full test coverage: mech call addon.test")
+end
 
 -- Test 17: v2 migration removes legacy debug options
 run_test("v2 migration removes legacy debug options", function()
