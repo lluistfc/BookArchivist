@@ -188,6 +188,7 @@ Locales.caES = {
 	["BOOK_UNTITLED"] = "(Sense títol)",
 	["BOOK_UNKNOWN"] = "Llibre desconegut",
 	["BOOK_MISSING_DATA"] = "Falten dades",
+	["TOOLTIP_ARCHIVED"] = "Book Archivist: Arxivat",
 	["MATCH_TITLE"] = "TÍTOL",
 	["MATCH_TEXT"] = "TEXT",
 

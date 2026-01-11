@@ -187,6 +187,7 @@ Locales.ptBR = {
 	["BOOK_UNTITLED"] = "(Sem título)",
 	["BOOK_UNKNOWN"] = "Livro desconhecido",
 	["BOOK_MISSING_DATA"] = "Dados ausentes",
+	["TOOLTIP_ARCHIVED"] = "Book Archivist: Arquivado",
 	["MATCH_TITLE"] = "TÍTULO",
 	["MATCH_TEXT"] = "TEXTO",
 

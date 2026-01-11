@@ -188,6 +188,7 @@ Locales.esES = {
 	["BOOK_UNTITLED"] = "(Sin título)",
 	["BOOK_UNKNOWN"] = "Libro desconocido",
 	["BOOK_MISSING_DATA"] = "Datos faltantes",
+	["TOOLTIP_ARCHIVED"] = "Book Archivist: Archivado",
 	["MATCH_TITLE"] = "TÍTULO",
 	["MATCH_TEXT"] = "TEXTO",
 

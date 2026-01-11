@@ -187,6 +187,7 @@ Locales.frFR = {
 	["BOOK_UNTITLED"] = "(Sans titre)",
 	["BOOK_UNKNOWN"] = "Livre inconnu",
 	["BOOK_MISSING_DATA"] = "Données manquantes",
+	["TOOLTIP_ARCHIVED"] = "Book Archivist: Archivé",
 	["MATCH_TITLE"] = "TITRE",
 	["MATCH_TEXT"] = "TEXTE",
 

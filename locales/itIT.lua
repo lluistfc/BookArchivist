@@ -186,6 +186,7 @@ Locales.itIT = {
 	["BOOK_UNTITLED"] = "(Senza titolo)",
 	["BOOK_UNKNOWN"] = "Libro sconosciuto",
 	["BOOK_MISSING_DATA"] = "Dati mancanti",
+	["TOOLTIP_ARCHIVED"] = "Book Archivist: Archiviato",
 	["MATCH_TITLE"] = "TITOLO",
 	["MATCH_TEXT"] = "TESTO",
 

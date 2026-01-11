@@ -187,6 +187,7 @@ Locales.deDE = {
 	["BOOK_UNTITLED"] = "(Ohne Titel)",
 	["BOOK_UNKNOWN"] = "Unbekanntes Buch",
 	["BOOK_MISSING_DATA"] = "Fehlende Daten",
+	["TOOLTIP_ARCHIVED"] = "Book Archivist: Archiviert",
 	["MATCH_TITLE"] = "TITEL",
 	["MATCH_TEXT"] = "TEXT",
 
