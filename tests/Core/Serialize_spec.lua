@@ -1,6 +1,13 @@
 -- Serialize_spec.lua
 -- Sandbox tests for table serialization/deserialization
 
+-- Load test helper
+local helper = dofile("tests/test_helper.lua")
+helper.setupNamespace()
+
+-- Load Serialize module
+helper.loadFile("core/BookArchivist_Serialize.lua")
+
 describe("Serialize.SerializeTable", function()
   it("serializes empty table", function()
     local result = BookArchivist.Serialize.SerializeTable({})

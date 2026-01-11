@@ -1,6 +1,17 @@
 -- Favorites_spec.lua
 -- Sandbox tests for Favorites management
 
+-- Load test helper
+local helper = dofile("tests/test_helper.lua")
+helper.setupNamespace()
+
+-- Mock Core module
+BookArchivist.Core = BookArchivist.Core or {}
+BookArchivist.DebugPrint = function(self, ...) end
+
+-- Load Favorites module
+helper.loadFile("core/BookArchivist_Favorites.lua")
+
 -- Setup mock database
 local function setupMockDB()
   BookArchivist.Core = BookArchivist.Core or {}

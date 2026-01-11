@@ -1,6 +1,14 @@
 -- CRC32_spec.lua
 -- Sandbox tests for CRC32 checksum computation
 
+-- Load test helper
+local helper = dofile("tests/test_helper.lua")
+helper.loadFile("tests/stubs/bit_library.lua")
+helper.setupNamespace()
+
+-- Load CRC32 module
+helper.loadFile("core/BookArchivist_CRC32.lua")
+
 describe("CRC32.Compute", function()
   it("computes CRC32 for empty string", function()
     local result = BookArchivist.CRC32:Compute("")

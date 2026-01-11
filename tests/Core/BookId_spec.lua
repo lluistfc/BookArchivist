@@ -1,6 +1,14 @@
 -- BookId_spec.lua
 -- Sandbox tests for BookArchivist BookId generation and parsing
 
+-- Load test helper
+local helper = dofile("tests/test_helper.lua")
+helper.loadFile("tests/stubs/bit_library.lua")
+helper.setupNamespace()
+
+-- Load BookId module
+helper.loadFile("core/BookArchivist_BookId.lua")
+
 describe("BookId.NormalizeText", function()
     it("converts to lowercase", function()
         local result = BookArchivist.BookId.NormalizeText("The New HORDE")

@@ -1,6 +1,16 @@
 -- Search_spec.lua
 -- Sandbox tests for search text processing
 
+-- Load test helper
+local helper = dofile("tests/test_helper.lua")
+helper.setupNamespace()
+
+-- Mock Core module
+BookArchivist.Core = BookArchivist.Core or {}
+
+-- Load Search module
+helper.loadFile("core/BookArchivist_Search.lua")
+
 describe("Search.NormalizeSearchText", function()
   it("lowercases input", function()
     local result = BookArchivist.Search.NormalizeSearchText("Hello World")

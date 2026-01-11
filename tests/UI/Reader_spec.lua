@@ -1,6 +1,9 @@
 -- Reader_spec.lua
 -- Sandbox tests for Reader UI logic
 
+-- Load test helper
+local helper = dofile("tests/test_helper.lua")
+
 -- Setup localization BEFORE loading the Reader module
 BookArchivist = BookArchivist or {}
 BookArchivist.L = {
