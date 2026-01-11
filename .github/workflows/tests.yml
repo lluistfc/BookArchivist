@@ -44,10 +44,24 @@ jobs:
           $luaDir = Split-Path $luaPath
           Write-Host "Lua found at: $luaPath"
           Write-Host "Lua directory: $luaDir"
+          
+          # Find include and lib directories
+          $luaIncDir = Join-Path (Split-Path $luaDir) "include"
+          $luaLibDir = $luaDir
+          
+          Write-Host "Include directory: $luaIncDir"
+          Write-Host "Lib directory: $luaLibDir"
+          
+          # List contents to verify
+          Write-Host "Contents of bin dir:"
+          Get-ChildItem $luaDir | Select-Object Name
+          Write-Host "Contents of include dir (if exists):"
+          if (Test-Path $luaIncDir) { Get-ChildItem $luaIncDir | Select-Object Name }
+          
           luarocks config --lua-version 5.1 variables.LUA "$luaPath"
           luarocks config --lua-version 5.1 variables.LUA_DIR "$luaDir"
-          luarocks config --lua-version 5.1 variables.LUA_INCDIR "$luaDir"
-          luarocks config --lua-version 5.1 variables.LUA_LIBDIR "$luaDir"
+          luarocks config --lua-version 5.1 variables.LUA_INCDIR "$luaIncDir"
+          luarocks config --lua-version 5.1 variables.LUA_LIBDIR "$luaLibDir"
           luarocks config --lua-version 5.1 lua_version "5.1"
         shell: pwsh
 
