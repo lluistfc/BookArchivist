@@ -11,6 +11,7 @@ ignore:
     - dev
     - tests
     - Tests
+    - scripts
     - docs
     - libs/WoWUnit
     
@@ -21,6 +22,7 @@ ignore:
     - README.md
     - media
     - Makefile
+    - .busted
 
     # Git and IDE
     - .git

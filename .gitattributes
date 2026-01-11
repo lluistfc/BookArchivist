@@ -2,10 +2,12 @@
 dev/ export-ignore
 tests/ export-ignore
 Tests/ export-ignore
+scripts/ export-ignore
 docs/ export-ignore
 media/ export-ignore
 libs/WoWUnit/ export-ignore
 Makefile export-ignore
+.busted export-ignore
 *.md export-ignore
 
 # Exclude repo-only stuff
