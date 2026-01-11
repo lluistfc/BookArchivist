@@ -2,7 +2,38 @@
 
 BookArchivist tests are organized into three categories based on execution environment.
 
-## 📂 Directory Structure
+## � Quick Start
+
+### First-Time Setup
+If you don't have Mechanic installed:
+```bash
+make check-mechanic    # Verify Mechanic CLI is available
+make setup-mechanic    # Clone, install, and configure Mechanic
+```
+
+**What `setup-mechanic` does:**
+- Clones Mechanic repository (if not present)
+- Installs Mechanic Desktop with pip (editable mode)
+- Creates junction/symlink in `_dev_/` folder (if addon is outside)
+- Syncs `!Mechanic` and `Mechanic` addons to WoW clients
+- Makes `mech` CLI available system-wide
+
+**Requirements:**
+- Python 3.10+ (`py`, `python3`, or `python`)
+- Git (for cloning Mechanic repo)
+
+**Platform-specific scripts:**
+- Windows: `scripts/setup-mechanic.ps1`
+- Unix/macOS: `scripts/setup-mechanic.sh`
+
+### Running Tests
+```bash
+make test              # Summary only (fast)
+make test-detailed     # Show all test results
+make test-errors       # With full error traces
+```
+
+## �📂 Directory Structure
 
 ```
 Tests/
@@ -44,15 +75,50 @@ Tests/
 
 ## 🔄 Running All Tests
 
-### Makefile (Cross-Platform)
+### Makefile (Recommended)
+The Makefile provides the most convenient way to run tests:
+
 ```bash
-make test              # Summary only
-make test-detailed     # All tests (JUnit-style)
-make test-errors       # With error traces
+make help              # Show all available targets
+make check-mechanic    # Verify Mechanic installation
+make setup-mechanic    # Setup Mechanic (first-time only)
+make test              # Run all tests (summary only)
+make test-detailed     # All tests with full output
+make test-errors       # Show full error stack traces
 make test-pattern PATTERN=Base64  # Run specific tests
 ```
 
-**Requires:** `make` (available via Git Bash on Windows, pre-installed on Unix/macOS)
+**Prerequisites:**
+- `make` (Git Bash on Windows, pre-installed on Unix/macOS)
+- Mechanic CLI (`make setup-mechanic` handles this)
+
+### Mechanic Integration
+BookArchivist uses Mechanic for addon development and testing:
+
+**Setup once:**
+```bash
+make setup-mechanic    # Auto-installs everything
+```
+
+**Development workflow:**
+```bash
+# Run offline tests (fast - 30ms)
+mech call sandbox.test '{"addon": "BookArchivist"}'
+
+# Run full test suite
+mech call addon.test '{"addon": "BookArchivist"}'
+
+# Validate addon structure
+mech call addon.validate '{"addon": "BookArchivist"}'
+```
+
+**Dev folder structure:**
+```
+_dev_/
+├── BookArchivist/     # Junction/symlink to actual addon
+├── !Mechanic/         # Mechanic diagnostic hub
+└── Mechanic/          # Mechanic main addon
+```
 
 ### Quick Test Runner (Direct Execution)
 
