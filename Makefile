@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync verify run stop link unlink release alpha beta
+.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -63,6 +63,7 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host '  make stop            - Stop Mechanic dashboard' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make validate        - Validate addon structure (.toc, files)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make lint            - Run Luacheck linter' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make warnings        - Show detailed lint warnings' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make verify          - Run full verification (validate + lint + test)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make output          - Get addon output (errors, tests, logs)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make sync            - Sync addon to WoW clients' -ForegroundColor Gray"
@@ -99,6 +100,7 @@ else
 	@echo "  make stop            - Stop Mechanic dashboard"
 	@echo "  make validate        - Validate addon structure (.toc, files)"
 	@echo "  make lint            - Run Luacheck linter"
+	@echo "  make warnings        - Show detailed lint warnings"
 	@echo "  make verify          - Run full verification (validate + lint + test)"
 	@echo "  make output          - Get addon output (errors, tests, logs)"
 	@echo "  make sync            - Sync addon to WoW clients"
@@ -206,6 +208,13 @@ lint:
 output:
 	@$(MECHANIC_CLI) call addon.output "{\"addon\": \"BookArchivist\", \"agent_mode\": true}"
 
+warnings:
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -NoProfile -Command "$$json = mech --json call addon.lint '{\"addon\": \"BookArchivist\"}' | ConvertFrom-Json; $$issues = $$json.data.issues; Write-Host \"Lint Warnings: $$($$issues.Count) issues\" -ForegroundColor Yellow; $$issues | Format-Table -Property file, line, column, code, message -AutoSize"
+else
+	@mech --json call addon.lint '{"addon": "BookArchivist"}' | jq -r '.data.issues[] | "\(.file):\(.line):\(.column) [\(.code)] \(.message)"'
+endif
+
 verify:
 	@echo "Running full verification..."
 	@echo ""
@@ -214,6 +223,8 @@ verify:
 	@echo ""
 	@echo "[2/3] Running Luacheck linter..."
 	@$(MECHANIC_CLI) call addon.lint "{\"addon\": \"BookArchivist\"}"
+	@echo ""
+	@echo "    Tip: Run 'make warnings' to see detailed lint warnings"
 	@echo ""
 	@echo "[3/3] Running test suite..."
 	@$(MAKE) test
