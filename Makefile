@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync
+.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync run stop
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -59,6 +59,8 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host 'Mechanic Integration:' -ForegroundColor White"
 	@pwsh -NoProfile -Command "Write-Host '  make check-mechanic  - Verify Mechanic CLI is available' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make setup-mechanic  - Clone and install Mechanic (if needed)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make run             - Start Mechanic dashboard (background)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make stop            - Stop Mechanic dashboard' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make validate        - Validate addon structure (.toc, files)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make lint            - Run Luacheck linter' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make output          - Get addon output (errors, tests, logs)' -ForegroundColor Gray"
@@ -85,6 +87,8 @@ else
 	@echo "Mechanic Integration:"
 	@echo "  make check-mechanic  - Verify Mechanic CLI is available"
 	@echo "  make setup-mechanic  - Clone and install Mechanic (if needed)"
+	@echo "  make run             - Start Mechanic dashboard (background)"
+	@echo "  make stop            - Stop Mechanic dashboard"
 	@echo "  make validate        - Validate addon structure (.toc, files)"
 	@echo "  make lint            - Run Luacheck linter"
 	@echo "  make output          - Get addon output (errors, tests, logs)"
@@ -188,4 +192,20 @@ output:
 
 sync:
 	@$(MECHANIC_CLI) call addon.sync "{\"addon\": \"BookArchivist\"}"
+
+# Dashboard management
+run:
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -NoProfile -Command "try { $$response = Invoke-WebRequest -Uri 'http://127.0.0.1:3100' -Method GET -TimeoutSec 1 -ErrorAction Stop; Write-Host '\u2713 Mechanic dashboard already running at http://127.0.0.1:3100' -ForegroundColor Green } catch { Write-Host 'Starting Mechanic dashboard...' -ForegroundColor Cyan; Start-Process -NoNewWindow -FilePath '$(MECHANIC_CLI)' -ArgumentList 'dashboard' }"
+else
+	@if curl -s http://127.0.0.1:3100 >/dev/null 2>&1; then \
+		echo "✓ Mechanic dashboard already running at http://127.0.0.1:3100"; \
+	else \
+		echo "Starting Mechanic dashboard..."; \
+		nohup $(MECHANIC_CLI) dashboard > /dev/null 2>&1 & \
+	fi
+endif
+
+stop:
+	@$(MECHANIC_CLI) stop
 
