@@ -87,25 +87,20 @@ jobs:
           Write-Host "Adding to PATH: $luaRocksBin"
           "$luaRocksBin" | Out-File -FilePath $env:GITHUB_PATH -Append
           
-          # Use luarocks path to get proper paths
-          $pathOutput = luarocks --lua-version 5.1 path --lr-path 2>&1
-          $cpathOutput = luarocks --lua-version 5.1 path --lr-cpath 2>&1
+          # Get LuaRocks paths directly (Windows format)
+          $luaPath = (luarocks --lua-version 5.1 path --lr-path 2>&1 | Out-String).Trim()
+          $luaCPath = (luarocks --lua-version 5.1 path --lr-cpath 2>&1 | Out-String).Trim()
           
-          Write-Host "LuaRocks LUA_PATH: $pathOutput"
-          Write-Host "LuaRocks LUA_CPATH: $cpathOutput"
+          Write-Host "LUA_PATH: $luaPath"
+          Write-Host "LUA_CPATH: $luaCPath"
           
-          # Extract and set the paths
-          if ($pathOutput -match "export LUA_PATH='([^']+)'") {
-            $luaPath = $matches[1]
-            "LUA_PATH=$luaPath" | Out-File -FilePath $env:GITHUB_ENV -Append
-            Write-Host "Set LUA_PATH to: $luaPath"
-          }
+          # Append default paths
+          $luaPath = "$luaPath;;"
+          $luaCPath = "$luaCPath;;"
           
-          if ($cpathOutput -match "export LUA_CPATH='([^']+)'") {
-            $luaCPath = $matches[1]
-            "LUA_CPATH=$luaCPath" | Out-File -FilePath $env:GITHUB_ENV -Append
-            Write-Host "Set LUA_CPATH to: $luaCPath"
-          }
+          # Set environment variables
+          "LUA_PATH=$luaPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "LUA_CPATH=$luaCPath" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
 
       - name: Verify installations
