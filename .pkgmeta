@@ -9,11 +9,10 @@ manual-changelog:
 ignore:
     # Development and test files
     - dev
-    - tests
     - Tests
     - scripts
     - docs
-    - libs/WoWUnit
+    - libs/libs.json
     
     # Development documentation
     - AGENTS.md

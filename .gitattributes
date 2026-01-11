@@ -1,11 +1,10 @@
 # Exclude development and documentation from git archive
 dev/ export-ignore
-tests/ export-ignore
 Tests/ export-ignore
 scripts/ export-ignore
 docs/ export-ignore
 media/ export-ignore
-libs/WoWUnit/ export-ignore
+libs/libs.json export-ignore
 Makefile export-ignore
 .busted export-ignore
 
@@ -14,7 +13,6 @@ AGENTS.md export-ignore
 ui/AGENTS.md export-ignore
 README.md export-ignore
 CHANGELOG.md export-ignore
-# CURSE_FORGE_RELEASE_CHANGELOG.md is kept for CurseForge packaging
 
 # Exclude repo-only stuff
 .github/ export-ignore

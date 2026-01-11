@@ -44,7 +44,7 @@ This is a **non-negotiable, inviolable rule**:
 
 ### After Writing Code
 1. **Run tests IMMEDIATELY** - `make test` or `make test-errors`
-2. **Verify all 200 tests pass** - Zero tolerance for failures
+2. **Verify all tests pass** - Zero tolerance for failures
 3. **If tests fail:**
    - ❌ **DO NOT COMMIT**
    - Fix the code or fix the tests
@@ -68,7 +68,7 @@ make test-pattern PATTERN=Module  # Run specific tests
 - **No merge** without green checkmarks
 
 ### Why This Matters
-- **200 tests** protect against regressions
+- **tests** protect against regressions
 - **4-second feedback loop** enables TDD workflow
 - **Repository pattern** allows isolated test database
 - **Production DB restored** even after catastrophic test failures
