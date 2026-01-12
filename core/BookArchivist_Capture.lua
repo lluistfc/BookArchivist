@@ -223,7 +223,7 @@ function Capture:OnClosed()
 			Core:IndexObjectForBook(src.objectID, persisted.id or persisted.key)
 		end
 		-- Refresh UI to update location data (including backfilled locations)
-		if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
+		if BookArchivist and BookArchivist.RefreshUI then
 			BookArchivist.RefreshUI()
 		end
 	end

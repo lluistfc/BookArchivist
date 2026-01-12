@@ -2,7 +2,6 @@
 -- Verifies that RefreshUI is called the correct number of times
 
 local helper = require("tests/test_helper")
-local SpyHelpers = require("tests/helpers/spy_helpers")
 
 describe("Capture System UI Refresh Behavior", function()
 	local Capture
@@ -40,6 +39,10 @@ describe("Capture System UI Refresh Behavior", function()
 		-- Initialize Repository with test database (dependency injection)
 		BookArchivist.Repository:Init(testDB)
 
+		-- Load BookId module (required by Core.PersistSession)
+		helper.loadFile("core/BookArchivist_CRC32.lua")
+		helper.loadFile("core/BookArchivist_BookId.lua")
+
 		-- Load Core module FIRST (Order module needs Core to exist)
 		helper.loadFile("core/BookArchivist_Core.lua")
 		Core = BookArchivist.Core
@@ -52,9 +55,9 @@ describe("Capture System UI Refresh Behavior", function()
 		helper.loadFile("core/BookArchivist_Capture.lua")
 		Capture = BookArchivist.Capture
 
-		-- Create a mock RefreshUI function that we can spy on
-		BookArchivist.RefreshUI = SpyHelpers.mockFunction()
-		refreshSpy = BookArchivist.RefreshUI
+		-- Create a spy for RefreshUI using Busted's built-in spy functionality
+		BookArchivist.RefreshUI = function() end
+		refreshSpy = spy.on(BookArchivist, "RefreshUI")
 
 		-- Mock WoW API functions
 		_G.ItemTextGetTitle = function() return "Test Book" end
@@ -90,10 +93,6 @@ describe("Capture System UI Refresh Behavior", function()
 	end)
 
 	after_each(function()
-		if refreshSpy then
-			refreshSpy.reset()
-		end
-		
 		-- Restore production database (Repository pattern cleanup)
 		if BookArchivist and BookArchivist.Repository and _G.BookArchivistDB then
 			BookArchivist.Repository:Init(_G.BookArchivistDB)
@@ -104,15 +103,17 @@ describe("Capture System UI Refresh Behavior", function()
 		it("should call RefreshUI exactly once on close (not on each page)", function()
 			-- Start capture
 			Capture:OnBegin()
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called on Begin")
+			assert.spy(refreshSpy).was_not.called()
 
 			-- Read one page
 			Capture:OnReady()
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called on page read (OnReady)")
+			assert.spy(refreshSpy).was_not.called()
 
 			-- Close book
 			Capture:OnClosed()
-			SpyHelpers.assertCalledTimes(refreshSpy, 1, "RefreshUI should be called exactly once on Close")
+			
+			-- Verify RefreshUI was called exactly once
+			assert.spy(refreshSpy).was.called(1)
 		end)
 	end)
 
@@ -129,26 +130,26 @@ describe("Capture System UI Refresh Behavior", function()
 
 			-- Start capture
 			Capture:OnBegin()
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called on Begin")
+			assert.spy(refreshSpy).was_not.called()
 
 			-- Read page 1
 			Capture:OnReady()
 			pageCount = pageCount + 1
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called on page 1")
+			assert.spy(refreshSpy).was_not.called()
 
 			-- Read page 2
 			Capture:OnReady()
 			pageCount = pageCount + 1
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called on page 2")
+			assert.spy(refreshSpy).was_not.called()
 
 			-- Read page 3 (final page)
 			Capture:OnReady()
 			pageCount = pageCount + 1
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called on page 3")
+			assert.spy(refreshSpy).was_not.called()
 
 			-- Close book
 			Capture:OnClosed()
-			SpyHelpers.assertCalledTimes(refreshSpy, 1, "RefreshUI should be called exactly once after reading all pages")
+			assert.spy(refreshSpy).was.called(1)
 		end)
 	end)
 
@@ -156,7 +157,7 @@ describe("Capture System UI Refresh Behavior", function()
 		it("should not call RefreshUI if OnClosed is called without a session", function()
 			-- Call OnClosed without OnBegin/OnReady
 			Capture:OnClosed()
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called if no session exists")
+			assert.spy(refreshSpy).was_not.called()
 		end)
 	end)
 
@@ -178,10 +179,10 @@ describe("Capture System UI Refresh Behavior", function()
 			end
 
 			-- At this point, if there was a bug, RefreshUI would have been called 5 times
-			SpyHelpers.assertNotCalled(refreshSpy, "RefreshUI should not be called during page reads")
+			assert.spy(refreshSpy).was_not.called()
 
 			Capture:OnClosed()
-			SpyHelpers.assertCalledTimes(refreshSpy, 1, "RefreshUI should only be called once on close")
+			assert.spy(refreshSpy).was.called(1)
 		end)
 	end)
 end)
