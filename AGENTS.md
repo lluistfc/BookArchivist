@@ -134,8 +134,8 @@ make test-pattern PATTERN=Module  # Run specific tests
 - **No merge** without green checkmarks
 
 ### Why This Matters
-- **tests** protect against regressions
-- **4-second feedback loop** enables TDD workflow
+- **Automated tests** protect against regressions
+- **Fast feedback loop** enables TDD workflow
 - **Repository pattern** allows isolated test database
 - **Production DB restored** even after catastrophic test failures
 

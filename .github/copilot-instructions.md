@@ -59,8 +59,6 @@ make test-detailed     # All test results (JUnit-style)
 make test-pattern PATTERN=Module  # Run specific tests
 ```
 
-**Current test count: 269 tests (as of v2.1.0+locationfix)**
-
 ### Verification Commands
 ```bash
 make verify            # Full verification (validate + lint + test)
