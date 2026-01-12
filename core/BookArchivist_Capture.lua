@@ -224,6 +224,10 @@ function Capture:OnClosed()
 		if persisted and src.objectID and src.objectType == "GameObject" and Core.IndexObjectForBook then
 			Core:IndexObjectForBook(src.objectID, persisted.id or persisted.key)
 		end
+		-- Refresh UI to update location data (including backfilled locations)
+		if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
+			BookArchivist.RefreshUI()
+		end
 	end
 	session = nil
 end
