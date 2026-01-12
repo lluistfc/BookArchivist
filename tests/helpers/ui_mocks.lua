@@ -2,49 +2,12 @@
 -- ui_mocks.lua
 -- Shared mocking utilities for UI tests
 -- Provides consistent mock implementations across test files
+--
+-- NOTE: WoW API stubs (wipe, C_Timer, time, etc.) are now provided by
+-- Mechanic's wow_stubs.lua loaded in busted_bootstrap.lua
+-- This file focuses on BookArchivist-specific mocks only
 
 local UIMocks = {}
-
--- ============================================================================
--- WoW API Mocks
--- ============================================================================
-
---- Mock the wipe() function (used to clear tables)
-function UIMocks.mockWipe()
-	_G.wipe = function(tbl)
-		if type(tbl) ~= "table" then return end
-		for k in pairs(tbl) do
-			tbl[k] = nil
-		end
-		return tbl
-	end
-end
-
---- Mock C_Timer for delayed callbacks
-function UIMocks.mockTimer()
-	_G.C_Timer = {
-		After = function(delay, callback)
-			-- Execute immediately for test purposes
-			if callback then
-				callback()
-			end
-		end,
-	}
-end
-
---- Mock time() for consistent timestamps
----@param initialTime number? Starting timestamp (default: 1000)
----@return function advanceTime Function to increment time
-function UIMocks.mockTime(initialTime)
-	local currentTime = initialTime or 1000
-	_G.time = function()
-		return currentTime
-	end
-	return function(delta)
-		currentTime = currentTime + (delta or 1)
-		return currentTime
-	end
-end
 
 -- ============================================================================
 -- Database Mocks
@@ -290,11 +253,11 @@ end
 -- Helper Functions
 -- ============================================================================
 
---- Reset all global mocks (call in teardown)
+--- Reset BookArchivist global namespace (call in teardown)
+--- Note: WoW API globals (wipe, C_Timer, time) are provided by Mechanic
+--- and don't need manual cleanup
 function UIMocks.resetGlobals()
-	_G.wipe = nil
-	_G.C_Timer = nil
-	_G.time = nil
+	_G.BookArchivist = nil
 end
 
 --- Create a simple pagination mock

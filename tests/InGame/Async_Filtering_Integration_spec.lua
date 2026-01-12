@@ -38,22 +38,13 @@ _G.CreateFrame = function(frameType, name, parent, template)
 	return frame
 end
 
-_G.wipe = function(tbl)
-	for k in pairs(tbl) do
-		tbl[k] = nil
-	end
-	return tbl
-end
+-- NOTE: WoW API stubs (wipe, C_Timer) now provided by Mechanic's wow_stubs.lua
 
--- Mock C_Timer.After for async operations
-_G.C_Timer = {
-	After = function(delay, callback)
-		-- For testing, execute callback immediately
-		if callback then
-			callback()
-		end
-	end,
-}
+-- Mock time() for consistent timestamps
+local currentTime = 1000
+_G.time = function()
+	return currentTime
+end
 
 -- Setup BookArchivist namespace
 BookArchivist = BookArchivist or {}

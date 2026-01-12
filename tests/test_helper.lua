@@ -46,6 +46,25 @@ function TestHelper.loadFile(relativePath)
 	dofile(fullPath)
 end
 
+-- Load Mechanic's WoW API stubs
+-- This provides pre-built stubs for all C_* namespaces and common WoW APIs
+function TestHelper.loadMechanicStubs()
+	local mechanicPath = "G:/development/_dev_/Mechanic/sandbox/generated/wow_stubs.lua"
+	
+	-- Check if file exists
+	local f = io.open(mechanicPath, "r")
+	if f then
+		f:close()
+		dofile(mechanicPath)
+		return true
+	else
+		-- Fallback: warn but don't fail (allows tests to run without Mechanic)
+		print("WARNING: Mechanic wow_stubs.lua not found at: " .. mechanicPath)
+		print("         Tests will use inline mocks instead.")
+		return false
+	end
+end
+
 -- Setup BookArchivist namespace with common defaults
 function TestHelper.setupNamespace()
 	BookArchivist = BookArchivist or {}

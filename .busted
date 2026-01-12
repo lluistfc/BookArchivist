@@ -10,6 +10,9 @@ return {
     -- - InGame: Excluded (need rewriting for in-game execution with real WoW APIs)
     ROOT = { "Tests/Sandbox/", "Tests/Desktop/" },
     
+    -- Load Mechanic stubs before all tests
+    helper = "Tests/busted_bootstrap.lua",
+    
     -- Clean output (all diagnostic prints removed from source code)
     verbose = false
   }

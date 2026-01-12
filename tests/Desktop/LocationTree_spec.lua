@@ -2,6 +2,8 @@
 -- LocationTree_spec.lua
 -- Tests for BookArchivist location tree building and navigation
 -- Critical path: 861 lines of tree building, navigation, and breadcrumb logic
+--
+-- NOTE: WoW API stubs (wipe) now provided by Mechanic's wow_stubs.lua
 
 describe("BookArchivist_UI_List_Location", function()
 	local ListUI
@@ -14,15 +16,6 @@ describe("BookArchivist_UI_List_Location", function()
 		_G.BookArchivist.UI = _G.BookArchivist.UI or {}
 		_G.BookArchivist.UI.List = _G.BookArchivist.UI.List or {}
 		_G.BookArchivist.L = _G.BookArchivist.L or {}
-
-		-- Mock WoW API: wipe() function (used in ensureLocationPathValid)
-		_G.wipe = function(tbl)
-			if type(tbl) ~= "table" then return end
-			for k in pairs(tbl) do
-				tbl[k] = nil
-			end
-			return tbl
-		end
 
 		-- Mock localization
 		_G.BookArchivist.L = {
