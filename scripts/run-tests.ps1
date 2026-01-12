@@ -18,6 +18,88 @@ Write-Host "`n━━━━━━━━━━━━━━━━━━━━━━
 Write-Host "  BookArchivist Test Suite" -ForegroundColor Cyan
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Cyan
 
+# Detect environment: GitHub Actions vs Local Dev
+$isCI = $env:GITHUB_ACTIONS -eq "true"
+$useMechanic = $false
+
+# Try to use Mechanic in local dev (not CI)
+if (-not $isCI) {
+    # Check if we can use Mechanic CLI
+    $mechanicPath = $null
+    
+    # Try to find Mechanic via environment or relative path
+    if (Test-Path "../_dev_/Mechanic/desktop") {
+        $mechanicPath = "../_dev_/Mechanic"
+    } elseif ($env:MECHANIC_PATH -and (Test-Path "$env:MECHANIC_PATH/desktop")) {
+        $mechanicPath = $env:MECHANIC_PATH
+    } elseif (Test-Path ".env") {
+        # Try loading from .env file
+        Get-Content .env | ForEach-Object {
+            if ($_ -match '^\s*MECHANIC_PATH\s*=\s*(.+)\s*$') {
+                $path = $matches[1] -replace '[''"]', ''
+                if (Test-Path "$path/desktop") {
+                    $mechanicPath = $path
+                }
+            }
+        }
+    }
+    
+    if ($mechanicPath) {
+        # Check if mech CLI is available
+        Push-Location $mechanicPath
+        try {
+            $mechTest = py -m mechanic.cli --help 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                $useMechanic = $true
+                Write-Host "✓ Using Mechanic CLI for test execution" -ForegroundColor Green
+            }
+        } catch {
+            # Mechanic not available, fall back to busted
+        } finally {
+            Pop-Location
+        }
+    }
+}
+
+if (-not $useMechanic) {
+    Write-Host "✓ Using Busted directly" -ForegroundColor $(if ($isCI) { "Green" } else { "Yellow" })
+    if ($isCI) {
+        Write-Host "  (GitHub Actions environment detected)" -ForegroundColor Gray
+    }
+}
+
+# If using Mechanic, delegate to it
+if ($useMechanic) {
+    Push-Location $mechanicPath
+    try {
+        Write-Host "Running tests via Mechanic..." -ForegroundColor Yellow
+        Write-Host "Command: py -m mechanic.cli call addon.test`n" -ForegroundColor Gray
+        
+        $result = py -m mechanic.cli call addon.test '{"addon":"BookArchivist"}' 2>&1 | Out-String
+        Write-Host $result
+        
+        # Parse result for exit code
+        if ($result -match "(\d+) passed, (\d+) failed") {
+            $passed = [int]$matches[1]
+            $failed = [int]$matches[2]
+            
+            if ($failed -gt 0) {
+                exit 1
+            } else {
+                Write-Host "`n✓ All tests passed via Mechanic!" -ForegroundColor Green
+                exit 0
+            }
+        } else {
+            Write-Host "✓ Tests completed via Mechanic" -ForegroundColor Green
+            exit 0
+        }
+    } finally {
+        Pop-Location
+    }
+    exit 0
+}
+
+# Fall back to busted for CI or when Mechanic not available
 # Check if busted is available
 $bustedPath = Get-Command busted -ErrorAction SilentlyContinue
 if (-not $bustedPath) {
