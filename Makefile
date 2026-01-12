@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern test-coverage clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
+.PHONY: help test test-detailed test-errors test-verbose test-pattern test-coverage test-sandbox api-search clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -82,6 +82,10 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host '  make test-verbose    - Show raw busted output' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-pattern    - Run specific tests (use PATTERN=name)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-coverage   - Run tests with code coverage' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make test-sandbox    - Run Sandbox tests (30ms, optional)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host ''"
+	@pwsh -NoProfile -Command "Write-Host 'Mechanic Advanced:' -ForegroundColor White"
+	@pwsh -NoProfile -Command "Write-Host '  make api-search QUERY=term  - Search WoW APIs offline' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host ''"
 	@pwsh -NoProfile -Command "Write-Host 'Examples:' -ForegroundColor White"
 	@pwsh -NoProfile -Command "Write-Host '  make setup-mechanic' -ForegroundColor Green"
@@ -178,8 +182,36 @@ else
 	@$(CHMOD) $(TEST_CMD) -c
 endif
 
+# Mechanic Sandbox testing (optional - 30ms feedback)
+test-sandbox:
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -NoProfile -Command "Write-Host 'Running Sandbox tests (via Mechanic)...' -ForegroundColor Cyan"
+	@pwsh -NoProfile -Command "cd $(MECHANIC_DIR); & '$(MECHANIC_CLI)' call sandbox.test -i '{\"addon\": \"BookArchivist\"}'"
+else
+	@echo "Running Sandbox tests (via Mechanic)..."
+	@cd "$(MECHANIC_DIR)" && "$(MECHANIC_CLI)" call sandbox.test -i '{"addon": "BookArchivist"}'
+endif
+
+# Search WoW APIs offline
+api-search:
+ifndef QUERY
+	@echo "Error: QUERY not specified"
+	@echo "Usage: make api-search QUERY=GetSpellInfo"
+	@exit 1
+endif
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -NoProfile -Command "cd $(MECHANIC_DIR); & '$(MECHANIC_CLI)' call api.search -i '{\"query\": \"$(QUERY)\", \"limit\": 20}'"
+else
+	@cd "$(MECHANIC_DIR)" && "$(MECHANIC_CLI)" call api.search -i '{"query": "$(QUERY)", "limit": 20}'
+endif
+
 # Alias targets
 detailed: test-detailed
+errors: test-errors
+verbose: test-verbose
+pattern: test-pattern
+coverage: test-coverage
+sandbox: test-sandbox
 errors: test-errors
 verbose: test-verbose
 pattern: test-pattern

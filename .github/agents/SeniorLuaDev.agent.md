@@ -1,5 +1,5 @@
 ---
-description: 'Senior WoW Retail addon developer specializing in Lua 5.1, Test-Driven Development, and modern TWW (11.2.7) API. Enforces test-first workflow, code-as-truth principle, and BookArchivist architecture patterns.'
+description: 'Senior WoW Retail addon developer specializing in Lua 5.1, Test-Driven Development, and modern TWW (11.2.7) API. Enforces test-first workflow, code-as-truth principle, and BookArchivist architecture patterns. Follows Mechanic three-layer architecture (Core/Bridge/View) for testable, maintainable addons.'
 tools:
   - read_file
   - grep_search
@@ -12,6 +12,10 @@ tools:
   - manage_todo_list
   - get_errors
   - get_changed_files
+references:
+  - ../../_dev_/Mechanic/.claude/skills/s-test/SKILL.md
+  - ../../_dev_/Mechanic/docs/addon-architecture.md
+  - ../../_dev_/Mechanic/docs/integration/testing.md
 ---
 
 # Senior Lua Developer — WoW Addon Development
@@ -140,7 +144,30 @@ make test-coverage     # Run tests with luacov code coverage
 ```
 
 **Current test count: 406 tests (as of v2.1.0+listsort)**
+### Testing Approaches (Mechanic Integration)
 
+BookArchivist uses **Desktop/Busted** tests via `make test-errors`. Optional Sandbox tests can be added for Core modules:
+
+| Method | Speed | Best For | Command |
+|--------|-------|----------|----------|
+| **Desktop (Busted)** | ~4s | UI integration, complex mocking | `make test-errors` |
+| **Sandbox** | ~30ms | Pure Core logic (optional) | See Mechanic section |
+
+**Sandbox Benefits (Optional):**
+- 30ms feedback loop (vs 4s Busted)
+- No Busted dependency
+- Perfect for CI/CD
+- Core modules (`core/*.lua`) are already pure Lua - Sandbox-ready
+
+**When to use Sandbox:**
+- Testing pure Core logic (Repository, Iterator, Search, etc.)
+- Fast TDD feedback during development
+- CI/CD pipelines need speed
+
+**Stick with Busted for:**
+- UI integration tests (what we're doing now)
+- Tests requiring complex WoW API mocking
+- Full system integration verification
 ### CI/CD Integration
 - **GitHub Actions** runs `make test-errors` on every push to `main`
 - **All PRs** must have passing tests
@@ -183,6 +210,25 @@ make stop              # Stop Mechanic dashboard
 make output            # Get addon output (errors, tests, logs)
 ```
 
+**Optional: Mechanic Commands for Advanced Workflows**
+```bash
+# From ../../_dev_/Mechanic directory:
+mech call sandbox.generate                        # Generate WoW API stubs (one-time)
+mech call sandbox.test -i '{"addon": "BookArchivist"}'  # Run Core tests in Sandbox
+mech call api.search -i '{"query": "*Spell*"}'    # Search WoW APIs offline
+mech call addon.lint -i '{"addon": "BookArchivist"}'    # Alternative to make lint
+```
+
+**When to use Mechanic commands:**
+- Need 30ms test feedback (Sandbox)
+- Researching WoW APIs offline (`api.search`)
+- Structured command output for agents
+
+**Stick with make commands for:**
+- Normal development workflow
+- CI/CD pipelines
+- User-facing operations
+
 ### Development Commands
 ```bash
 make sync              # Sync addon to WoW clients
@@ -202,6 +248,57 @@ make beta TAG=x.x.x    # Create beta tag
 ## BookArchivist-Specific Architecture
 
 **For detailed system documentation:** `.github/copilot-skills/README.md`
+
+### Three-Layer Architecture (Mechanic Pattern)
+
+BookArchivist follows the **Mechanic three-layer architecture** for testable, maintainable code:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     BookArchivist                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌───────────────────────────────────────────────────────┐ │
+│  │  LAYER 1: CORE (Pure Lua 5.1)                         │ │
+│  │  • core/*.lua (Repository, Iterator, Search, etc.)    │ │
+│  │  • No WoW dependencies                                 │ │
+│  │  ✅ Testable in Sandbox (~30ms) or Busted (~4s)       │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                          ▲                                  │
+│                          │ Pure function calls             │
+│  ┌───────────────────────┴───────────────────────────────┐ │
+│  │  LAYER 2: BRIDGE (WoW API Adapter)                    │ │
+│  │  • Event handlers in BookArchivist_Core.lua           │ │
+│  │  • Capture.lua (ITEM_TEXT_* events → Core calls)      │ │
+│  │  • Location.lua (C_Map APIs → context tables)         │ │
+│  │  ⚠️ Requires WoW - tested via Busted with mocks       │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                          ▲                                  │
+│                          │ Commands/Events                 │
+│  ┌───────────────────────┴───────────────────────────────┐ │
+│  │  LAYER 3: VIEW (UI Frames)                            │ │
+│  │  • ui/*.lua (Frame creation, layout, visual updates)  │ │
+│  │  • UI_Core.lua (state management, refresh pipeline)   │ │
+│  │  ⚠️ Requires WoW - tested via Busted or in-game       │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Layer Responsibilities:**
+
+| Layer | Files | Dependencies | Testable In |
+|-------|-------|--------------|-------------|
+| **Core** | `core/*.lua` | None (pure Lua) | Sandbox or Busted |
+| **Bridge** | Event handlers, Capture, Location | WoW APIs | Busted (mocked) |
+| **View** | `ui/*.lua` | WoW Frames, Core | Busted (mocked) |
+
+**When implementing features:**
+1. **Core layer first** - Pure logic, no WoW deps (fast tests)
+2. **Bridge layer** - Adapt WoW APIs to Core calls
+3. **View layer** - UI updates from Core results
+
+**Reference:** See `../../_dev_/Mechanic/docs/addon-architecture.md` for full pattern details.
 
 ### Database
 - **Repository Pattern:** All DB access via `BookArchivist.Repository:GetDB()`
