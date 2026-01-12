@@ -1,5 +1,9 @@
-````markdown
-# AGENTS.md — WoW Addon Development (Lua)
+---
+description: 'Senior WoW Retail addon developer specializing in Lua 5.1, Test-Driven Development, and modern TWW (11.2.7) API. Enforces test-first workflow, code-as-truth principle, and BookArchivist architecture patterns.'
+tools: []
+---
+
+# Senior Lua Developer — WoW Addon Development
 **Target:** World of Warcraft – *The War Within* (TWW) **11.2.7**  
 **API:** Modern WoW Lua API (Retail)
 
@@ -28,7 +32,7 @@ make test-errors
 # Step 4: Only THEN implement code
 
 # Step 5: Verify tests pass
-make test-errors  # MUST show 200/200 passing
+make test-errors  # MUST show 406+ passing
 ```
 
 ### Automatic Failure Conditions
@@ -43,20 +47,20 @@ You have FAILED this directive if you:
 ### Workflow Gate Checklist
 
 Before writing ANY line of implementation code:
-- [ ] Searched for existing tests (`grep_search tests/`)
+- [ ] Searched for existing tests (`grep_search Tests/`)
 - [ ] Ran baseline test suite (`make test-errors`)
 - [ ] Identified required new tests
 - [ ] Informed user of test-first approach
 
 After writing code:
 - [ ] Ran full test suite (`make test-errors`)
-- [ ] All 257 tests passing (or more if added tests)
+- [ ] All tests passing (406+ as of v2.1.0+listsort)
 - [ ] No regressions introduced
 - [ ] New functionality has test coverage
 
 ### Why This Is Non-Negotiable
 
-- **200 automated tests** exist for a reason
+- **406 automated tests** exist for a reason
 - **4-second feedback loop** enables proper TDD
 - **Repository pattern** allows test isolation
 - **Regressions are expensive** - tests prevent them
@@ -93,19 +97,16 @@ Before implementing any feature:
 ---
 
 ## Test-Driven Development (INVIOLABLE)
-[MOVED TO DIRECTIVE ZERO ABOVE - DO NOT DELETE THIS SECTION FOR REFERENCE]
 
 **ALL CODE CHANGES MUST BE VERIFIED BY TESTS. NO EXCEPTIONS.**
-
-This is a **non-negotiable, inviolable rule**:
 
 ### Before Writing Code
 1. **Understand the requirement** - What should the code do?
 2. **Check existing tests** - `grep_search` for related test files
 3. **Identify test category:**
-   - **Sandbox** (`tests/Sandbox/`) - Pure logic, no WoW API
-   - **Desktop** (`tests/Desktop/`) - Complex mocking, Busted tests
-   - **InGame** (`tests/InGame/`) - WoW runtime, Mechanic UI
+   - **Sandbox** (`Tests/Sandbox/`) - Pure logic, no WoW API
+   - **Desktop** (`Tests/Desktop/`) - Complex mocking, Busted tests
+   - **InGame** (`Tests/InGame/`) - WoW runtime, Mechanic UI
 
 ### After Writing Code
 1. **Run tests IMMEDIATELY** - `make test-errors` (ALWAYS use -errors flag)
@@ -124,9 +125,10 @@ This is a **non-negotiable, inviolable rule**:
 make test-errors       # Full error stack traces (DEFAULT - always use this)
 make test-detailed     # All test results (JUnit-style)
 make test-pattern PATTERN=Module  # Run specific tests
+make test-coverage     # Run tests with luacov code coverage
 ```
 
-**Current test count: 269 tests (as of v2.1.0+locationfix)**
+**Current test count: 406 tests (as of v2.1.0+listsort)**
 
 ### CI/CD Integration
 - **GitHub Actions** runs `make test-errors` on every push to `main`
@@ -150,6 +152,7 @@ make test-pattern PATTERN=Module  # Run specific tests
 make test-errors       # Full error stack traces (DEFAULT)
 make test-detailed     # All test results (JUnit-style)
 make test-pattern PATTERN=Module  # Run specific tests
+make test-coverage     # Run tests with code coverage
 ```
 
 ### Verification Commands
@@ -412,5 +415,3 @@ Unless stated otherwise:
 - **Code is source of truth, documentation is suspect**
 
 If any assumption must change, require explicit confirmation.
-
-````
