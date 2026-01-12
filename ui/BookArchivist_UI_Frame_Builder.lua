@@ -124,18 +124,19 @@ function FrameUI:BuildContent(frame, opts)
 				end
 
 				-- Content ready, proceed with refresh
-			if opts.onShow then
-				local ok, err = pcall(opts.onShow, frame)
-				if not ok and opts.logError then
-					opts.logError("Error refreshing UI: " .. tostring(err))
+				if opts.onShow then
+					local ok, err = pcall(opts.onShow, frame)
+					if not ok and opts.logError then
+						opts.logError("Error refreshing UI: " .. tostring(err))
+					end
 				end
-			end
-		end)
+			end)
 
-		if opts.onAfterCreate then
-			pcall(opts.onAfterCreate, frame)
-		end
-	end,
+			if opts.onAfterCreate then
+				pcall(opts.onAfterCreate, frame)
+			end
+		end,
+	}
 
 	-- Execute steps asynchronously with yields
 	local function runStep(index)
