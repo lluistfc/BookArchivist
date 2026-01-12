@@ -514,8 +514,59 @@ function ListUI:Create(uiFrame)
 		self:SetFrame("helpButton", helpButton)
 	end
 
-	-- Bottom: Resume button only
+	-- Bottom: Random button and Resume button
 	local bottomButtonsHost = headerRightBottom or headerRight
+
+	-- Random Book button
+	local randomButton = self:SafeCreateFrame("Button", nil, bottomButtonsHost)
+	if randomButton then
+		randomButton:SetSize(26, 26)
+		
+		-- Use dice icon texture (no button template background)
+		local texture = randomButton:CreateTexture(nil, "ARTWORK")
+		if texture then
+			texture:SetTexture("Interface\\Buttons\\UI-GroupLoot-Dice-Up")
+			texture:SetAllPoints(randomButton)
+		end
+		
+		-- Highlight texture for hover effect
+		local highlight = randomButton:CreateTexture(nil, "HIGHLIGHT")
+		if highlight then
+			highlight:SetTexture("Interface\\Buttons\\UI-GroupLoot-Dice-Highlight")
+			highlight:SetAllPoints(randomButton)
+			highlight:SetBlendMode("ADD")
+		end
+		
+		-- Position at left of bottom row
+		randomButton:SetPoint("LEFT", bottomButtonsHost, "LEFT", 0, 0)
+		
+		randomButton:SetScript("OnClick", function()
+			local RandomBook = BookArchivist and BookArchivist.RandomBook
+			if not RandomBook or not RandomBook.OpenRandomBook then
+				return
+			end
+			
+			-- Open a random book with location context
+			RandomBook:OpenRandomBook()
+		end)
+		
+		randomButton:SetScript("OnEnter", function(self)
+			if not GameTooltip then
+				return
+			end
+			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+			GameTooltip:SetText(t("RANDOM_BOOK_TOOLTIP"))
+			GameTooltip:Show()
+		end)
+		
+		randomButton:SetScript("OnLeave", function()
+			if GameTooltip then
+				GameTooltip:Hide()
+			end
+		end)
+		
+		self:SetFrame("randomButton", randomButton)
+	end
 
 	local resumeButton = self:SafeCreateFrame("Button", nil, bottomButtonsHost, "UIPanelButtonTemplate")
 	if resumeButton then
@@ -762,6 +813,9 @@ function ListUI:Create(uiFrame)
 	self:UpdateCountsDisplay()
 	if self.UpdateResumeButton then
 		self:UpdateResumeButton()
+	end
+	if self.UpdateRandomButton then
+		self:UpdateRandomButton()
 	end
 	self:DebugPrint("[BookArchivist] ListUI created")
 end

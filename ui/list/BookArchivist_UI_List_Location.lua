@@ -285,7 +285,7 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
 			)
 		end
 	else
-		for _, key in ipairs(paginated) do
+		for i, key in ipairs(paginated) do
 			table.insert(rows, { kind = "book", key = key })
 		end
 	end
@@ -294,6 +294,13 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
 	state.totalRows = totalItems
 	state.currentPage = page
 	state.totalPages = totalPages
+	
+	if listUI.DebugPrint then
+		listUI:DebugPrint(string.format(
+			"[BookArchivist] rebuildLocationRows: page=%d/%d, items=%d, paginated=%d, rows=%d (startIdx=%d, endIdx=%d)",
+			page, totalPages, totalItems, #paginated, #rows, startIdx or 0, endIdx or 0
+		))
+	end
 end
 
 function ListUI:GetLocationRows()

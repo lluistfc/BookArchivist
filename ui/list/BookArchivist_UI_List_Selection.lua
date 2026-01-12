@@ -38,6 +38,9 @@ function ListUI:NotifySelectionChanged()
 	if self.UpdateResumeButton then
 		self:UpdateResumeButton()
 	end
+	if self.UpdateRandomButton then
+		self:UpdateRandomButton()
+	end
 end
 
 function ListUI:ShowBookContextMenu(anchorButton, bookKey)

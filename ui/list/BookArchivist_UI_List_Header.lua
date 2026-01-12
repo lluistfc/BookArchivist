@@ -178,3 +178,33 @@ function ListUI:UpdateResumeButton()
 	end
 	button:Show()
 end
+
+function ListUI:UpdateRandomButton()
+	local button = self:GetFrame("randomButton")
+	if not button then
+		return
+	end
+	
+	local addon = self:GetAddon()
+	if not addon or not addon.GetDB then
+		button:Disable()
+		return
+	end
+	
+	local db = addon:GetDB() or {}
+	local order = db.order or {}
+	
+	if #order == 0 then
+		-- No books in library - disable button
+		button:Disable()
+		if button.SetAlpha then
+			button:SetAlpha(0.5)
+		end
+	else
+		-- Books exist - enable button
+		button:Enable()
+		if button.SetAlpha then
+			button:SetAlpha(1.0)
+		end
+	end
+end

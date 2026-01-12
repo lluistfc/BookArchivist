@@ -194,6 +194,26 @@ function ListUI:UpdateList()
 		paginationFrame:Hide()
 	end
 
+	-- Check if location page changed and needs rebuild
+	local state = self:GetLocationState()
+	local requestedPage = self:GetPage()
+	local locationCurrentPage = state.currentPage or 1
+	
+	self:DebugPrint(string.format("[BookArchivist] UpdateList locations: requestedPage=%d, locationCurrentPage=%d", requestedPage, locationCurrentPage))
+	
+	if requestedPage ~= locationCurrentPage then
+		-- Page changed, rebuild location rows with new page
+		self:DebugPrint(string.format("[BookArchivist] UpdateList locations: page changed, rebuilding with page %d", requestedPage))
+		state.currentPage = requestedPage
+		if self.RebuildLocationRows then
+			local pageSize = self:GetPageSize()
+			self:RebuildLocationRows(state, self, pageSize, requestedPage)
+		end
+		if self.UpdateLocationBreadcrumbUI then
+			self:UpdateLocationBreadcrumbUI()
+		end
+	end
+
 	-- Get location pagination info
 	local locPagination = self.GetLocationPagination and self:GetLocationPagination()
 		or { totalRows = 0, currentPage = 1, totalPages = 1 }
@@ -205,6 +225,19 @@ function ListUI:UpdateList()
 	end
 
 	local rows = self:GetLocationRows()
+	self:DebugPrint(string.format("[BookArchivist] UpdateList locations: displaying %d rows", #rows))
+	
+	-- Debug: Show sample of book keys in rows
+	local sampleKeys = {}
+	for i = 1, math.min(3, #rows) do
+		if rows[i] and rows[i].kind == "book" and rows[i].key then
+			table.insert(sampleKeys, rows[i].key)
+		end
+	end
+	if #sampleKeys > 0 then
+		self:DebugPrint(string.format("[BookArchivist] UpdateList locations: sample keys: %s", table.concat(sampleKeys, ", ")))
+	end
+	
 	local total = #rows
 	local state = self:GetLocationState()
 	local activeNode = state.activeNode or state.root
