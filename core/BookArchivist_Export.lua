@@ -10,6 +10,9 @@ local Serialize = BookArchivist.Serialize
 local Base64 = BookArchivist.Base64
 local CRC32 = BookArchivist.CRC32
 
+-- Try to get LibDeflate (optional dependency)
+local LibDeflate = LibStub and LibStub("LibDeflate", true)
+
 local function EncodeBDB1Envelope(payload)
 	if not payload then
 		return nil, "payload missing"
@@ -21,7 +24,17 @@ local function EncodeBDB1Envelope(payload)
 	if not serialized then
 		return nil, err or "serialization failed"
 	end
+	
+	-- Compress data if LibDeflate available and schemaVersion >= 2
 	local compressed = serialized
+	local useCompression = LibDeflate and payload.schemaVersion and payload.schemaVersion >= 2
+	
+	if useCompression then
+		compressed = LibDeflate:CompressDeflate(serialized, {level = 9})
+		if not compressed then
+			return nil, "compression failed"
+		end
+	end
 
 	local crc
 	if CRC32 and CRC32.Compute then
@@ -36,7 +49,13 @@ local function EncodeBDB1Envelope(payload)
 		return nil, "base64 encoder unavailable"
 	end
 
-	local encoded = Base64.Encode(compressed)
+	-- Use LibDeflate's base64 encoder if available (more efficient)
+	local encoded
+	if useCompression and LibDeflate then
+		encoded = LibDeflate:EncodeForPrint(compressed)
+	else
+		encoded = Base64.Encode(compressed)
+	end
 
 	local CHUNK_SIZE = 16384
 	local totalChunks = math.max(1, math.ceil(#encoded / CHUNK_SIZE))
@@ -85,6 +104,9 @@ local function DecodeBDB1Envelope(raw)
 	if not (Base64 and Base64.Decode) then
 		return nil, nil, "Decode unavailable"
 	end
+	
+	-- Try to get LibDeflate for v2 decoding
+	local LibDeflate = LibStub and LibStub("LibDeflate", true)
 
 	-- Strategy: extract everything between header and footer,
 	-- strip all control lines (BDB1|S|, BDB1|C|, BDB1|E), and
@@ -123,11 +145,14 @@ local function DecodeBDB1Envelope(raw)
 		body = body:gsub("BDB%d+|E", "")
 	end
 
-	-- Remove everything that isn't valid base64
-	body = body:gsub("[^A-Za-z0-9+/=]+", "")
+	-- Remove whitespace/control chars but keep all potentially valid encoding chars
+	-- Standard base64: [A-Za-z0-9+/=]
+	-- LibDeflate EncodeForPrint: [A-Za-z0-9()]
+	-- Keep union of both: [A-Za-z0-9+/=()]
+	body = body:gsub("[^A-Za-z0-9+/=()]+", "")
 
 	if BookArchivist and BookArchivist.DebugPrint then
-		BookArchivist:DebugPrint("[BA Decode] Base64 length: " .. #body)
+		BookArchivist:DebugPrint("[BA Decode] Cleaned length: " .. #body)
 		BookArchivist:DebugPrint("[BA Decode] Expected CRC: " .. tostring(expectedCRC))
 		BookArchivist:DebugPrint("[BA Decode] Expected size: " .. tostring(expectedSize))
 	end
@@ -138,9 +163,26 @@ local function DecodeBDB1Envelope(raw)
 
 	local encoded = body
 
-	local compressed, err = Base64.Decode(encoded)
-	if not compressed then
-		return nil, nil, "Decode failed: " .. tostring(err)
+	-- Auto-detect encoding: if it contains ( or ), it's LibDeflate encoding
+	-- Otherwise it's standard base64
+	local usesLibDeflateEncoding = encoded:match("[()]") ~= nil
+	
+	-- Decode based on detected encoding
+	local compressed, err
+	if usesLibDeflateEncoding and LibDeflate then
+		-- LibDeflate's EncodeForPrint format
+		compressed = LibDeflate:DecodeForPrint(encoded)
+		if not compressed then
+			return nil, nil, "LibDeflate decode failed (6-bit encoding)"
+		end
+	elseif usesLibDeflateEncoding and not LibDeflate then
+		return nil, nil, "Data uses LibDeflate encoding but library not available"
+	else
+		-- Standard base64
+		compressed, err = Base64.Decode(encoded)
+		if not compressed then
+			return nil, nil, "Decode failed: " .. tostring(err)
+		end
 	end
 
 	if BookArchivist and BookArchivist.DebugPrint then
@@ -157,7 +199,28 @@ local function DecodeBDB1Envelope(raw)
 		end
 	end
 
+	-- Decompress if this is v2 format
 	local serialized = compressed
+	if headerSchema >= 2 then
+		if not LibDeflate then
+			-- LibDeflate not available - treat as v1 fallback
+			-- This happens in test environments or if dependency missing
+			if BookArchivist and BookArchivist.DebugPrint then
+				BookArchivist:DebugPrint("[BA Decode] WARNING: v2 format but LibDeflate unavailable, treating as uncompressed")
+			end
+			-- Data should already be uncompressed (v1 fallback during export)
+		else
+			local decompressed = LibDeflate:DecompressDeflate(compressed)
+			if not decompressed then
+				return nil, nil, "Decompression failed (v2 format)"
+			end
+			if BookArchivist and BookArchivist.DebugPrint then
+				BookArchivist:DebugPrint("[BA Decode] Decompressed length: " .. #decompressed)
+			end
+			serialized = decompressed
+		end
+	end
+	
 	if expectedSize > 0 and #serialized ~= expectedSize then
 		if BookArchivist and BookArchivist.DebugPrint then
 			BookArchivist:DebugPrint("[BA Decode] Size mismatch: got " .. #serialized .. ", expected " .. expectedSize)

@@ -236,7 +236,22 @@ local function HandleComm(prefix, message, distribution, sender)
 		return
 	end
 
-	local success, data = AceSerializer:Deserialize(message)
+	-- Try to decompress if this looks like compressed data
+	local LibDeflate = LibStub and LibStub("LibDeflate", true)
+	local processedMessage = message
+	
+	if LibDeflate then
+		local decoded = LibDeflate:DecodeForPrint(message)
+		if decoded then
+			local decompressed = LibDeflate:DecompressDeflate(decoded)
+			if decompressed then
+				processedMessage = decompressed
+				BookArchivist:DebugPrint("|cFF00FF00[ChatLinks DEBUG]|r Decompressed message")
+			end
+		end
+	end
+
+	local success, data = AceSerializer:Deserialize(processedMessage)
 	if not success or type(data) ~= "table" then
 		BookArchivist:DebugPrint(
 			"|cFFFF0000[ChatLinks DEBUG]|r Deserialize failed or not a table:",
@@ -324,6 +339,23 @@ function ChatLinks:HandleBookRequest(sender, bookTitle)
 
 	if AceSerializer and AceComm then
 		local serialized = AceSerializer:Serialize(response)
+		
+		-- Compress if LibDeflate available and response contains book data
+		local LibDeflate = LibStub and LibStub("LibDeflate", true)
+		if LibDeflate and response.bookData then
+			local compressed = LibDeflate:CompressDeflate(serialized, {level = 9})
+			if compressed then
+				serialized = LibDeflate:EncodeForPrint(compressed)
+				response.compressed = true -- Flag for receiver
+				-- Re-serialize with compression flag
+				serialized = AceSerializer:Serialize(response)
+				compressed = LibDeflate:CompressDeflate(serialized, {level = 9})
+				if compressed then
+					serialized = LibDeflate:EncodeForPrint(compressed)
+				end
+			end
+		end
+		
 		AceComm:SendCommMessage("BookArchivist", serialized, "WHISPER", sender)
 	end
 end

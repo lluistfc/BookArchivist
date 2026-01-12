@@ -8,6 +8,7 @@
 
 # Ace3 libraries
 libs\LibStub\LibStub.lua
+libs\LibDeflate\LibDeflate.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 libs\AceSerializer-3.0\AceSerializer-3.0.xml
 libs\AceComm-3.0\AceComm-3.0.xml

@@ -448,8 +448,13 @@ function Core:BuildExportPayload()
 	if type(GetRealmName) == "function" then
 		realm = GetRealmName()
 	end
+	
+	-- Use v2 schema if LibDeflate is available, otherwise v1
+	local LibDeflate = LibStub and LibStub("LibDeflate", true)
+	local schemaVersion = LibDeflate and 2 or 1
+	
 	return {
-		schemaVersion = 1,
+		schemaVersion = schemaVersion,
 		exportedAt = now(),
 		character = {
 			name = name or "?",
@@ -481,9 +486,13 @@ function Core:BuildExportPayloadForBook(bookId)
 	-- Export only the selected book
 	local singleBookTable = {}
 	singleBookTable[bookId] = db.booksById[bookId]
+	
+	-- Use v2 schema if LibDeflate is available, otherwise v1
+	local LibDeflate = LibStub and LibStub("LibDeflate", true)
+	local schemaVersion = LibDeflate and 2 or 1
 
 	return {
-		schemaVersion = 1,
+		schemaVersion = schemaVersion,
 		exportedAt = now(),
 		character = {
 			name = name or "?",

@@ -245,8 +245,10 @@ function ImportWorker:_Step(_elapsed)
 			if type(payload) ~= "table" then
 				return self:_Fail("Invalid payload type")
 			end
-			if payload.schemaVersion ~= 1 then
-				return self:_Fail("Unsupported schemaVersion: " .. tostring(payload.schemaVersion))
+			-- Accept both v1 (uncompressed) and v2 (compressed) formats
+			local version = payload.schemaVersion or 1
+			if version ~= 1 and version ~= 2 then
+				return self:_Fail("Unsupported schemaVersion: " .. tostring(version) .. ". Please update BookArchivist.")
 			end
 			if type(payload.booksById) ~= "table" then
 				return self:_Fail("Payload missing booksById")

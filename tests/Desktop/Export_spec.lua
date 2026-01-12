@@ -316,4 +316,176 @@ describe("Export (BDB1 Format)", function()
 			assert.are.equal("Book 50 with some longer title text", result.books.book50.title)
 		end)
 	end)
+
+	describe("Compression (v2 with LibDeflate)", function()
+		-- Try to load LibDeflate if available
+		local LibDeflate
+		local hasLibDeflate = pcall(function()
+			-- Load from local libs folder
+			LibDeflate = dofile("libs/LibDeflate/LibDeflate.lua")
+		end)
+
+		if hasLibDeflate and LibDeflate then
+			-- Make LibDeflate available via LibStub for decoder
+			_G.LibStub = _G.LibStub or function(name, silent)
+				if name == "LibDeflate" then
+					return LibDeflate
+				end
+				return nil
+			end
+
+			it("should detect LibDeflate availability", function()
+				assert.is_not_nil(LibDeflate)
+				assert.is_function(LibDeflate.CompressDeflate)
+				assert.is_function(LibDeflate.DecompressDeflate)
+				assert.is_function(LibDeflate.EncodeForPrint)
+				assert.is_function(LibDeflate.DecodeForPrint)
+			end)
+
+			it("should compress data with v2 schema", function()
+				-- Create test data
+				local testData = string.rep("This is repeated test data. ", 100)
+				
+				-- Compress
+				local compressed = LibDeflate:CompressDeflate(testData, {level = 9})
+				
+				assert.is_not_nil(compressed)
+				assert.is_true(#compressed < #testData, 
+					string.format("Compressed size (%d) should be less than original (%d)", #compressed, #testData))
+				
+				-- Verify compression ratio
+				local ratio = (1 - (#compressed / #testData)) * 100
+				assert.is_true(ratio > 50, 
+					string.format("Compression ratio should be > 50%%, got %.1f%%", ratio))
+			end)
+
+			it("should achieve 75%+ compression on book data", function()
+				-- Create realistic book data
+				local bookPages = {}
+				for i = 1, 6 do
+					bookPages[i] = string.format([[
+						<HTML><BODY>
+						<H1>Chapter %d</H1>
+						<P>This is the content of chapter %d. It contains repeated phrases and common words that should compress well. The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</P>
+						<P>More content here with similar patterns. The library contains many books with similar formatting and repeated vocabulary.</P>
+						</BODY></HTML>
+					]], i, i)
+				end
+				
+				local book = {
+					title = "Test Book with Long Title",
+					material = "Parchment",
+					pages = bookPages,
+					createdAt = 1234567890,
+				}
+				
+				local payload = {
+					schemaVersion = 2,
+					booksById = { ["test-book-id"] = book },
+					exportedAt = 1234567890,
+				}
+				
+				-- Serialize
+				local serialized = BookArchivist.Serialize.SerializeTable(payload)
+				local originalSize = #serialized
+				
+				-- Compress
+				local compressed = LibDeflate:CompressDeflate(serialized, {level = 9})
+				local compressedSize = #compressed
+				
+				-- Calculate reduction
+				local reduction = (1 - (compressedSize / originalSize)) * 100
+				
+				assert.is_true(reduction >= 75, 
+					string.format("Expected 75%% reduction, got %.1f%% (original: %d, compressed: %d)", 
+						reduction, originalSize, compressedSize))
+			end)
+
+			it("should round-trip compress and decompress", function()
+				local original = "Test data for compression"
+				
+				local compressed = LibDeflate:CompressDeflate(original, {level = 9})
+				local decompressed = LibDeflate:DecompressDeflate(compressed)
+				
+				assert.are.equal(original, decompressed)
+			end)
+
+			it("should encode compressed data for safe transmission", function()
+				local original = "Test data"
+				
+				local compressed = LibDeflate:CompressDeflate(original, {level = 9})
+				local encoded = LibDeflate:EncodeForPrint(compressed)
+				
+				-- Encoded should be base64-like (printable characters)
+				assert.is_string(encoded)
+				assert.is_true(#encoded > 0)
+				
+				-- Should decode back
+				local decoded = LibDeflate:DecodeForPrint(encoded)
+				local decompressed = LibDeflate:DecompressDeflate(decoded)
+				
+				assert.are.equal(original, decompressed)
+			end)
+
+			it("should round-trip full v2 BDB1 envelope with compression", function()
+				-- Create realistic book payload
+				local originalPayload = {
+					schemaVersion = 2,
+					booksById = {
+						["test-book-1"] = {
+							title = "Test Book",
+							material = "Parchment",
+							pages = {
+								[1] = "<HTML><BODY><H1>Chapter 1</H1><P>This is test content that should compress well.</P></BODY></HTML>",
+								[2] = "<HTML><BODY><H1>Chapter 2</H1><P>More content with repeated patterns and words.</P></BODY></HTML>",
+							},
+							location = {
+								zoneText = "Stormwind",
+								subZoneText = "Trade District",
+							},
+							createdAt = 1234567890,
+						},
+					},
+					exportedAt = 1234567890,
+				}
+				
+				-- Serialize
+				local serialized = BookArchivist.Serialize.SerializeTable(originalPayload)
+				
+				-- Compress with LibDeflate
+				local compressed = LibDeflate:CompressDeflate(serialized, {level = 9})
+				local encoded = LibDeflate:EncodeForPrint(compressed)
+				
+				-- Verify compression actually reduced size
+				assert.is_true(#encoded < #BookArchivist.Base64.Encode(serialized),
+					"Compressed+encoded size should be less than uncompressed base64")
+				
+				-- Build BDB1 envelope with v2 header
+				-- NOTE: CRC is computed on compressed data, rawSize is uncompressed size
+				local crc = BookArchivist.CRC32:Compute(compressed)
+				local envelope = string.format("BDB1|S|2|%u|%d|2\nBDB1|C|1|%s\nBDB1|E", crc, #serialized, encoded)
+				
+				-- Decode the envelope (this should decompress)
+				local decoded, schema, err = BookArchivist.Core._DecodeBDB1Envelope(envelope)
+				assert.is_nil(err)
+				assert.are.equal(2, schema)
+				
+				-- Deserialize and verify data integrity
+				local result = BookArchivist.Serialize.DeserializeTable(decoded)
+				
+				assert.are.equal(2, result.schemaVersion)
+				assert.is_not_nil(result.booksById["test-book-1"])
+				assert.are.equal("Test Book", result.booksById["test-book-1"].title)
+				assert.are.equal("Parchment", result.booksById["test-book-1"].material)
+				assert.are.equal(2, #result.booksById["test-book-1"].pages)
+				assert.are.equal("Stormwind", result.booksById["test-book-1"].location.zoneText)
+				assert.are.equal(1234567890, result.booksById["test-book-1"].createdAt)
+			end)
+		else
+			it("should skip compression tests when LibDeflate not available", function()
+				-- This test always passes, just documents that LibDeflate is missing
+				assert.is_true(true, "LibDeflate not available in test environment - compression tests skipped")
+			end)
+		end
+	end)
 end)
