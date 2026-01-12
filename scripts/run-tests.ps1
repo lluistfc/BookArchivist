@@ -9,7 +9,7 @@ param(
     [switch]$Coverage,     # Enable code coverage with luacov
     [string]$Pattern = ""  # Filter tests by pattern
 )
-
+$OutputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
 $ErrorActionPreference = "Stop"
 # Script is in scripts/ folder, addon root is parent
 $addonPath = Split-Path -Parent $PSScriptRoot

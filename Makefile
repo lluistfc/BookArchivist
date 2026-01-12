@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
+.PHONY: help test test-detailed test-errors test-verbose test-pattern test-coverage clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -81,6 +81,7 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host '  make test-errors     - Show full error stack traces' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-verbose    - Show raw busted output' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-pattern    - Run specific tests (use PATTERN=name)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make test-coverage   - Run tests with code coverage' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host ''"
 	@pwsh -NoProfile -Command "Write-Host 'Examples:' -ForegroundColor White"
 	@pwsh -NoProfile -Command "Write-Host '  make setup-mechanic' -ForegroundColor Green"
@@ -118,6 +119,7 @@ else
 	@echo "  make test-errors     - Show full error stack traces"
 	@echo "  make test-verbose    - Show raw busted output"
 	@echo "  make test-pattern    - Run specific tests (use PATTERN=name)"
+	@echo "  make test-coverage   - Run tests with code coverage"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make setup-mechanic"
@@ -168,11 +170,20 @@ else
 	@$(CHMOD) $(TEST_CMD) -p "$(PATTERN)"
 endif
 
+test-coverage:
+	@echo "Running tests with coverage on $(DETECTED_OS)..."
+ifeq ($(DETECTED_OS),Windows)
+	@$(TEST_CMD) -Coverage
+else
+	@$(CHMOD) $(TEST_CMD) -c
+endif
+
 # Alias targets
 detailed: test-detailed
 errors: test-errors
 verbose: test-verbose
 pattern: test-pattern
+coverage: test-coverage
 
 # Mechanic setup and verification
 check-mechanic:
