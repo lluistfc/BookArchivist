@@ -22,8 +22,13 @@ Write-Host "━━━━━━━━━━━━━━━━━━━━━━�
 $isCI = $env:GITHUB_ACTIONS -eq "true"
 $useMechanic = $false
 
-# Try to use Mechanic in local dev (not CI)
-if (-not $isCI) {
+# Coverage requires busted directly (Mechanic doesn't collect coverage)
+if ($Coverage) {
+    Write-Host "✓ Coverage mode enabled - using Busted directly" -ForegroundColor Yellow
+    $useMechanic = $false
+}
+# Try to use Mechanic in local dev (not CI, not coverage)
+elseif (-not $isCI) {
     # Check if we can use Mechanic CLI
     $mechanicPath = $null
     
