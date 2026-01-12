@@ -204,9 +204,7 @@ function Capture:OnReady()
 		if persisted and src.objectID and src.objectType == "GameObject" and Core.IndexObjectForBook then
 			Core:IndexObjectForBook(src.objectID, persisted.id or persisted.key)
 		end
-		if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
-			BookArchivist.RefreshUI()
-		end
+		-- Don't refresh UI on every page read - wait for OnClosed to refresh once
 	end
 end
 
