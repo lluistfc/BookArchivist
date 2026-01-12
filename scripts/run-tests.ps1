@@ -6,6 +6,7 @@ param(
     [switch]$Verbose,      # Show full busted output (raw)
     [switch]$Detailed,     # Show each test result (JUnit-style)
     [switch]$ShowErrors,   # Display full error stack traces
+    [switch]$Coverage,     # Enable code coverage with luacov
     [string]$Pattern = ""  # Filter tests by pattern
 )
 
@@ -30,6 +31,10 @@ if (-not $bustedPath) {
 $cmd = "busted"
 $args = @()
 
+if ($Coverage) {
+    $args += "--coverage"
+}
+
 if ($Verbose) {
     $args += "--verbose"
 }
@@ -40,6 +45,9 @@ if ($Pattern) {
 
 # Run tests
 Write-Host "Running tests..." -ForegroundColor Yellow
+if ($Coverage) {
+    Write-Host "Coverage: Enabled (luacov)" -ForegroundColor Cyan
+}
 if ($Pattern) {
     Write-Host "Pattern: $Pattern" -ForegroundColor Gray
 }
