@@ -1,6 +1,6 @@
 return {
+  reporter = "console",  -- Colorized terminal output
   statsfile = "coverage/luacov.stats.out",
-  reportfile = "coverage/luacov.report.out",
   exclude = {
     "Tests/",
     "docs/",
@@ -9,4 +9,5 @@ return {
     "media"
   }
 }
+-- Console output goes directly to terminal when you run: luacov
 
