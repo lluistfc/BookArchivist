@@ -2,3 +2,6 @@
 # Luacov coverage files
 luacov.stats.out
 luacov.report.out
+
+# Environment configuration
+.env

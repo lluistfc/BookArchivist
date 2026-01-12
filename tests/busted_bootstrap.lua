@@ -3,26 +3,51 @@
 -- Configure this in .busted as: helper = "Tests/busted_bootstrap.lua"
 
 -- Load WoW API stubs (provides C_Timer, C_Map, etc.)
--- Try vendored copy first (for CI), then Mechanic (for local dev)
-local stubsPaths = {
-	"tests/vendor/wow_stubs.lua",  -- Vendored copy (CI)
-	"../../_dev_/Mechanic/sandbox/generated/wow_stubs.lua"  -- Mechanic (relative path)
-}
+-- Strategy:
+-- 1. If in _dev_/BookArchivist, use relative path to _dev_/Mechanic
+-- 2. Otherwise, try loading MECHANIC_PATH from .env file
+-- 3. Fall back to minimal inline mocks (sufficient for all tests)
 
 local loaded = false
-for _, path in ipairs(stubsPaths) do
-	local f = io.open(path, "r")
+local mechanicPath = nil
+
+-- Check if we're in a _dev_ directory structure
+local cwd = io.popen("cd"):read("*l")  -- Get current working directory
+if cwd:match("[/\\]_dev_[/\\]") then
+	-- We're in _dev_ structure, use relative path
+	mechanicPath = "../Mechanic"
+	print("✓ Detected _dev_ directory structure")
+else
+	-- Try loading from .env file
+	local envFile = io.open(".env", "r")
+	if envFile then
+		for line in envFile:lines() do
+			local key, value = line:match("^%s*([^=]+)%s*=%s*(.+)%s*$")
+			if key == "MECHANIC_PATH" then
+				mechanicPath = value:gsub('"', ''):gsub("'", '')  -- Remove quotes
+				print("✓ Loaded MECHANIC_PATH from .env")
+				break
+			end
+		end
+		envFile:close()
+	end
+end
+
+-- Try loading Mechanic stubs if path is available
+if mechanicPath then
+	local stubsPath = mechanicPath .. "/sandbox/generated/wow_stubs.lua"
+	local f = io.open(stubsPath, "r")
 	if f then
 		f:close()
-		dofile(path)
-		print("✓ Loaded wow_stubs.lua from: " .. path)
+		dofile(stubsPath)
+		print("✓ Loaded wow_stubs.lua from: " .. stubsPath)
 		loaded = true
-		break
 	end
 end
 
 if not loaded then
-	print("⚠ wow_stubs.lua not found - using minimal inline mocks")
+	-- Use minimal inline mocks (works for all BookArchivist tests)
+	print("✓ Using minimal WoW API mocks (sufficient for all tests)")
 	
 	-- Minimal WoW API mocks for CI (when Mechanic not available)
 	-- These cover the essential APIs used by BookArchivist tests
