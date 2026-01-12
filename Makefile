@@ -184,11 +184,11 @@ else
 endif
 
 coverage-stats:
-	@echo "Generating coverage statistics..."
+	@echo "Generating coverage report..."
 ifeq ($(DETECTED_OS),Windows)
-	@pwsh -NoProfile -Command "luacov-console -s"
+	@pwsh -NoProfile -Command "luacov | Out-Null; Get-Content coverage/luacov.report.out | Select-Object -Last 40"
 else
-	@luacov-console -s
+	@luacov > /dev/null && tail -n 40 coverage/luacov.report.out
 endif
 
 # Mechanic Sandbox testing (optional - 30ms feedback)
