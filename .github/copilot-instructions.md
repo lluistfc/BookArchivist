@@ -21,7 +21,7 @@ When the user requests code changes, you MUST:
 5. **CONFIRM** - Tell the user: "I need to check/write tests first"
 6. **TEST** - Run `make test-errors` to establish baseline
 7. **IMPLEMENT** - Only then write the actual feature code
-8. **VALIDATE** - Run `make test-errors` again, all 200 tests must pass
+8. **VALIDATE** - Run `make test-errors` again, all tests must pass (257+ as of v2.1.0)
 9. **COMMIT-GATE** - If tests fail, the task is NOT complete
 
 ### This Applies To
@@ -47,6 +47,50 @@ If you write code before confirming test status:
 - User should call you out immediately
 
 **Remember: "Implementation complete" means tests pass, not "code written".**
+
+---
+
+## 📋 Make Commands Reference
+
+### Test Commands (ALWAYS use test-errors)
+```bash
+make test-errors       # Full error stack traces (DEFAULT)
+make test-detailed     # All test results (JUnit-style)
+make test-pattern PATTERN=Module  # Run specific tests
+```
+
+**Current test count: 269 tests (as of v2.1.0+locationfix)**
+
+### Verification Commands
+```bash
+make verify            # Full verification (validate + lint + test)
+make validate          # Validate addon structure (.toc, files)
+make lint              # Run Luacheck linter
+make warnings          # Show detailed lint warnings
+```
+
+### Mechanic Integration
+```bash
+make check-mechanic    # Verify Mechanic CLI is available
+make setup-mechanic    # Clone and install Mechanic
+make run               # Start Mechanic dashboard
+make stop              # Stop Mechanic dashboard
+make output            # Get addon output (errors, tests, logs)
+```
+
+### Development Commands
+```bash
+make sync              # Sync addon to WoW clients
+make link              # Link addon to WoW (via addon.sync)
+make unlink            # Unlink addon from WoW clients
+```
+
+### Release Commands
+```bash
+make release TAG=x.x.x # Create release tag
+make alpha TAG=x.x.x   # Create alpha tag
+make beta TAG=x.x.x    # Create beta tag
+```
 
 ---
 

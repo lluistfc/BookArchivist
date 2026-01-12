@@ -50,7 +50,7 @@ Before writing ANY line of implementation code:
 
 After writing code:
 - [ ] Ran full test suite (`make test-errors`)
-- [ ] All 200 tests passing (or more if added tests)
+- [ ] All 257 tests passing (or more if added tests)
 - [ ] No regressions introduced
 - [ ] New functionality has test coverage
 
@@ -108,7 +108,7 @@ This is a **non-negotiable, inviolable rule**:
    - **InGame** (`tests/InGame/`) - WoW runtime, Mechanic UI
 
 ### After Writing Code
-1. **Run tests IMMEDIATELY** - `make test` or `make test-errors`
+1. **Run tests IMMEDIATELY** - `make test-errors` (ALWAYS use -errors flag)
 2. **Verify all tests pass** - Zero tolerance for failures
 3. **If tests fail:**
    - ❌ **DO NOT COMMIT**
@@ -121,11 +121,12 @@ This is a **non-negotiable, inviolable rule**:
 
 ### Test Execution Commands
 ```bash
-make test              # Quick summary (200 tests in ~4s)
-make test-errors       # Full error stack traces
+make test-errors       # Full error stack traces (DEFAULT - always use this)
 make test-detailed     # All test results (JUnit-style)
 make test-pattern PATTERN=Module  # Run specific tests
 ```
+
+**Current test count: 269 tests (as of v2.1.0+locationfix)**
 
 ### CI/CD Integration
 - **GitHub Actions** runs `make test-errors` on every push to `main`
@@ -139,6 +140,48 @@ make test-pattern PATTERN=Module  # Run specific tests
 - **Production DB restored** even after catastrophic test failures
 
 **REMEMBER: If you didn't test it, it doesn't work. Test first, code second.**
+
+---
+
+## Make Commands Reference
+
+### Test Commands (ALWAYS use test-errors)
+```bash
+make test-errors       # Full error stack traces (DEFAULT)
+make test-detailed     # All test results (JUnit-style)
+make test-pattern PATTERN=Module  # Run specific tests
+```
+
+### Verification Commands
+```bash
+make verify            # Full verification (validate + lint + test)
+make validate          # Validate addon structure (.toc, files)
+make lint              # Run Luacheck linter
+make warnings          # Show detailed lint warnings
+```
+
+### Mechanic Integration
+```bash
+make check-mechanic    # Verify Mechanic CLI is available
+make setup-mechanic    # Clone and install Mechanic
+make run               # Start Mechanic dashboard
+make stop              # Stop Mechanic dashboard
+make output            # Get addon output (errors, tests, logs)
+```
+
+### Development Commands
+```bash
+make sync              # Sync addon to WoW clients
+make link              # Link addon to WoW (via addon.sync)
+make unlink            # Unlink addon from WoW clients
+```
+
+### Release Commands
+```bash
+make release TAG=x.x.x # Create release tag
+make alpha TAG=x.x.x   # Create alpha tag
+make beta TAG=x.x.x    # Create beta tag
+```
 
 ---
 
