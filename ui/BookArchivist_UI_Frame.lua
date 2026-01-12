@@ -58,7 +58,7 @@ local function buildFrame(safeCreateFrame)
 		debugPrint = debugPrint,
 		logError = logError,
 		onOptions = function()
-			if addonRoot and type(addonRoot.OpenOptionsPanel) == "function" then
+			if addonRoot and addonRoot.OpenOptionsPanel then
 				addonRoot:OpenOptionsPanel()
 			end
 		end,

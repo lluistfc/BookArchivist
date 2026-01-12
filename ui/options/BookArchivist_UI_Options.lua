@@ -143,7 +143,7 @@ local function RegisterNativeSettings()
 				BookArchivistDB.options.tooltip.enabled = boolValue
 
 				-- Apply runtime state immediately
-				if BookArchivist and type(BookArchivist.SetTooltipEnabled) == "function" then
+				if BookArchivist and BookArchivist.SetTooltipEnabled then
 					BookArchivist:SetTooltipEnabled(boolValue)
 				end
 			end
@@ -488,7 +488,7 @@ local function CreateToolsFrame()
 				if BookArchivist and BookArchivist.DebugPrint then
 					BookArchivist:DebugPrint("[Import] Import completed: " .. tostring(summary or ""))
 				end
-				if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
+				if BookArchivist and BookArchivist.RefreshUI then
 					BookArchivist.RefreshUI()
 				end
 			end,

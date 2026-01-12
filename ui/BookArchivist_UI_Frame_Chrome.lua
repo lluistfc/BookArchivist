@@ -146,7 +146,7 @@ local function configureOptionsButton(frame, safeCreateFrame, onOptions)
 		end
 	end)
 	button:SetScript("OnClick", function()
-		if type(onOptions) == "function" then
+		if onOptions then
 			local ok, err = pcall(onOptions)
 			if not ok and BookArchivist and BookArchivist.LogError then
 				BookArchivist:LogError("BookArchivist options button failed: " .. tostring(err))

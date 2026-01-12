@@ -74,7 +74,7 @@ function addonRoot.EnableDebugLogging(state, skipPersist)
 	end
 	if DEBUG_LOGGING then
 		chatMessage("|cFF00FF00BookArchivist debug logging enabled.|r")
-		if type(addonRoot.RefreshUI) == "function" then
+		if addonRoot.RefreshUI then
 			addonRoot.RefreshUI()
 		end
 	else

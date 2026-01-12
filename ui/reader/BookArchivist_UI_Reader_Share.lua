@@ -241,9 +241,9 @@ function ReaderShare:ShareCurrentBook(addon, bookKey)
 
 	-- Generate export for single book
 	local exportStr, err
-	if addon.ExportBook and type(addon.ExportBook) == "function" then
+	if addon.ExportBook then
 		exportStr, err = addon:ExportBook(bookKey)
-	elseif addon.Export and type(addon.Export) == "function" then
+	elseif addon.Export then
 		-- Fallback to full export if ExportBook doesn't exist
 		exportStr, err = addon:Export()
 	end

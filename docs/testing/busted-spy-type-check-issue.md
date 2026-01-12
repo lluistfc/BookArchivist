@@ -1,6 +1,10 @@
-# Busted Spy Incompatibility with Strict `type()` Checks
+# Busted Spy Compatibility with Duck-Typed Callbacks
 
-## The Real Problem
+## Background
+
+Originally, BookArchivist used strict `type(x) == "function"` checks for extension points, which blocked testing tools. This has been **refactored as of v2.1.0+**.
+
+## The Problem (Historical)
 
 Strict `type(x) == "function"` checks are **overly defensive for extension points** and actively resist testing tools. Senior Lua developers avoid this pattern for callbacks and hooks.
 
@@ -17,17 +21,19 @@ This breaks:
 - Wrapped callbacks
 - Test instrumentation
 
-## What Senior Lua Devs Do
+## What Senior Lua Devs Do (Now Implemented)
 
-### For Extension Points / Callbacks (our case)
+### ✅ For Extension Points / Callbacks (our current code)
 ```lua
--- Most idiomatic: truthy check + call attempt
+-- Idiomatic: truthy check + call attempt
 if BookArchivist and BookArchivist.RefreshUI then
     BookArchivist.RefreshUI()
 end
 ```
 
 **Why:** Lua is duck-typed. If it's callable, it works. If not, you get a clear error at the call site.
+
+**Test compatibility:** Works seamlessly with Busted's `spy.on()` - no workarounds needed.
 
 ### For Controlled Internal APIs
 ```lua
@@ -37,9 +43,23 @@ assert(type(callback) == "function", "callback must be a function")
 
 **When to use:** Performance-critical paths, closed APIs, deliberate rejection of non-functions.
 
-## Our Workaround
+## Status: ✅ REFACTORED
 
-Since we can't change production code mid-release, we use **manual call tracking**:
+All BookArchivist extension points now use duck-typed callable checks. Tests use Busted's native `spy.on()` without workarounds.
+
+**Files refactored (v2.1.0+):**
+- `core/BookArchivist_Capture.lua` - RefreshUI callback
+- `ui/reader/BookArchivist_UI_Reader_Share.lua` - ExportBook/Export callbacks
+- `ui/reader/BookArchivist_UI_Reader_Layout.lua` - RefreshUI callback
+- `ui/list/BookArchivist_UI_List_Selection.lua` - RefreshUI callback
+- `ui/options/BookArchivist_UI_Options.lua` - SetTooltipEnabled, SetResumeLastPageEnabled, SetLanguage, RefreshUI callbacks
+- `ui/BookArchivist_UI_Core.lua` - RefreshUI callback
+- `ui/BookArchivist_UI_Frame_Chrome.lua` - OpenOptionsPanel callback
+- `ui/BookArchivist_UI_Frame.lua` - OpenOptionsPanel callback
+
+## Historical: The Workaround (No Longer Needed)
+
+Before the refactor, we used **manual call tracking** to work around the type checks:
 
 ```lua
 -- Manual spy (temporary solution)
@@ -53,23 +73,15 @@ local spy = {
     reset = function() callCount = 0 end
 }
 
--- Works with type() checks
+-- Works with type() checks (historical workaround)
 assert.equals(1, spy.getCallCount())
 ```
 
-## The Fix (Future Refactor)
+This approach is **no longer necessary** - all code now uses duck-typed checks.
 
-Change `BookArchivist_Capture.lua` line 226 from:
-```lua
-if BookArchivist and type(BookArchivist.RefreshUI) == "function" then
-```
+## Benefits Achieved
 
-To:
-```lua
-if BookArchivist and BookArchivist.RefreshUI then
-```
-
-This makes the code:
+The refactoring provides:
 - ✅ More testable (works with Busted spies)
 - ✅ More extensible (works with proxies/wrappers)
 - ✅ More idiomatic (duck-typed Lua)

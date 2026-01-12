@@ -715,7 +715,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				addon.Favorites:Toggle(key)
 				local isFav = addon.Favorites:IsFavorite(key)
 				syncFavoriteVisual(self, isFav)
-				if type(addon.RefreshUI) == "function" then
+				if addon.RefreshUI then
 					addon:RefreshUI()
 				end
 			end)

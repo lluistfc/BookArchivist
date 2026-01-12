@@ -67,7 +67,7 @@ function ListUI:ShowBookContextMenu(anchorButton, bookKey)
 				else
 					addon.Favorites:Set(bookKey, true)
 				end
-				if type(addon.RefreshUI) == "function" then
+				if addon.RefreshUI then
 					addon:RefreshUI()
 				end
 			end,
