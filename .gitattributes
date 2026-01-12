@@ -4,12 +4,13 @@ Tests/ export-ignore
 scripts/ export-ignore
 docs/ export-ignore
 media/ export-ignore
+coverage/ export-ignore
 libs/libs.json export-ignore
 Makefile export-ignore
 .busted export-ignore
+.luacov export-ignore
 
 # Exclude markdown except release changelog
-AGENTS.md export-ignore
 ui/AGENTS.md export-ignore
 README.md export-ignore
 CHANGELOG.md export-ignore
@@ -20,6 +21,8 @@ CHANGELOG.md export-ignore
 .gitattributes export-ignore
 .pkgmeta export-ignore
 .vscode/ export-ignore
+.claude
+.env.dist export-ignore
 BookArchivist_logo.png export-ignore
 
 # Shell scripts should have LF line endings

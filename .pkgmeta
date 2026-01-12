@@ -12,6 +12,7 @@ ignore:
     - Tests
     - scripts
     - docs
+    - coverage
     - libs/libs.json
     
     # Development documentation
@@ -22,6 +23,8 @@ ignore:
     - media
     - Makefile
     - .busted
+    - .env.dist
+    - .luacov
 
     # Git and IDE
     - .git
@@ -29,6 +32,7 @@ ignore:
     - .gitattributes
     - .vscode
     - .github
+    - .claude
     
     # Release process files
     - .pkgmeta
