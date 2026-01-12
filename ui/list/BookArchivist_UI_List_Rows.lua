@@ -194,24 +194,19 @@ function ListUI:UpdateList()
 		paginationFrame:Hide()
 	end
 
-	-- Check if location page changed and needs rebuild
+	-- Always rebuild location rows to ensure current page is displayed
 	local state = self:GetLocationState()
 	local requestedPage = self:GetPage()
-	local locationCurrentPage = state.currentPage or 1
 	
-	self:DebugPrint(string.format("[BookArchivist] UpdateList locations: requestedPage=%d, locationCurrentPage=%d", requestedPage, locationCurrentPage))
+	self:DebugPrint(string.format("[BookArchivist] UpdateList locations: rebuilding with page %d", requestedPage))
 	
-	if requestedPage ~= locationCurrentPage then
-		-- Page changed, rebuild location rows with new page
-		self:DebugPrint(string.format("[BookArchivist] UpdateList locations: page changed, rebuilding with page %d", requestedPage))
-		state.currentPage = requestedPage
-		if self.RebuildLocationRows then
-			local pageSize = self:GetPageSize()
-			self:RebuildLocationRows(state, self, pageSize, requestedPage)
-		end
-		if self.UpdateLocationBreadcrumbUI then
-			self:UpdateLocationBreadcrumbUI()
-		end
+	-- Rebuild location rows with current page
+	if self.RebuildLocationRows then
+		local pageSize = self:GetPageSize()
+		self.RebuildLocationRows(state, self, pageSize, requestedPage)
+	end
+	if self.UpdateLocationBreadcrumbUI then
+		self:UpdateLocationBreadcrumbUI()
 	end
 
 	-- Get location pagination info
