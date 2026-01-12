@@ -1,1 +1,4 @@
 .vscode
+# Luacov coverage files
+luacov.stats.out
+luacov.report.out
