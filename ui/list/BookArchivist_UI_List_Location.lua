@@ -561,6 +561,10 @@ function ListUI:RebuildLocationTree()
 
 	local db = addon:GetDB()
 
+	-- Invalidate cache when explicitly rebuilding (data may have changed)
+	treeCache = {}
+	lastCacheKey = nil
+
 	-- Phase 2: Generate cache key from current filters
 	local categoryId = "__all__"
 	if self.GetCategoryId then
@@ -575,20 +579,6 @@ function ListUI:RebuildLocationTree()
 	local favoritesOnly = filters.favoritesOnly and "true" or "false"
 	local searchText = (self.__state and self.__state.searchText) or ""
 	local cacheKey = categoryId .. "|" .. favoritesOnly .. "|" .. searchText
-
-	-- Check cache first
-	if lastCacheKey == cacheKey then
-		if BookArchivist.LogInfo then
-			BookArchivist:LogInfo("Using cached location tree")
-		end
-		state.root = treeCache[cacheKey]
-		state.currentPage = 1 -- Reset to page 1
-		ensureLocationPathValid(state)
-		local pageSize = self:GetPageSize()
-		local page = state.currentPage or 1
-		rebuildLocationRows(state, self, pageSize, page)
-		return
-	end
 
 	-- Phase 2: Show loading progress
 	local mainFrame = _G["BookArchivistFrame"]
