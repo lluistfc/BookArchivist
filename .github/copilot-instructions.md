@@ -332,6 +332,8 @@ locales/*       — Localization (enUS, esES, caES, frFR, deDE, itIT, ptBR)
 ### When working on...
 
 #### **Database/Persistence**
+**Skill:** [k-savedvariables](../.claude/skills/k-savedvariables/SKILL.md)
+
 - **Repository Pattern**: All DB access goes through `BookArchivist.Repository:GetDB()`
 - **Dependency Injection**: `Repository:Init(database)` injects the active database
 - SavedVariables: `BookArchivistDB` (per-character)
@@ -347,16 +349,22 @@ locales/*       — Localization (enUS, esES, caES, frFR, deDE, itIT, ptBR)
 - Zero test-specific code in Repository (pure dependency injection)
 
 #### **Capture system**
+**Skill:** [k-capture](../.claude/skills/k-capture/SKILL.md)
+
 - Events: `ITEM_TEXT_BEGIN` → `ITEM_TEXT_READY` → `ITEM_TEXT_CLOSED`
 - Session lifecycle: OnBegin → OnReady (per page) → OnClosed
 - Persistence: incremental on READY, final on CLOSED
 - Location: resolved via `BookArchivist.Location:BuildWorldLocation()`
+**Skill:** [k-list-panel](../.claude/skills/k-list-panel/SKILL.md)
+
 
 #### **List filtering**
 - **Always use async Iterator** (prevents UI freeze)
 - Budget: 16ms per iteration chunk
 - See: `ui/list/BookArchivist_UI_List_Filter.lua`
 - Filter state: `BookArchivist.UI.Internal.getFilterState()`
+**Skill:** [k-reader-panel](../.claude/skills/k-reader-panel/SKILL.md)
+
 
 #### **Reader rendering**
 - Mode detection: HTML vs plain text
@@ -485,11 +493,30 @@ end
 → Update all 7 locale files if adding new keys
 
 **Need to know what a module does?**
-→ Check `.github/copilot-skills/*.md` first  
+→ Check Claude skills (see "Knowledge Skills Reference" below)  
 → Then `read_file` the actual source to verify
 
 **Documentation contradicts code?**
 → THE CODE IS CORRECT  
 → Update documentation to match code
+
+---
+
+## 📚 Knowledge Skills Reference
+
+For deep dives into specific systems, reference these Claude skills:
+
+| Skill | Topic | Key Content |
+|-------|-------|-------------|
+| [k-savedvariables](../.claude/skills/k-savedvariables/SKILL.md) | Database & Persistence | BookArchivistDB schema, Repository pattern, indexes, migrations |
+| [k-capture](../.claude/skills/k-capture/SKILL.md) | Book Capture System | ItemText events, session lifecycle, incremental persistence |
+| [k-favorites](../.claude/skills/k-favorites/SKILL.md) | Favorites & Recent | MRU list, favorite flags, virtual categories |
+| [k-tooltip](../.claude/skills/k-tooltip/SKILL.md) | Tooltip Integration | GameTooltip hooks, index lookups, "Archived" indicator |
+| [k-import-export](../.claude/skills/k-import-export/SKILL.md) | Import/Export | BDB1 format, async import worker, merge semantics |
+| [k-ui-refresh](../.claude/skills/k-ui-refresh/SKILL.md) | UI Refresh Flow | ViewModel, RefreshUI pipeline, lazy initialization |
+| [k-list-panel](../.claude/skills/k-list-panel/SKILL.md) | List Panel UI | Async filtering, sorting, pagination, categories |
+| [k-reader-panel](../.claude/skills/k-reader-panel/SKILL.md) | Reader Panel UI | Content rendering, SimpleHTML, navigation, actions |
+
+**Full details:** Each skill references complete documentation in `.github/copilot-skills/`
 
 ---
