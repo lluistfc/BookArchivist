@@ -148,10 +148,12 @@ function ChatLinks:RequestBookFromSender(senderName, bookTitle)
 		{ 1, (L["REQUESTING_BOOK"] or "Requesting book from %s..."):format(senderNameClean), 1, 0.82, 0 },
 	})
 
-	-- Send request
+	-- Send request with capability info
+	local LibDeflate = LibStub and LibStub("LibDeflate", true)
 	local request = {
 		m = "request",
 		title = bookTitle,
+		supportsCompression = LibDeflate ~= nil, -- Tell sender if we support compression
 	}
 
 	BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Sending request via AceComm:")
@@ -267,8 +269,9 @@ local function HandleComm(prefix, message, distribution, sender)
 
 	if data.m == "request" then
 		BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Received request for:", data.title)
+		BookArchivist:DebugPrint("  supports compression:", data.supportsCompression and "yes" or "no")
 		-- Someone is requesting a book from us
-		ChatLinks:HandleBookRequest(sender, data.title)
+		ChatLinks:HandleBookRequest(sender, data.title, data)
 	elseif data.m == "response" then
 		BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Received response")
 		-- We received book data - clear loading state immediately
@@ -295,7 +298,7 @@ local function HandleComm(prefix, message, distribution, sender)
 end
 
 -- Handle book request from another player
-function ChatLinks:HandleBookRequest(sender, bookTitle)
+function ChatLinks:HandleBookRequest(sender, bookTitle, requestData)
 	local count = 0
 	for _ in pairs(linkedBooks) do
 		count = count + 1
@@ -340,20 +343,20 @@ function ChatLinks:HandleBookRequest(sender, bookTitle)
 	if AceSerializer and AceComm then
 		local serialized = AceSerializer:Serialize(response)
 		
-		-- Compress if LibDeflate available and response contains book data
+		-- Only compress if receiver supports it (indicated in request)
 		local LibDeflate = LibStub and LibStub("LibDeflate", true)
-		if LibDeflate and response.bookData then
+		local receiverSupportsCompression = requestData and requestData.supportsCompression
+		
+		if LibDeflate and receiverSupportsCompression and response.bookData then
+			BookArchivist:DebugPrint("|cFF00FF00[ChatLinks DEBUG]|r Compressing response (receiver supports it)")
 			local compressed = LibDeflate:CompressDeflate(serialized, {level = 9})
 			if compressed then
 				serialized = LibDeflate:EncodeForPrint(compressed)
-				response.compressed = true -- Flag for receiver
-				-- Re-serialize with compression flag
-				serialized = AceSerializer:Serialize(response)
-				compressed = LibDeflate:CompressDeflate(serialized, {level = 9})
-				if compressed then
-					serialized = LibDeflate:EncodeForPrint(compressed)
-				end
+			else
+				BookArchivist:DebugPrint("|cFFFF0000[ChatLinks DEBUG]|r Compression failed, sending uncompressed")
 			end
+		else
+			BookArchivist:DebugPrint("|cFFFFAA00[ChatLinks DEBUG]|r Sending uncompressed (receiver=", receiverSupportsCompression and "supports" or "doesn't support", "compression)")
 		end
 		
 		AceComm:SendCommMessage("BookArchivist", serialized, "WHISPER", sender)
