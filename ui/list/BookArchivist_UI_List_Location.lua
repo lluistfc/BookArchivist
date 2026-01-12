@@ -593,6 +593,8 @@ function ListUI:RebuildLocationTree()
 		end
 		treeCache[cacheKey] = buildResult
 		lastCacheKey = cacheKey
+		-- Set state.root for ensureLocationPathValid and rebuildLocationRows
+		state.root = buildResult
 		state.currentPage = 1
 		ensureLocationPathValid(state)
 		local pageSize = self:GetPageSize()
@@ -673,6 +675,8 @@ function ListUI:RebuildLocationTree()
 			-- Cache the result
 			treeCache[cacheKey] = root
 			lastCacheKey = cacheKey
+			-- CRITICAL: Set state.root so ensureLocationPathValid and rebuildLocationRows can access the tree
+			state.root = root
 			state.currentPage = 1 -- Start at page 1
 			ensureLocationPathValid(state)
 
