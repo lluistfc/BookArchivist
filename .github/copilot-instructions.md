@@ -19,7 +19,7 @@ When the user requests code changes, you MUST:
 5. **CONFIRM** - Tell the user: "I need to check/write tests first"
 6. **TEST** - Run `make test-errors` to establish baseline
 7. **IMPLEMENT** - Only then write the actual feature code
-8. **VALIDATE** - Run `make test-errors` again, all tests must pass (257+ as of v2.1.0)
+8. **VALIDATE** - Run `make test-errors` again, all tests must pass
 9. **COMMIT-GATE** - If tests fail, the task is NOT complete
 
 ### This Applies To
@@ -58,8 +58,6 @@ make test-pattern PATTERN=Module  # Run specific tests
 make test-coverage     # Run tests with code coverage
 make test-sandbox      # Run Sandbox tests (30ms, optional)
 ```
-
-**Current test count: 406 tests (as of v2.1.0+listsort)**
 
 **Testing Approaches:**
 
