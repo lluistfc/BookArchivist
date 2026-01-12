@@ -33,38 +33,38 @@ Internal.chatMessage = chatMessage
 
 -- Debug functions now delegate to BookArchivist core
 local function debugMessage(msg)
-	if addonRoot and type(addonRoot.DebugMessage) == "function" then
+	if addonRoot and addonRoot.DebugMessage then
 		addonRoot:DebugMessage(msg)
 	end
 end
 Internal.debugMessage = debugMessage
 
 local function debugPrint(...)
-	if addonRoot and type(addonRoot.DebugPrint) == "function" then
+	if addonRoot and addonRoot.DebugPrint then
 		addonRoot:DebugPrint(...)
 	end
 end
 Internal.debugPrint = debugPrint
 
 function Internal.getDebugLog()
-	if addonRoot and type(addonRoot.GetDebugLog) == "function" then
+	if addonRoot and addonRoot.GetDebugLog then
 		return addonRoot:GetDebugLog()
 	end
 	return {}
 end
 
 function Internal.clearDebugLog()
-	if addonRoot and type(addonRoot.ClearDebugLog) == "function" then
+	if addonRoot and addonRoot.ClearDebugLog then
 		addonRoot:ClearDebugLog()
 	end
 end
 
 function addonRoot.EnableDebugLogging(state, skipPersist)
 	-- Clear log when disabling debug mode
-	if not state and addonRoot and type(addonRoot.ClearDebugLog) == "function" then
+	if not state and addonRoot and addonRoot.ClearDebugLog then
 		addonRoot:ClearDebugLog()
 	end
-	if not skipPersist and type(addonRoot.SetDebugEnabled) == "function" then
+	if not skipPersist and addonRoot.SetDebugEnabled then
 		addonRoot:SetDebugEnabled(DEBUG_LOGGING)
 		return
 	end

@@ -53,7 +53,8 @@ All BookArchivist extension points now use duck-typed callable checks. Tests use
 - `ui/reader/BookArchivist_UI_Reader_Layout.lua` - RefreshUI callback
 - `ui/list/BookArchivist_UI_List_Selection.lua` - RefreshUI callback
 - `ui/options/BookArchivist_UI_Options.lua` - SetTooltipEnabled, SetResumeLastPageEnabled, SetLanguage, RefreshUI callbacks
-- `ui/BookArchivist_UI_Core.lua` - RefreshUI callback
+- `ui/BookArchivist_UI_Core.lua` - DebugMessage, DebugPrint, GetDebugLog, ClearDebugLog, SetDebugEnabled, RefreshUI callbacks
+- `ui/BookArchivist_UI_Frame_Builder.lua` - onShow, onAfterCreate option callbacks (also fixed bug where onAfterCreate was checked but never invoked)
 - `ui/BookArchivist_UI_Frame_Chrome.lua` - OpenOptionsPanel callback
 - `ui/BookArchivist_UI_Frame.lua` - OpenOptionsPanel callback
 

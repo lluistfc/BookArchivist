@@ -124,23 +124,18 @@ function FrameUI:BuildContent(frame, opts)
 				end
 
 				-- Content ready, proceed with refresh
-				if type(opts.onShow) == "function" then
-					local ok, err = pcall(opts.onShow, frame)
-					if not ok and opts.logError then
-						opts.logError("Error refreshing UI: " .. tostring(err))
-					end
+			if opts.onShow then
+				local ok, err = pcall(opts.onShow, frame)
+				if not ok and opts.logError then
+					opts.logError("Error refreshing UI: " .. tostring(err))
 				end
-			end)
-
-			if type(opts.onAfterCreate) == "function" then
-				pcall(opts.onAfterCreate, frame)
 			end
+		end)
 
-			if opts.debugPrint then
-				opts.debugPrint("[BookArchivist] setupUI: async build complete")
-			end
-		end,
-	}
+		if opts.onAfterCreate then
+			pcall(opts.onAfterCreate, frame)
+		end
+	end,
 
 	-- Execute steps asynchronously with yields
 	local function runStep(index)
