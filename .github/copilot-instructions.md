@@ -6,6 +6,50 @@ Repository-wide rules for WoW addon development. Follow unless explicitly overri
 
 ---
 
+## ⛔ MANDATORY GATE: TEST-DRIVEN DEVELOPMENT
+
+**STOP: Read this before writing ANY code.**
+
+### Rule Zero: Tests Are NOT Optional
+
+When the user requests code changes, you MUST:
+
+1. **STOP** - Do not write any implementation code yet
+2. **CHECK** - Run `grep_search` for existing tests in `tests/` folder
+3. **VERIFY** - Understand current test structure and patterns
+4. **PLAN** - Identify what tests need to be written/updated
+5. **CONFIRM** - Tell the user: "I need to check/write tests first"
+6. **TEST** - Run `make test-errors` to establish baseline
+7. **IMPLEMENT** - Only then write the actual feature code
+8. **VALIDATE** - Run `make test-errors` again, all 200 tests must pass
+9. **COMMIT-GATE** - If tests fail, the task is NOT complete
+
+### This Applies To
+
+✅ **YES - Test first:**
+- New features
+- Bug fixes
+- Refactoring
+- Architecture changes
+- Export/import modifications
+- Database schema changes
+
+❌ **NO - Test not required:**
+- Documentation-only changes
+- Comments-only changes
+- Localization string additions (unless logic changes)
+
+### Enforcement
+
+If you write code before confirming test status:
+- You have failed this directive
+- The code is untrusted
+- User should call you out immediately
+
+**Remember: "Implementation complete" means tests pass, not "code written".**
+
+---
+
 ## 🚨 NON-NEGOTIABLE RULES
 
 ### 1. Code is the source of truth
