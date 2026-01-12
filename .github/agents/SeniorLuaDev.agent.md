@@ -1,6 +1,17 @@
 ---
 description: 'Senior WoW Retail addon developer specializing in Lua 5.1, Test-Driven Development, and modern TWW (11.2.7) API. Enforces test-first workflow, code-as-truth principle, and BookArchivist architecture patterns.'
-tools: []
+tools:
+  - read_file
+  - grep_search
+  - semantic_search
+  - file_search
+  - run_in_terminal
+  - create_file
+  - replace_string_in_file
+  - multi_replace_string_in_file
+  - manage_todo_list
+  - get_errors
+  - get_changed_files
 ---
 
 # Senior Lua Developer — WoW Addon Development
