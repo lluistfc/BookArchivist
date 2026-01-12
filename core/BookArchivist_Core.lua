@@ -617,8 +617,15 @@ function Core:PersistSession(session)
 	entry.creator = entry.creator ~= "" and entry.creator or session.creator
 	entry.material = entry.material ~= "" and entry.material or session.material
 	entry.source = entry.source or session.source
+	
+	-- Backfill location data if missing (e.g., books captured during v2.0.2-v2.0.3 bug)
+	-- Only update if: (1) session has location data, AND (2) existing book lacks it
 	if session.location then
-		entry.location = cloneTable(session.location)
+		if not entry.location then
+			-- No location data exists - backfill with current read location
+			entry.location = cloneTable(session.location)
+		end
+		-- If entry.location already exists, preserve original capture location
 	end
 
 	if Core.BuildSearchText then

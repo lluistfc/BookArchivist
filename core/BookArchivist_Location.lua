@@ -150,3 +150,30 @@ local function resolveGuidName(guid)
 	end
 	return nil
 end
+
+function Location:BuildWorldLocation()
+	local zoneData = buildZoneData()
+	return {
+		context = "world",
+		zoneChain = copyArray(zoneData.zoneChain),
+		zoneText = zoneData.zoneText,
+		mapID = zoneData.mapID,
+		capturedAt = nowSeconds(),
+	}
+end
+
+function Location:GetLootLocation(itemID)
+	itemID = type(itemID) == "number" and itemID or tonumber(itemID)
+	if not itemID then
+		return nil
+	end
+	pruneLootMemory()
+	local entry = recentLoot[itemID]
+	if not entry then
+		return nil
+	end
+	if not entry.recordedAt or (nowSeconds() - entry.recordedAt) > MAX_LOOT_AGE * 4 then
+		return nil
+	end
+	return cloneLocation(entry)
+end
