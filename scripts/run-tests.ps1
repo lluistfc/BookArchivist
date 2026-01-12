@@ -141,7 +141,7 @@ try {
         }
     } else {
         # Normal mode: parse and format output
-        $output = & busted --coverage --output=json @args 2>&1
+        $output = & busted --output=json @args 2>&1
         
         if ($LASTEXITCODE -eq 0 -or $output) {
             # Parse JSON
