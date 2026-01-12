@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern test-coverage test-sandbox api-search clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
+.PHONY: help test test-detailed test-errors test-verbose test-pattern test-coverage coverage-stats test-sandbox api-search clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -82,6 +82,7 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host '  make test-verbose    - Show raw busted output' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-pattern    - Run specific tests (use PATTERN=name)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-coverage   - Run tests with code coverage' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make coverage-stats  - Show colorized coverage statistics' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make test-sandbox    - Run Sandbox tests (30ms, optional)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host ''"
 	@pwsh -NoProfile -Command "Write-Host 'Mechanic Advanced:' -ForegroundColor White"
@@ -180,6 +181,14 @@ ifeq ($(DETECTED_OS),Windows)
 	@$(TEST_CMD) -Coverage
 else
 	@$(CHMOD) $(TEST_CMD) -c
+endif
+
+coverage-stats:
+	@echo "Generating coverage statistics..."
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -NoProfile -Command "luacov-console -s"
+else
+	@luacov-console -s
 endif
 
 # Mechanic Sandbox testing (optional - 30ms feedback)
