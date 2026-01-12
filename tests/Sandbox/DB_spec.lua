@@ -19,6 +19,10 @@ describe("DB Module", function()
 				callback()
 			end
 		}
+		_G.StaticPopupDialogs = {} -- Mock for DBSafety corruption detection
+		_G.StaticPopup_Show = function(dialogName) -- Mock popup function
+			-- Do nothing in tests
+		end
 		
 		-- Load modules in dependency order
 		dofile("./core/BookArchivist_Repository.lua")
@@ -155,23 +159,14 @@ describe("DB Module", function()
 	
 	describe("Existing v2 Database", function()
 		it("should not re-migrate existing v2 database", function()
-			_G.BookArchivistDB = {
-				dbVersion = 2,
-				booksById = {
-					["book-id-123"] = {
-						id = "book-id-123",
-						title = "Existing Book"
-					}
-				},
-				order = { "book-id-123" },
-				indexes = {
-					objectToBookId = {},
-					itemToBookIds = {},
-					titleToBookIds = {}
-				},
-				options = {},
-				recent = { list = {}, cap = 50 } -- Add recent for validation
+			-- Create a fully valid v2 database to avoid DBSafety reinitialization
+			_G.BookArchivistDB = DBSafety:InitializeFreshDB()
+			_G.BookArchivistDB.booksById["book-id-123"] = {
+				id = "book-id-123",
+				title = "Existing Book",
+				pages = { [1] = "Content" }
 			}
+			_G.BookArchivistDB.order = { "book-id-123" }
 			
 			local originalTitle = _G.BookArchivistDB.booksById["book-id-123"].title
 			
@@ -337,23 +332,14 @@ describe("DB Module", function()
 		end)
 		
 		it("should preserve data across multiple Init calls", function()
-			_G.BookArchivistDB = {
-				dbVersion = 2,
-				booksById = {
-					["test-id"] = {
-						id = "test-id",
-						title = "Test Book"
-					}
-				},
-				order = { "test-id" },
-				indexes = {
-					objectToBookId = {},
-					itemToBookIds = {},
-					titleToBookIds = {}
-				},
-				options = {},
-				recent = { list = {}, cap = 50 }
+			-- Create fully valid v2 database
+			_G.BookArchivistDB = DBSafety:InitializeFreshDB()
+			_G.BookArchivistDB.booksById["test-id"] = {
+				id = "test-id",
+				title = "Test Book",
+				pages = { [1] = "Content" }
 			}
+			_G.BookArchivistDB.order = { "test-id" }
 			
 			DB:Init()
 			
