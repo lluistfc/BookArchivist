@@ -2,15 +2,65 @@
 -- Loaded before all tests to initialize common test infrastructure
 -- Configure this in .busted as: helper = "Tests/busted_bootstrap.lua"
 
--- Load Mechanic's WoW API stubs first (provides C_Timer, C_Map, etc.)
-local mechanicPath = "G:/development/_dev_/Mechanic/sandbox/generated/wow_stubs.lua"
-local f = io.open(mechanicPath, "r")
-if f then
-	f:close()
-	dofile(mechanicPath)
-	print("✓ Loaded Mechanic wow_stubs.lua (22,945 lines of WoW API stubs)")
-else
-	print("⚠ Mechanic wow_stubs.lua not found - using inline mocks")
+-- Load WoW API stubs (provides C_Timer, C_Map, etc.)
+-- Try vendored copy first (for CI), then Mechanic (for local dev)
+local stubsPaths = {
+	"tests/vendor/wow_stubs.lua",  -- Vendored copy (CI)
+	"../../_dev_/Mechanic/sandbox/generated/wow_stubs.lua"  -- Mechanic (relative path)
+}
+
+local loaded = false
+for _, path in ipairs(stubsPaths) do
+	local f = io.open(path, "r")
+	if f then
+		f:close()
+		dofile(path)
+		print("✓ Loaded wow_stubs.lua from: " .. path)
+		loaded = true
+		break
+	end
+end
+
+if not loaded then
+	print("⚠ wow_stubs.lua not found - using minimal inline mocks")
+	
+	-- Minimal WoW API mocks for CI (when Mechanic not available)
+	-- These cover the essential APIs used by BookArchivist tests
+	
+	-- C_Timer namespace
+	_G.C_Timer = {
+		After = function(delay, callback)
+			if callback then callback() end
+		end,
+		NewTimer = function(duration, callback)
+			return { Cancel = function() end }
+		end,
+		NewTicker = function(duration, callback, iterations)
+			return { Cancel = function() end }
+		end
+	}
+	
+	-- C_Map namespace (location APIs)
+	_G.C_Map = {
+		GetBestMapForUnit = function(unit) return 1415 end,  -- Ardenweald
+		GetMapInfo = function(mapID) 
+			return { name = "Test Zone", mapID = mapID or 1415 }
+		end,
+		GetPlayerMapPosition = function(mapID, unit)
+			return { x = 0.5, y = 0.5 }
+		end
+	}
+	
+	-- Item APIs
+	_G.GetItemInfo = function(itemID)
+		return "Test Item", nil, 0, 1, 1, "Miscellaneous", "Junk", 1, "", "", 0
+	end
+	
+	-- Unit APIs
+	_G.UnitName = function(unit) return "TestPlayer", "TestRealm" end
+	_G.UnitGUID = function(unit) return "Player-1234-56789ABC" end
+	
+	print("✓ Loaded minimal WoW API mocks (CI mode)")
 end
 
 -- Now load our addon-specific stubs/overrides
