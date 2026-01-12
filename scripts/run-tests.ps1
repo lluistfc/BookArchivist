@@ -140,78 +140,9 @@ try {
             exit 1
         }
     } else {
-        # Normal mode: parse and format output
-        $output = & busted --coverage --output=json @args 2>&1
-        
-        if ($LASTEXITCODE -eq 0 -or $output) {
-            # Parse JSON
-            try {
-                $result = $output | ConvertFrom-Json
-                
-                $passed = $result.successes.Count
-                $failed = $result.failures.Count
-                $errors = $result.errors.Count
-                $total = $passed + $failed + $errors
-                
-                # Summary
-                Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-                Write-Host "  SUMMARY" -ForegroundColor Cyan
-                Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-                Write-Host "  Total:  $total tests" -ForegroundColor White
-                Write-Host "  Passed: $passed tests" -ForegroundColor Green
-                Write-Host "  Failed: $($failed + $errors) tests" -ForegroundColor $(if ($failed + $errors -eq 0) { "Green" } else { "Red" })
-                Write-Host "  Duration: $([math]::Round($result.duration, 2))s`n" -ForegroundColor Gray
-                
-                # Show failures if any
-                if ($failed -gt 0) {
-                    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Red
-                    Write-Host "  FAILURES" -ForegroundColor Red
-                    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Red
-                    foreach ($failure in $result.failures) {
-                        Write-Host "  ✗ $($failure.name)" -ForegroundColor Red
-                        if ($ShowErrors -and $failure.trace) {
-                            Write-Host "    Message: $($failure.trace.message)" -ForegroundColor Gray
-                            if ($failure.trace.traceback) {
-                                $lines = $failure.trace.traceback -split "`n" | Select-Object -First 5
-                                foreach ($line in $lines) {
-                                    Write-Host "    $line" -ForegroundColor DarkGray
-                                }
-                            }
-                            Write-Host ""
-                        } else {
-                            Write-Host "    $($failure.trace.message)" -ForegroundColor Gray
-                        }
-                    }
-                    Write-Host ""
-                }
-                
-                # Show errors if any
-                if ($errors -gt 0) {
-                    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Red
-                    Write-Host "  ERRORS (InGame tests - expected to fail)" -ForegroundColor Yellow
-                    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Red
-                    Write-Host "  $errors InGame tests require WoW runtime" -ForegroundColor Gray
-                    Write-Host "  These will work once converted to native WoW tests`n" -ForegroundColor Gray
-                }
-                
-                # Exit code
-                if ($failed -gt 0) {
-                    exit 1
-                } else {
-                    Write-Host "✓ All Sandbox + Desktop tests passed!" -ForegroundColor Green
-                    Write-Host ""
-                    exit 0
-                }
-            } catch {
-                # JSON parsing failed, show raw output
-                Write-Host "Failed to parse test results. Raw output:" -ForegroundColor Yellow
-                Write-Host $output
-                exit 1
-            }
-        } else {
-            Write-Host "❌ Tests failed to run" -ForegroundColor Red
-            exit 1
-        }
+        # Normal mode: use busted's default output (clean, shows only failures/errors)
+        & busted @args
+        exit $LASTEXITCODE
     }
 } finally {
     Pop-Location

@@ -2,45 +2,14 @@
 -- ui_mocks_spec.lua
 -- Tests for the ui_mocks helper module itself
 -- Verifies that our mock utilities work correctly
+--
+-- NOTE: WoW API tests (wipe, C_Timer, time) removed - now provided by Mechanic
 
 describe("UIMocks Helper", function()
 	local UIMocks
 
 	setup(function()
 		UIMocks = dofile("Tests/helpers/ui_mocks.lua")
-	end)
-
-	describe("WoW API Mocks", function()
-		it("mockWipe should create wipe() function", function()
-			UIMocks.mockWipe()
-			assert.is_not_nil(_G.wipe)
-			assert.is_function(_G.wipe)
-
-			local tbl = { a = 1, b = 2, c = 3 }
-			_G.wipe(tbl)
-			assert.are.equal(0, next(tbl) == nil and 0 or 1)
-		end)
-
-		it("mockTimer should create C_Timer.After", function()
-			UIMocks.mockTimer()
-			assert.is_not_nil(_G.C_Timer)
-			assert.is_function(_G.C_Timer.After)
-
-			local called = false
-			_G.C_Timer.After(1, function()
-				called = true
-			end)
-			assert.is_true(called)
-		end)
-
-		it("mockTime should create time() and advancer", function()
-			local advanceTime = UIMocks.mockTime(100)
-			assert.is_function(_G.time)
-			assert.are.equal(100, _G.time())
-
-			advanceTime(50)
-			assert.are.equal(150, _G.time())
-		end)
 	end)
 
 	describe("Database Mocks", function()
