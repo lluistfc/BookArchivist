@@ -43,6 +43,7 @@ Locales.enUS = {
 	["HEADER_BUTTON_HELP"] = "Help",
 	["HEADER_HELP_CHAT"] = "Use the search, filters, and sort menu to find any saved book instantly.",
 	["RESUME_LAST_BOOK"] = "Resume last book",
+	["RANDOM_BOOK_TOOLTIP"] = "Open a random book from your library",
 
 	-- Reader
 	["READER_EMPTY_PROMPT"] = "Select a book from the list",

@@ -138,7 +138,7 @@ function Generator:CreateTestBook(index, options)
 		lastReadAt = nil,
 		seenCount = math.random(1, 10),
 		isFavorite = (index % 10 == 0), -- Every 10th book is favorite
-		location = options.includeLocations and self:GenerateLocation(index) or nil,
+		location = (options.includeLocations ~= false) and self:GenerateLocation(index) or nil,
 	}
 end
 
@@ -146,37 +146,52 @@ end
 --- @param index number
 --- @return table|nil location
 function Generator:GenerateLocation(index)
-	local zones = {
-		"Stormwind City",
-		"Orgrimmar",
-		"Ironforge",
-		"Thunder Bluff",
-		"Darnassus",
-		"Undercity",
-		"Silvermoon City",
-		"The Exodar",
-		"Dalaran",
-		"Boralus",
-		"Dazar'alor",
+	-- Define known location chains (continent > zone > subzone)
+	local locationChains = {
+		-- Eastern Kingdoms
+		{ "Eastern Kingdoms", "Elwynn Forest", "Goldshire" },
+		{ "Eastern Kingdoms", "Elwynn Forest", "Northshire Abbey" },
+		{ "Eastern Kingdoms", "Elwynn Forest", "Stormwind City" },
+		{ "Eastern Kingdoms", "Westfall", "Sentinel Hill" },
+		{ "Eastern Kingdoms", "Duskwood", "Darkshire" },
+		{ "Eastern Kingdoms", "Redridge Mountains", "Lakeshire" },
+		
+		-- Kalimdor
+		{ "Kalimdor", "Durotar", "Orgrimmar" },
+		{ "Kalimdor", "Durotar", "Razor Hill" },
+		{ "Kalimdor", "The Barrens", "Crossroads" },
+		{ "Kalimdor", "Mulgore", "Thunder Bluff" },
+		{ "Kalimdor", "Teldrassil", "Darnassus" },
+		{ "Kalimdor", "Darkshore", "Auberdine" },
+		
+		-- Northrend
+		{ "Northrend", "Borean Tundra", "Valiance Keep" },
+		{ "Northrend", "Howling Fjord", "Valgarde" },
+		{ "Northrend", "Dragonblight", "Wintergarde Keep" },
+		{ "Northrend", "Crystalsong Forest", "Dalaran" },
+		
+		-- Pandaria
+		{ "Pandaria", "The Jade Forest", "Jade Temple" },
+		{ "Pandaria", "Valley of the Four Winds", "Halfhill" },
+		{ "Pandaria", "Kun-Lai Summit", "Temple of the White Tiger" },
 	}
-
-	local subzones = {
-		"Library",
-		"Great Hall",
-		"Market District",
-		"Cathedral Square",
-		"Valley of Wisdom",
-		"War Quarter",
-		"Trade District",
-	}
-
-	return {
-		mapID = 1453 + (index % 100), -- Random map ID
-		zone = getRandomElement(zones),
-		subzone = getRandomElement(subzones),
-		x = math.random(0, 100) / 100,
-		y = math.random(0, 100) / 100,
-	}
+	
+	-- Randomly assign location chains based on index
+	-- 70% of books get a location, 30% have nil location (for Unknown Location)
+	if (index % 10) < 7 then
+		local chain = locationChains[(index % #locationChains) + 1]
+		return {
+			mapID = 1453 + (index % 100), -- Random map ID
+			zone = chain[2], -- Zone name
+			subzone = chain[3], -- Subzone name
+			x = math.random(0, 100) / 100,
+			y = math.random(0, 100) / 100,
+			zoneChain = chain, -- Full location hierarchy
+		}
+	else
+		-- No location (will appear in "Unknown Location")
+		return nil
+	end
 end
 
 --- Generate multiple test books and add them to the database

@@ -33,6 +33,7 @@ core/BookArchivist_Options.lua
 core/BookArchivist_Order.lua
 core/BookArchivist_ImportWorker.lua
 core/BookArchivist_Recent.lua
+core/BookArchivist_RandomBook.lua
 core/BookArchivist_Tooltip.lua
 core/BookArchivist_Location.lua
 core/BookArchivist_ChatLinks.lua

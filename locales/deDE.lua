@@ -39,6 +39,7 @@ Locales.deDE = {
 	["HEADER_BUTTON_HELP"] = "Hilfe",
 	["HEADER_HELP_CHAT"] = "Nutze Suche, Filter und Sortierung, um jedes gespeicherte Buch sofort zu finden.",
 	["RESUME_LAST_BOOK"] = "Weiterlesen",
+	["RANDOM_BOOK_TOOLTIP"] = "Öffne ein zufälliges Buch aus deiner Bibliothek",
 
 	-- Reader
 	["READER_EMPTY_PROMPT"] = "Wähle ein Buch aus der Liste",

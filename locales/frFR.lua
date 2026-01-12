@@ -39,6 +39,7 @@ Locales.frFR = {
 	["HEADER_BUTTON_HELP"] = "Aide",
 	["HEADER_HELP_CHAT"] = "Utilisez la recherche, les filtres et le tri pour retrouver n'importe quel livre enregistré instantanément.",
 	["RESUME_LAST_BOOK"] = "Dernier livre",
+	["RANDOM_BOOK_TOOLTIP"] = "Ouvrir un livre aléatoire de votre bibliothèque",
 
 	-- Reader
 	["READER_EMPTY_PROMPT"] = "Sélectionnez un livre dans la liste",

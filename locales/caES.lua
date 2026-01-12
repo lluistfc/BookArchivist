@@ -39,6 +39,7 @@ Locales.caES = {
 	["HEADER_BUTTON_HELP"] = "Ajuda",
 	["HEADER_HELP_CHAT"] = "Utilitza la cerca, els filtres i el menú d'ordenació per trobar qualsevol llibre desat a l'instant.",
 	["RESUME_LAST_BOOK"] = "Reprèn llibre",
+	["RANDOM_BOOK_TOOLTIP"] = "Obre un llibre aleatori de la teva biblioteca",
 
 	-- Reader
 	["READER_EMPTY_PROMPT"] = "Selecciona un llibre de la llista",

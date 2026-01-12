@@ -39,6 +39,7 @@ Locales.esES = {
 	["HEADER_BUTTON_HELP"] = "Ayuda",
 	["HEADER_HELP_CHAT"] = "Usa la búsqueda, los filtros y el menú de ordenación para encontrar cualquier libro guardado al instante.",
 	["RESUME_LAST_BOOK"] = "Reanudar libro",
+	["RANDOM_BOOK_TOOLTIP"] = "Abrir un libro aleatorio de tu biblioteca",
 
 	-- Reader
 	["READER_EMPTY_PROMPT"] = "Selecciona un libro de la lista",

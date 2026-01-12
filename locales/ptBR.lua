@@ -39,6 +39,7 @@ Locales.ptBR = {
 	["HEADER_BUTTON_HELP"] = "Ajuda",
 	["HEADER_HELP_CHAT"] = "Use busca, filtros e ordenação para encontrar qualquer livro salvo instantaneamente.",
 	["RESUME_LAST_BOOK"] = "Retomar livro",
+	["RANDOM_BOOK_TOOLTIP"] = "Abrir um livro aleatório da sua biblioteca",
 
 	-- Reader
 	["READER_EMPTY_PROMPT"] = "Selecione um livro na lista",

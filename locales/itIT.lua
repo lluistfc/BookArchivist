@@ -39,6 +39,7 @@ Locales.itIT = {
 	["HEADER_BUTTON_HELP"] = "Aiuto",
 	["HEADER_HELP_CHAT"] = "Usa ricerca, filtri e ordinamento per trovare subito qualsiasi libro salvato.",
 	["RESUME_LAST_BOOK"] = "Riprendi libro",
+	["RANDOM_BOOK_TOOLTIP"] = "Apri un libro casuale dalla tua biblioteca",
 
 	-- Reader
 	["READER_EMPTY_PROMPT"] = "Seleziona un libro dall'elenco",
