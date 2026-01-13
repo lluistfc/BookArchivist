@@ -193,6 +193,43 @@ function MIGRATIONS.v2(db)
 	return db
 end
 
+-- v3: add Book Echo tracking fields (readCount, firstReadLocation, lastPageRead)
+function MIGRATIONS.v3(db)
+	if type(db) ~= "table" then
+		db = {}
+	end
+
+	if type(db.dbVersion) == "number" and db.dbVersion >= 3 then
+		return db
+	end
+
+	debug("Applying v3 (Book Echo tracking fields)")
+
+	-- Add readCount, firstReadLocation, lastPageRead to all books
+	for bookId, book in pairs(db.booksById or {}) do
+		if type(book) == "table" then
+			-- Initialize readCount to 0 if not present
+			if book.readCount == nil then
+				book.readCount = 0
+			end
+
+			-- Initialize firstReadLocation to nil if not present
+			if book.firstReadLocation == nil then
+				book.firstReadLocation = nil
+			end
+
+			-- Initialize lastPageRead to nil if not present
+			if book.lastPageRead == nil then
+				book.lastPageRead = nil
+			end
+		end
+	end
+
+	db.dbVersion = 3
+
+	return db
+end
+
 local function migrate(db)
 	if type(db) ~= "table" then
 		db = {}
@@ -206,6 +243,10 @@ local function migrate(db)
 
 	if (tonumber(db.dbVersion) or 0) < 2 then
 		db = MIGRATIONS.v2(db)
+	end
+
+	if (tonumber(db.dbVersion) or 0) < 3 then
+		db = MIGRATIONS.v3(db)
 	end
 
 	debug("Finished migration dispatch at dbVersion=" .. tostring(db.dbVersion or 0))
@@ -222,3 +263,4 @@ end
 -- version when needed (e.g., safety nets for legacy data).
 Migrations.v1 = MIGRATIONS.v1
 Migrations.v2 = MIGRATIONS.v2
+Migrations.v3 = MIGRATIONS.v3

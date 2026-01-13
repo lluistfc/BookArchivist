@@ -87,12 +87,12 @@ describe("DB Module", function()
 			assert.is_not_nil(db.indexes)
 		end)
 		
-		it("should set dbVersion to 2", function()
+		it("should set dbVersion to 3", function()
 			_G.BookArchivistDB = nil
 			
 			DB:Init()
 			
-			assert.equals(2, _G.BookArchivistDB.dbVersion)
+			assert.equals(3, _G.BookArchivistDB.dbVersion)
 		end)
 		
 		it("should create required indexes", function()
@@ -135,7 +135,7 @@ describe("DB Module", function()
 			DB:Init()
 			
 			local db = _G.BookArchivistDB
-			assert.equals(2, db.dbVersion)
+			assert.equals(3, db.dbVersion)
 			assert.is_not_nil(db.booksById)
 			assert.is_not_nil(db.legacy)
 		end)
@@ -172,8 +172,8 @@ describe("DB Module", function()
 			
 			DB:Init()
 			
-			-- Should preserve existing v2 structure
-			assert.equals(2, _G.BookArchivistDB.dbVersion)
+			-- Should preserve existing v2 structure and migrate to v3
+			assert.equals(3, _G.BookArchivistDB.dbVersion)
 			assert.is_not_nil(_G.BookArchivistDB.booksById["book-id-123"])
 			assert.equals(originalTitle, _G.BookArchivistDB.booksById["book-id-123"].title)
 		end)
@@ -328,7 +328,7 @@ describe("DB Module", function()
 			
 			-- Should return same reference
 			assert.equals(db1, db2)
-			assert.equals(2, db2.dbVersion)
+			assert.equals(3, db2.dbVersion)
 		end)
 		
 		it("should preserve data across multiple Init calls", function()

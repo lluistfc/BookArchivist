@@ -543,6 +543,109 @@ run_test("v2 migration removes legacy debug options", function()
 	assert_equal(v2_migrated.dbVersion, 2, "Should have dbVersion 2")
 end)
 
+-- Test 18: v3 migration adds readCount to all books
+run_test("v3 migration adds readCount to all books", function()
+	local db = {
+		dbVersion = 2,
+		booksById = {
+			["book1"] = { title = "Test Book 1", pages = { [1] = "Page 1" } },
+			["book2"] = { title = "Test Book 2", pages = { [1] = "Page 1" } },
+		},
+	}
+
+	local v3_migrated = BookArchivist.Migrations.v3(db)
+
+	assert_equal(v3_migrated.dbVersion, 3, "Should set dbVersion to 3")
+	assert_equal(v3_migrated.booksById["book1"].readCount, 0, "book1 should have readCount = 0")
+	assert_equal(v3_migrated.booksById["book2"].readCount, 0, "book2 should have readCount = 0")
+end)
+
+-- Test 19: v3 migration adds firstReadLocation to all books
+run_test("v3 migration adds firstReadLocation to all books", function()
+	local db = {
+		dbVersion = 2,
+		booksById = {
+			["book1"] = { title = "Test Book 1", pages = { [1] = "Page 1" } },
+			["book2"] = { title = "Test Book 2", pages = { [1] = "Page 1" } },
+		},
+	}
+
+	local v3_migrated = BookArchivist.Migrations.v3(db)
+
+	assert_equal(v3_migrated.booksById["book1"].firstReadLocation, nil, "book1 should have firstReadLocation = nil")
+	assert_equal(v3_migrated.booksById["book2"].firstReadLocation, nil, "book2 should have firstReadLocation = nil")
+end)
+
+-- Test 20: v3 migration adds lastPageRead to all books
+run_test("v3 migration adds lastPageRead to all books", function()
+	local db = {
+		dbVersion = 2,
+		booksById = {
+			["book1"] = { title = "Test Book 1", pages = { [1] = "Page 1" } },
+			["book2"] = { title = "Test Book 2", pages = { [1] = "Page 1" } },
+		},
+	}
+
+	local v3_migrated = BookArchivist.Migrations.v3(db)
+
+	assert_equal(v3_migrated.booksById["book1"].lastPageRead, nil, "book1 should have lastPageRead = nil")
+	assert_equal(v3_migrated.booksById["book2"].lastPageRead, nil, "book2 should have lastPageRead = nil")
+end)
+
+-- Test 21: v3 migration preserves existing data
+run_test("v3 migration preserves existing data", function()
+	local db = {
+		dbVersion = 2,
+		booksById = {
+			["book1"] = {
+				title = "Test Book 1",
+				creator = "Test Author",
+				material = "Test Material",
+				pages = { [1] = "Page 1", [2] = "Page 2" },
+				seenCount = 5,
+				firstSeenAt = 123456789,
+				lastSeenAt = 987654321,
+			},
+		},
+	}
+
+	local v3_migrated = BookArchivist.Migrations.v3(db)
+
+	local book = v3_migrated.booksById["book1"]
+	assert_equal(book.title, "Test Book 1", "Should preserve title")
+	assert_equal(book.creator, "Test Author", "Should preserve creator")
+	assert_equal(book.material, "Test Material", "Should preserve material")
+	assert_equal(book.seenCount, 5, "Should preserve seenCount")
+	assert_equal(book.firstSeenAt, 123456789, "Should preserve firstSeenAt")
+	assert_equal(book.lastSeenAt, 987654321, "Should preserve lastSeenAt")
+	assert_type(book.pages, "table", "Should preserve pages table")
+	assert_equal(book.pages[1], "Page 1", "Should preserve page 1 content")
+	assert_equal(book.pages[2], "Page 2", "Should preserve page 2 content")
+end)
+
+-- Test 22: v3 migration does not overwrite existing readCount/firstReadLocation/lastPageRead
+run_test("v3 migration preserves existing v3 fields", function()
+	local db = {
+		dbVersion = 2,
+		booksById = {
+			["book1"] = {
+				title = "Test Book 1",
+				pages = { [1] = "Page 1" },
+				readCount = 10,
+				firstReadLocation = "Stormwind",
+				lastPageRead = 5,
+			},
+		},
+	}
+
+	local v3_migrated = BookArchivist.Migrations.v3(db)
+
+	local book = v3_migrated.booksById["book1"]
+	assert_equal(book.readCount, 10, "Should preserve existing readCount")
+	assert_equal(book.firstReadLocation, "Stormwind", "Should preserve existing firstReadLocation")
+	assert_equal(book.lastPageRead, 5, "Should preserve existing lastPageRead")
+end)
+
 -- Print summary
 print("\n" .. string.rep("=", 60))
 print("Test Summary")

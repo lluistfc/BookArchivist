@@ -82,6 +82,11 @@ function DB:Init()
 			BookArchivistDB = Migrations.v2(BookArchivistDB)
 			dbv = tonumber(BookArchivistDB.dbVersion) or 0
 		end
+		if dbv < 3 and type(Migrations.v3) == "function" then
+			debug("DB init: applying v3 (from dbVersion=" .. tostring(dbv) .. ")")
+			BookArchivistDB = Migrations.v3(BookArchivistDB)
+			dbv = tonumber(BookArchivistDB.dbVersion) or 0
+		end
 	end
 
 	if type(BookArchivistDB.dbVersion) ~= "number" then
