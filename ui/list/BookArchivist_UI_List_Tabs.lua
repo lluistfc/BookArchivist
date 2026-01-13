@@ -134,6 +134,33 @@ function ListUI:EnsureListTabsRail(tabParent)
 	return tabsRail
 end
 
+-- Helper: Find the page where a book appears in Books mode
+local function findPageForBook(self, bookId)
+	if not bookId then
+		return 1
+	end
+	
+	local filteredKeys = self:GetFilteredKeys() or {}
+	local pageSize = self:GetPageSize() or 25
+	
+	-- Find the book's position in the filtered list
+	local position = nil
+	for i, key in ipairs(filteredKeys) do
+		if key == bookId then
+			position = i
+			break
+		end
+	end
+	
+	if not position then
+		return 1 -- Book not found, default to first page
+	end
+	
+	-- Calculate which page contains this position
+	local page = math.ceil(position / pageSize)
+	return page
+end
+
 local function wireTabButton(self, tabButton)
 	if not tabButton then
 		return
@@ -151,7 +178,38 @@ local function wireTabButton(self, tabButton)
 			PanelTemplates_SetTab(tabParent, tabId)
 		end
 		self:SetSelectedListTab(tabId)
-		self:SetListMode(self:TabIdToMode(tabId))
+		local newMode = self:TabIdToMode(tabId)
+		
+		-- When switching to Locations tab with a book selected, navigate to its location
+		if newMode == "locations" then
+			local selectedBookId = self:GetSelectedKey()
+			if selectedBookId then
+				local RandomBook = BookArchivist and BookArchivist.RandomBook
+				if RandomBook and RandomBook.NavigateToBookLocation then
+					-- Use the same navigation logic as Random Book
+					RandomBook:NavigateToBookLocation(selectedBookId)
+					return -- NavigateToBookLocation handles the mode switch
+				end
+			end
+		end
+		
+		-- When switching to Books tab with a book selected, navigate to its page
+		if newMode == "books" then
+			local selectedBookId = self:GetSelectedKey()
+			if selectedBookId then
+				local targetPage = findPageForBook(self, selectedBookId)
+				if targetPage and targetPage > 1 then
+					self:SetListMode(newMode)
+					self:SetPage(targetPage, true) -- Set page without triggering refresh
+					if self.UpdateList then
+						self:UpdateList() -- Manual refresh to show correct page
+					end
+					return
+				end
+			end
+		end
+		
+		self:SetListMode(newMode)
 	end)
 end
 

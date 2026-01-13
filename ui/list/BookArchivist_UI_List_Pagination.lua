@@ -103,6 +103,16 @@ function ListUI:PrevPage()
 	self:SetPage(self:GetPage() - 1)
 end
 
+function ListUI:FirstPage()
+	self:SetPage(1)
+end
+
+function ListUI:LastPage()
+	local total = self.__state.pagination.total or #self:GetFilteredKeys()
+	local pageCount = self:GetPageCount(total)
+	self:SetPage(pageCount)
+end
+
 function ListUI:GetPageCount(total)
 	total = tonumber(total) or 0
 	local pageSize = self:GetPageSize()
@@ -180,16 +190,24 @@ function ListUI:UpdatePaginationUI(total, pageCount)
 		end
 	end
 
+	local firstButton = self:GetFrame("pageFirstButton")
 	local prevButton = self:GetFrame("pagePrevButton")
 	local nextButton = self:GetFrame("pageNextButton")
+	local lastButton = self:GetFrame("pageLastButton")
 	local pageLabel = self:GetFrame("pageLabel")
 	local dropdown = self:GetFrame("pageSizeDropdown")
 
+	if firstButton and firstButton.SetEnabled then
+		firstButton:SetEnabled(page > 1)
+	end
 	if prevButton and prevButton.SetEnabled then
 		prevButton:SetEnabled(page > 1)
 	end
 	if nextButton and nextButton.SetEnabled then
 		nextButton:SetEnabled(page < pageCount and total > 0)
+	end
+	if lastButton and lastButton.SetEnabled then
+		lastButton:SetEnabled(page < pageCount and total > 0)
 	end
 	if pageLabel and pageLabel.SetText then
 		if total == 0 then
@@ -247,10 +265,28 @@ function ListUI:EnsurePaginationControls()
 		bottomRow:SetHeight(btnH)
 	end
 
+	local firstBtn =
+		self:SafeCreateFrame("Button", "BookArchivistListFirstPage", bottomRow or pagination, "UIPanelButtonTemplate")
+	if firstBtn then
+		firstBtn:SetSize(24, 22)
+		firstBtn:SetText("")
+		-- Set texture icon for first page
+		local texture = firstBtn:CreateTexture(nil, "ARTWORK")
+		if texture then
+			texture:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
+			texture:SetSize(20, 20)
+			texture:SetPoint("CENTER", firstBtn, "CENTER", 0, 0)
+		end
+		firstBtn:SetScript("OnClick", function()
+			self:FirstPage()
+		end)
+		self:SetFrame("pageFirstButton", firstBtn)
+	end
+
 	local prev =
 		self:SafeCreateFrame("Button", "BookArchivistListPrevPage", bottomRow or pagination, "UIPanelButtonTemplate")
 	if prev then
-		prev:SetSize(80, 22)
+		prev:SetSize(70, 22)
 		prev:SetText(t("PAGINATION_PREV"))
 		prev:SetNormalFontObject(GameFontNormal)
 		local fontString = prev:GetFontString()
@@ -266,7 +302,7 @@ function ListUI:EnsurePaginationControls()
 	local nextBtn =
 		self:SafeCreateFrame("Button", "BookArchivistListNextPage", bottomRow or pagination, "UIPanelButtonTemplate")
 	if nextBtn then
-		nextBtn:SetSize(80, 22)
+		nextBtn:SetSize(70, 22)
 		nextBtn:SetText(t("PAGINATION_NEXT"))
 		nextBtn:SetNormalFontObject(GameFontNormal)
 		local fontString = nextBtn:GetFontString()
@@ -279,13 +315,47 @@ function ListUI:EnsurePaginationControls()
 		self:SetFrame("pageNextButton", nextBtn)
 	end
 
+	local lastBtn =
+		self:SafeCreateFrame("Button", "BookArchivistListLastPage", bottomRow or pagination, "UIPanelButtonTemplate")
+	if lastBtn then
+		lastBtn:SetSize(24, 22)
+		lastBtn:SetText("")
+		-- Set texture icon for last page
+		local texture = lastBtn:CreateTexture(nil, "ARTWORK")
+		if texture then
+			texture:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+			texture:SetSize(20, 20)
+			texture:SetPoint("CENTER", lastBtn, "CENTER", 0, 0)
+		end
+		lastBtn:SetScript("OnClick", function()
+			self:LastPage()
+		end)
+		self:SetFrame("pageLastButton", lastBtn)
+	end
+
 	local pageLabelHost = bottomRow or pagination
 	local pageLabel = pageLabelHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	pageLabel:SetJustifyH("CENTER")
 	pageLabel:SetJustifyV("MIDDLE")
 	pageLabel:SetHeight(btnH)
 	pageLabel:SetText(t("PAGINATION_PAGE_SINGLE"))
-	if prev and nextBtn then
+	-- Layout: [|<] [Prev] [Page X/Y] [Next] [>|]
+	if firstBtn and prev and nextBtn and lastBtn then
+		pageLabel:ClearAllPoints()
+		pageLabel:SetPoint("CENTER", pageLabelHost, "CENTER", 0, 0)
+		-- Prev to left of label
+		prev:ClearAllPoints()
+		prev:SetPoint("RIGHT", pageLabel, "LEFT", -gap, 0)
+		-- First to left of Prev
+		firstBtn:ClearAllPoints()
+		firstBtn:SetPoint("RIGHT", prev, "LEFT", -4, 0)
+		-- Next to right of label
+		nextBtn:ClearAllPoints()
+		nextBtn:SetPoint("LEFT", pageLabel, "RIGHT", gap, 0)
+		-- Last to right of Next
+		lastBtn:ClearAllPoints()
+		lastBtn:SetPoint("LEFT", nextBtn, "RIGHT", 4, 0)
+	elseif prev and nextBtn then
 		pageLabel:ClearAllPoints()
 		pageLabel:SetPoint("CENTER", pageLabelHost, "CENTER", 0, 0)
 		prev:ClearAllPoints()
