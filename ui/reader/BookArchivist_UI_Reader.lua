@@ -668,6 +668,23 @@ function ReaderUI:RenderSelected()
 		addon.Recent:MarkOpened(key)
 	end
 
+	-- Track reading history for Book Echo
+	if entry then
+		-- Increment readCount
+		entry.readCount = (entry.readCount or 0) + 1
+		
+		-- Capture firstReadLocation only once
+		if not entry.firstReadLocation then
+			local Location = BookArchivist.Location
+			if Location and Location.BuildWorldLocation then
+				local loc = Location:BuildWorldLocation()
+				if loc and loc.zoneText then
+					entry.firstReadLocation = loc.zoneText
+				end
+			end
+		end
+	end
+
 	bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
 	bookTitle:SetTextColor(1, 0.82, 0)
 
@@ -722,6 +739,12 @@ function ReaderUI:RenderSelected()
 		local pageIndex = state.currentPageIndex
 		local pageNum = state.pageOrder[pageIndex]
 		pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
+		
+		-- Track lastPageRead for Book Echo
+		if pageNum then
+			entry.lastPageRead = pageNum
+		end
+		
 		if shouldResumeLastPage(addon) then
 			if pageNum then
 				entry.lastPageNum = pageNum
