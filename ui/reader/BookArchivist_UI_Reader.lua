@@ -676,7 +676,11 @@ function ReaderUI:RenderSelected()
 	end
 
 	-- Track reading history for Book Echo
-	if entry then
+	-- Only increment counters when book actually changes OR when dev option is enabled
+	local isNewBook = (state.lastTrackedBookId ~= key)
+	local forceRefresh = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.echoRefreshOnRead
+	
+	if entry and (isNewBook or forceRefresh) then
 		-- Increment readCount
 		entry.readCount = (entry.readCount or 0) + 1
 		
@@ -689,6 +693,11 @@ function ReaderUI:RenderSelected()
 					entry.firstReadLocation = loc.zoneText
 				end
 			end
+		end
+		
+		-- Remember which book we just tracked (unless force refresh is on)
+		if not forceRefresh then
+			state.lastTrackedBookId = key
 		end
 	end
 

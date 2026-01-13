@@ -35,6 +35,9 @@ local function ensureDebugOptions()
 	if db.options.gridVisible == nil then
 		db.options.gridVisible = false
 	end
+	if db.options.echoRefreshOnRead == nil then
+		db.options.echoRefreshOnRead = false
+	end
 end
 
 -- ============================================================================
@@ -182,6 +185,30 @@ local function InjectDebugSettingIntoOptionsPanel()
 			-- Debug mode only controls chat logging
 			-- Grid visibility is controlled separately via /badev grid
 			DevTools.EnableDebugChat(state)
+		end)
+	end
+
+	-- Register echo refresh checkbox (for testing Book Echo)
+	do
+		local variable = "echoRefreshOnRead"
+		local variableKey = variable
+		local variableTbl = BookArchivistDB.options
+		local defaultValue = false
+		local name = "Refresh Echo on Each Read"
+
+		local setting =
+			Settings.RegisterAddOnSetting(category, variable, variableKey, variableTbl, "boolean", name, defaultValue)
+
+		Settings.CreateCheckbox(
+			category,
+			setting,
+			"Force Book Echo to recalculate on every book view (for testing echo logic)"
+		)
+
+		Settings.SetOnValueChangedCallback(variableKey, function(callbackId, setting)
+			local currentValue = setting:GetValue()
+			-- Option is automatically persisted to variableTbl.echoRefreshOnRead
+			-- Reader will check BookArchivistDB.options.echoRefreshOnRead
 		end)
 	end
 
