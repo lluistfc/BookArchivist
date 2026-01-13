@@ -617,6 +617,10 @@ function ListUI:NavigateInto(segment)
 	state.path[#state.path + 1] = segment
 	self:DebugPrint(string.format("[BookArchivist] NavigateInto: path now has %d segments", #state.path))
 	state.currentPage = 1 -- Reset to page 1 when navigating
+	-- Sync with global pagination state so Next/Prev buttons work
+	if self.SetPage then
+		self:SetPage(1, true) -- skipRefresh=true, we'll refresh manually
+	end
 	ensureLocationPathValid(state)
 	local pageSize = self:GetPageSize()
 	local page = state.currentPage or 1
@@ -632,6 +636,10 @@ function ListUI:NavigateUp()
 	end
 	table.remove(path)
 	state.currentPage = 1 -- Reset to page 1 when navigating
+	-- Sync with global pagination state so Next/Prev buttons work
+	if self.SetPage then
+		self:SetPage(1, true) -- skipRefresh=true, we'll refresh manually
+	end
 	ensureLocationPathValid(state)
 	local pageSize = self:GetPageSize()
 	local page = state.currentPage or 1
@@ -686,6 +694,10 @@ function ListUI:RebuildLocationTree()
 		-- Set state.root for ensureLocationPathValid and rebuildLocationRows
 		state.root = buildResult
 		state.currentPage = 1
+		-- Sync with global pagination state
+		if self.SetPage then
+			self:SetPage(1, true) -- skipRefresh=true, we'll refresh manually
+		end
 		ensureLocationPathValid(state)
 		local pageSize = self:GetPageSize()
 		local page = state.currentPage or 1
