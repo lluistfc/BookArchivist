@@ -112,6 +112,34 @@ jobs:
           name: BookArchivist
           path: artifact/
 
+      - name: Extract release notes from CHANGELOG
+        if: (startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.test_only != 'true'))
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          
+          # Extract the section for this version from CHANGELOG.md
+          awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit;
+              if ($0 ~ "\\[" ver "\\]") {
+                found=1;
+                print;
+                next;
+              }
+            }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          
+          # Check if we extracted anything
+          if [ ! -s release_notes.md ]; then
+            echo "No changelog entry found for version $VERSION"
+            echo "Release $VERSION" > release_notes.md
+          fi
+          
+          cat release_notes.md
+
       - name: Create GitHub Release and upload ZIP
         if: (startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.test_only != 'true'))
         uses: softprops/action-gh-release@v1
@@ -120,6 +148,7 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
           name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+          body_path: release_notes.md
           draft: false
           prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') }}
           files: dist/BookArchivist.zip
