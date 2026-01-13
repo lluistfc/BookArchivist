@@ -19,17 +19,16 @@ describe("DB Module", function()
 				callback()
 			end
 		}
-		_G.StaticPopupDialogs = {} -- Mock for DBSafety corruption detection
-		_G.StaticPopup_Show = function(dialogName) -- Mock popup function
-			-- Do nothing in tests
+		_G.StaticPopupDialogs = {}
+		_G.StaticPopup_Show = function()
 		end
+		_G.C_Timer = { After = function(_, cb) if cb then cb() end end }
 		
-		-- Load modules in dependency order
-		dofile("./core/BookArchivist_Repository.lua")
-		dofile("./core/BookArchivist_Serialize.lua")
-		dofile("./core/BookArchivist_DBSafety.lua")
-		dofile("./core/BookArchivist_Migrations.lua")
-		dofile("./core/BookArchivist_DB.lua")
+		helper.loadFile("core/BookArchivist_Repository.lua")
+		helper.loadFile("core/BookArchivist_Serialize.lua")
+		helper.loadFile("core/BookArchivist_DBSafety.lua")
+		helper.loadFile("core/BookArchivist_Migrations.lua")
+		helper.loadFile("core/BookArchivist_DB.lua")
 		
 		Repository = BookArchivist.Repository
 		DB = BookArchivist.DB
