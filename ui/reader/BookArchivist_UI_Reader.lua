@@ -680,8 +680,27 @@ function ReaderUI:RenderSelected()
 	local isNewBook = (state.lastTrackedBookId ~= key)
 	local forceRefresh = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.echoRefreshOnRead
 	
+	-- Calculate echo BEFORE incrementing (shows history before this read)
+	local echoText = state.echoText or getWidget("echoText")
+	if echoText then
+		local BookEcho = BookArchivist.BookEcho
+		if BookEcho and BookEcho.GetEchoText then
+			local echo = BookEcho:GetEchoText(key)
+			if echo then
+				echoText:SetText(echo)
+				echoText:Show()
+			else
+				echoText:SetText("")
+				echoText:Hide()
+			end
+		else
+			echoText:SetText("")
+			echoText:Hide()
+		end
+	end
+	
 	if entry and (isNewBook or forceRefresh) then
-		-- Increment readCount
+		-- Increment readCount AFTER calculating echo
 		entry.readCount = (entry.readCount or 0) + 1
 		
 		-- Capture firstReadLocation only once
@@ -703,25 +722,6 @@ function ReaderUI:RenderSelected()
 
 	bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
 	bookTitle:SetTextColor(1, 0.82, 0)
-
-	-- Update echo text (Book Echo memory reflection)
-	local echoText = state.echoText or getWidget("echoText")
-	if echoText then
-		local BookEcho = BookArchivist.BookEcho
-		if BookEcho and BookEcho.GetEchoText then
-			local echo = BookEcho:GetEchoText(key)
-			if echo then
-				echoText:SetText(echo)
-				echoText:Show()
-			else
-				echoText:SetText("")
-				echoText:Hide()
-			end
-		else
-			echoText:SetText("")
-			echoText:Hide()
-		end
-	end
 
 	local meta = {}
 	if entry.creator and entry.creator ~= "" then

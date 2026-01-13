@@ -125,7 +125,7 @@ function BookEcho:GetEchoText(bookId)
 	if book.readCount and book.readCount > 2 then
 		return string.format(
 			L["ECHO_RETURNED"] or "You've returned to these pages %d times. Each reading leaves its mark.",
-			book.readCount - 1  -- Subtract current read
+			book.readCount - 1  -- readCount includes first read, subtract to get return count
 		)
 	end
 	
