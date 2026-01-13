@@ -34,6 +34,21 @@ describe("ListConfig Module", function()
 	teardown(function()
 		Repository:Init(_G.BookArchivistDB or {})
 	end)
+
+	local function loadListConfigWithCore(coreOverride)
+		local originalCore = BookArchivist.Core
+		local originalListConfig = BookArchivist.ListConfig
+
+		BookArchivist.Core = coreOverride
+		dofile("./core/BookArchivist_ListConfig.lua")
+		local reloadedListConfig = BookArchivist.ListConfig
+
+		BookArchivist.Core = originalCore
+		BookArchivist.ListConfig = originalListConfig
+		ListConfig = originalListConfig
+
+		return reloadedListConfig
+	end
 	
 	describe("Module Loading", function()
 		it("should load ListConfig module without errors", function()
@@ -89,7 +104,38 @@ describe("ListConfig Module", function()
 			assert.is_not_nil(listOpts.filters)
 			assert.equals("table", type(listOpts.filters))
 		end)
-		
+
+		it("should initialize database via fallback when Core.EnsureDB missing", function()
+			_G.BookArchivistDB = nil
+			local fallbackListConfig = loadListConfigWithCore(nil)
+
+			local listOpts = fallbackListConfig:EnsureListOptions()
+
+			assert.is_not_nil(_G.BookArchivistDB)
+			assert.is_not_nil(_G.BookArchivistDB.options)
+			assert.is_not_nil(_G.BookArchivistDB.options.list)
+			assert.equals(_G.BookArchivistDB.options.list, listOpts)
+
+			_G.BookArchivistDB = nil
+			Repository:Init(testDB)
+		end)
+
+		it("should reuse fallback db when Core.EnsureDB is not a function", function()
+			_G.BookArchivistDB = nil
+			local fakeCore = { EnsureDB = "not a function" }
+			local fallbackListConfig = loadListConfigWithCore(fakeCore)
+
+			local firstOpts = fallbackListConfig:EnsureListOptions()
+			firstOpts.sortMode = "title"
+			local secondOpts = fallbackListConfig:EnsureListOptions()
+
+			assert.equals(firstOpts, secondOpts)
+			assert.equals("title", secondOpts.sortMode)
+
+			_G.BookArchivistDB = nil
+			Repository:Init(testDB)
+		end)
+
 		it("should set filter defaults", function()
 			testDB.options = {}
 			
@@ -497,5 +543,12 @@ describe("ListConfig Module", function()
 			-- Should return same reference
 			assert.equals(opts1, opts2)
 		end)
+	end)
+
+	it("should return filters table when updating known keys", function()
+		testDB.options = {}
+		local returned = ListConfig:SetListFilter("multiPage", true)
+		local current = ListConfig:GetListFilters()
+		assert.equals(current, returned)
 	end)
 end)
