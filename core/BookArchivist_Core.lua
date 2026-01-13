@@ -483,9 +483,19 @@ function Core:BuildExportPayloadForBook(bookId)
 		realm = GetRealmName()
 	end
 
-	-- Export only the selected book
+	-- Export only the selected book (strip echo metadata for fresh recipient experience)
+	local originalBook = db.booksById[bookId]
+	local cleanBook = {}
+	
+	-- Copy all fields except echo metadata
+	for k, v in pairs(originalBook) do
+		if k ~= "readCount" and k ~= "firstReadLocation" and k ~= "lastPageRead" and k ~= "lastReadAt" then
+			cleanBook[k] = v
+		end
+	end
+	
 	local singleBookTable = {}
-	singleBookTable[bookId] = db.booksById[bookId]
+	singleBookTable[bookId] = cleanBook
 	
 	-- Use v2 schema if LibDeflate is available, otherwise v1
 	local LibDeflate = LibStub and LibStub("LibDeflate", true)
