@@ -907,4 +907,180 @@ describe("Export (BDB1 Format)", function()
 			assert.is_true(envelope:find("BDB1|S|1|") ~= nil)
 		end)
 	end)
+
+	describe("EncodeBDB1Envelope (full encoding)", function()
+		it("encodes a minimal payload with schema v1", function()
+			local payload = {
+				schemaVersion = 1,
+				booksById = {
+					["test-book"] = {
+						title = "Test",
+						pages = { [1] = "Content" },
+					},
+				},
+			}
+
+			-- Use ExportToString which calls EncodeBDB1Envelope internally
+			BookArchivist.Core.BuildExportPayload = function()
+				return payload
+			end
+
+			local encoded, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(err)
+			assert.is_not_nil(encoded)
+			assert.is_true(encoded:find("BDB1|S|") ~= nil, "Should have BDB1 header")
+			assert.is_true(encoded:find("BDB1|E") ~= nil, "Should have BDB1 footer")
+			assert.is_true(encoded:find("BDB1|C|1|") ~= nil, "Should have at least one chunk")
+		end)
+
+		it("encodes payload with compression (v2)", function()
+			-- Mock LibDeflate for compression test
+			local mockLibDeflate = {
+				CompressDeflate = function(data, opts)
+					assert.are.equal(9, opts.level)
+					return "COMPRESSED:" .. data
+				end,
+				EncodeForPrint = function(data)
+					return BookArchivist.Base64.Encode(data)
+				end,
+			}
+
+			_G.LibStub = function(name, silent)
+				if name == "LibDeflate" then
+					return mockLibDeflate
+				end
+			end
+
+			local payload = {
+				schemaVersion = 2,
+				booksById = {
+					["test-book"] = {
+						title = "Test",
+						pages = { [1] = "Content" },
+					},
+				},
+			}
+
+			BookArchivist.Core.BuildExportPayload = function()
+				return payload
+			end
+
+			local encoded, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(err)
+			assert.is_not_nil(encoded)
+			assert.is_true(encoded:find("BDB1|S|") ~= nil)
+			assert.is_true(encoded:find("BDB1|E") ~= nil)
+
+			-- Cleanup
+			_G.LibStub = nil
+		end)
+
+		it("handles missing payload gracefully", function()
+			-- This tests the nil payload guard in EncodeBDB1Envelope
+			BookArchivist.Core.BuildExportPayload = function()
+				return nil  -- No payload
+			end
+
+			local encoded, err = BookArchivist.Core:ExportToString()
+
+			-- EncodeBDB1Envelope should return error for nil payload
+			assert.is_nil(encoded)
+			assert.is_not_nil(err)
+		end)
+
+		it("handles serialization failure", function()
+			-- Mock serializer to fail
+			local origSerialize = BookArchivist.Serialize.SerializeTable
+			BookArchivist.Serialize.SerializeTable = function()
+				return nil, "serialization error"
+			end
+
+			local payload = {
+				schemaVersion = 1,
+				booksById = { ["test"] = {} },
+			}
+
+			BookArchivist.Core.BuildExportPayload = function()
+				return payload
+			end
+
+			local encoded, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(encoded)
+			assert.is_not_nil(err)
+			assert.is_true(err:find("serialization") ~= nil)
+
+			-- Restore
+			BookArchivist.Serialize.SerializeTable = origSerialize
+		end)
+
+		it("handles missing CRC32 module gracefully", function()
+			-- Temporarily remove CRC32
+			local origCRC32 = BookArchivist.CRC32
+			BookArchivist.CRC32 = nil
+
+			local payload = {
+				schemaVersion = 1,
+				booksById = { ["test"] = { title = "Test" } },
+			}
+
+			BookArchivist.Core.BuildExportPayload = function()
+				return payload
+			end
+
+			-- Should use CRC=0 fallback
+			local encoded, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(err)
+			assert.is_not_nil(encoded)
+			-- Should still create valid envelope (CRC may be computed differently, just verify it's valid)
+			assert.is_true(encoded:find("BDB1|S|") ~= nil, "Should have valid BDB1 header")
+			assert.is_true(encoded:find("BDB1|E") ~= nil, "Should have valid BDB1 footer")
+
+			-- Restore
+			BookArchivist.CRC32 = origCRC32
+		end)
+
+		it("chunks large payloads correctly", function()
+			-- Create a large payload to force chunking
+			local largePages = {}
+			for i = 1, 100 do
+				largePages[i] = string.rep("This is a long line of text. ", 50)
+			end
+
+			local payload = {
+				schemaVersion = 1,
+				booksById = {
+					["large-book"] = {
+						title = "Large Book",
+						pages = largePages,
+					},
+				},
+			}
+
+			BookArchivist.Core.BuildExportPayload = function()
+				return payload
+			end
+
+			local encoded, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(err)
+			assert.is_not_nil(encoded)
+
+			-- Count chunks (BDB1|C|X| markers)
+			local chunkCount = 0
+			for _ in encoded:gmatch("BDB1|C|%d+|") do
+				chunkCount = chunkCount + 1
+			end
+
+			-- Large payload should create multiple chunks
+			assert.is_true(chunkCount > 1, "Should have multiple chunks for large payload")
+
+			-- Verify header indicates correct chunk count
+			local headerChunks = encoded:match("BDB1|S|(%d+)|")
+			assert.are.equal(tostring(chunkCount), headerChunks, "Header should match actual chunk count")
+		end)
+	end)
 end)
