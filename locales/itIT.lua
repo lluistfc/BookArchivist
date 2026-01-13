@@ -202,4 +202,29 @@ Locales.itIT = {
 	["LANGUAGE_NAME_FRENCH"] = "Francese",
 	["LANGUAGE_NAME_ITALIAN"] = "Italiano",
 	["LANGUAGE_NAME_PORTUGUESE"] = "Portoghese",
+
+	-- Book Echo strings
+	["ECHO_FIRST_READ"] = "Scoperto per la prima volta %s %s. Ora, il libro è tornato a te.",
+	["ECHO_RETURNED"] = "Sei tornato a queste pagine %d volte. Ogni lettura lascia il suo segno.",
+	["ECHO_LAST_PAGE"] = "Lasciato aperto a pagina %d. Il resto del racconto ti aspetta.",
+	["ECHO_LAST_OPENED"] = "Intatto per %s. Il tempo è passato dall'ultima volta che hai voltato queste pagine.",
+	["ECHO_TIME_DAYS"] = "%d giorni",
+	["ECHO_TIME_HOURS"] = "%d ore",
+	["ECHO_TIME_MINUTES"] = "%d minuti",
+	
+	-- Location context phrases
+	["LOC_CONTEXT_SHELVES"] = "tra gli scaffali di",
+	["LOC_CONTEXT_ARCHIVES"] = "negli archivi di",
+	["LOC_CONTEXT_DEPTHS"] = "nelle profondità di",
+	["LOC_CONTEXT_RUINS"] = "tra le rovine di",
+	["LOC_CONTEXT_CANOPY"] = "sotto il baldacchino di",
+	["LOC_CONTEXT_SANDS"] = "nelle sabbie di",
+	["LOC_CONTEXT_PEAKS"] = "in alto tra le cime di",
+	["LOC_CONTEXT_ABOARD"] = "a bordo di",
+	["LOC_CONTEXT_SHADOWS"] = "nelle ombre di",
+	["LOC_CONTEXT_DEEP"] = "nel profondo di",
+	["LOC_CONTEXT_WILDS"] = "attraverso le terre selvagge di",
+	["LOC_CONTEXT_SHORES"] = "lungo le coste di",
+	["LOC_CONTEXT_ISLE"] = "sull'isola di",
+	["LOC_CONTEXT_IN"] = "in",
 }

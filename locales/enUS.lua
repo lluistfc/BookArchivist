@@ -202,4 +202,29 @@ Locales.enUS = {
 	["LANGUAGE_NAME_FRENCH"] = "French",
 	["LANGUAGE_NAME_ITALIAN"] = "Italian",
 	["LANGUAGE_NAME_PORTUGUESE"] = "Portuguese",
+
+	-- Book Echo strings
+	["ECHO_FIRST_READ"] = "First discovered %s %s. Now, the book has returned to you.",
+	["ECHO_RETURNED"] = "You've returned to these pages %d times. Each reading leaves its mark.",
+	["ECHO_LAST_PAGE"] = "Left open at page %d. The rest of the tale awaits.",
+	["ECHO_LAST_OPENED"] = "Untouched for %s. Time has passed since last you turned these pages.",
+	["ECHO_TIME_DAYS"] = "%d days",
+	["ECHO_TIME_HOURS"] = "%d hours",
+	["ECHO_TIME_MINUTES"] = "%d minutes",
+	
+	-- Location context phrases
+	["LOC_CONTEXT_SHELVES"] = "among the shelves of",
+	["LOC_CONTEXT_ARCHIVES"] = "in the archives of",
+	["LOC_CONTEXT_DEPTHS"] = "in the depths of",
+	["LOC_CONTEXT_RUINS"] = "among the ruins of",
+	["LOC_CONTEXT_CANOPY"] = "beneath the canopy of",
+	["LOC_CONTEXT_SANDS"] = "in the sands of",
+	["LOC_CONTEXT_PEAKS"] = "high among the peaks of",
+	["LOC_CONTEXT_ABOARD"] = "aboard",
+	["LOC_CONTEXT_SHADOWS"] = "in the shadows of",
+	["LOC_CONTEXT_DEEP"] = "deep within",
+	["LOC_CONTEXT_WILDS"] = "across the wilds of",
+	["LOC_CONTEXT_SHORES"] = "along the shores of",
+	["LOC_CONTEXT_ISLE"] = "upon the isle of",
+	["LOC_CONTEXT_IN"] = "in",
 }

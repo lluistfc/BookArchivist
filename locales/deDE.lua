@@ -203,4 +203,29 @@ Locales.deDE = {
 	["LANGUAGE_NAME_FRENCH"] = "Französisch",
 	["LANGUAGE_NAME_ITALIAN"] = "Italienisch",
 	["LANGUAGE_NAME_PORTUGUESE"] = "Portugiesisch",
+
+	-- Book Echo strings
+	["ECHO_FIRST_READ"] = "Zum ersten Mal entdeckt %s %s. Jetzt ist das Buch zu dir zurückgekehrt.",
+	["ECHO_RETURNED"] = "Du bist %d Mal zu diesen Seiten zurückgekehrt. Jede Lektüre hinterlässt ihre Spuren.",
+	["ECHO_LAST_PAGE"] = "Offen gelassen auf Seite %d. Der Rest der Geschichte erwartet dich.",
+	["ECHO_LAST_OPENED"] = "Unberührt seit %s. Die Zeit ist vergangen, seit du diese Seiten zuletzt umgeblättert hast.",
+	["ECHO_TIME_DAYS"] = "%d Tage",
+	["ECHO_TIME_HOURS"] = "%d Stunden",
+	["ECHO_TIME_MINUTES"] = "%d Minuten",
+	
+	-- Location context phrases
+	["LOC_CONTEXT_SHELVES"] = "unter den Regalen von",
+	["LOC_CONTEXT_ARCHIVES"] = "in den Archiven von",
+	["LOC_CONTEXT_DEPTHS"] = "in den Tiefen von",
+	["LOC_CONTEXT_RUINS"] = "unter den Ruinen von",
+	["LOC_CONTEXT_CANOPY"] = "unter dem Blätterdach von",
+	["LOC_CONTEXT_SANDS"] = "im Sand von",
+	["LOC_CONTEXT_PEAKS"] = "hoch oben auf den Gipfeln von",
+	["LOC_CONTEXT_ABOARD"] = "an Bord",
+	["LOC_CONTEXT_SHADOWS"] = "in den Schatten von",
+	["LOC_CONTEXT_DEEP"] = "tief in",
+	["LOC_CONTEXT_WILDS"] = "durch die Wildnis von",
+	["LOC_CONTEXT_SHORES"] = "entlang der Küsten von",
+	["LOC_CONTEXT_ISLE"] = "auf der Insel",
+	["LOC_CONTEXT_IN"] = "in",
 }

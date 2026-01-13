@@ -204,4 +204,29 @@ Locales.caES = {
 	["LANGUAGE_NAME_FRENCH"] = "Francès",
 	["LANGUAGE_NAME_ITALIAN"] = "Italià",
 	["LANGUAGE_NAME_PORTUGUESE"] = "Portuguès",
+
+	-- Book Echo strings
+	["ECHO_FIRST_READ"] = "Descobert per primera vegada %s %s. Ara, el llibre ha tornat a tu.",
+	["ECHO_RETURNED"] = "Has tornat a aquestes pàgines %d vegades. Cada lectura deixa la seva empremta.",
+	["ECHO_LAST_PAGE"] = "Deixat obert a la pàgina %d. La resta del relat t'espera.",
+	["ECHO_LAST_OPENED"] = "Intacte durant %s. Ha passat el temps des de l'última vegada que vas passar aquestes pàgines.",
+	["ECHO_TIME_DAYS"] = "%d dies",
+	["ECHO_TIME_HOURS"] = "%d hores",
+	["ECHO_TIME_MINUTES"] = "%d minuts",
+	
+	-- Location context phrases
+	["LOC_CONTEXT_SHELVES"] = "entre els prestatges de",
+	["LOC_CONTEXT_ARCHIVES"] = "als arxius de",
+	["LOC_CONTEXT_DEPTHS"] = "a les profunditats de",
+	["LOC_CONTEXT_RUINS"] = "entre les ruïnes de",
+	["LOC_CONTEXT_CANOPY"] = "sota el dosser de",
+	["LOC_CONTEXT_SANDS"] = "a les sorres de",
+	["LOC_CONTEXT_PEAKS"] = "a dalt dels cims de",
+	["LOC_CONTEXT_ABOARD"] = "a bord de",
+	["LOC_CONTEXT_SHADOWS"] = "a les ombres de",
+	["LOC_CONTEXT_DEEP"] = "al fons de",
+	["LOC_CONTEXT_WILDS"] = "a través de les terres salvatges de",
+	["LOC_CONTEXT_SHORES"] = "al llarg de les costes de",
+	["LOC_CONTEXT_ISLE"] = "a l'illa de",
+	["LOC_CONTEXT_IN"] = "a",
 }
