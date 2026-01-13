@@ -658,4 +658,253 @@ describe("Export (BDB1 Format)", function()
 			end)
 		end
 	end)
+
+	describe("Export envelope encoding", function()
+		local originalBuildExport
+		local originalBuildBookExport
+		local originalSerialize
+		local originalBase64Encode
+		local originalCRCCompute
+		local originalLibStub
+
+		local function reloadExport(libDeflateStub)
+			if libDeflateStub then
+				_G.LibStub = function(name)
+					if name == "LibDeflate" then
+						return libDeflateStub
+					end
+					return nil
+				end
+			else
+				_G.LibStub = nil
+			end
+			helper.loadFile("core/BookArchivist_Export.lua")
+		end
+
+		before_each(function()
+			originalBuildExport = BookArchivist.Core.BuildExportPayload
+			originalBuildBookExport = BookArchivist.Core.BuildExportPayloadForBook
+			originalSerialize = BookArchivist.Serialize.SerializeTable
+			originalBase64Encode = BookArchivist.Base64.Encode
+			originalCRCCompute = BookArchivist.CRC32.Compute
+			originalLibStub = _G.LibStub
+			reloadExport(nil)
+		end)
+
+		after_each(function()
+			BookArchivist.Core.BuildExportPayload = originalBuildExport
+			BookArchivist.Core.BuildExportPayloadForBook = originalBuildBookExport
+			BookArchivist.Serialize.SerializeTable = originalSerialize
+			BookArchivist.Base64.Encode = originalBase64Encode
+			BookArchivist.CRC32.Compute = originalCRCCompute
+			_G.LibStub = originalLibStub
+			helper.loadFile("core/BookArchivist_Export.lua")
+		end)
+
+		it("returns error when export helper missing", function()
+			BookArchivist.Core.BuildExportPayload = nil
+
+			local text, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(text)
+			assert.is_true(err:find("unavailable") ~= nil)
+		end)
+
+		it("returns error when payload is missing", function()
+			BookArchivist.Core.BuildExportPayload = function()
+				return nil
+			end
+
+			local text, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(text)
+			assert.is_true(err:find("payload") ~= nil)
+		end)
+
+		it("returns error when serializer is unavailable", function()
+			BookArchivist.Serialize.SerializeTable = nil
+			BookArchivist.Core.BuildExportPayload = function()
+				return { schemaVersion = 1 }
+			end
+
+			local text, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(text)
+			assert.is_true(err:find("serializer") ~= nil)
+		end)
+
+		it("returns serializer failure messages", function()
+			BookArchivist.Core.BuildExportPayload = function()
+				return { schemaVersion = 1 }
+			end
+			BookArchivist.Serialize.SerializeTable = function()
+				return nil, "serial fail"
+			end
+
+			local text, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(text)
+			assert.are.equal("serial fail", err)
+		end)
+
+		it("returns error when base64 encoder is unavailable", function()
+			BookArchivist.Core.BuildExportPayload = function()
+				return { schemaVersion = 1 }
+			end
+			BookArchivist.Serialize.SerializeTable = function()
+				return "SER_DATA"
+			end
+			BookArchivist.Base64.Encode = nil
+
+			local text, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(text)
+			assert.is_true(err:find("base64") ~= nil)
+		end)
+
+		it("builds a BDB1 envelope via base64 path", function()
+			local lastEncoded
+			local lastCRCInput
+			local capturedPayload
+			BookArchivist.Core.BuildExportPayload = function()
+				return { schemaVersion = 1, booksById = { book = true } }
+			end
+			BookArchivist.Serialize.SerializeTable = function(payload)
+				capturedPayload = payload
+				return "SER_DATA"
+			end
+			BookArchivist.Base64.Encode = function(data)
+				lastEncoded = data
+				return originalBase64Encode(data)
+			end
+			BookArchivist.CRC32.Compute = function(_, data)
+				lastCRCInput = data
+				return 4242
+			end
+
+			local envelope, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(err)
+			assert.are.equal("SER_DATA", lastEncoded)
+			assert.are.equal("SER_DATA", lastCRCInput)
+			assert.are.same({ schemaVersion = 1, booksById = { book = true } }, capturedPayload)
+			assert.is_true(envelope:find("BDB1|S|1|4242|8|1") ~= nil)
+			assert.is_true(envelope:find("BDB1|C|1|") ~= nil)
+
+			local serialized, schema = BookArchivist.Core._DecodeBDB1Envelope(envelope)
+			assert.are.equal("SER_DATA", serialized)
+			assert.are.equal(1, schema)
+		end)
+
+		it("falls back to zero CRC when CRC32.Compute is missing", function()
+			BookArchivist.CRC32.Compute = nil
+			BookArchivist.Serialize.SerializeTable = function()
+				return "XYZ"
+			end
+			BookArchivist.Core.BuildExportPayload = function()
+				return { schemaVersion = 1 }
+			end
+
+			local envelope, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(err)
+			assert.is_true(envelope:find("BDB1|S|1|0|3|1") ~= nil)
+		end)
+
+		it("uses LibDeflate when schema version is 2", function()
+			local compressionLog = {}
+			local libStub = {
+				CompressDeflate = function(_, data)
+					table.insert(compressionLog, { op = "compress", data = data })
+					return "COMP:" .. data
+				end,
+				EncodeForPrint = function(_, data)
+					table.insert(compressionLog, { op = "encode", data = data })
+					return "PRINT:" .. data
+				end,
+			}
+			reloadExport(libStub)
+			BookArchivist.Base64.Encode = function()
+				assert.is_true(false, "Base64 path should not be used when compression succeeds")
+			end
+			BookArchivist.Serialize.SerializeTable = function()
+				return "SER_V2"
+			end
+			local crcInput
+			BookArchivist.CRC32.Compute = function(_, data)
+				crcInput = data
+				return 9001
+			end
+			BookArchivist.Core.BuildExportPayload = function()
+				return { schemaVersion = 2, booksById = {} }
+			end
+
+			local envelope, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(err)
+			assert.are.equal("COMP:SER_V2", crcInput)
+			assert.is_true(envelope:find("BDB1|S|1|9001|6|2") ~= nil)
+			assert.is_true(envelope:find("BDB1|C|1|PRINT:COMP:SER_V2") ~= nil)
+			assert.are.equal(2, #compressionLog)
+		end)
+
+		it("propagates compression failures", function()
+			local libStub = {
+				CompressDeflate = function()
+					return nil
+				end,
+				EncodeForPrint = function()
+					return "unused"
+				end,
+			}
+			reloadExport(libStub)
+			BookArchivist.Serialize.SerializeTable = function()
+				return "SER_FAIL"
+			end
+			BookArchivist.Core.BuildExportPayload = function()
+				return { schemaVersion = 2 }
+			end
+
+			local text, err = BookArchivist.Core:ExportToString()
+
+			assert.is_nil(text)
+			assert.is_true(err:find("compression failed") ~= nil)
+		end)
+
+		it("returns error when book export helper is missing", function()
+			BookArchivist.Core.BuildExportPayloadForBook = nil
+
+			local text, err = BookArchivist.Core:ExportBookToString("book-id")
+
+			assert.is_nil(text)
+			assert.is_true(err:find("unavailable") ~= nil)
+		end)
+
+		it("propagates book export errors", function()
+			BookArchivist.Core.BuildExportPayloadForBook = function(_, bookId)
+				assert.are.equal("missing", bookId)
+				return nil, "unknown book"
+			end
+
+			local text, err = BookArchivist.Core:ExportBookToString("missing")
+
+			assert.is_nil(text)
+			assert.are.equal("unknown book", err)
+		end)
+
+		it("exports a single book via helper", function()
+			BookArchivist.Core.BuildExportPayloadForBook = function(_, bookId)
+				assert.are.equal("book-1", bookId)
+				return { schemaVersion = 1, booksById = { [bookId] = true } }, nil
+			end
+			BookArchivist.Serialize.SerializeTable = function()
+				return "ONE"
+			end
+
+			local envelope, err = BookArchivist.Core:ExportBookToString("book-1")
+
+			assert.is_nil(err)
+			assert.is_true(envelope:find("BDB1|S|1|") ~= nil)
+		end)
+	end)
 end)
