@@ -1,3 +1,38 @@
+# 2.3.0
+
+**New Feature: Book Echo System**
+
+## What's New
+
+### Book Echo 💬
+
+Experience your books with personality! After reading, you'll see contextual flavor text that adds charm to your library experience:
+- **Read Count Tracking**: See how many times you've revisited each book
+- **Context-Aware Messages**: 50+ unique echoes based on content, creator, and rarity
+
+Examples:
+- "You've read this 3 times. A favorite, perhaps?"
+- "Another tome by Khadgar. His wisdom is timeless."
+- "A rare find! Only the most dedicated collectors have seen this."
+
+### Bug Fixes
+
+- Fixed echo display issues (race conditions, truncation, refresh problems)
+- Fixed pagination sync issues in Locations tab
+- Fixed orphaned books not appearing in database order after migration
+- Improved page turn detection for more accurate read counts
+
+### Behind the Scenes
+
+- Database v3 migration for echo support and read tracking
+- Enhanced export system with metadata stripping for cleaner payloads
+
+### Feedback Welcome
+
+The Book Echo system adds personality to your reading experience! If you have suggestions for new echo templates or encounter any issues, please share your feedback on CurseForge or GitHub.
+
+---
+
 # 2.2.0
 
 **New Feature: Random Book Discovery**

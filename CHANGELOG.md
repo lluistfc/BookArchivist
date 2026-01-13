@@ -2,6 +2,71 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.0] - 2026-01-18
+
+**Feature release with Book Echo system and comprehensive test coverage improvements**
+
+### Added
+
+- **Book Echo Feature**
+  - New flavor text system that provides contextual commentary after reading a book
+  - Echoes appear in the reader panel below book content
+  - Displays read count tracking ("You've read this X times")
+  - Context-aware messages based on content, creator, or rarity
+  - Fully localized support for 7 languages: enUS, esES, caES, frFR, deDE, itIT, ptBR
+  - 50+ unique echo templates covering various book types and scenarios
+
+- **Developer Tools Enhancements**
+  - New "Refresh Echo" dev command to preview echo display without full reload
+  - DB Reset button in developer options (confirms before executing)
+  - Enhanced dev tools panel with echo testing capabilities
+  - Additional debug commands for echo system diagnostics
+
+- **Test Coverage Improvements**
+  - Added 20 new tests across core modules (641 → 661 total tests)
+  - Recent module: 86.21% → 94.83% coverage (+8.62%)
+  - RandomBook module: 90.48% → 97.12% coverage (+6.64%)
+  - Search module: 84.21% → 94.74% coverage (+10.53%)
+  - Migrations module: 83.82% → 85.29% coverage (+1.47%)
+  - Export module: Enhanced EncodeBDB1Envelope coverage (compression, chunking, error paths)
+  - 13 modules now maintain 90%+ coverage (Core, Repository, DB, BookId, etc.)
+
+### Changed
+
+- **Database Schema Evolution**
+  - Migrated to v3 schema for Book Echo support
+  - Added readCount tracking per book entry
+  - Automatic migration from v2 → v3 on addon load
+
+- **Export System**
+  - Implemented metadata stripping for cleaner export payloads
+  - Export now excludes echo-related transient data
+  - Reduced export string size for chat compatibility
+
+- **Page Turn Detection**
+  - Enhanced page turn detection logic in reader panel
+  - Improved tracking of when users actually advance pages
+  - More accurate readCount increments
+
+### Fixed
+
+- **List Panel Pagination**
+  - Fixed pagination sync issues in Locations tab
+  - Fixed incorrect pagination boundaries causing blank pages
+  - Improved pagination state management between tab switches
+
+- **Edge Cases**
+  - Fixed nil guard issues in Recent module (db without booksById)
+  - Fixed orphaned books not appearing in migrated database order
+  - Fixed RandomBook crashes when UI.List unavailable
+  - Fixed FindPageForBook handling of nil returns
+
+### Developer Notes
+
+*This release introduces the Book Echo system, a delightful flavor text feature that adds personality to your reading experience. With 50+ unique echo templates and full localization support across 7 languages, echoes provide contextual commentary based on book content, creators, and rarity. Test coverage has been significantly improved with 20 new tests, bringing 13 core modules to 90%+ coverage (661 tests total). The v3 database migration adds readCount tracking for future analytics features.*
+
+*Key metrics: 661/661 tests passing, 51.79% overall coverage (90%+ on 13 core modules), 0 critical lint errors, Interface version 120001 (The War Within).*
+
 ## [2.2.0] - 2026-01-13
 
 **Feature release with Random Book and UI improvements**

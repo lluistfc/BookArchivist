@@ -21,7 +21,11 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
   - Preserves headings, paragraphs, line breaks, and embedded images.
   - Includes a local atlas for Legion artifact “book” textures so those pages render correctly without depending on other addons.
   - Falls back to Blizzard’s SimpleHTML widget or plain text when needed.
-
+- **Book Echo system**
+  - Contextual flavor text appears after reading a book with personality and charm.
+  - Read count tracking shows how many times you've revisited each book.
+  - 50+ unique echo templates based on content, creator, and rarity.
+  - Fully localized in 7 languages (enUS, esES, caES, frFR, deDE, itIT, ptBR).
 - **Search and filters**
   - Search across titles and text from the main header search box.
   - Filter and sort modes exposed via the list header and dropdowns.
