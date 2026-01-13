@@ -64,6 +64,59 @@ describe("Serialize.SerializeTable", function()
 		assert.is_nil(result)
 		assert.is_true(err ~= nil)
 	end)
+
+	it("rejects non-finite numbers (NaN)", function()
+		local nan = 0/0
+		local result, err = BookArchivist.Serialize.SerializeTable({ value = nan })
+		assert.is_nil(result)
+		assert.is_not_nil(err)
+		assert.is_not_nil(string.match(err, "non%-finite"))
+	end)
+
+	it("rejects non-finite numbers (infinity)", function()
+		local result, err = BookArchivist.Serialize.SerializeTable({ value = math.huge })
+		assert.is_nil(result)
+		assert.is_not_nil(err)
+		assert.is_not_nil(string.match(err, "non%-finite"))
+	end)
+
+	it("rejects tables with unsupported key types", function()
+		local tbl = {}
+		tbl[function() end] = "bad key"
+		local result, err = BookArchivist.Serialize.SerializeTable(tbl)
+		assert.is_nil(result)
+		assert.is_not_nil(err)
+		assert.is_not_nil(string.match(err, "unsupported key type"))
+	end)
+
+	it("handles tables with mixed numeric and string keys", function()
+		local tbl = { [1] = "numeric", key = "string" }
+		local result = BookArchivist.Serialize.SerializeTable(tbl)
+		assert.is_not_nil(result)
+	end)
+
+	it("rejects deeply nested tables beyond max depth", function()
+		-- Build a deeply nested table
+		local tbl = {}
+		local current = tbl
+		for i = 1, 25 do  -- Exceed MAX_DEPTH (20)
+			current.nested = {}
+			current = current.nested
+		end
+		
+		local result, err = BookArchivist.Serialize.SerializeTable(tbl)
+		assert.is_nil(result)
+		assert.is_not_nil(err)
+		assert.is_not_nil(string.match(err, "max depth"))
+	end)
+
+	it("handles nil values as table keys correctly", function()
+		-- Lua doesn't allow nil as table key, but we validate behavior
+		local tbl = { a = nil }  -- nil values are ignored in Lua tables
+		local result = BookArchivist.Serialize.SerializeTable(tbl)
+		-- Should serialize empty table since nil is dropped
+		assert.is_not_nil(result)
+	end)
 end)
 
 describe("Serialize.DeserializeTable", function()
