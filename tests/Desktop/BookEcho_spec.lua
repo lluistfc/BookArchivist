@@ -5,6 +5,22 @@ describe("BookEcho", function()
 	local BookEcho, Repository, Core
 	local testDB
 	local mockTime = 1000000
+
+	local function getInternal(name)
+		assert(type(name) == "string", "upvalue name required")
+		assert(BookEcho and BookEcho.GetEchoText, "BookEcho not initialized")
+		local idx = 1
+		while true do
+			local upvalueName, value = debug.getupvalue(BookEcho.GetEchoText, idx)
+			if not upvalueName then
+				return nil
+			end
+			if upvalueName == name then
+				return value
+			end
+			idx = idx + 1
+		end
+	end
 	
 	setup(function()
 		-- Mock environment
@@ -172,6 +188,20 @@ describe("BookEcho", function()
 			assert.is_falsy(echo:find("Azeroth >"))
 			assert.is_falsy(echo:find("Eastern Kingdoms"))
 		end)
+
+		it("should fall back to raw location when parsing fails", function()
+			testDB.booksById["book1"] = {
+				id = "book1",
+				readCount = 2,
+				firstReadLocation = "",
+				pages = { [1] = "Content" },
+			}
+
+			local echo = BookEcho:GetEchoText("book1")
+			assert.is_truthy(echo:find("First discovered in "))
+			assert.is_truthy(echo:find("returned to you"))
+			assert.is_truthy(echo:find("in %. Now"))
+		end)
 		
 		it("should use 'in the shadows of' for dungeons and citadels", function()
 			testDB.booksById["book1"] = {
@@ -331,6 +361,15 @@ describe("BookEcho", function()
 			
 			local echo = BookEcho:GetEchoText("book1")
 			assert.is_truthy(echo:find("30 minutes"))
+		end)
+	end)
+
+	describe("Internal helpers", function()
+		it("should fall back to generic context when location is missing", function()
+			local getLocationContext = getInternal("getLocationContext")
+			assert.is_function(getLocationContext)
+			local phrase = getLocationContext(nil)
+			assert.are.equal("in", phrase)
 		end)
 	end)
 	

@@ -9,6 +9,35 @@ helper.setupNamespace()
 -- Load BookId module
 helper.loadFile("core/BookArchivist_BookId.lua")
 
+describe("BookId bootstrap", function()
+	it("loads bit stub when native libraries are missing", function()
+		local originalBit, originalBit32 = _G.bit, _G.bit32
+		local originalDofile = _G.dofile
+		local stubLoaded = false
+
+		local function restore()
+			_G.bit = originalBit
+			_G.bit32 = originalBit32
+			_G.dofile = originalDofile
+		end
+
+		_G.bit, _G.bit32 = nil, nil
+		_G.dofile = function(path)
+			if path == "Tests/stubs/bit_library.lua" then
+				stubLoaded = true
+			end
+			return originalDofile(path)
+		end
+
+		local ok, err = pcall(function()
+			helper.loadFile("core/BookArchivist_BookId.lua")
+		end)
+		restore()
+		assert.is_true(ok, err)
+		assert.is_true(stubLoaded)
+	end)
+end)
+
 describe("BookId.NormalizeText", function()
 	it("converts to lowercase", function()
 		local result = BookArchivist.BookId.NormalizeText("The New HORDE")
@@ -211,5 +240,22 @@ describe("BookId.MakeBookIdV2", function()
 
 		local id = BookArchivist.BookId.MakeBookIdV2(book)
 		assert(id:match("^b2:%x+$"), "Should generate ID even without pages")
+	end)
+
+	it("treats non-numeric page keys as missing content", function()
+		local withStringPages = {
+			title = "String Pages",
+			pages = { intro = "Narration" },
+			source = { objectID = 100 },
+		}
+
+		local withoutPages = {
+			title = "String Pages",
+			source = { objectID = 100 },
+		}
+
+		local idWithStrings = BookArchivist.BookId.MakeBookIdV2(withStringPages)
+		local idWithoutPages = BookArchivist.BookId.MakeBookIdV2(withoutPages)
+		assert.are.equal(idWithoutPages, idWithStrings)
 	end)
 end)
