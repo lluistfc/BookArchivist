@@ -229,9 +229,10 @@ local function InjectDebugSettingIntoOptionsPanel()
 		resetButton = CreateFrame("Button", "BookArchivistResetCountsButton", container, "UIPanelButtonTemplate")
 		resetButton:SetSize(180, 22)
 		resetButton:SetText("Reset All Read Counts")
-		-- Position to the right of the echo checkbox, above grid dropdown
-		-- X=280 to align right of checkbox labels, Y=-105 to align with second checkbox row
-		resetButton:SetPoint("TOPLEFT", container, "TOPLEFT", 280, -105)
+		-- Position to the right of "Refresh Echo on Each Read" checkbox
+		-- Need to account for production options above (tooltip, resume, language, import button, debug mode)
+		-- Each takes ~40-50px, so echo checkbox is around Y=-270
+		resetButton:SetPoint("TOPLEFT", container, "TOPLEFT", 280, -270)
 		
 		resetButton:SetScript("OnClick", function()
 			StaticPopup_Show("BOOKARCHIVIST_CONFIRM_RESET_COUNTS")
