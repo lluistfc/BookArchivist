@@ -686,23 +686,28 @@ function ReaderUI:RenderSelected()
 	-- With forceRefresh, treat re-selecting same book from list as "new book"
 	local shouldTrack = isNewBook or (forceRefresh and not isPageTurn)
 	
-	-- Calculate echo BEFORE incrementing (shows history before this read)
+	-- Calculate and display echo only when tracking (new book or forced refresh)
+	-- This prevents echo recalculation when clicking same book with forceRefresh disabled
 	local echoText = state.echoText or getWidget("echoText")
 	if echoText then
-		local BookEcho = BookArchivist.BookEcho
-		if BookEcho and BookEcho.GetEchoText then
-			local echo = BookEcho:GetEchoText(key)
-			if echo then
-				echoText:SetText(echo)
-				echoText:Show()
+		if shouldTrack then
+			-- Calculate echo BEFORE incrementing readCount (shows history before this read)
+			local BookEcho = BookArchivist.BookEcho
+			if BookEcho and BookEcho.GetEchoText then
+				local echo = BookEcho:GetEchoText(key)
+				if echo then
+					echoText:SetText(echo)
+					echoText:Show()
+				else
+					echoText:SetText("")
+					echoText:Hide()
+				end
 			else
 				echoText:SetText("")
 				echoText:Hide()
 			end
-		else
-			echoText:SetText("")
-			echoText:Hide()
 		end
+		-- If not tracking (same book, forceRefresh off), keep existing echo displayed
 	end
 	
 	if entry and shouldTrack then
