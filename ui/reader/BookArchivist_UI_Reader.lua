@@ -714,10 +714,9 @@ function ReaderUI:RenderSelected()
 			end
 		end
 		
-		-- Remember which book we just tracked (unless force refresh is on)
-		if not forceRefresh then
-			state.lastTrackedBookId = key
-		end
+		-- ALWAYS remember which book we just tracked (even with force refresh)
+		-- This prevents incrementing on page turns within the same book
+		state.lastTrackedBookId = key
 	end
 
 	bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
