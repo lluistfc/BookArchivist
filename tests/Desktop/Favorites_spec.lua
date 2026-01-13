@@ -111,14 +111,27 @@ describe("Favorites.Toggle", function()
 
 	it("handles nil bookId", function()
 		setupMockDB()
-		-- Should not error
+		-- Should not error and should not call Set
+		local calls = 0
+		local originalSet = BookArchivist.Favorites.Set
+		BookArchivist.Favorites.Set = function()
+			calls = calls + 1
+		end
 		BookArchivist.Favorites:Toggle(nil)
+		BookArchivist.Favorites.Set = originalSet
+		assert.are.equal(0, calls)
 	end)
 
 	it("handles non-existent bookId", function()
 		setupMockDB()
-		-- Should not error
+		local calls = 0
+		local originalSet = BookArchivist.Favorites.Set
+		BookArchivist.Favorites.Set = function()
+			calls = calls + 1
+		end
 		BookArchivist.Favorites:Toggle("nonexistent")
+		BookArchivist.Favorites.Set = originalSet
+		assert.are.equal(0, calls)
 	end)
 end)
 
