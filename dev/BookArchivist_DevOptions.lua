@@ -241,7 +241,65 @@ local function InjectDebugSettingIntoOptionsPanel()
 			end
 		end)
 	end
+	
+	-- Register reset read counts button
+	do
+		local name = "Reset All Read Counts"
+		local tooltip = "Reset readCount, firstReadLocation, and lastPageRead for all books (for testing echo feature)"
+		
+		local function ResetAllReadCounts()
+			StaticPopup_Show("BOOKARCHIVIST_CONFIRM_RESET_COUNTS")
+		end
+		
+		local initializer = Settings.CreateButtonInitializer(
+			name,
+			tooltip,
+			ResetAllReadCounts,
+			nil, -- buttonText (nil uses default "Okay")
+			function() return true end -- enabled callback
+		)
+		
+		Settings.RegisterInitializer(category, initializer)
+	end
 end
+
+-- ============================================================================
+-- RESET READ COUNTS DIALOG
+-- ============================================================================
+
+StaticPopupDialogs["BOOKARCHIVIST_CONFIRM_RESET_COUNTS"] = {
+	text = "Reset read counts for all books?\n\nThis will reset:\n• Read count\n• First read location\n• Last page read\n\nBook Echo will treat all books as unread.",
+	button1 = "Reset All",
+	button2 = "Cancel",
+	OnAccept = function()
+		local db = BookArchivist and BookArchivist.GetDB and BookArchivist:GetDB()
+		if not db or not db.booksById then
+			print("|cFFFF0000[BookArchivist]|r No database found.")
+			return
+		end
+		
+		local count = 0
+		for bookId, book in pairs(db.booksById) do
+			if type(book) == "table" then
+				book.readCount = 0
+				book.firstReadLocation = nil
+				book.lastPageRead = nil
+				count = count + 1
+			end
+		end
+		
+		print(string.format("|cFF00FF00[BookArchivist]|r Reset read counts for %d books.", count))
+		
+		-- Refresh UI if it's open
+		if BookArchivist.UI and BookArchivist.UI.Core and BookArchivist.UI.Core.RefreshUI then
+			BookArchivist.UI.Core:RefreshUI()
+		end
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,
+}
 
 -- ============================================================================
 -- INITIALIZATION
