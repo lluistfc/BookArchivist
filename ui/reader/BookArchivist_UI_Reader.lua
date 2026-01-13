@@ -676,9 +676,15 @@ function ReaderUI:RenderSelected()
 	end
 
 	-- Track reading history for Book Echo
-	-- Only increment counters when book actually changes OR when dev option is enabled
+	-- Detect if this is a new book selection or just a page turn
+	local currentPageIndex = state.currentPageIndex or 1
 	local isNewBook = (state.lastTrackedBookId ~= key)
+	local isPageTurn = (state.lastTrackedBookId == key and state.lastTrackedPageIndex ~= currentPageIndex)
 	local forceRefresh = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.echoRefreshOnRead
+	
+	-- Only increment on new book selection, not page turns
+	-- With forceRefresh, treat re-selecting same book from list as "new book"
+	local shouldTrack = isNewBook or (forceRefresh and not isPageTurn)
 	
 	-- Calculate echo BEFORE incrementing (shows history before this read)
 	local echoText = state.echoText or getWidget("echoText")
@@ -699,7 +705,7 @@ function ReaderUI:RenderSelected()
 		end
 	end
 	
-	if entry and (isNewBook or forceRefresh) then
+	if entry and shouldTrack then
 		-- Increment readCount AFTER calculating echo
 		entry.readCount = (entry.readCount or 0) + 1
 		
@@ -713,11 +719,11 @@ function ReaderUI:RenderSelected()
 				end
 			end
 		end
-		
-		-- ALWAYS remember which book we just tracked (even with force refresh)
-		-- This prevents incrementing on page turns within the same book
-		state.lastTrackedBookId = key
 	end
+	
+	-- Always track which book and page we just rendered
+	state.lastTrackedBookId = key
+	state.lastTrackedPageIndex = currentPageIndex
 
 	bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
 	bookTitle:SetTextColor(1, 0.82, 0)
