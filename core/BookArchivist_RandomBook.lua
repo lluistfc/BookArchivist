@@ -77,15 +77,15 @@ function RandomBook:NavigateToBookLocation(bookId)
 		return false
 	end
 	
+	-- Always set the selection first (needed for both location and non-location cases)
+	if ListUI.SetSelectedKey then
+		ListUI:SetSelectedKey(bookId)
+	end
+	
 	-- Only switch mode and navigate if book has location
 	if hasLocation then
 		if BookArchivist.DebugPrint then
 			BookArchivist:DebugPrint(string.format("[RandomBook] Navigating to location: %s", table.concat(zoneChain, " > ")))
-		end
-		
-		-- Switch to Locations mode to show geographical context
-		if ListUI.SetListMode then
-			ListUI:SetListMode("locations")
 		end
 		
 		-- Navigate to the book's location in the tree
@@ -99,44 +99,108 @@ function RandomBook:NavigateToBookLocation(bookId)
 			
 			-- Replace the entire path
 			state.path = newPath
-			state.currentPage = 1
 			
-			-- Sync the main pagination state with location state
-			if ListUI.SetPage then
-				ListUI:SetPage(1, true) -- skipRefresh=true to avoid double update
-			end
+			-- Store the target book ID so we can paginate to it after tree is ready
+			state.targetBookId = bookId
 			
-			-- Rebuild the location tree first
-			if ListUI.RebuildLocationTree then
-				ListUI:RebuildLocationTree()
-			end
+			-- Check if tree already exists
+			local treeExists = state.root ~= nil
 			
-			-- Ensure path is valid and rebuild rows
-			if ListUI.EnsureLocationPathValid then
-				ListUI:EnsureLocationPathValid(state)
-			end
-			if ListUI.RebuildLocationRows then
-				local pageSize = ListUI.GetPageSize and ListUI:GetPageSize() or 25
-				ListUI:RebuildLocationRows(state, ListUI, pageSize, 1)
-			end
-			if ListUI.UpdateLocationBreadcrumbUI then
-				ListUI:UpdateLocationBreadcrumbUI()
+			if BookArchivist.DebugPrint then
+				BookArchivist:DebugPrint(string.format("[RandomBook] Tree exists: %s", tostring(treeExists)))
 			end
 			
-			-- Update the list to reflect the new location
-			if ListUI.UpdateList then
-				ListUI:UpdateList()
+			-- If tree doesn't exist, rebuild it (async)
+			if not treeExists and ListUI.RebuildLocationTree then
+				if BookArchivist.DebugPrint then
+					BookArchivist:DebugPrint("[RandomBook] Rebuilding location tree (async)")
+				end
+				-- Switch to Locations mode (will trigger tree rebuild via mode change)
+				if ListUI.SetListMode then
+					ListUI:SetListMode("locations")
+				end
+				-- Tree rebuild will handle pagination via targetBookId when complete
+			else
+				-- Tree already exists, navigate synchronously
+				if BookArchivist.DebugPrint then
+					BookArchivist:DebugPrint("[RandomBook] Using existing tree, navigating now")
+				end
+				
+				-- Ensure path is valid (note: using dot notation, not colon)
+				if ListUI.EnsureLocationPathValid then
+					ListUI.EnsureLocationPathValid(state)
+				end
+				
+				-- Find which page the book is on
+				local targetPage = 1
+				if ListUI.FindPageForBook then
+					local foundPage = ListUI:FindPageForBook(bookId)
+					if foundPage then
+						targetPage = foundPage
+						if BookArchivist.DebugPrint then
+							BookArchivist:DebugPrint(string.format("[RandomBook] Found book on page %d", targetPage))
+						end
+					else
+						if BookArchivist.DebugPrint then
+							BookArchivist:DebugPrint("[RandomBook] Book not found in location, defaulting to page 1")
+						end
+					end
+				end
+				
+				-- Set pagination state for Locations mode only
+				state.currentPage = targetPage
+				
+				-- Do NOT update global pagination - that's for Books mode
+				-- Each mode maintains its own page state independently
+				
+				-- Rebuild rows with the correct page
+				if ListUI.RebuildLocationRows then
+					local pageSize = ListUI.GetPageSize and ListUI:GetPageSize() or 25
+					ListUI.RebuildLocationRows(state, ListUI, pageSize, targetPage)
+				end
+				if ListUI.UpdateLocationBreadcrumbUI then
+					ListUI:UpdateLocationBreadcrumbUI()
+				end
+				
+				-- Check current mode
+				local currentMode = ListUI.GetListMode and ListUI:GetListMode()
+				local needsModeSwitch = (currentMode ~= "locations")
+				
+				if BookArchivist.DebugPrint then
+					BookArchivist:DebugPrint(string.format("[RandomBook] Current mode: %s, needs switch: %s", tostring(currentMode), tostring(needsModeSwitch)))
+				end
+				
+				if needsModeSwitch then
+					-- Temporarily prevent tree rebuild during mode switch
+					local oldRebuild = ListUI.RebuildLocationTree
+					ListUI.RebuildLocationTree = function() 
+						if BookArchivist.DebugPrint then
+							BookArchivist:DebugPrint("[RandomBook] Suppressing tree rebuild during mode switch")
+						end
+					end
+					
+					-- Switch to Locations mode
+					if ListUI.SetListMode then
+						ListUI:SetListMode("locations")
+					end
+					
+					-- Restore the original function
+					ListUI.RebuildLocationTree = oldRebuild
+				end
+				
+				-- Update the list display
+				if ListUI.UpdateList then
+					ListUI:UpdateList()
+				end
+				
+				-- Clear the target book ID
+				state.targetBookId = nil
 			end
 		end
 	end
 	-- If no location, just stay in current mode and show the book
 	
-	-- Select the book
-	if ListUI.SetSelectedKey then
-		ListUI:SetSelectedKey(bookId)
-	end
-	
-	-- Notify selection changed to trigger UI updates
+	-- Notify selection changed to trigger reader update
 	if ListUI.NotifySelectionChanged then
 		ListUI:NotifySelectionChanged()
 	end

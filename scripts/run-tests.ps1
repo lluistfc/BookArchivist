@@ -77,31 +77,41 @@ if (-not $useMechanic) {
 if ($useMechanic) {
     Push-Location $mechanicPath
     try {
-        Write-Host "Running tests via Mechanic..." -ForegroundColor Yellow
-        Write-Host "Command: py -m mechanic.cli call addon.test`n" -ForegroundColor Gray
-        
-        $result = py -m mechanic.cli call addon.test '{"addon":"BookArchivist"}' 2>&1 | Out-String
-        Write-Host $result
-        
-        # Parse result for exit code
-        if ($result -match "(\d+) passed, (\d+) failed") {
-            $passed = [int]$matches[1]
-            $failed = [int]$matches[2]
+        # When -ShowErrors is specified, bypass Mechanic and use Busted directly for full output
+        if ($ShowErrors -or $Detailed) {
+            Write-Host "Error detail mode requested - falling back to Busted for full output" -ForegroundColor Yellow
+            Pop-Location
+            $useMechanic = $false
+        } else {
+            Write-Host "Running tests via Mechanic..." -ForegroundColor Yellow
+            Write-Host "Command: py -m mechanic.cli call addon.test`n" -ForegroundColor Gray
             
-            if ($failed -gt 0) {
-                exit 1
+            $result = py -m mechanic.cli call addon.test '{"addon":"BookArchivist"}' 2>&1 | Out-String
+            Write-Host $result
+            
+            # Parse result for exit code
+            if ($result -match "(\d+) passed, (\d+) failed") {
+                $passed = [int]$matches[1]
+                $failed = [int]$matches[2]
+                
+                if ($failed -gt 0) {
+                    Write-Host "`nℹ For detailed error output, run: make test-errors" -ForegroundColor Yellow
+                    exit 1
+                } else {
+                    Write-Host "`n✓ All tests passed via Mechanic!" -ForegroundColor Green
+                    exit 0
+                }
             } else {
-                Write-Host "`n✓ All tests passed via Mechanic!" -ForegroundColor Green
+                Write-Host "✓ Tests completed via Mechanic" -ForegroundColor Green
                 exit 0
             }
-        } else {
-            Write-Host "✓ Tests completed via Mechanic" -ForegroundColor Green
-            exit 0
         }
     } finally {
-        Pop-Location
+        if ($useMechanic) {
+            Pop-Location
+            exit 0
+        }
     }
-    exit 0
 }
 
 # Fall back to busted for CI or when Mechanic not available
@@ -142,8 +152,8 @@ Write-Host "Command: busted $($args -join ' ')`n" -ForegroundColor Gray
 
 Push-Location $addonPath
 try {
-    if ($Verbose) {
-        # Verbose mode: show full busted output
+    if ($Verbose -or $ShowErrors) {
+        # Verbose/ShowErrors mode: show full busted output (native format with errors)
         & busted @args
     } elseif ($Detailed) {
         # Detailed mode: show each test with pass/fail (JUnit-style)

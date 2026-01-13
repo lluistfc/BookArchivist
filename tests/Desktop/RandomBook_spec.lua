@@ -354,6 +354,10 @@ describe("RandomBook Selection", function()
 				keySet = nil,
 				renderCalled = false,
 				updateCalled = false,
+				locationState = {
+					path = {},
+					currentPage = 1,
+				},
 			}
 			
 			BookArchivist.UI = BookArchivist.UI or {}
@@ -366,6 +370,15 @@ describe("RandomBook Selection", function()
 				end,
 				GetSelectedKey = function(self)
 					return mockUI.keySet
+				end,
+				GetLocationState = function(self)
+					return mockUI.locationState
+				end,
+				GetListMode = function(self)
+					return mockUI.modeSet
+				end,
+				RebuildLocationTree = function(self)
+					-- Mock - tree doesn't exist, will trigger async path
 				end,
 				NotifySelectionChanged = function(self)
 					-- Mock

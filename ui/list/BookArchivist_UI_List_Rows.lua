@@ -196,7 +196,8 @@ function ListUI:UpdateList()
 
 	-- Always rebuild location rows to ensure current page is displayed
 	local state = self:GetLocationState()
-	local requestedPage = self:GetPage()
+	-- Use location's own pagination state, not global Books pagination
+	local requestedPage = state.currentPage or 1
 	
 	self:DebugPrint(string.format("[BookArchivist] UpdateList locations: rebuilding with page %d", requestedPage))
 	

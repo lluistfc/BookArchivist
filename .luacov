@@ -2,11 +2,13 @@ return {
   statsfile = "coverage/luacov.stats.out",
   reportfile = "coverage/luacov.report.out",
   exclude = {
-    "Tests/",
-    "docs/",
-    "scripts/",
-    "dev/",
-    "media"
+    "Tests/", "Tests\\",
+    "tests/", "tests\\",
+    "docs/", "docs\\",
+    "scripts/", "scripts\\",
+    "dev/", "dev\\",
+    "media/", "media\\",
+    "locales/", "locales\\",
+    "libs/", "libs\\",
   }
 }
--- View report: code coverage/luacov.report.out

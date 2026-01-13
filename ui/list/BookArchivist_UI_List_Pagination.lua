@@ -151,14 +151,33 @@ function ListUI:UpdatePaginationUI(total, pageCount)
 		pageCount = 1
 	end
 
-	local page = self:GetPage()
+	-- Get the correct page based on current mode
+	local currentMode = self:GetListMode()
+	local page
+	if currentMode == "locations" then
+		local state = self:GetLocationState()
+		page = tonumber(state.currentPage) or 1
+	else
+		page = self:GetPage() -- Books mode uses state.pagination.page
+	end
+	
 	if page > pageCount then
 		page = pageCount
-		self.__state.pagination.page = page
+		if currentMode == "locations" then
+			local state = self:GetLocationState()
+			state.currentPage = page
+		else
+			self.__state.pagination.page = page
+		end
 	end
 	if page < 1 then
 		page = 1
-		self.__state.pagination.page = page
+		if currentMode == "locations" then
+			local state = self:GetLocationState()
+			state.currentPage = page
+		else
+			self.__state.pagination.page = page
+		end
 	end
 
 	local prevButton = self:GetFrame("pagePrevButton")

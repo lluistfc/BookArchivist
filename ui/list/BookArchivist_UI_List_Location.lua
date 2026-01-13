@@ -317,6 +317,96 @@ function ListUI:GetLocationPagination()
 	}
 end
 
+--- Find which page a specific book is on in the current location
+--- @param bookId string The book ID to find
+--- @return number|nil pageNumber The page number (1-indexed), or nil if book not found
+function ListUI:FindPageForBook(bookId)
+	if not bookId then
+		if self.DebugPrint then
+			self:DebugPrint("[FindPageForBook] No bookId provided")
+		end
+		return nil
+	end
+	
+	local state = getLocationState(self)
+	local node = state.activeNode or state.root
+	if not node then
+		if self.DebugPrint then
+			self:DebugPrint("[FindPageForBook] No node available")
+		end
+		return nil
+	end
+	
+	-- Sort the node to match the display order
+	sortNodeLazy(node)
+	
+	local childNames = node.childNames or {}
+	local books = node.books or {}
+	
+	if self.DebugPrint then
+		self:DebugPrint(string.format("[FindPageForBook] Looking for bookId=%s in node with %d children, %d books", bookId, #childNames, #books))
+	end
+	
+	-- Filter books by current search query if applicable
+	local hasSearch = self.GetSearchQuery and self:GetSearchQuery() ~= ""
+	if hasSearch and not (childNames and #childNames > 0) then
+		local filtered = self.GetFilteredKeys and self:GetFilteredKeys() or {}
+		local filteredBooksInLocation = {}
+		for _, key in ipairs(filtered) do
+			for _, locKey in ipairs(books) do
+				if key == locKey then
+					table.insert(filteredBooksInLocation, key)
+					break
+				end
+			end
+		end
+		books = filteredBooksInLocation
+		if self.DebugPrint then
+			self:DebugPrint(string.format("[FindPageForBook] After search filter: %d books", #books))
+		end
+	end
+	
+	-- We only care about books (not child locations)
+	local hasChildren = childNames and #childNames > 0
+	if hasChildren then
+		-- If showing child locations, book won't be visible
+		if self.DebugPrint then
+			self:DebugPrint("[FindPageForBook] Node has children, book won't be visible")
+		end
+		return nil
+	end
+	
+	-- Find the book's index in the books array
+	local bookIndex = nil
+	for i, key in ipairs(books) do
+		if key == bookId then
+			bookIndex = i
+			break
+		end
+	end
+	
+	if not bookIndex then
+		if self.DebugPrint then
+			self:DebugPrint(string.format("[FindPageForBook] Book not found in %d books", #books))
+		end
+		return nil
+	end
+	
+	-- Calculate which page this index falls on
+	local pageSize = self:GetPageSize()
+	if pageSize <= 0 then
+		pageSize = 25
+	end
+	
+	local pageNumber = math.ceil(bookIndex / pageSize)
+	
+	if self.DebugPrint then
+		self:DebugPrint(string.format("[FindPageForBook] Found book at index %d, pageSize=%d, page=%d", bookIndex, pageSize, pageNumber))
+	end
+	
+	return pageNumber
+end
+
 function ListUI:GetLocationBreadcrumbText()
 	local state = getLocationState(self)
 	local path = state.path or {}
@@ -677,17 +767,53 @@ function ListUI:RebuildLocationTree()
 			lastCacheKey = cacheKey
 			-- CRITICAL: Set state.root so ensureLocationPathValid and rebuildLocationRows can access the tree
 			state.root = root
-			state.currentPage = 1 -- Start at page 1
-			ensureLocationPathValid(state)
+			
+			-- Check if we need to paginate to a specific book (set by RandomBook navigation)
+			local targetPage = 1
+			if state.targetBookId then
+				if BookArchivist.LogInfo then
+					BookArchivist:LogInfo(string.format("Found targetBookId: %s, will paginate to it", state.targetBookId))
+				end
+				
+				-- Ensure path is valid first
+				ensureLocationPathValid(state)
+				
+				-- Find which page the target book is on
+				if self.FindPageForBook then
+					local foundPage = self:FindPageForBook(state.targetBookId)
+					if foundPage then
+						targetPage = foundPage
+						if BookArchivist.LogInfo then
+							BookArchivist:LogInfo(string.format("Target book found on page %d", targetPage))
+						end
+					else
+						if BookArchivist.LogInfo then
+							BookArchivist:LogInfo("Target book not found in location, using page 1")
+						end
+					end
+				end
+				
+				-- Clear the target book ID
+				state.targetBookId = nil
+			else
+				-- Normal rebuild: start at page 1
+				ensureLocationPathValid(state)
+			end
+			
+			state.currentPage = targetPage
+			
+			-- Sync the main pagination state with location state
+			if self.SetPage then
+				self:SetPage(targetPage, true) -- skipRefresh=true to avoid double update
+			end
 
 			if BookArchivist.LogInfo then
-				BookArchivist:LogInfo("Rebuilding location rows...")
+				BookArchivist:LogInfo(string.format("Rebuilding location rows for page %d...", targetPage))
 			end
 
 			-- Use pagination parameters from ListUI
 			local pageSize = self.GetPageSize and self:GetPageSize() or 100
-			local page = state.currentPage or 1
-			rebuildLocationRows(state, self, pageSize, page)
+			rebuildLocationRows(state, self, pageSize, targetPage)
 
 			-- Update breadcrumb UI
 			if self.UpdateLocationBreadcrumbUI then
