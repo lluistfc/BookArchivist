@@ -157,11 +157,6 @@ local function InjectDebugSettingIntoOptionsPanel()
 		db.options.gridMode = "border"
 	end
 
-	-- ============================================================================
-	-- DEVELOPMENT TOOLS CATEGORY
-	-- ============================================================================
-	Settings.CreateSectionTitle(category, "Development Tools", "Options for testing and debugging addon functionality")
-
 	-- Register debug checkbox
 	do
 		local variable = "debug"
@@ -192,11 +187,6 @@ local function InjectDebugSettingIntoOptionsPanel()
 			DevTools.EnableDebugChat(state)
 		end)
 	end
-
-	-- ============================================================================
-	-- BOOK ECHO TESTING CATEGORY
-	-- ============================================================================
-	Settings.CreateSectionTitle(category, "Book Echo Testing", "Tools for testing the Book Echo memory reflection feature")
 
 	-- Register echo refresh checkbox (for testing Book Echo)
 	do
@@ -256,11 +246,6 @@ local function InjectDebugSettingIntoOptionsPanel()
 	
 	-- Hook into settings panel show to create button
 	hooksecurefunc(SettingsPanel, "Show", CreateResetButton)
-
-	-- ============================================================================
-	-- UI DEBUG CATEGORY
-	-- ============================================================================
-	Settings.CreateSectionTitle(category, "UI Debug", "Visual debugging tools for frame layout")
 
 	-- Register grid mode dropdown
 	do
