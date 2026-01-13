@@ -319,27 +319,27 @@ TAG ?=
 release:
 ifeq ($(DETECTED_OS),Windows)
 	@if "$(TAG)"=="" (echo Error: TAG required. Usage: make release TAG=x.x.x && exit 1)
-	@git tag -a "$(TAG)" -m "Release $(TAG)"
-	@echo ✓ Created tag: $(TAG)
-	@echo To push: git push origin $(TAG)
+	@git tag -a "v$(TAG)" -m "Release v$(TAG)"
+	@echo ✓ Created tag: v$(TAG)
+	@echo To push: git push origin v$(TAG)
 else
 	@if [ -z "$(TAG)" ]; then echo "Error: TAG required. Usage: make release TAG=x.x.x"; exit 1; fi
-	@git tag -a "$(TAG)" -m "Release $(TAG)"
-	@echo "✓ Created tag: $(TAG)"
-	@echo "To push: git push origin $(TAG)"
+	@git tag -a "v$(TAG)" -m "Release v$(TAG)"
+	@echo "✓ Created tag: v$(TAG)"
+	@echo "To push: git push origin v$(TAG)"
 endif
 
 alpha:
 ifeq ($(DETECTED_OS),Windows)
 	@if "$(TAG)"=="" (echo Error: TAG required. Usage: make alpha TAG=x.x.x && exit 1)
-	@git tag -a "$(TAG)-alpha" -m "Alpha release $(TAG)-alpha"
-	@echo ✓ Created tag: $(TAG)-alpha
-	@echo To push: git push origin $(TAG)-alpha
+	@git tag -a "v$(TAG)-alpha" -m "Alpha release v$(TAG)-alpha"
+	@echo ✓ Created tag: v$(TAG)-alpha
+	@echo To push: git push origin v$(TAG)-alpha
 else
 	@if [ -z "$(TAG)" ]; then echo "Error: TAG required. Usage: make alpha TAG=x.x.x"; exit 1; fi
-	@git tag -a "$(TAG)-alpha" -m "Alpha release $(TAG)-alpha"
-	@echo "✓ Created tag: $(TAG)-alpha"
-	@echo "To push: git push origin $(TAG)-alpha"
+	@git tag -a "v$(TAG)-alpha" -m "Alpha release v$(TAG)-alpha"
+	@echo "✓ Created tag: v$(TAG)-alpha"
+	@echo "To push: git push origin v$(TAG)-alpha"
 endif
 
 beta:
