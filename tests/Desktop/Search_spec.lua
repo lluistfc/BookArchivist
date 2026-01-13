@@ -119,6 +119,29 @@ describe("Search.BuildSearchText", function()
 		assert.is_true(result ~= nil)
 	end)
 
+	it("handles pages with only non-numeric keys", function()
+		local pages = {
+			title = "Title Page",
+			author = "Author Page",
+			content = "Content Page",
+		}
+		local result = BookArchivist.Search.BuildSearchText("Book", pages)
+		-- Should contain title + all page content
+		assert.is_true(result:match("book") ~= nil)
+		assert.is_true(result:match("title page") ~= nil or result:match("author page") ~= nil or result:match("content page") ~= nil)
+	end)
+
+	it("handles empty non-numeric page values", function()
+		local pages = {
+			empty = "",
+			blank = "   ",
+			valid = "Content",
+		}
+		local result = BookArchivist.Search.BuildSearchText("Title", pages)
+		assert.is_true(result:match("title") ~= nil)
+		assert.is_true(result:match("content") ~= nil)
+	end)
+
 	it("joins with newlines", function()
 		local pages = { [1] = "Page1", [2] = "Page2" }
 		local result = BookArchivist.Search.BuildSearchText("Title", pages)
