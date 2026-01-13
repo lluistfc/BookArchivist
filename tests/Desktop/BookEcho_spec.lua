@@ -156,6 +156,23 @@ describe("BookEcho", function()
 			assert.is_truthy(echo:find("The Skyfire Ship"))
 		end)
 		
+		it("should extract final zone from location chain", function()
+			testDB.booksById["book1"] = {
+				id = "book1",
+				readCount = 2,
+				firstReadLocation = "Azeroth > Eastern Kingdoms > Stormwind City",
+				pages = { [1] = "Content" },
+			}
+			
+			local echo = BookEcho:GetEchoText("book1")
+			-- Should use only "Stormwind City", not the full chain
+			assert.is_truthy(echo:find("Stormwind City"))
+			assert.is_truthy(echo:find("among the shelves of"))
+			-- Should NOT contain the full chain
+			assert.is_falsy(echo:find("Azeroth >"))
+			assert.is_falsy(echo:find("Eastern Kingdoms"))
+		end)
+		
 		it("should use 'in the shadows of' for dungeons and citadels", function()
 			testDB.booksById["book1"] = {
 				id = "book1",

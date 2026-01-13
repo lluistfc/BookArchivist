@@ -105,11 +105,19 @@ function BookEcho:GetEchoText(bookId)
 	
 	-- Priority 1: First reopen (readCount == 2)
 	if book.readCount == 2 and book.firstReadLocation then
-		local contextPhrase = getLocationContext(book.firstReadLocation)
+		-- Extract final zone from chain (e.g., "Azeroth > Eastern Kingdoms > Stormwind City" -> "Stormwind City")
+		local finalZone = book.firstReadLocation:match("([^>]+)$")
+		if finalZone then
+			finalZone = finalZone:gsub("^%s+", ""):gsub("%s+$", "") -- Trim whitespace
+		else
+			finalZone = book.firstReadLocation
+		end
+		
+		local contextPhrase = getLocationContext(finalZone)
 		return string.format(
 			L["ECHO_FIRST_READ"] or "First discovered %s %s. Now, the book has returned to you.",
 			contextPhrase,
-			book.firstReadLocation
+			finalZone
 		)
 	end
 	
