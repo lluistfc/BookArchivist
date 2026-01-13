@@ -217,16 +217,20 @@ local function InjectDebugSettingIntoOptionsPanel()
 	local function CreateResetButton()
 		if resetButton then return end
 		
-		-- Find the settings panel
+		-- Find the settings panel container (the right side content area)
 		local settingsPanel = SettingsPanel
 		if not settingsPanel then return end
 		
-		-- Create button manually (positioned after echo checkbox)
-		resetButton = CreateFrame("Button", "BookArchivistResetCountsButton", settingsPanel, "UIPanelButtonTemplate")
+		-- Get the container that holds the actual settings content
+		local container = settingsPanel.Container
+		if not container then return end
+		
+		-- Create button manually (positioned in the settings content area)
+		resetButton = CreateFrame("Button", "BookArchivistResetCountsButton", container, "UIPanelButtonTemplate")
 		resetButton:SetSize(200, 22)
 		resetButton:SetText("Reset All Read Counts")
-		-- Position relative to the settings panel (adjust Y based on number of options above)
-		resetButton:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 20, -290)
+		-- Position relative to container top-left (after the checkboxes)
+		resetButton:SetPoint("TOPLEFT", container, "TOPLEFT", 20, -200)
 		
 		resetButton:SetScript("OnClick", function()
 			StaticPopup_Show("BOOKARCHIVIST_CONFIRM_RESET_COUNTS")
