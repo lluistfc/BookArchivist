@@ -1,3 +1,41 @@
+# 2.2.0
+
+**New Feature: Random Book Discovery**
+
+## What's New
+
+### Random Book Button 🎲
+
+Discover books you might have forgotten! The new Random button opens a random book from your library and automatically:
+- Shows the book in the Locations tab for geographic context
+- Paginates to the exact page where the book appears
+- Avoids showing the currently open book (unless it's your only book)
+
+Perfect for rediscovering your collection or getting inspired by serendipitous finds!
+
+### UI Improvements
+
+- **Independent Pagination**: Books and Locations tabs now maintain separate page numbers (no more confusion when switching between tabs)
+- **Fixed Pagination Bug**: Locations tab now properly updates content when you change pages
+
+### Critical Bug Fix
+
+- **Restored Location Data Capture**: Fixed a regression in v2.0.2 that broke location tracking for newly captured books. Books now correctly record where you found them again, and the Locations tab will populate properly for new captures.
+
+### Behind the Scenes
+
+- Added 130+ new automated tests (total: 489 passing tests)
+- Integrated advanced WoW API mocking for more reliable testing
+- Added code coverage tracking to ensure quality
+- Implemented LibDeflate compression for 75% smaller export strings
+- Enhanced location system with 603 WoW zones for accurate context
+
+### Feedback Welcome
+
+The Random Book feature is a fun new way to rediscover your collection! If you encounter any issues, please report them on CurseForge or GitHub.
+
+---
+
 # 2.1.0-beta
 
 **Infrastructure and quality improvements (beta release for testing)**

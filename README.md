@@ -36,6 +36,7 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
   - Optional delete button in the reader with confirmation dialog.
   - Favorites system to bookmark important books.
   - "Resume last book" feature to return to your most recent read.
+  - **Random Book** button to discover forgotten books with automatic location context and pagination.
 
 ## Screenshots
 
@@ -118,6 +119,7 @@ Customize your experience with multiple language support, tooltip integration, a
 - `core/BookArchivist_ImportWorker.lua` — staged import pipeline (decode/parse/merge/search/titles).
 - `core/BookArchivist_Favorites.lua` — favorites system for bookmarking books.
 - `core/BookArchivist_Recent.lua` — recent reads tracking.
+- `core/BookArchivist_RandomBook.lua` — random book selection with location navigation.
 - `core/BookArchivist_Locale.lua` — localization loader and helpers.
 
 ### UI framework

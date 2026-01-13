@@ -2,6 +2,89 @@
 
 All notable changes to this project are documented here.
 
+## [2.2.0] - 2026-01-13
+
+**Feature release with Random Book and UI improvements**
+
+### Added
+
+- **Random Book Feature**
+  - New "Random" button opens a random book from your library
+  - Automatically navigates to book's location in Locations tab for geographic context
+  - Smart pagination: displays the exact page where the book appears
+  - Excludes currently open book when selecting (unless it's the only book)
+  - Handles books without location data gracefully
+
+- **Testing Infrastructure Enhancements**
+  - Integrated Mechanic wow_stubs for comprehensive WoW API mocking (650+ API definitions)
+  - Added Mechanic CLI integration for local development (faster test execution)
+  - Enhanced test output: `make test-errors` now shows full Busted stack traces
+  - Code coverage support with luacov (`make test-coverage`, `make coverage-stats`)
+  - Added 130+ new tests: LocationTree (29), ListPagination (39), ListSort (34), Iterator (14), Location (28), Capture (16), ChatLinks (9)
+  - Created reusable UI mock helpers library (20+ mock utilities)
+  - Total test count: 489 passing tests
+
+- **Developer Documentation**
+  - Migrated documentation to Claude skills format for AI-assisted development
+  - Added comprehensive coverage analysis and TDD enforcement guidelines
+  - Created structured knowledge base for 8 major systems
+
+- **Compression & Performance**
+  - Added LibDeflate compression for export strings (75%+ size reduction)
+  - Implemented capability negotiation for cross-version chat link compatibility
+
+- **Location System**
+  - Echo integration: location-aware context system with 603 WoW zones
+  - Location capture and backfill functionality (fixes v2.0.2 regression)
+  - Enhanced zone chain processing for accurate geographic data
+
+### Changed
+
+- **UI Improvements**
+  - Independent pagination for Books and Locations tabs (no cross-contamination)
+  - Books tab uses `state.pagination.page`, Locations tab uses `state.currentPage`
+  - Pagination UI now mode-aware, displays correct page numbers per tab
+  - Fixed Locations tab pagination not updating content when changing pages
+
+- **Testing Workflow**
+  - Smart test runner: uses Mechanic CLI locally, Busted directly in CI
+  - Coverage mode forces Busted (Mechanic doesn't collect coverage)
+  - Improved error display with full stack traces instead of JSON parsing
+
+- **Code Quality**
+  - Removed overly defensive type checks in favor of duck-typing
+  - Refactored Frame_Builder steps table structure
+  - Cleaned up unused spy helpers
+
+### Fixed
+
+- **Pagination Issues**
+  - Fixed Books tab inheriting page number from Locations tab when switching modes
+  - Fixed Random Book feature not paginating to correct page
+  - Fixed pagination UI showing wrong page number in Locations mode
+  - Fixed Locations pagination not updating content when page changes
+
+- **UI Refresh Loop**
+  - Fixed infinite UI refresh loop during multi-page book capture
+  - Added refresh guards to prevent cascading calls
+  - Location tree cache now properly invalidated on rebuild
+
+- **Location System**
+  - Restored location capture functions broken in v2.0.2
+  - Fixed location tree not persisting in state (now stored in `state.root`)
+  - UI refreshes after book capture to update Locations tab
+
+- **Test Infrastructure**
+  - Added WoW API mocks for DB corruption handling tests
+  - Fixed CI-compatible fallback mocks in test bootstrap
+  - Removed test count references from documentation (auto-updated)
+
+### Developer Notes
+
+*This beta includes significant new functionality (Random Book feature) and extensive testing improvements (489 passing tests with 130+ new tests added). The Random Book feature provides a fun way to rediscover books in your library with automatic location context. Pagination improvements ensure Books and Locations tabs maintain independent state. All changes validated with comprehensive test coverage.*
+
+*Key metrics: 489/489 tests passing, code coverage tracking enabled, 0 critical lint errors, Interface version 120001 (The War Within).*
+
 ## [2.1.0-beta] - 2026-01-11
 
 **Infrastructure and quality improvements release (internal improvements for development)**
