@@ -129,8 +129,9 @@ function BookEcho:GetEchoText(bookId)
 		)
 	end
 	
-	-- Priority 3: Resume state (lastPageRead < totalPages)
-	if book.lastPageRead and book.pages then
+	-- Priority 3: Resume state (lastPageRead < totalPages, but only if read before)
+	-- Don't show resume echo on first read (readCount must be > 0)
+	if book.readCount and book.readCount > 0 and book.lastPageRead and book.pages then
 		local totalPages = 0
 		for _ in pairs(book.pages) do
 			totalPages = totalPages + 1

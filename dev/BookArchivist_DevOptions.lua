@@ -299,6 +299,7 @@ StaticPopupDialogs["BOOKARCHIVIST_CONFIRM_RESET_COUNTS"] = {
 				book.readCount = 0
 				book.firstReadLocation = nil
 				book.lastPageRead = nil
+				book.lastReadAt = nil
 				count = count + 1
 			end
 		end
