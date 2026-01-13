@@ -14,14 +14,184 @@ helper.setupNamespace()
 helper.loadFile("core/BookArchivist_CRC32.lua")
 helper.loadFile("core/BookArchivist_Base64.lua")
 helper.loadFile("core/BookArchivist_Serialize.lua")
+helper.loadFile("core/BookArchivist_Repository.lua")
 
 -- Mock Core for Export module dependency
 BookArchivist.Core = BookArchivist.Core or {}
+
+-- Load Core module (contains BuildExportPayloadForBook)
+helper.loadFile("core/BookArchivist_Core.lua")
 
 -- Load Export module
 helper.loadFile("core/BookArchivist_Export.lua")
 
 describe("Export (BDB1 Format)", function()
+	describe("BuildExportPayloadForBook", function()
+		local testDB
+		
+		before_each(function()
+			-- Mock global functions
+			_G.time = function() return 1000000 end
+			_G.UnitName = function() return "TestPlayer" end
+			_G.GetRealmName = function() return "TestRealm" end
+			_G.C_Timer = _G.C_Timer or {}
+			_G.C_Timer.After = function(delay, callback) 
+				if callback then callback() end 
+			end
+			
+			-- Create test database with v3 schema
+			testDB = {
+				dbVersion = 3,
+				booksById = {},
+				order = {},
+				indexes = {
+					objectToBookId = {},
+					itemToBookIds = {},
+					titleToBookIds = {},
+				},
+				options = {},
+			}
+			
+			-- Mock BookArchivistDB global
+			_G.BookArchivistDB = testDB
+			
+			-- Initialize Repository with test DB
+			BookArchivist.Repository:Init(testDB)
+		end)
+		
+		after_each(function()
+			-- Restore
+			_G.BookArchivistDB = nil
+			BookArchivist.Repository:Init(_G.BookArchivistDB or {})
+		end)
+		
+		it("should strip echo metadata when exporting a book", function()
+			-- Create a book with echo metadata
+			testDB.booksById["test-book-1"] = {
+				id = "test-book-1",
+				title = "Test Book",
+				material = "Parchment",
+				creator = "Test Author",
+				pages = {
+					[1] = "Page 1 content",
+					[2] = "Page 2 content",
+				},
+				location = { zoneText = "Stormwind" },
+				createdAt = 900000,
+				-- Echo metadata that should be stripped:
+				readCount = 5,
+				firstReadLocation = "Ironforge",
+				lastPageRead = 2,
+				lastReadAt = 999000,
+			}
+			testDB.order = { "test-book-1" }
+			
+			-- Export the book
+			local payload, err = BookArchivist.Core:BuildExportPayloadForBook("test-book-1")
+			
+			assert.is_nil(err)
+			assert.is_not_nil(payload)
+			assert.is_not_nil(payload.booksById)
+			assert.is_not_nil(payload.booksById["test-book-1"])
+			
+			local exportedBook = payload.booksById["test-book-1"]
+			
+			-- Verify content fields are present
+			assert.are.equal("Test Book", exportedBook.title)
+			assert.are.equal("Parchment", exportedBook.material)
+			assert.are.equal("Test Author", exportedBook.creator)
+			assert.are.equal(2, #exportedBook.pages)
+			assert.are.equal("Stormwind", exportedBook.location.zoneText)
+			assert.are.equal(900000, exportedBook.createdAt)
+			
+			-- Verify echo metadata is NOT present
+			assert.is_nil(exportedBook.readCount, "readCount should be stripped")
+			assert.is_nil(exportedBook.firstReadLocation, "firstReadLocation should be stripped")
+			assert.is_nil(exportedBook.lastPageRead, "lastPageRead should be stripped")
+			assert.is_nil(exportedBook.lastReadAt, "lastReadAt should be stripped")
+		end)
+		
+		it("should export book without echo metadata if none exists", function()
+			-- Create a book without echo metadata
+			testDB.booksById["new-book"] = {
+				id = "new-book",
+				title = "New Book",
+				pages = { [1] = "Content" },
+			}
+			testDB.order = { "new-book" }
+			
+			local payload, err = BookArchivist.Core:BuildExportPayloadForBook("new-book")
+			
+			assert.is_nil(err)
+			assert.is_not_nil(payload)
+			
+			local exportedBook = payload.booksById["new-book"]
+			assert.are.equal("New Book", exportedBook.title)
+			assert.is_nil(exportedBook.readCount)
+			assert.is_nil(exportedBook.firstReadLocation)
+		end)
+		
+		it("should preserve all non-echo fields", function()
+			-- Create a book with many fields
+			testDB.booksById["full-book"] = {
+				id = "full-book",
+				title = "Complete Book",
+				material = "Leather",
+				creator = "Famous Author",
+				pages = { [1] = "Page 1", [2] = "Page 2", [3] = "Page 3" },
+				location = { 
+					zoneText = "Dalaran",
+					subZoneText = "Violet Citadel",
+				},
+				createdAt = 800000,
+				lastSeenAt = 850000,
+				-- Echo metadata (should be stripped)
+				readCount = 10,
+				firstReadLocation = "Stormwind",
+				lastPageRead = 3,
+				lastReadAt = 900000,
+			}
+			testDB.order = { "full-book" }
+			
+			local payload, err = BookArchivist.Core:BuildExportPayloadForBook("full-book")
+			
+			assert.is_nil(err)
+			local exportedBook = payload.booksById["full-book"]
+			
+			-- All content preserved
+			assert.are.equal("Complete Book", exportedBook.title)
+			assert.are.equal("Leather", exportedBook.material)
+			assert.are.equal("Famous Author", exportedBook.creator)
+			assert.are.equal(3, #exportedBook.pages)
+			assert.are.equal("Dalaran", exportedBook.location.zoneText)
+			assert.are.equal("Violet Citadel", exportedBook.location.subZoneText)
+			assert.are.equal(800000, exportedBook.createdAt)
+			assert.are.equal(850000, exportedBook.lastSeenAt)
+			
+			-- Echo metadata stripped
+			assert.is_nil(exportedBook.readCount)
+			assert.is_nil(exportedBook.firstReadLocation)
+			assert.is_nil(exportedBook.lastPageRead)
+			assert.is_nil(exportedBook.lastReadAt)
+		end)
+		
+		it("should return error for missing book", function()
+			local payload, err = BookArchivist.Core:BuildExportPayloadForBook("nonexistent")
+			
+			assert.is_nil(payload)
+			assert.is_not_nil(err)
+			assert.is_truthy(err:find("not found"))
+		end)
+		
+		it("should return error for invalid book ID", function()
+			local payload, err = BookArchivist.Core:BuildExportPayloadForBook(nil)
+			
+			assert.is_nil(payload)
+			assert.is_not_nil(err)
+			assert.is_truthy(err:find("invalid"))
+		end)
+	end)
+	
 	describe("DecodeBDB1Envelope", function()
 		it("should reject empty string", function()
 			local result, schema, err = BookArchivist.Core._DecodeBDB1Envelope("")
