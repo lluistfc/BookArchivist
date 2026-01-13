@@ -185,13 +185,38 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	bookTitle:SetPoint("BOTTOM", readerHeaderRow, "CENTER", 0, 0)
 
+	-- Echo text (Book Echo memory reflection)
+	local echoText = readerHeaderRow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	state.echoText = echoText
+	if rememberWidget then
+		rememberWidget("echoText", echoText)
+	end
+	echoText:ClearAllPoints()
+	echoText:SetPoint("TOPLEFT", bookTitle, "BOTTOMLEFT", 0, -2)
+	if actionsRail then
+		echoText:SetPoint("TOPRIGHT", actionsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
+	else
+		echoText:SetPoint("TOPRIGHT", readerHeaderRow, "TOPRIGHT", 0, 0)
+	end
+	echoText:SetJustifyH("LEFT")
+	echoText:SetWordWrap(true)
+	echoText:SetTextColor(0.7, 0.7, 0.7, 0.8)
+	-- Make italic if possible
+	local font, size = echoText:GetFont()
+	if font then
+		echoText:SetFont(font, size, "ITALIC")
+	end
+	echoText:SetText("")
+	echoText:Hide()
+	uiFrame.echoText = echoText
+
 	local metaDisplay = readerHeaderRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	state.metaDisplay = metaDisplay
 	if rememberWidget then
 		rememberWidget("meta", metaDisplay)
 	end
 	metaDisplay:ClearAllPoints()
-	metaDisplay:SetPoint("TOPLEFT", bookTitle, "BOTTOMLEFT", 0, -(Metrics.GAP_XS or 2))
+	metaDisplay:SetPoint("TOPLEFT", echoText, "BOTTOMLEFT", 0, -(Metrics.GAP_XS or 2))
 	if actionsRail then
 		metaDisplay:SetPoint("TOPRIGHT", actionsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
 	else

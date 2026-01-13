@@ -607,6 +607,13 @@ function ReaderUI:RenderSelected()
 		bookTitle:SetTextColor(0.5, 0.5, 0.5)
 		metaDisplay:SetText("")
 
+		-- Hide echo text when no book selected
+		local echoText = state.echoText or getWidget("echoText")
+		if echoText then
+			echoText:SetText("")
+			echoText:Hide()
+		end
+
 		-- Hide action buttons when no book selected
 		local deleteButton = getDeleteButton()
 		if deleteButton then
@@ -687,6 +694,25 @@ function ReaderUI:RenderSelected()
 
 	bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
 	bookTitle:SetTextColor(1, 0.82, 0)
+
+	-- Update echo text (Book Echo memory reflection)
+	local echoText = state.echoText or getWidget("echoText")
+	if echoText then
+		local BookEcho = BookArchivist.BookEcho
+		if BookEcho and BookEcho.GetEchoText then
+			local echo = BookEcho:GetEchoText(key)
+			if echo then
+				echoText:SetText(echo)
+				echoText:Show()
+			else
+				echoText:SetText("")
+				echoText:Hide()
+			end
+		else
+			echoText:SetText("")
+			echoText:Hide()
+		end
+	end
 
 	local meta = {}
 	if entry.creator and entry.creator ~= "" then
