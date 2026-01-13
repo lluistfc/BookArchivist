@@ -8,10 +8,32 @@ describe("Iterator Module", function()
 	local onUpdateCallback
 	local currentTime = 0
 	local frameCounter = 0
+	local logInfoMessages = {}
+	local logErrorMessages = {}
+
+	local function resetLogs()
+		logInfoMessages = {}
+		logErrorMessages = {}
+	end
+
+	local function logContains(messages, needle)
+		for _, msg in ipairs(messages) do
+			if tostring(msg):find(needle, 1, true) then
+				return true
+			end
+		end
+		return false
+	end
 	
 	setup(function()
 		-- Mock WoW API
 		_G.BookArchivist = {}
+		function BookArchivist:LogInfo(msg)
+			table.insert(logInfoMessages, msg)
+		end
+		function BookArchivist:LogError(msg)
+			table.insert(logErrorMessages, msg)
+		end
 		_G.GetTime = function()
 			return currentTime
 		end
@@ -32,6 +54,7 @@ describe("Iterator Module", function()
 		-- Load module
 		dofile("./core/BookArchivist_Iterator.lua")
 		Iterator = BookArchivist.Iterator
+		resetLogs() -- Ignore module load log
 	end)
 	
 	before_each(function()
@@ -39,6 +62,7 @@ describe("Iterator Module", function()
 		frameCounter = 0
 		onUpdateCallback = nil
 		mockFrame = nil
+		resetLogs()
 	end)
 	
 	describe("Module Loading", function()
@@ -517,6 +541,65 @@ describe("Iterator Module", function()
 			
 			-- Operation should be cancelled after error
 			assert.is_false(Iterator:IsRunning("error-test"))
+		end)
+	end)
+
+	describe("Logging", function()
+		it("logs start and completion events", function()
+			Iterator:Start("log-complete", { 1, 2 }, function()
+				return true
+			end, { isArray = true })
+
+			for _ = 1, 5 do
+				if onUpdateCallback then
+					onUpdateCallback()
+				else
+					break
+				end
+				frameCounter = frameCounter + 1
+			end
+
+			assert.is_true(logContains(logInfoMessages, "Iterator started"))
+			assert.is_true(logContains(logInfoMessages, "Iterator complete"))
+		end)
+
+		it("logs user-requested aborts", function()
+			Iterator:Start("log-abort", { a = 1, b = 2, c = 3 }, function(key, value)
+				return key ~= "b"
+			end)
+
+			for _ = 1, 5 do
+				if onUpdateCallback then
+					onUpdateCallback()
+				else
+					break
+				end
+				frameCounter = frameCounter + 1
+			end
+
+			assert.is_true(logContains(logInfoMessages, "Iterator aborted by callback"))
+			assert.is_true(logContains(logInfoMessages, "Iterator aborted"))
+		end)
+
+		it("logs callback errors", function()
+			Iterator:Start("log-error", { a = 1, b = 2 }, function(key)
+				if key == "a" then
+					error("boom")
+				end
+				return true
+			end)
+
+			for _ = 1, 3 do
+				if onUpdateCallback then
+					onUpdateCallback()
+				else
+					break
+				end
+				frameCounter = frameCounter + 1
+			end
+
+			assert.is_true(logContains(logErrorMessages, "Iterator callback error"))
+			assert.is_true(logContains(logInfoMessages, "Iterator aborted"))
 		end)
 	end)
 end)
