@@ -82,6 +82,10 @@ local function formatTimeAgo(timestamp)
 	
 	if diff < 0 then return nil end
 	
+	-- Don't show recency echo for very recent reads (< 1 minute)
+	-- This prevents "0 minutes" showing immediately after reading
+	if diff < 60 then return nil end
+	
 	local days = math.floor(diff / 86400)
 	if days > 0 then
 		return string.format(L["ECHO_TIME_DAYS"] or "%d days", days)
