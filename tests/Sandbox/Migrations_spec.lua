@@ -196,6 +196,30 @@ describe("Migrations Module", function()
 			assert.is_not_nil(result.legacy.books)
 			assert.is_not_nil(result.legacy.order)
 		end)
+
+		it("should handle orphaned books in order", function()
+			-- Create a book that exists in booksById but not in legacy order
+			local db = {
+				books = {
+					["in_order"] = { title = "In Order", pages = { [1] = "A" } },
+					["orphan"] = { title = "Orphan", pages = { [1] = "B" } },
+				},
+				-- Only include one book in order
+				order = { "in_order" },
+			}
+			
+			local result = Migrations.v2(db)
+			
+			-- Both books should be in booksById
+			local count = 0
+			for _ in pairs(result.booksById) do
+				count = count + 1
+			end
+			assert.equals(2, count)
+			
+			-- The orphan book should have been appended to order
+			assert.equals(2, #result.order)
+		end)
 	end)
 	
 	describe("Migrate dispatcher", function()
