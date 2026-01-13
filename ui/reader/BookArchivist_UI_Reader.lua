@@ -680,7 +680,9 @@ function ReaderUI:RenderSelected()
 	local currentPageIndex = state.currentPageIndex or 1
 	local isNewBook = (state.lastTrackedBookId ~= key)
 	local isPageTurn = (state.lastTrackedBookId == key and state.lastTrackedPageIndex ~= currentPageIndex)
+	-- Safeguard: only respect forceRefresh if DevOptions is actually loaded
 	local forceRefresh = BookArchivistDB and BookArchivistDB.options and BookArchivistDB.options.echoRefreshOnRead
+		and BookArchivist.DevTools ~= nil
 	
 	-- Only increment on new book selection, not page turns
 	-- With forceRefresh, treat re-selecting same book from list as "new book"
