@@ -20,6 +20,18 @@ end
 helper.loadFile("core/BookArchivist_DBSafety.lua")
 
 describe("DBSafety (Corruption Detection)", function()
+	local createdBackups = {}
+	local originalDate = _G.date
+
+	after_each(function()
+		for _, name in ipairs(createdBackups) do
+			_G[name] = nil
+		end
+		createdBackups = {}
+		_G.BookArchivistDB = nil
+		_G.date = originalDate
+	end)
+
 	describe("ValidateStructure", function()
 		it("should accept valid modern database (v2)", function()
 			local db = {
@@ -396,6 +408,140 @@ describe("DBSafety (Corruption Detection)", function()
 			-- Verify independence
 			clone.booksById.book1.title = "Changed"
 			assert.are.equal("Test Book", original.booksById.book1.title)
+		end)
+	end)
+
+	describe("CreateBackup", function()
+		it("clones the database into a timestamped global", function()
+			_G.BookArchivistDB = {
+				dbVersion = 2,
+				booksById = {
+					book1 = { title = "One", pages = { [1] = "Page" } },
+				},
+				order = { "book1" },
+			}
+			_G.date = function(pattern)
+				assert.are.equal("%Y%m%d_%H%M%S", pattern)
+				return "20260113_111111"
+			end
+
+			local backupName = BookArchivist.DBSafety:CreateBackup()
+			table.insert(createdBackups, backupName)
+
+			assert.are.equal("BookArchivistDB_Backup_20260113_111111", backupName)
+			assert.is_table(_G[backupName])
+			assert.are_not.equal(_G.BookArchivistDB, _G[backupName])
+			_G.BookArchivistDB.booksById.book1.title = "Mutated"
+			assert.are.equal("One", _G[backupName].booksById.book1.title)
+		end)
+	end)
+
+	describe("HealthCheck", function()
+		it("fails when database is missing", function()
+			local healthy, issue = BookArchivist.DBSafety:HealthCheck(nil)
+			assert.is_false(healthy)
+			assert.is_true(issue:find("missing") ~= nil)
+		end)
+
+		it("reports orphaned order, invalid books, and invalid recents", function()
+			local db = BookArchivist.DBSafety:InitializeFreshDB()
+			db.booksById.good = { title = "Good", pages = { [1] = "Text" } }
+			db.booksById.broken = "oops"
+			db.order = { "good", "ghost" }
+			db.recent.list = { "good", "missing" }
+
+			local healthy, issue = BookArchivist.DBSafety:HealthCheck(db)
+			assert.is_false(healthy)
+			assert.is_true(issue:find("orphaned entries") ~= nil)
+			assert.is_true(issue:find("books with invalid") ~= nil)
+			assert.is_true(issue:find("invalid entries in recent") ~= nil)
+		end)
+
+		it("passes when structure is healthy", function()
+			local db = BookArchivist.DBSafety:InitializeFreshDB()
+			db.booksById.good = { title = "Good", pages = { [1] = "Text" } }
+			db.order = { "good" }
+			db.recent.list = { "good" }
+
+			local healthy, issue = BookArchivist.DBSafety:HealthCheck(db)
+			assert.is_true(healthy)
+			assert.is_nil(issue)
+		end)
+	end)
+
+	describe("RepairDatabase", function()
+		it("repairs orphaned entries, invalid recents, ui state, and bad books", function()
+			_G.BookArchivistDB = {
+				booksById = {
+					good = { title = "Good", pages = { [1] = "Text" } },
+					bad = { title = nil, pages = nil },
+				},
+				order = { "good", "ghost1", "ghost2" },
+				recent = { list = { "good", "ghostRecent" } },
+				uiState = { lastBookId = "ghost1" },
+			}
+
+			local count, summary = BookArchivist.DBSafety:RepairDatabase()
+			assert.are.equal(5, count)
+			assert.is_true(summary:find("orphaned order") ~= nil)
+			assert.is_true(summary:find("invalid recent") ~= nil)
+			assert.is_true(summary:find("lastBookId") ~= nil)
+			assert.is_true(summary:find("invalid book") ~= nil)
+			assert.are.same({ "good" }, _G.BookArchivistDB.order)
+			assert.are.same({ "good" }, _G.BookArchivistDB.recent.list)
+			assert.is_nil(_G.BookArchivistDB.uiState.lastBookId)
+			assert.is_nil(_G.BookArchivistDB.booksById.bad)
+		end)
+
+		it("recreates missing uiState", function()
+			_G.BookArchivistDB = {
+				booksById = { good = { title = "Good", pages = { [1] = "Text" } } },
+				order = { "good" },
+				recent = { list = { "good" } },
+				uiState = nil,
+			}
+
+			local count, summary = BookArchivist.DBSafety:RepairDatabase()
+			assert.are.equal(1, count)
+			assert.is_true(summary:find("uiState") ~= nil)
+			assert.are.equal("__all__", _G.BookArchivistDB.uiState.lastCategoryId)
+		end)
+
+		it("returns gracefully when db is missing", function()
+			_G.BookArchivistDB = nil
+			local count, summary = BookArchivist.DBSafety:RepairDatabase()
+			assert.are.equal(0, count)
+			assert.is_true(summary:find("Cannot repair") ~= nil)
+		end)
+	end)
+
+	describe("GetAvailableBackups", function()
+		it("lists backups with metadata sorted by name", function()
+			local newer = "BookArchivistDB_Backup_20260113_020000"
+			local older = "BookArchivistDB_Backup_CORRUPTED_20260113_010000"
+			_G[newer] = { data = true }
+			_G[older] = { nested = { value = true } }
+			table.insert(createdBackups, newer)
+			table.insert(createdBackups, older)
+
+			local backups = BookArchivist.DBSafety:GetAvailableBackups()
+			assert.are.equal(2, #backups)
+			assert.are.equal(newer, backups[1].name)
+			assert.is_false(backups[1].isCorrupted)
+			assert.is_true(backups[1].size > 0)
+			assert.are.equal(older, backups[2].name)
+			assert.is_true(backups[2].isCorrupted)
+		end)
+	end)
+
+	describe("EstimateSize", function()
+		it("returns minimal values for primitives and estimates nested tables", function()
+			assert.are.equal(0.001, BookArchivist.DBSafety:EstimateSize("string"))
+			local size = BookArchivist.DBSafety:EstimateSize({
+				one = true,
+				two = { child = true },
+			})
+			assert.is_true(size > 0.1)
 		end)
 	end)
 end)

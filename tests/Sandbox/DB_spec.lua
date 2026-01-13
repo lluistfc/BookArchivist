@@ -1,6 +1,6 @@
----@diagnostic disable: undefined-global
--- DB_spec.lua
--- Tests for BookArchivist.DB (database initialization and migration)
+
+local helper = dofile("Tests/test_helper.lua")
+helper.setupNamespace()
 
 describe("DB Module", function()
 	local DB, DBSafety, Migrations, Repository

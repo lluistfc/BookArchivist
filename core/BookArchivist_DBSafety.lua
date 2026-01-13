@@ -9,6 +9,11 @@ BookArchivist.DBSafety = DBSafety
 
 local BACKUP_PREFIX = "BookArchivistDB_Backup_"
 
+local function extractBackupTimestamp(name)
+	local suffix = name:sub(#BACKUP_PREFIX + 1)
+	return suffix:gsub("^CORRUPTED_", "")
+end
+
 -- Module loaded confirmation
 if BookArchivist and BookArchivist.DebugPrint then
 	BookArchivist:DebugPrint("[DBSafety] Module loaded")
@@ -359,7 +364,7 @@ function DBSafety:GetAvailableBackups()
 	local backups = {}
 
 	for key, value in pairs(_G) do
-		if type(key) == "string" and key:find("^" .. BACKUP_PREFIX, 1, true) then
+		if type(key) == "string" and key:sub(1, #BACKUP_PREFIX) == BACKUP_PREFIX then
 			table.insert(backups, {
 				name = key,
 				isCorrupted = key:find("CORRUPTED") ~= nil,
@@ -368,8 +373,16 @@ function DBSafety:GetAvailableBackups()
 		end
 	end
 
-	-- Sort by name (which includes timestamp)
+	-- Sort newest first by timestamp, falling back to corruption flag then name
 	table.sort(backups, function(a, b)
+		local aKey = extractBackupTimestamp(a.name)
+		local bKey = extractBackupTimestamp(b.name)
+		if aKey ~= bKey then
+			return aKey > bKey
+		end
+		if a.isCorrupted ~= b.isCorrupted then
+			return b.isCorrupted -- prefer non-corrupted
+		end
 		return a.name > b.name
 	end)
 
