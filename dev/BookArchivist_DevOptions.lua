@@ -242,25 +242,40 @@ local function InjectDebugSettingIntoOptionsPanel()
 		end)
 	end
 	
-	-- Register reset read counts button
-	do
-		local name = "Reset All Read Counts"
-		local tooltip = "Reset readCount, firstReadLocation, and lastPageRead for all books (for testing echo feature)"
+	-- Register reset read counts button (manual creation since Settings API doesn't support buttons)
+	-- We'll create it after the Settings panel is shown
+	local resetButton
+	local function CreateResetButton()
+		if resetButton then return end
 		
-		local function ResetAllReadCounts()
+		-- Find the settings panel
+		local settingsPanel = SettingsPanel
+		if not settingsPanel then return end
+		
+		-- Create button manually
+		resetButton = CreateFrame("Button", "BookArchivistResetCountsButton", settingsPanel, "UIPanelButtonTemplate")
+		resetButton:SetSize(200, 22)
+		resetButton:SetText("Reset All Read Counts")
+		resetButton:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 20, -320)
+		
+		resetButton:SetScript("OnClick", function()
 			StaticPopup_Show("BOOKARCHIVIST_CONFIRM_RESET_COUNTS")
-		end
+		end)
 		
-		local initializer = Settings.CreateButtonInitializer(
-			name,
-			tooltip,
-			ResetAllReadCounts,
-			nil, -- buttonText (nil uses default "Okay")
-			function() return true end -- enabled callback
-		)
+		resetButton:SetScript("OnEnter", function(self)
+			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+			GameTooltip:SetText("Reset All Read Counts", 1, 1, 1)
+			GameTooltip:AddLine("Reset readCount, firstReadLocation, and lastPageRead for all books (for testing echo feature)", nil, nil, nil, true)
+			GameTooltip:Show()
+		end)
 		
-		Settings.RegisterInitializer(category, initializer)
+		resetButton:SetScript("OnLeave", function()
+			GameTooltip:Hide()
+		end)
 	end
+	
+	-- Hook into settings panel show to create button
+	hooksecurefunc(SettingsPanel, "Show", CreateResetButton)
 end
 
 -- ============================================================================
