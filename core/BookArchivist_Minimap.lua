@@ -34,10 +34,20 @@ function MinimapModule:Initialize()
 		icon = "Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png",
 		OnClick = function(_, button)
 			if button == "LeftButton" then
-				BookArchivist.ToggleUI()
+				if BookArchivist.ToggleUI then
+					BookArchivist.ToggleUI()
+				end
 			elseif button == "RightButton" then
-				-- Use the same slash command handler logic
-				SlashCmdList["BOOKARCHIVIST"]("options")
+				-- Open Blizzard settings to BookArchivist category
+				if Settings and Settings.OpenToCategory then
+					local optionsUI = BookArchivist.UI and BookArchivist.UI.OptionsUI
+					if optionsUI and optionsUI.GetCategory then
+						local category = optionsUI:GetCategory()
+						if category then
+							Settings.OpenToCategory(category.ID or category)
+						end
+					end
+				end
 			end
 		end,
 		OnTooltipShow = function(tooltip)
