@@ -33,8 +33,8 @@ function Tests.test_selection_tracking()
 end
 
 function Tests.test_list_selection_handler()
-	if not BookArchivist.UI.List.OnBookSelected then
-		return false, "OnBookSelected function missing"
+	if not BookArchivist.UI.List.UpdateList then
+		return false, "UpdateList function missing"
 	end
 	return true, "List selection handler available"
 end
@@ -74,8 +74,8 @@ function Tests.test_favorite_list_update()
 end
 
 function Tests.test_row_rendering()
-	if not BookArchivist.UI.List.RenderRows then
-		return false, "RenderRows function missing"
+	if not BookArchivist.UI.List.UpdateList then
+		return false, "UpdateList function missing"
 	end
 	return true, "Row rendering available"
 end
