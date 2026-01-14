@@ -34,9 +34,9 @@ function MinimapModule:Initialize()
 		icon = "Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png",
 		OnClick = function(_, button)
 			if button == "LeftButton" then
-				BookArchivist:Toggle()
+				BookArchivist.UI.Toggle()
 			elseif button == "RightButton" then
-				BookArchivist:OpenSettings()
+				BookArchivist.UI.OpenSettings()
 			end
 		end,
 		OnTooltipShow = function(tooltip)
