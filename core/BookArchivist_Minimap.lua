@@ -38,15 +38,8 @@ function MinimapModule:Initialize()
 					BookArchivist.ToggleUI()
 				end
 			elseif button == "RightButton" then
-				-- Open Blizzard settings to BookArchivist category
-				if Settings and Settings.OpenToCategory then
-					local optionsUI = BookArchivist.UI and BookArchivist.UI.OptionsUI
-					if optionsUI and optionsUI.GetCategory then
-						local category = optionsUI:GetCategory()
-						if category then
-							Settings.OpenToCategory(category.ID or category)
-						end
-					end
+				if BookArchivist.OpenOptionsPanel then
+					BookArchivist:OpenOptionsPanel()
 				end
 			end
 		end,
