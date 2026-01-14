@@ -229,9 +229,9 @@ end
 -- Public API (consumed by MechanicIntegration)
 function InGameTests.GetAll()
 	-- Spec test modules are already loaded via .toc and exported to global namespace
-	ReaderTests = BookArchivist.ReaderTests or {}
-	FilteringTests = BookArchivist.FilteringTests or {}
-	IntegrationTests = BookArchivist.IntegrationTests or {}
+	local ReaderTests = BookArchivist.ReaderTests or {}
+	local FilteringTests = BookArchivist.FilteringTests or {}
+	local IntegrationTests = BookArchivist.IntegrationTests or {}
 
 	-- Build combined test list
 	local allTests = {}
@@ -288,11 +288,6 @@ function InGameTests.Run(testId)
 	local startTime = debugprofilestop()
 	local result
 
-	-- Reload test modules from global namespace (spec files loaded via .toc)
-	local ReaderTests = BookArchivist.ReaderTests or {}
-	local FilteringTests = BookArchivist.FilteringTests or {}
-	local IntegrationTests = BookArchivist.IntegrationTests or {}
-
 	if testId == "tooltip_integration" then
 		result = runTooltipTest()
 	elseif testId == "itemtext_capture" then
@@ -301,6 +296,7 @@ function InGameTests.Run(testId)
 		result = runLocationTest()
 	elseif testId:match("^reader_") then
 		local funcName = "test_" .. testId:sub(8)
+		local ReaderTests = BookArchivist.ReaderTests or {}
 		if ReaderTests[funcName] then
 			local passed, message = ReaderTests[funcName]()
 			result = {
@@ -313,6 +309,7 @@ function InGameTests.Run(testId)
 		end
 	elseif testId:match("^filtering_") then
 		local funcName = "test_" .. testId:sub(11)
+		local FilteringTests = BookArchivist.FilteringTests or {}
 		if FilteringTests[funcName] then
 			local passed, message = FilteringTests[funcName]()
 			result = {
@@ -325,6 +322,7 @@ function InGameTests.Run(testId)
 		end
 	elseif testId:match("^integration_") then
 		local funcName = "test_" .. testId:sub(14)
+		local IntegrationTests = BookArchivist.IntegrationTests or {}
 		if IntegrationTests[funcName] then
 			local passed, message = IntegrationTests[funcName]()
 			result = {
