@@ -85,5 +85,5 @@ end
 
 function MinimapModule:GetButtonOptions()
 	local db = BookArchivist:GetDB()
-	return db.minimap or { hide = false }
+	return db and db.minimap or { hide = false }
 end
