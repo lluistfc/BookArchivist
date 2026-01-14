@@ -232,20 +232,6 @@ function InGameTests.GetAll()
 	local ReaderTests = BookArchivist.ReaderTests or {}
 	local FilteringTests = BookArchivist.FilteringTests or {}
 	local IntegrationTests = BookArchivist.IntegrationTests or {}
-	
-	-- Debug: Check what's loaded
-	if not BookArchivist.IntegrationTests then
-		print("[InGameTests] WARNING: BookArchivist.IntegrationTests is nil!")
-	else
-		local count = 0
-		for k, v in pairs(BookArchivist.IntegrationTests) do
-			count = count + 1
-			if k:match("^test_") then
-				print("[InGameTests] Found integration test: " .. k)
-			end
-		end
-		print("[InGameTests] Total IntegrationTests entries: " .. count)
-	end
 
 	-- Build combined test list
 	local allTests = {}
@@ -335,11 +321,8 @@ function InGameTests.Run(testId)
 			result = { passed = false, message = "Test function not found", details = {} }
 		end
 	elseif testId:match("^integration_") then
-		local funcName = "test_" .. testId:sub(14)
+		local funcName = "test_" .. testId:sub(13)
 		local IntegrationTests = BookArchivist.IntegrationTests or {}
-		print("[InGameTests] Run() looking for: " .. funcName)
-		print("[InGameTests] IntegrationTests is: " .. tostring(IntegrationTests))
-		print("[InGameTests] IntegrationTests[funcName] is: " .. tostring(IntegrationTests[funcName]))
 		if IntegrationTests[funcName] then
 			local passed, message = IntegrationTests[funcName]()
 			result = {
@@ -348,7 +331,6 @@ function InGameTests.Run(testId)
 				details = {},
 			}
 		else
-			print("[InGameTests] ERROR: Test function '" .. funcName .. "' not found in IntegrationTests")
 			result = { passed = false, message = "Test function not found", details = {} }
 		end
 	else
