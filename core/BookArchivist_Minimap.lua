@@ -1,73 +1,89 @@
 ---@diagnostic disable: undefined-global
 -- BookArchivist_Minimap.lua
--- Stores minimap button settings independent from UI concerns.
+-- Minimap button integration using LibDBIcon
+
+local ADDON_NAME = ...
 
 BookArchivist = BookArchivist or {}
 
-local MinimapModule = BookArchivist.Minimap or {}
+local MinimapModule = {}
 BookArchivist.Minimap = MinimapModule
 
-local function getUI()
-	if not BookArchivist.UI then
-		return nil
-	end
-	return BookArchivist.UI.Minimap
-end
+local LibStub = _G.LibStub
+local L = BookArchivist.L or {}
 
-local function getOptions()
-	local core = BookArchivist.Core
-	if core and core.GetMinimapButtonOptions then
-		return core:GetMinimapButtonOptions()
-	end
-	MinimapModule._fallback = MinimapModule._fallback or { angle = 200 }
-	return MinimapModule._fallback
-end
+-- LibDataBroker object
+local ldb = LibStub and LibStub:GetLibrary("LibDataBroker-1.1", true)
+local icon = LibStub and LibStub:GetLibrary("LibDBIcon-1.0", true)
 
-function MinimapModule:GetButtonOptions()
-	return getOptions()
-end
-
-function MinimapModule:GetAngle()
-	local opts = getOptions()
-	return opts.angle or 200
-end
-
-function MinimapModule:SetAngle(angle)
-	local opts = getOptions()
-	local normalized = tonumber(angle) or opts.angle or 200
-	opts.angle = normalized % 360
-end
-
-function MinimapModule:RegisterButton(button)
-	self.button = button
-end
-
-function MinimapModule:GetButton()
-	return self.button
-end
-
-function MinimapModule:ClearButton()
-	self.button = nil
-end
-
-function MinimapModule:RefreshPosition()
-	local ui = getUI()
-	if ui and ui.RefreshPosition then
-		ui:RefreshPosition()
-	end
-end
+local dataObject
 
 function MinimapModule:Initialize()
+	if not ldb or not icon then
+		BookArchivist:DebugPrint("[Minimap] LibDBIcon not available")
+		return false
+	end
+
 	if self.initialized then
 		return true
 	end
-	local ui = getUI()
-	if ui and ui.Initialize then
-		local ok = ui:Initialize()
-		if ok then
-			self.initialized = true
-			return true
-		end
+
+	-- Create LibDataBroker data object
+	dataObject = ldb:NewDataObject("BookArchivist", {
+		type = "launcher",
+		icon = "Interface\\AddOns\\BookArchivist\\BookArchivist_logo_64x64.png",
+		OnClick = function(_, button)
+			if button == "LeftButton" then
+				BookArchivist:Toggle()
+			elseif button == "RightButton" then
+				BookArchivist:OpenSettings()
+			end
+		end,
+		OnTooltipShow = function(tooltip)
+			if not tooltip or not tooltip.AddLine then
+				return
+			end
+			tooltip:SetText((L["ADDON_TITLE"]) or "Book Archivist", 1, 0.82, 0)
+			tooltip:AddLine((L["MINIMAP_TIP_LEFT"]) or "Left-click: Open library", 0.9, 0.9, 0.9)
+			tooltip:AddLine((L["MINIMAP_TIP_RIGHT"]) or "Right-click: Open options", 0.9, 0.9, 0.9)
+			tooltip:AddLine((L["MINIMAP_TIP_DRAG"]) or "Drag: Move button", 0.9, 0.9, 0.9)
+		end,
+	})
+
+	-- Get or create minimap settings
+	local db = BookArchivist:GetDB()
+	if not db.minimap then
+		db.minimap = { hide = false }
+	end
+
+	-- Register with LibDBIcon
+	icon:Register("BookArchivist", dataObject, db.minimap)
+
+	self.initialized = true
+	BookArchivist:DebugPrint("[Minimap] Initialized with LibDBIcon")
+	return true
+end
+
+function MinimapModule:Show()
+	if icon and dataObject then
+		icon:Show("BookArchivist")
+	end
+end
+
+function MinimapModule:Hide()
+	if icon and dataObject then
+		icon:Hide("BookArchivist")
+	end
+end
+
+function MinimapModule:IsShown()
+	if icon and dataObject then
+		return not icon:IsHidden("BookArchivist")
 	end
 	return false
+end
+
+function MinimapModule:GetButtonOptions()
+	local db = BookArchivist:GetDB()
+	return db.minimap or { hide = false }
 end

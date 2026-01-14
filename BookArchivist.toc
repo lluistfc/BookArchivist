@@ -13,6 +13,8 @@ libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 libs\AceSerializer-3.0\AceSerializer-3.0.xml
 libs\AceComm-3.0\AceComm-3.0.xml
 libs\AceGUI-3.0\AceGUI-3.0.xml
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+libs\LibDBIcon-1.0\lib.xml
 
 core/BookArchivist_Repository.lua
 core/BookArchivist_BookId.lua
@@ -72,7 +74,6 @@ ui/reader/BookArchivist_UI_Reader_Rich.lua
 ui/reader/BookArchivist_UI_Reader_Delete.lua
 ui/reader/BookArchivist_UI_Reader_Share.lua
 ui/reader/BookArchivist_UI_Reader_Layout.lua
-ui/minimap/BookArchivist_UI_Minimap.lua
 ui/options/BookArchivist_UI_OptionsTemplates.xml
 ui/options/BookArchivist_UI_Options.lua
 ui/BookArchivist_UI.lua

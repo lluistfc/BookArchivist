@@ -2,6 +2,12 @@ package-as: BookArchivist
 
 enable-nolib-creation: no
 
+externals:
+  libs/LibDataBroker-1.1:
+    url: https://repos.curseforge.com/wow/libdatabroker-1-1
+  libs/LibDBIcon-1.0:
+    url: https://repos.curseforge.com/wow/libdbicon-1-0
+
 manual-changelog:
     filename: CURSE_FORGE_RELEASE_CHANGELOG.md
     markup-type: markdown
