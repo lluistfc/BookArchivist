@@ -337,6 +337,9 @@ function InGameTests.Run(testId)
 	elseif testId:match("^integration_") then
 		local funcName = "test_" .. testId:sub(14)
 		local IntegrationTests = BookArchivist.IntegrationTests or {}
+		print("[InGameTests] Run() looking for: " .. funcName)
+		print("[InGameTests] IntegrationTests is: " .. tostring(IntegrationTests))
+		print("[InGameTests] IntegrationTests[funcName] is: " .. tostring(IntegrationTests[funcName]))
 		if IntegrationTests[funcName] then
 			local passed, message = IntegrationTests[funcName]()
 			result = {
@@ -345,6 +348,7 @@ function InGameTests.Run(testId)
 				details = {},
 			}
 		else
+			print("[InGameTests] ERROR: Test function '" .. funcName .. "' not found in IntegrationTests")
 			result = { passed = false, message = "Test function not found", details = {} }
 		end
 	else
