@@ -232,6 +232,20 @@ function InGameTests.GetAll()
 	local ReaderTests = BookArchivist.ReaderTests or {}
 	local FilteringTests = BookArchivist.FilteringTests or {}
 	local IntegrationTests = BookArchivist.IntegrationTests or {}
+	
+	-- Debug: Check what's loaded
+	if not BookArchivist.IntegrationTests then
+		print("[InGameTests] WARNING: BookArchivist.IntegrationTests is nil!")
+	else
+		local count = 0
+		for k, v in pairs(BookArchivist.IntegrationTests) do
+			count = count + 1
+			if k:match("^test_") then
+				print("[InGameTests] Found integration test: " .. k)
+			end
+		end
+		print("[InGameTests] Total IntegrationTests entries: " .. count)
+	end
 
 	-- Build combined test list
 	local allTests = {}
