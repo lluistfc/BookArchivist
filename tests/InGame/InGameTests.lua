@@ -32,11 +32,6 @@ local tests = {
 	},
 }
 
--- Load spec file test modules
-local ReaderTests = {}
-local FilteringTests = {}
-local IntegrationTests = {}
-
 -- Test implementations (Core tests)
 local function runTooltipTest()
 	local details = {}
@@ -292,6 +287,11 @@ end
 function InGameTests.Run(testId)
 	local startTime = debugprofilestop()
 	local result
+
+	-- Reload test modules from global namespace (spec files loaded via .toc)
+	local ReaderTests = BookArchivist.ReaderTests or {}
+	local FilteringTests = BookArchivist.FilteringTests or {}
+	local IntegrationTests = BookArchivist.IntegrationTests or {}
 
 	if testId == "tooltip_integration" then
 		result = runTooltipTest()
