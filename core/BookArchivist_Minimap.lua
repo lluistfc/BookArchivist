@@ -36,9 +36,8 @@ function MinimapModule:Initialize()
 			if button == "LeftButton" then
 				BookArchivist.ToggleUI()
 			elseif button == "RightButton" then
-				if BookArchivist.UI and BookArchivist.UI.OptionsUI then
-					BookArchivist.UI.OptionsUI:Open()
-				end
+				-- Use the same slash command handler logic
+				SlashCmdList["BOOKARCHIVIST"]("options")
 			end
 		end,
 		OnTooltipShow = function(tooltip)
