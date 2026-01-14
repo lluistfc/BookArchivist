@@ -228,60 +228,7 @@ end
 
 -- Public API (consumed by MechanicIntegration)
 function InGameTests.GetAll()
-	-- Spec test modules are already loaded via .toc and exported to global namespace
-	local ReaderTests = BookArchivist.ReaderTests or {}
-	local FilteringTests = BookArchivist.FilteringTests or {}
-	local IntegrationTests = BookArchivist.IntegrationTests or {}
-
-	-- Build combined test list
-	local allTests = {}
-	for _, test in ipairs(tests) do
-		table.insert(allTests, test)
-	end
-
-	-- Add Reader tests
-	for funcName, _ in pairs(ReaderTests) do
-		if funcName:match("^test_") then
-			local testName = funcName:sub(6):gsub("_", " ")
-			table.insert(allTests, {
-				id = "reader_" .. funcName:sub(6),
-				name = testName,
-				category = "UI",
-				type = "auto",
-				description = "Reader: " .. testName,
-			})
-		end
-	end
-
-	-- Add Filtering tests
-	for funcName, _ in pairs(FilteringTests) do
-		if funcName:match("^test_") then
-			local testName = funcName:sub(6):gsub("_", " ")
-			table.insert(allTests, {
-				id = "filtering_" .. funcName:sub(6),
-				name = testName,
-				category = "UI",
-				type = "auto",
-				description = "Filtering: " .. testName,
-			})
-		end
-	end
-
-	-- Add Integration tests
-	for funcName, _ in pairs(IntegrationTests) do
-		if funcName:match("^test_") then
-			local testName = funcName:sub(6):gsub("_", " ")
-			table.insert(allTests, {
-				id = "integration_" .. funcName:sub(6),
-				name = testName,
-				category = "UI",
-				type = "auto",
-				description = "Integration: " .. testName,
-			})
-		end
-	end
-
-	return allTests
+	return tests
 end
 
 function InGameTests.Run(testId)
@@ -294,45 +241,6 @@ function InGameTests.Run(testId)
 		result = runCaptureTest()
 	elseif testId == "location_detection" then
 		result = runLocationTest()
-	elseif testId:match("^reader_") then
-		local funcName = "test_" .. testId:sub(8)
-		local ReaderTests = BookArchivist.ReaderTests or {}
-		if ReaderTests[funcName] then
-			local passed, message = ReaderTests[funcName]()
-			result = {
-				passed = passed,
-				message = message or (passed and "OK" or "FAIL"),
-				details = {},
-			}
-		else
-			result = { passed = false, message = "Test function not found", details = {} }
-		end
-	elseif testId:match("^filtering_") then
-		local funcName = "test_" .. testId:sub(11)
-		local FilteringTests = BookArchivist.FilteringTests or {}
-		if FilteringTests[funcName] then
-			local passed, message = FilteringTests[funcName]()
-			result = {
-				passed = passed,
-				message = message or (passed and "OK" or "FAIL"),
-				details = {},
-			}
-		else
-			result = { passed = false, message = "Test function not found", details = {} }
-		end
-	elseif testId:match("^integration_") then
-		local funcName = "test_" .. testId:sub(13)
-		local IntegrationTests = BookArchivist.IntegrationTests or {}
-		if IntegrationTests[funcName] then
-			local passed, message = IntegrationTests[funcName]()
-			result = {
-				passed = passed,
-				message = message or (passed and "OK" or "FAIL"),
-				details = {},
-			}
-		else
-			result = { passed = false, message = "Test function not found", details = {} }
-		end
 	else
 		result = {
 			passed = false,

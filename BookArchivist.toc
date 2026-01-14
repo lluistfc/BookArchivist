@@ -86,9 +86,6 @@ ui/BookArchivist_UI_Runtime.lua
 #@do-not-package@
 ## Dev Tools (optional, excluded from releases via .pkgmeta)
 ## These files will be silently ignored if not present
-Tests/InGame/Reader_spec.lua
-Tests/InGame/Async_Filtering_Integration_spec.lua
-Tests/InGame/List_Reader_Integration_spec.lua
 Tests/InGame/InGameTests.lua
 dev/BookArchivist_MechanicIntegration.lua
 dev/BookArchivist_DevTools.lua
