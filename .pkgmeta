@@ -33,6 +33,10 @@ ignore:
     - docs
     - coverage
     - libs/libs.json
+    - libs/LibDeflate/tests
+    - libs/LibDeflate/examples
+    - libs/LibDeflate/.git
+    - libs/LibDeflate/.github
     
     # Development documentation
     - AGENTS.md
