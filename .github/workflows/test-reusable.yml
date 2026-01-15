@@ -102,6 +102,25 @@ jobs:
           busted --version
         shell: pwsh
 
+      - name: Cache Libraries
+        id: cache-libs
+        uses: actions/cache@v4
+        with:
+          path: |
+            libs
+            libs_test
+          key: addon-libs-${{ hashFiles('.pkgmeta') }}-v1
+
+      - name: Install Subversion
+        if: steps.cache-libs.outputs.cache-hit != 'true'
+        run: choco install svn -y
+        shell: pwsh
+
+      - name: Download Libraries
+        if: steps.cache-libs.outputs.cache-hit != 'true'
+        run: make download-libs
+        shell: pwsh
+
       - name: Run Tests
         run: make test-errors
         shell: pwsh

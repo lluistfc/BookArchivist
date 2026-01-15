@@ -47,7 +47,7 @@ $gitLibs = @{
         url = "https://repos.curseforge.com/wow/libdatabroker-1-1"
         tag = $null
     }
-    "libs_test/LibDeflate" = @{
+    "libs/LibDeflate" = @{
         url = "https://github.com/SafeteeWoW/LibDeflate"
         tag = "1.0.2-release"
     }
