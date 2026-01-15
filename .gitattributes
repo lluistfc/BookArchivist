@@ -5,9 +5,10 @@ scripts/ export-ignore
 docs/ export-ignore
 media/ export-ignore
 coverage/ export-ignore
-libs/libs.json export-ignore
+libs_test/ export-ignore
 
-# Library development files
+# Library development files (keep libs/ but exclude dev files within)
+libs/libs.json export-ignore
 libs/LibDeflate/tests/ export-ignore
 libs/LibDeflate/examples/ export-ignore
 libs/LibDeflate/docs/ export-ignore
