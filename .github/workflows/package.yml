@@ -57,6 +57,37 @@ jobs:
           git clone https://github.com/SafeteeWoW/LibDeflate libs/LibDeflate --quiet
           cd libs/LibDeflate && git checkout 1.0.2-release --quiet && cd ../..
 
+      - name: Clean Library Development Files
+        run: |
+          # Remove version control directories
+          find libs -type d -name ".svn" -exec rm -rf {} + 2>/dev/null || true
+          find libs -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true
+          find libs -type d -name ".github" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Remove test directories
+          find libs -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+          find libs -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Remove documentation and examples
+          find libs -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
+          find libs -type d -name "examples" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Remove CI/build files
+          find libs -name ".travis.yml" -delete 2>/dev/null || true
+          find libs -name ".appveyor.yml" -delete 2>/dev/null || true
+          find libs -name ".luacheckrc" -delete 2>/dev/null || true
+          find libs -name ".pkgmeta" -delete 2>/dev/null || true
+          find libs -name "*.rockspec" -delete 2>/dev/null || true
+          find libs -name ".gitignore" -delete 2>/dev/null || true
+          
+          # Remove README and changelog files
+          find libs -name "README*" -delete 2>/dev/null || true
+          find libs -name "readme*" -delete 2>/dev/null || true
+          find libs -name "CHANGELOG*" -delete 2>/dev/null || true
+          find libs -name "changelog*" -delete 2>/dev/null || true
+          find libs -name "LICENSE*" -delete 2>/dev/null || true
+          
+          echo "Cleaned library development files"
       - name: Build ZIP (git archive + export-ignore)
         run: |
           set -euo pipefail
