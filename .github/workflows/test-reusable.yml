@@ -113,7 +113,10 @@ jobs:
 
       - name: Install Subversion
         if: steps.cache-libs.outputs.cache-hit != 'true'
-        run: choco install svn -y
+        run: |
+          choco install svn -y
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          "C:\Program Files (x86)\Subversion\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
         shell: pwsh
 
       - name: Download Libraries
