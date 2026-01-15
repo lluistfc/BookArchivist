@@ -55,6 +55,13 @@ ignore:
     - libs/LibDBIcon-1.0/.pkgmeta
     - libs/LibDataBroker-1.1/README.textile
     
+    # Remove embedded duplicates from LibDBIcon-1.0 (we load our own versions)
+    - libs/LibDBIcon-1.0/LibStub
+    - libs/LibDBIcon-1.0/CallbackHandler-1.0
+    - libs/LibDBIcon-1.0/LibDataBroker-1.1
+    - libs/LibDBIcon-1.0/embeds.xml
+    - libs/LibDBIcon-1.0/LibDBIcon-1.0.toc
+
     # Development documentation
     - AGENTS.md
     - ui/AGENTS.md

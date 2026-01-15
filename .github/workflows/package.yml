@@ -87,6 +87,13 @@ jobs:
           find libs -name "changelog*" -delete 2>/dev/null || true
           find libs -name "LICENSE*" -delete 2>/dev/null || true
           
+          # Remove embedded duplicate libraries from LibDBIcon (we load our own versions)
+          rm -rf libs/LibDBIcon-1.0/LibStub 2>/dev/null || true
+          rm -rf libs/LibDBIcon-1.0/CallbackHandler-1.0 2>/dev/null || true
+          rm -rf libs/LibDBIcon-1.0/LibDataBroker-1.1 2>/dev/null || true
+          rm -f libs/LibDBIcon-1.0/embeds.xml 2>/dev/null || true
+          rm -f libs/LibDBIcon-1.0/LibDBIcon-1.0.toc 2>/dev/null || true
+          
           echo "Cleaned library development files"
       - name: Build ZIP (git archive + export-ignore)
         run: |
