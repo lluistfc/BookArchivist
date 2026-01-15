@@ -170,7 +170,28 @@ Customize your experience with multiple language support, tooltip integration, a
 
 For more detailed contributor guidance and conventions, see `.github/copilot-instructions.md`.
 
-## Development Setup (Live Testing)
+## Development Setup
+
+### External Libraries
+
+BookArchivist uses several WoW addon libraries (Ace3, LibStub, LibDBIcon, etc.). You can either download them or junction to existing copies:
+
+**Option 1: Download libraries**
+```bash
+make download-libs
+```
+
+**Option 2: Junction to existing libraries** (if you already have them elsewhere)
+1. Copy `.env.dist` to `.env`
+2. Edit `.env` and uncomment/set the `LIB_*` paths to point to your existing library directories
+3. Run:
+```bash
+make junction-libs
+```
+
+This creates Windows directory junctions (no admin required) so multiple addons can share the same library folders without duplication.
+
+### Live Testing Setup
 
 For rapid development, create a symbolic link from your WoW AddOns folder to your development directory. This allows WoW to read directly from your dev folder—no copying or building needed. Just edit, save, and `/reload` in-game.
 

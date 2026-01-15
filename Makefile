@@ -48,7 +48,7 @@ endif
 # Pattern variable for filtering tests
 PATTERN ?=
 
-.PHONY: help test test-detailed test-errors test-verbose test-pattern test-coverage coverage-stats test-sandbox api-search clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta
+.PHONY: help test test-detailed test-errors test-verbose test-pattern test-coverage coverage-stats test-sandbox api-search clean setup-mechanic check-mechanic validate lint output sync verify warnings run stop link unlink release alpha beta download-libs junction-libs
 
 help:
 ifeq ($(DETECTED_OS),Windows)
@@ -59,6 +59,8 @@ ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host 'Mechanic Integration:' -ForegroundColor White"
 	@pwsh -NoProfile -Command "Write-Host '  make check-mechanic  - Verify Mechanic CLI is available' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make setup-mechanic  - Clone and install Mechanic (if needed)' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make download-libs   - Download external libraries for local dev' -ForegroundColor Gray"
+	@pwsh -NoProfile -Command "Write-Host '  make junction-libs   - Create junctions to existing libraries' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make run             - Start Mechanic dashboard (background)' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make stop            - Stop Mechanic dashboard' -ForegroundColor Gray"
 	@pwsh -NoProfile -Command "Write-Host '  make validate        - Validate addon structure (.toc, files)' -ForegroundColor Gray"
@@ -301,6 +303,24 @@ endif
 
 stop:
 	@$(MECHANIC_CLI) stop
+
+# Download external libraries for local development
+download-libs:
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -ExecutionPolicy Bypass -File scripts/download-libs.ps1
+else
+	@echo "Error: download-libs currently only supports Windows (PowerShell)"
+	@exit 1
+endif
+
+# Create junctions to existing libraries (reads paths from .env)
+junction-libs:
+ifeq ($(DETECTED_OS),Windows)
+	@pwsh -ExecutionPolicy Bypass -File scripts/junction-libs.ps1
+else
+	@echo "Error: junction-libs currently only supports Windows (PowerShell)"
+	@exit 1
+endif
 
 # Addon linking
 link:
