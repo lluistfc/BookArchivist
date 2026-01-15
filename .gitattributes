@@ -6,6 +6,28 @@ docs/ export-ignore
 media/ export-ignore
 coverage/ export-ignore
 libs/libs.json export-ignore
+
+# Library development files
+libs/LibDeflate/tests/ export-ignore
+libs/LibDeflate/examples/ export-ignore
+libs/LibDeflate/docs/ export-ignore
+libs/LibDeflate/.git export-ignore
+libs/LibDeflate/.github/ export-ignore
+libs/LibDeflate/.travis/ export-ignore
+libs/LibDeflate/.appveyor.yml export-ignore
+libs/LibDeflate/.travis.yml export-ignore
+libs/LibDeflate/.gitignore export-ignore
+libs/LibDeflate/.pkgmeta export-ignore
+libs/LibDeflate/.luacheckrc export-ignore
+libs/LibDeflate/README.md export-ignore
+libs/LibDeflate/changelog.md export-ignore
+libs/LibDeflate/LICENSE.txt export-ignore
+libs/LibDeflate/*.rockspec export-ignore
+libs/LibStub/tests/ export-ignore
+libs/LibStub/.pkgmeta export-ignore
+libs/LibDBIcon-1.0/.pkgmeta export-ignore
+libs/LibDataBroker-1.1/README.textile export-ignore
+
 Makefile export-ignore
 .busted export-ignore
 .luacov export-ignore
