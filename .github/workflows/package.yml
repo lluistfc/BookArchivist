@@ -37,6 +37,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Subversion
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
+      - name: Download Libraries
+        run: |
+          mkdir -p libs libs_test
+          
+          # SVN libraries
+          svn checkout https://repos.curseforge.com/wow/ace3/trunk/AceComm-3.0 libs/AceComm-3.0 --quiet
+          svn checkout https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0 libs/AceGUI-3.0 --quiet
+          svn checkout https://repos.curseforge.com/wow/ace3/trunk/AceSerializer-3.0 libs/AceSerializer-3.0 --quiet
+          svn checkout https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0 libs/CallbackHandler-1.0 --quiet
+          svn checkout https://repos.curseforge.com/wow/libdbicon-1-0/trunk libs/LibDBIcon-1.0 --quiet
+          svn checkout https://repos.curseforge.com/wow/libstub/trunk libs/LibStub --quiet
+          
+          # Git libraries
+          git clone https://repos.curseforge.com/wow/libdatabroker-1-1 libs/LibDataBroker-1.1 --quiet
+          git clone https://github.com/SafeteeWoW/LibDeflate libs/LibDeflate --quiet
+          cd libs/LibDeflate && git checkout 1.0.2-release --quiet && cd ../..
+
       - name: Build ZIP (git archive + export-ignore)
         run: |
           set -euo pipefail
@@ -46,16 +66,25 @@ jobs:
 
           mkdir -p dist
 
-          # Repo root contains BookArchivist.toc; prefix ensures zip root is BookArchivist/
-          git archive \
-            --format=zip \
-            --prefix="${ADDON_NAME}/" \
-            -o "dist/${ADDON_NAME}.zip" \
-            HEAD
+          # Create temporary directory
+          tmpdir="$(mktemp -d)"
+          
+          # Export git-tracked files
+          git archive --format=tar --prefix="${ADDON_NAME}/" HEAD | tar -x -C "$tmpdir"
+          
+          # Copy libs folder (downloaded separately, not from git archive)
+          cp -rv libs "$tmpdir/${ADDON_NAME}/"
+          
+          # Verify libs were copied
+          echo "Checking libs in archive:"
+          ls -la "$tmpdir/${ADDON_NAME}/libs/"
+          
+          # Create ZIP
+          (cd "$tmpdir" && zip -qr "${GITHUB_WORKSPACE}/dist/${ADDON_NAME}.zip" "${ADDON_NAME}")
           
           # Verify ZIP was created
           if [ ! -f "dist/${ADDON_NAME}.zip" ]; then
-            echo "ERROR: ZIP file was not created. Ensure source files exist and are tracked by git."
+            echo "ERROR: ZIP file was not created."
             exit 1
           fi
           
