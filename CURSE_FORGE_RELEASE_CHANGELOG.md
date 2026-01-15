@@ -1,3 +1,28 @@
+# 2.3.1-alpha
+
+**Alpha Release: Minimap Improvements**
+
+This alpha release upgrades the minimap button system for better compatibility and reliability.
+
+## What's New
+
+### Improved Minimap Button 📍
+
+- **Better Integration**: Now uses LibDBIcon, the industry-standard library for minimap buttons
+- **More Reliable**: Improved drag behavior and position saving
+- **Better Compatibility**: Works seamlessly with other addons that use LibDBIcon
+- **Automatic Compartment**: Full support for the addon compartment button
+
+## What's Changed
+
+- Enhanced test coverage across core modules for better reliability
+- Improved build and deployment process for faster updates
+- Internal code quality improvements
+
+**Note**: This is an alpha release for early testing. Please report any issues you encounter!
+
+---
+
 # 2.3.0
 
 **New Feature: Book Echo System**

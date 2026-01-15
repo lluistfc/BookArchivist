@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.1-alpha] - 2026-01-15
+
+**Alpha release: Minimap improvements and library management tools**
+
+### Added
+
+- **Minimap Icon Improvements**
+  - Migrated to LibDBIcon for minimap button management
+  - Better integration with other addons using LibDBIcon
+  - More reliable drag behavior and position persistence
+  - Automatic compartment mode support (addon compartment button)
+
+- **Library Management Tools**
+  - New `make download-libs` command to download external libraries via SVN/git
+  - New `make junction-libs` command to create directory junctions to existing libraries
+  - Unified git repository downloads (LibDataBroker + LibDeflate) with optional tag support
+  - Added LIB_* environment variables to .env.dist for junction configuration
+  - Developers can now share library folders across multiple addons without duplication
+
+### Changed
+
+- **CI/CD Improvements**
+  - Added library caching to GitHub Actions workflow (based on .pkgmeta hash)
+  - Automatic Subversion installation when cache is missed
+  - Faster CI runs after first build (~30 seconds saved per run)
+
+- **Developer Experience**
+  - Simplified .gitignore to exclude entire libs/ directory
+  - Updated README with comprehensive library management documentation
+  - Updated .env.dist showing complete junction configuration
+
 ## [2.3.0] - 2026-01-18
 
 **Feature release with Book Echo system and comprehensive test coverage improvements**
