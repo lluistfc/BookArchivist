@@ -1,8 +1,8 @@
-# 2.3.1-alpha
+# 2.3.1
 
-**Alpha Release: Minimap Improvements**
+**Feature Release: Minimap Improvements**
 
-This alpha release upgrades the minimap button system for better compatibility and reliability.
+This release upgrades the minimap button system for better compatibility and reliability.
 
 ## What's New
 
@@ -15,11 +15,7 @@ This alpha release upgrades the minimap button system for better compatibility a
 
 ## What's Changed
 
-- Enhanced test coverage across core modules for better reliability
-- Improved build and deployment process for faster updates
 - Internal code quality improvements
-
-**Note**: This is an alpha release for early testing. Please report any issues you encounter!
 
 ---
 

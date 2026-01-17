@@ -2,9 +2,9 @@
 
 All notable changes to this project are documented here.
 
-## [2.3.1-alpha] - 2026-01-15
+## [2.3.1] - 2026-01-17
 
-**Alpha release: Minimap improvements and library management tools**
+**Feature release: Minimap improvements and library management tools**
 
 ### Added
 
