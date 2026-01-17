@@ -714,6 +714,56 @@ function Core:InjectEntry(entry, opts)
 	end
 end
 
+-- ---------------------------------------------------------------------------
+-- Custom (player-authored) books
+-- ---------------------------------------------------------------------------
+
+local function ensureCustomIndex(db)
+	db.indexes = db.indexes or {}
+	db.indexes.custom = db.indexes.custom or { counter = 0 }
+	return db.indexes.custom
+end
+
+---Generate a unique, stable ID for a custom book.
+---@return string
+function Core:NextCustomBookId()
+	ensureDB()
+	local db = BookArchivistDB
+	local custom = ensureCustomIndex(db)
+	custom.counter = (tonumber(custom.counter) or 0) + 1
+	-- Use time-based component + monotonic counter to avoid collisions.
+	local ts = now() or 0
+	return string.format("c:%d:%d", ts, custom.counter)
+end
+
+---Create and persist a new custom book entry.
+---This intentionally does NOT modify captured books.
+---@param title string|nil
+---@param pages table|nil  -- numeric keys: [1] = "...", [2] = "..."
+---@return string|nil bookId
+function Core:CreateCustomBook(title, pages)
+	local bookId = self:NextCustomBookId()
+	local createdAt = now() or 0
+	local playerName = (type(UnitName) == "function" and UnitName("player")) or nil
+
+	local entry = {
+		key = bookId,
+		title = title or "",
+		creator = playerName or "",
+		createdAt = createdAt,
+		updatedAt = createdAt,
+		pages = pages or { [1] = "", [2] = "" },
+		source = {
+			type = "CUSTOM",
+			custom = true,
+		},
+	}
+
+	-- Append to end of list for predictable UX.
+	self:InjectEntry(entry, { append = true })
+	return bookId
+end
+
 function Core:Now()
 	return now()
 end

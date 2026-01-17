@@ -568,6 +568,29 @@ function ListUI:Create(uiFrame)
 		self:SetFrame("randomButton", randomButton)
 	end
 
+	-- New Book button (custom/player-authored books)
+	-- NOTE: anchored relative to Resume to avoid overlap at smaller window widths.
+	local newBookButton = self:SafeCreateFrame("Button", nil, bottomButtonsHost, "UIPanelButtonTemplate")
+	if newBookButton then
+		newBookButton:SetHeight(26)
+		newBookButton:SetText(t("NEW_BOOK"))
+		newBookButton:SetNormalFontObject(GameFontNormal)
+		local fontString = newBookButton:GetFontString()
+		if fontString then
+			fontString:SetTextColor(1.0, 0.82, 0.0)
+			fontString:SetWordWrap(false)
+		end
+		-- Keep it compact and place it immediately left of Resume.
+		newBookButton:SetWidth(88)
+		newBookButton:SetScript("OnClick", function()
+			local Reader = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader
+			if Reader and Reader.OpenCreateBook then
+				Reader:OpenCreateBook()
+			end
+		end)
+		self:SetFrame("newBookButton", newBookButton)
+	end
+
 	local resumeButton = self:SafeCreateFrame("Button", nil, bottomButtonsHost, "UIPanelButtonTemplate")
 	if resumeButton then
 		resumeButton:SetHeight(26)
@@ -580,6 +603,10 @@ function ListUI:Create(uiFrame)
 		end
 		resumeButton:SetWidth(Metrics.BTN_W + 20)
 		resumeButton:SetPoint("RIGHT", bottomButtonsHost, "RIGHT", 0, 0)
+		if newBookButton then
+			newBookButton:ClearAllPoints()
+			newBookButton:SetPoint("RIGHT", resumeButton, "LEFT", -(Metrics.GAP_M or 10), 0)
+		end
 		resumeButton:SetScript("OnClick", function()
 			local addon = self.GetAddon and self:GetAddon()
 			if not addon or not addon.GetLastBookId then

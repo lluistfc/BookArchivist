@@ -68,10 +68,13 @@ function FrameUI:BuildContent(frame, opts)
 			end
 		end,
 
-		-- Chunk 2: Options button and header
+		-- Chunk 2: Options button, texture viewer button, and header
 		function()
 			if FrameUI.ConfigureOptionsButton then
 				FrameUI.ConfigureOptionsButton(frame, safeCreateFrame, opts.onOptions)
+			end
+			if FrameUI.ConfigureTextureViewerButton then
+				FrameUI.ConfigureTextureViewerButton(frame, safeCreateFrame)
 			end
 		end,
 

@@ -10,6 +10,8 @@ Locales.frFR = {
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Options de Book Archivist",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Ouvrir le panneau de configuration",
+	["TEXTURE_VIEWER"] = "Visionneuse de Textures",
+	["TEXTURE_VIEWER_TOOLTIP"] = "Voir la texture d'édition",
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Livres",
@@ -228,4 +230,14 @@ Locales.frFR = {
 	["LOC_CONTEXT_SHORES"] = "le long des côtes de",
 	["LOC_CONTEXT_ISLE"] = "sur l'île de",
 	["LOC_CONTEXT_IN"] = "à",
+	["NEW_BOOK"] = "Nouveau Livre",
+	["SAVE_BOOK"] = "Enregistrer",
+	["BOOK_TITLE_PLACEHOLDER"] = "Entrez le titre du livre...",
+	["BOOK_TITLE_REQUIRED"] = "Veuillez entrer un titre pour le livre",
+	["BOOK_CONTENT_REQUIRED"] = "Veuillez écrire du contenu dans au moins une page",
+	["BOOK_SAVE_FAILED"] = "Échec de l'enregistrement du livre",
+	["BOOK_SAVED_SUCCESS"] = "Livre enregistré avec succès!",
+	["SAVE_BOOK_TOOLTIP"] = "Enregistrer ce livre dans votre bibliothèque",
+	["CANCEL"] = "Cancel",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Book title…",
 }

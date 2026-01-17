@@ -10,6 +10,8 @@ Locales.caES = {
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Opcions de Book Archivist",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Obre el panell d'opcions",
+	["TEXTURE_VIEWER"] = "Visualitzador de Textures",
+	["TEXTURE_VIEWER_TOOLTIP"] = "Veure la textura d'edició",
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Llibres",
@@ -229,4 +231,14 @@ Locales.caES = {
 	["LOC_CONTEXT_SHORES"] = "al llarg de les costes de",
 	["LOC_CONTEXT_ISLE"] = "a l'illa de",
 	["LOC_CONTEXT_IN"] = "a",
+	["NEW_BOOK"] = "Llibre Nou",
+	["SAVE_BOOK"] = "Desar",
+	["BOOK_TITLE_PLACEHOLDER"] = "Introdueix el títol del llibre...",
+	["BOOK_TITLE_REQUIRED"] = "Si us plau introdueix un títol pel llibre",
+	["BOOK_CONTENT_REQUIRED"] = "Si us plau escriu contingut en almenys una pàgina",
+	["BOOK_SAVE_FAILED"] = "Error en desar el llibre",
+	["BOOK_SAVED_SUCCESS"] = "Llibre desat amb èxit!",
+	["SAVE_BOOK_TOOLTIP"] = "Desar aquest llibre a la teva biblioteca",
+	["CANCEL"] = "Cancel",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Book title…",
 }

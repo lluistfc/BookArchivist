@@ -780,5 +780,219 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	countText:SetText("|cFF888888Books saved as you read them in-game|r")
 	uiFrame.countText = countText
 
+	-- -----------------------------------------------------------------------
+	-- Custom book creation modal (scribe desk)
+	-- -----------------------------------------------------------------------
+	-- This is ONLY used to create new custom books; captured books are not edited.
+	-- Important: the modal must live inside the *scroll/content* region, not the
+	-- entire reader block, otherwise it will fight the reader header/nav layout
+	-- and visually diverge from the intended mockup.
+	local modalHost = state.readerScrollRow or readerBlock
+	if modalHost and safeCreateFrame and rememberWidget then
+		local createFrame = safeCreateFrame("Frame", "BookArchivistCreateBookFrame", modalHost)
+		if createFrame then
+			createFrame:SetAllPoints(modalHost)
+			createFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+			createFrame:SetFrameLevel((readerBlock.GetFrameLevel and readerBlock:GetFrameLevel() or 1) + 50)
+
+			-- Semi-transparent dimmed background
+			local dim = createFrame:CreateTexture(nil, "BACKGROUND")
+			dim:SetAllPoints(createFrame)
+			dim:SetColorTexture(0, 0, 0, 0.5)
+
+			-- Book texture background (desk with open book)
+			local book = createFrame:CreateTexture(nil, "ARTWORK")
+			book:SetTexture("Interface\\AddOns\\BookArchivist\\media\\book_archivist_edit.tga")
+			-- Center the book with proper aspect ratio (1536x1024)
+			-- Use relative sizing to fit within the panel while maintaining proportions
+			book:SetPoint("CENTER", createFrame, "CENTER", 0, 0)
+			-- Set a reasonable maximum size that fits in the reader panel
+			local maxWidth = math.min(createFrame:GetWidth() - 40, 960)
+			local maxHeight = maxWidth * (1024 / 1536)
+			book:SetSize(maxWidth, maxHeight)
+			book:SetTexCoord(0, 1, 0, 1)
+			createFrame.bookTexture = book
+
+			-- Define a stable anchor region that corresponds to the open-book spread.
+			-- All editor controls are positioned relative to this, so they don't drift
+			-- when the container resizes.
+			local spread = safeCreateFrame("Frame", nil, createFrame)
+			spread:ClearAllPoints()
+			-- Calculate proportional insets based on book size
+			-- These values are calibrated to the actual book texture layout
+			local bookWidth = book:GetWidth()
+			local bookHeight = book:GetHeight()
+			local leftInset = bookWidth * 0.08
+			local rightInset = bookWidth * 0.08
+			local topInset = bookHeight * 0.12
+			local bottomInset = bookHeight * 0.10
+			spread:SetPoint("TOPLEFT", book, "TOPLEFT", leftInset, -topInset)
+			spread:SetPoint("BOTTOMRIGHT", book, "BOTTOMRIGHT", -rightInset, bottomInset)
+			createFrame.spread = spread
+
+			-- Title input (single line) anchored above the book spread.
+			local titleBox = safeCreateFrame("EditBox", "BookArchivistCreateBookTitle", createFrame, "InputBoxTemplate")
+			if titleBox then
+				titleBox:SetAutoFocus(false)
+				titleBox:SetHeight(32)
+				-- Center the title box above the book spread
+				titleBox:SetPoint("TOP", spread, "TOP", 0, 50)
+				titleBox:SetWidth(math.min(spread:GetWidth() * 0.85, 500))
+				titleBox:SetTextInsets(10, 10, 0, 0)
+				titleBox:SetMaxLetters(100)
+				titleBox:SetFontObject(GameFontNormal)
+				
+				-- Placeholder behavior
+				titleBox.placeholder = titleBox:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+				titleBox.placeholder:SetPoint("LEFT", titleBox, "LEFT", 10, 0)
+				titleBox.placeholder:SetText(t("BOOK_TITLE_PLACEHOLDER") or "Enter book title...")
+				
+				titleBox:SetScript("OnTextChanged", function(self)
+					local text = self:GetText()
+					if self.placeholder then
+						self.placeholder:SetShown(not text or text == "")
+					end
+				end)
+				
+				titleBox:SetScript("OnEscapePressed", function(self)
+					self:ClearFocus()
+				end)
+				
+				titleBox:SetScript("OnEnterPressed", function(self)
+					self:ClearFocus()
+					-- Move focus to left page editor
+					if state.createBookLeftEdit and state.createBookLeftEdit.SetFocus then
+						state.createBookLeftEdit:SetFocus()
+					end
+				end)
+				
+				rememberWidget("createBookTitle", titleBox)
+				state.createBookTitle = titleBox
+			end
+
+			local function makePageEditor(namePrefix, anchorX, isLeft)
+				-- Calculate page width based on spread dimensions
+				local spreadWidth = spread:GetWidth()
+				local pageWidth = (spreadWidth * 0.43) -- Each page is ~43% of spread width
+				
+				local host = safeCreateFrame("Frame", nil, createFrame)
+				host:SetSize(pageWidth, 1)
+				-- Anchor inside the spread region; this keeps the editors centered on pages.
+				host:SetPoint("TOP", spread, "TOP", anchorX, -10)
+				host:SetPoint("BOTTOM", spread, "BOTTOM", anchorX, 20)
+
+				-- Add subtle page background
+				local pageBg = host:CreateTexture(nil, "BACKGROUND")
+				pageBg:SetAllPoints(host)
+				pageBg:SetColorTexture(0.95, 0.93, 0.88, 0.15)
+
+				local scroll = safeCreateFrame("ScrollFrame", nil, host, "UIPanelScrollFrameTemplate")
+				scroll:SetPoint("TOPLEFT", host, "TOPLEFT", 4, -4)
+				scroll:SetPoint("BOTTOMRIGHT", host, "BOTTOMRIGHT", -22, 4)
+
+				local edit = safeCreateFrame("EditBox", namePrefix, scroll)
+				edit:SetMultiLine(true)
+				edit:SetAutoFocus(false)
+				edit:SetFontObject(GameFontNormal)
+				edit:SetMaxLetters(2000) -- Reasonable page limit
+				local contentWidth = pageWidth - 30
+				edit:SetWidth(contentWidth)
+				edit:SetTextInsets(8, 8, 8, 8)
+				
+				-- Enable proper text wrapping
+				edit:SetScript("OnCursorChanged", function(self, x, y, w, h)
+					ScrollingEdit_OnCursorChanged(self, x, y - 10, w, h)
+				end)
+				
+				edit:SetScript("OnEscapePressed", function(self)
+					self:ClearFocus()
+				end)
+				
+				-- Tab navigation between pages
+				edit:SetScript("OnTabPressed", function(self)
+					if isLeft and state.createBookRightEdit then
+						state.createBookRightEdit:SetFocus()
+					elseif not isLeft and state.createBookLeftEdit then
+						state.createBookLeftEdit:SetFocus()
+					end
+				end)
+				
+				scroll:SetScrollChild(edit)
+				edit.ScrollFrame = scroll
+
+				return edit
+			end
+
+			-- Page editors positioned over the blank pages
+			-- Calculate positions based on spread width for proper centering
+			local spreadWidth = spread:GetWidth()
+			local pageOffset = spreadWidth * 0.25 -- Position at 25% from center
+			local leftEdit = makePageEditor("BookArchivistCreateBookLeftEdit", -pageOffset, true)
+			local rightEdit = makePageEditor("BookArchivistCreateBookRightEdit", pageOffset, false)
+			if leftEdit then
+				rememberWidget("createBookLeftEdit", leftEdit)
+				state.createBookLeftEdit = leftEdit
+			end
+			if rightEdit then
+				rememberWidget("createBookRightEdit", rightEdit)
+				state.createBookRightEdit = rightEdit
+			end
+
+			-- Save / Cancel buttons positioned at bottom center
+			local buttonContainer = safeCreateFrame("Frame", nil, createFrame)
+			buttonContainer:SetSize(260, 32)
+			buttonContainer:SetPoint("BOTTOM", book, "BOTTOM", 0, 25)
+			
+			local saveBtn = safeCreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+			local cancelBtn = safeCreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+			if saveBtn and cancelBtn then
+				saveBtn:SetSize(120, 32)
+				cancelBtn:SetSize(120, 32)
+				saveBtn:SetText(t("SAVE_BOOK"))
+				cancelBtn:SetText(t("CANCEL"))
+				
+				-- Position buttons side by side with small gap
+				saveBtn:SetPoint("LEFT", buttonContainer, "LEFT", 0, 0)
+				cancelBtn:SetPoint("RIGHT", buttonContainer, "RIGHT", 0, 0)
+				
+				-- Style save button with green tint
+				local saveFontString = saveBtn:GetFontString()
+				if saveFontString then
+					saveFontString:SetTextColor(0.1, 0.9, 0.1)
+				end
+				
+				saveBtn:SetScript("OnClick", function()
+					if ReaderUI and ReaderUI.SaveCreateBook then
+						ReaderUI:SaveCreateBook()
+					end
+				end)
+				
+				saveBtn:SetScript("OnEnter", function(self)
+					if GameTooltip then
+						GameTooltip:SetOwner(self, "ANCHOR_TOP")
+						GameTooltip:SetText(t("SAVE_BOOK_TOOLTIP") or "Save this book to your library")
+						GameTooltip:Show()
+					end
+				end)
+				
+				saveBtn:SetScript("OnLeave", function()
+					if GameTooltip then
+						GameTooltip:Hide()
+					end
+				end)
+				
+				cancelBtn:SetScript("OnClick", function()
+					if ReaderUI and ReaderUI.CancelCreateBook then
+						ReaderUI:CancelCreateBook()
+					end
+				end)
+			end
+
+			createFrame:Hide()
+			rememberWidget("createBookFrame", createFrame)
+			state.createBookFrame = createFrame
+		end
+	end
+
 	debugPrint("[BookArchivist] ReaderUI created")
 end

@@ -10,6 +10,8 @@ Locales.enUS = {
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Book Archivist Options",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Open the settings panel",
+	["TEXTURE_VIEWER"] = "Texture Viewer",
+	["TEXTURE_VIEWER_TOOLTIP"] = "View the edit texture",
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Books",
@@ -227,4 +229,14 @@ Locales.enUS = {
 	["LOC_CONTEXT_SHORES"] = "along the shores of",
 	["LOC_CONTEXT_ISLE"] = "upon the isle of",
 	["LOC_CONTEXT_IN"] = "in",
+	["NEW_BOOK"] = "New Book",
+	["SAVE_BOOK"] = "Save",
+	["BOOK_TITLE_PLACEHOLDER"] = "Enter book title...",
+	["BOOK_TITLE_REQUIRED"] = "Please enter a book title",
+	["BOOK_CONTENT_REQUIRED"] = "Please write some content in at least one page",
+	["BOOK_SAVE_FAILED"] = "Failed to save book",
+	["BOOK_SAVED_SUCCESS"] = "Book saved successfully!",
+	["SAVE_BOOK_TOOLTIP"] = "Save this book to your library",
+	["CANCEL"] = "Cancel",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Book title…",
 }
