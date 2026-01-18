@@ -40,6 +40,7 @@ core/BookArchivist_Recent.lua
 core/BookArchivist_BookEcho.lua
 core/BookArchivist_RandomBook.lua
 core/BookArchivist_Tooltip.lua
+core/BookArchivist_TextureValidator.lua
 core/BookArchivist_Location.lua
 core/BookArchivist_ChatLinks.lua
 core/BookArchivist_Capture.lua
