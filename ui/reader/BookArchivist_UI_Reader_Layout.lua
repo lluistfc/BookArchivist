@@ -23,7 +23,6 @@ local function t(key)
 end
 
 local rememberWidget = ReaderUI.__rememberWidget
-local getWidget = ReaderUI.__getWidget
 local getAddon = ReaderUI.__getAddon
 local safeCreateFrame = ReaderUI.__safeCreateFrame
 local state = ReaderUI.__state or {}
