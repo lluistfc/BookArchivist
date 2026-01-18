@@ -307,7 +307,9 @@ function Core:GetDB()
 		return Repository:GetDB()
 	end
 	-- Fallback for early initialization before Repository is loaded
-	BookArchivist:DebugPrint("[Core] GetDB: Repository not available, using ensureDB fallback")
+	if BookArchivist and BookArchivist.DebugPrint then
+		BookArchivist:DebugPrint("[Core] GetDB: Repository not available, using ensureDB fallback")
+	end
 	return ensureDB()
 end
 
