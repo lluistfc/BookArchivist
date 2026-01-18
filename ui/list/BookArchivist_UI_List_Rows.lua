@@ -135,6 +135,7 @@ function ListUI:UpdateList()
 						meta = meta,
 						isSelected = (key == selectedKey),
 						isFavorite = entry.isFavorite,
+						isCustomBook = entry.source and entry.source.type == "CUSTOM",
 						showTitleBadge = matchFlags and matchFlags.title or false,
 						showTextBadge = matchFlags and matchFlags.text or false,
 					}
@@ -297,6 +298,7 @@ function ListUI:UpdateList()
 					meta = meta,
 					isSelected = (key == selectedKey),
 					isFavorite = entry.isFavorite,
+					isCustomBook = entry.source and entry.source.type == "CUSTOM",
 					showTitleBadge = matchFlags and matchFlags.title or false,
 					showTextBadge = matchFlags and matchFlags.text or false,
 				}

@@ -502,6 +502,12 @@ function ReaderUI:Init(context)
 end
 
 function ReaderUI:RenderSelected()
+	-- Don't render if edit mode is active
+	local EditMode = ReaderUI.EditMode
+	if EditMode and EditMode.IsEditing and EditMode:IsEditing() then
+		return
+	end
+	
 	local ui = state.readerBlock or (ctx and ctx.getUIFrame and ctx.getUIFrame())
 	if not ui then
 		return
@@ -872,6 +878,37 @@ function ReaderUI:RenderSelected()
 			favoriteBtn:SetChecked(isFav)
 		end
 	end
+
+	-- Show custom book icon (inscription) if this is a custom book
+	local customIcon = state.customBookIcon
+	local editButton = state.editButton
+	local isCustomBook = entry and entry.source and entry.source.type == "CUSTOM"
+	
+	if customIcon then
+		if isCustomBook then
+			customIcon:Show()
+		else
+			customIcon:Hide()
+		end
+	end
+	
+	-- Show edit button only for custom books
+	-- When edit button is shown, hide page indicator to avoid overlap
+	local pageIndicator = state.pageIndicator
+	if editButton then
+		if isCustomBook then
+			editButton:Show()
+			if pageIndicator then
+				pageIndicator:Hide()
+			end
+		else
+			editButton:Hide()
+			if pageIndicator then
+				pageIndicator:Show()
+			end
+		end
+	end
+
 	self:UpdatePageControlsDisplay(totalPages)
 end
 

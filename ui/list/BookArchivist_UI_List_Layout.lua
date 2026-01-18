@@ -569,7 +569,7 @@ function ListUI:Create(uiFrame)
 	end
 
 	-- New Book button (custom/player-authored books)
-	-- NOTE: anchored relative to Resume to avoid overlap at smaller window widths.
+	-- NOTE: anchored relative to random button to avoid overlap
 	local newBookButton = self:SafeCreateFrame("Button", nil, bottomButtonsHost, "UIPanelButtonTemplate")
 	if newBookButton then
 		newBookButton:SetHeight(26)
@@ -580,8 +580,13 @@ function ListUI:Create(uiFrame)
 			fontString:SetTextColor(1.0, 0.82, 0.0)
 			fontString:SetWordWrap(false)
 		end
-		-- Keep it compact and place it immediately left of Resume.
 		newBookButton:SetWidth(88)
+		-- Position to right of random button
+		if randomButton then
+			newBookButton:SetPoint("LEFT", randomButton, "RIGHT", (Metrics.GAP_M or 10), 0)
+		else
+			newBookButton:SetPoint("LEFT", bottomButtonsHost, "LEFT", 30, 0)
+		end
 		newBookButton:SetScript("OnClick", function()
 			local Reader = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader
 			if Reader and Reader.OpenCreateBook then
@@ -603,10 +608,6 @@ function ListUI:Create(uiFrame)
 		end
 		resumeButton:SetWidth(Metrics.BTN_W + 20)
 		resumeButton:SetPoint("RIGHT", bottomButtonsHost, "RIGHT", 0, 0)
-		if newBookButton then
-			newBookButton:ClearAllPoints()
-			newBookButton:SetPoint("RIGHT", resumeButton, "LEFT", -(Metrics.GAP_M or 10), 0)
-		end
 		resumeButton:SetScript("OnClick", function()
 			local addon = self.GetAddon and self:GetAddon()
 			if not addon or not addon.GetLastBookId then
@@ -731,6 +732,11 @@ function ListUI:Create(uiFrame)
 
 		if button.favoriteStar then
 			button.favoriteStar:SetShown(elementData.isFavorite or false)
+		end
+
+		-- Show custom book icon (inscription profession icon)
+		if button.customIcon then
+			button.customIcon:SetShown(elementData.isCustomBook or false)
 		end
 
 		-- Sync match badges (handles text, positioning, and visibility)

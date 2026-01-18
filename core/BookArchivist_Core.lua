@@ -740,8 +740,9 @@ end
 ---This intentionally does NOT modify captured books.
 ---@param title string|nil
 ---@param pages table|nil  -- numeric keys: [1] = "...", [2] = "..."
+---@param location table|nil -- location table from Location:BuildWorldLocation()
 ---@return string|nil bookId
-function Core:CreateCustomBook(title, pages)
+function Core:CreateCustomBook(title, pages, location)
 	local bookId = self:NextCustomBookId()
 	local createdAt = now() or 0
 	local playerName = (type(UnitName) == "function" and UnitName("player")) or nil
@@ -752,16 +753,76 @@ function Core:CreateCustomBook(title, pages)
 		creator = playerName or "",
 		createdAt = createdAt,
 		updatedAt = createdAt,
-		pages = pages or { [1] = "", [2] = "" },
+		pages = pages or { [1] = "" },
 		source = {
 			type = "CUSTOM",
 			custom = true,
 		},
 	}
+	
+	-- Add location if provided
+	if location then
+		entry.location = location
+	end
 
 	-- Append to end of list for predictable UX.
 	self:InjectEntry(entry, { append = true })
 	return bookId
+end
+
+function Core:UpdateCustomBook(bookId, title, pages, location)
+	local db = BookArchivist.Repository:GetDB()
+	if not db or not db.booksById then
+		return false
+	end
+	
+	local entry = db.booksById[bookId]
+	if not entry then
+		return false
+	end
+	
+	-- Only allow updating custom books
+	if not entry.source or entry.source.type ~= "CUSTOM" then
+		return false
+	end
+	
+	-- Update fields
+	entry.title = title or entry.title
+	entry.pages = pages or entry.pages
+	entry.updatedAt = now() or 0
+	
+	-- Update location (allow removing it by passing nil explicitly)
+	if location ~= nil then
+		entry.location = location
+	end
+	
+	-- Rebuild search text for the updated book
+	if self.BuildSearchText then
+		entry.searchText = self:BuildSearchText(entry)
+	end
+	
+	-- Update title index
+	if db.indexes and db.indexes.titleToBookIds then
+		local titleKey = trim(strlower(entry.title or ""))
+		if titleKey ~= "" then
+			if not db.indexes.titleToBookIds[titleKey] then
+				db.indexes.titleToBookIds[titleKey] = {}
+			end
+			-- Add bookId if not already present
+			local found = false
+			for _, id in ipairs(db.indexes.titleToBookIds[titleKey]) do
+				if id == bookId then
+					found = true
+					break
+				end
+			end
+			if not found then
+				table.insert(db.indexes.titleToBookIds[titleKey], bookId)
+			end
+		end
+	end
+	
+	return true
 end
 
 function Core:Now()

@@ -31,6 +31,44 @@ function ListUI:DisableDeleteButton()
 end
 
 function ListUI:NotifySelectionChanged()
+	-- Check if edit mode is active with unsaved changes
+	local ReaderUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader
+	local EditMode = ReaderUI and ReaderUI.EditMode
+	if EditMode and EditMode.IsEditing and EditMode:IsEditing() then
+		local L = BookArchivist.L
+		
+		-- Show confirmation dialog
+		if not StaticPopupDialogs["BOOKARCHIVIST_EXIT_EDIT_MODE"] then
+			StaticPopupDialogs["BOOKARCHIVIST_EXIT_EDIT_MODE"] = {
+				text = L["EXIT_EDIT_MODE_TEXT"],
+				button1 = OKAY,
+				button2 = CANCEL,
+				OnAccept = function()
+					if EditMode.Cancel then
+						EditMode:Cancel()
+					end
+					-- Continue with selection change
+					local ctx = ListUI:GetContext()
+					if ctx and ctx.onSelectionChanged then
+						ctx.onSelectionChanged()
+					end
+					if ListUI.UpdateResumeButton then
+						ListUI:UpdateResumeButton()
+					end
+					if ListUI.UpdateRandomButton then
+						ListUI:UpdateRandomButton()
+					end
+				end,
+				timeout = 0,
+				whileDead = true,
+				hideOnEscape = true,
+				preferredIndex = 3,
+			}
+		end
+		StaticPopup_Show("BOOKARCHIVIST_EXIT_EDIT_MODE")
+		return -- Don't proceed with selection change
+	end
+	
 	local ctx = self:GetContext()
 	if ctx and ctx.onSelectionChanged then
 		ctx.onSelectionChanged()

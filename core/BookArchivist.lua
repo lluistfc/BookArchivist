@@ -218,9 +218,9 @@ end
 
 -- Create a new custom (player-authored) book.
 -- This does not edit or mutate captured books.
-function BookArchivist:CreateCustomBook(title, pages)
+function BookArchivist:CreateCustomBook(title, pages, location)
 	if Core and Core.CreateCustomBook then
-		return Core:CreateCustomBook(title, pages)
+		return Core:CreateCustomBook(title, pages, location)
 	end
 	return nil
 end

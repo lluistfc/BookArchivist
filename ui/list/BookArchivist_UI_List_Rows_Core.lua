@@ -276,6 +276,16 @@ function ListUI:CreateRowButtonStructure(button, rowHeight)
 	favoriteStar:Hide()
 	button.favoriteStar = favoriteStar
 
+	-- Inscription icon for custom books
+	local customIcon = rowContent:CreateTexture(nil, "OVERLAY")
+	local iconSize = starSize -- Same size as favorite star
+	customIcon:SetSize(iconSize, iconSize)
+	customIcon:SetPoint("TOPRIGHT", favoriteStar, "TOPLEFT", -2, 0) -- Position to left of favorite star
+	customIcon:SetTexture("Interface\\Icons\\INV_Inscription_Tradeskill01")
+	customIcon:SetAlpha(0.9)
+	customIcon:Hide()
+	button.customIcon = customIcon
+
 	button.titleText = rowContent:CreateFontString(nil, "OVERLAY")
 	button.titleText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	button.titleText:SetPoint("TOPLEFT", rowContent, "TOPLEFT", 0, 0)
