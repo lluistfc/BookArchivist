@@ -2,13 +2,12 @@
 -- BookArchivist_Recent.lua
 -- Per-character "recently read" tracking on top of booksById.
 
-BookArchivist = BookArchivist or {}
-BookArchivist.Core = BookArchivist.Core or {}
+local BA = BookArchivist
 
-local Recent = BookArchivist.Recent or {}
-BookArchivist.Recent = Recent
+local Recent = BA.Recent or {}
+BA.Recent = Recent
 
-local Core = BookArchivist.Core
+local Core = BA.Core
 
 local function now()
 	if Core and Core.Now then

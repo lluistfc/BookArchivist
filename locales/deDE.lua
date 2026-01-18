@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global
 -- German (deDE) locale definitions for BookArchivist
 
-BookArchivist = BookArchivist or {}
-BookArchivist.__Locales = BookArchivist.__Locales or {}
-local Locales = BookArchivist.__Locales
+local BA = BookArchivist
+BA.__Locales = BA.__Locales or {}
+local Locales = BA.__Locales
 
 Locales.deDE = {
 	-- Addon & options

@@ -1,10 +1,10 @@
 -- InGameTests.lua
 -- Test runner for BookArchivist in-game tests (consumed by MechanicIntegration.lua)
 
-BookArchivist = BookArchivist or {}
-BookArchivist.InGameTests = BookArchivist.InGameTests or {}
+local BA = BookArchivist
+BA.InGameTests = BA.InGameTests or {}
 
-local InGameTests = BookArchivist.InGameTests
+local InGameTests = BA.InGameTests
 
 -- Test definitions
 local tests = {

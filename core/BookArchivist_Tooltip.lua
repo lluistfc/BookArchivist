@@ -3,10 +3,10 @@
 -- Lightweight GameTooltip integration to show whether a readable item
 -- has its text archived for the current character.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
-local Tooltip = BookArchivist.Tooltip or {}
-BookArchivist.Tooltip = Tooltip
+local Tooltip = BA.Tooltip or {}
+BA.Tooltip = Tooltip
 
 local function getDB()
 	local Core = BookArchivist.Core

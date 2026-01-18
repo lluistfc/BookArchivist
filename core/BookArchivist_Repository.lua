@@ -2,10 +2,10 @@
 -- BookArchivist_Repository.lua
 -- Central database repository - single source of truth for all DB access
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Repository = {}
-BookArchivist.Repository = Repository
+BA.Repository = Repository
 
 -- The database instance to use (injected via Init)
 local db = nil

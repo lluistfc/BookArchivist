@@ -2,10 +2,10 @@
 -- BookArchivist_ChatLinks.lua
 -- WeakAuras-style sharing: clickable chat links with automatic data transmission
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local ChatLinks = {}
-BookArchivist.ChatLinks = ChatLinks
+BA.ChatLinks = ChatLinks
 
 -- Get AceComm library
 local AceComm = LibStub and LibStub("AceComm-3.0", true)
@@ -131,7 +131,7 @@ function ChatLinks:RequestBookFromSender(senderName, bookTitle)
 		return
 	end
 
-	local L = BookArchivist.L or {}
+	local L = BA.L or {}
 
 	-- Mark sender as safe
 	local senderNameClean = Ambiguate(senderName, "none")
@@ -265,7 +265,7 @@ local function HandleComm(prefix, message, distribution, sender)
 
 	BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Deserialized message type:", data.m)
 
-	local L = BookArchivist.L or {}
+	local L = BA.L or {}
 
 	if data.m == "request" then
 		BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Received request for:", data.title)
@@ -336,7 +336,7 @@ function ChatLinks:HandleBookRequest(sender, bookTitle, requestData)
 		response.bookData = foundBook
 	else
 		BookArchivist:DebugPrint("|cFFFF0000[ChatLinks DEBUG]|r Book not found, sending error")
-		local L = BookArchivist.L or {}
+		local L = BA.L or {}
 		response.error = L["BOOK_NOT_AVAILABLE"] or "Book no longer available for sharing"
 	end
 
@@ -375,7 +375,7 @@ function ChatLinks:ShowImportWithData(bookData)
 		self:CreateImportPrompt()
 	end
 
-	local L = BookArchivist.L or {}
+	local L = BA.L or {}
 
 	-- Update title
 	self.promptTitle:SetText(
@@ -416,7 +416,7 @@ end
 
 -- Create the import prompt dialog
 function ChatLinks:CreateImportPrompt()
-	local L = BookArchivist.L or {}
+	local L = BA.L or {}
 
 	local prompt = CreateFrame("Frame", "BookArchivistImportPrompt", UIParent, "BackdropTemplate")
 	prompt:SetSize(500, 300)
@@ -522,7 +522,7 @@ end
 
 -- Perform the import
 function ChatLinks:DoImport()
-	local L = BookArchivist.L or {}
+	local L = BA.L or {}
 	local text = nil
 	local pendingBook = self.importPrompt.pendingBook
 
@@ -543,8 +543,8 @@ function ChatLinks:DoImport()
 		-- This will require adding the book to the database
 
 		-- Refresh UI if open
-		if BookArchivist.UI and BookArchivist.UI.RefreshBookList then
-			BookArchivist.UI:RefreshBookList()
+		if BA.UI and BA.UI.RefreshBookList then
+			BA.UI:RefreshBookList()
 		end
 
 		self.importPrompt:Hide()
@@ -577,7 +577,7 @@ function ChatLinks:DoImport()
 	text = text:gsub("||", "|")
 
 	-- Use existing import worker
-	local ImportWorker = BookArchivist.ImportWorker
+	local ImportWorker = BA.ImportWorker
 	if not ImportWorker then
 		BookArchivist:DebugPrint(
 			"|cFFFF0000BookArchivist:|r "
@@ -603,8 +603,8 @@ function ChatLinks:DoImport()
 		end
 
 		-- Refresh UI if open
-		if BookArchivist.UI and BookArchivist.UI.RefreshBookList then
-			BookArchivist.UI:RefreshBookList()
+		if BA.UI and BA.UI.RefreshBookList then
+			BA.UI:RefreshBookList()
 		end
 
 		self.importPrompt:Hide()
@@ -632,7 +632,7 @@ function ChatLinks:Init()
 	end
 
 	-- Register import result dialogs
-	local L = BookArchivist.L or {}
+	local L = BA.L or {}
 
 	StaticPopupDialogs["BOOKARCHIVIST_IMPORT_SUCCESS"] = {
 		text = L["IMPORT_SUCCESS"] or "Imported: %s",

@@ -2,8 +2,7 @@
 -- BookArchivist_Favorites.lua
 -- Per-character favorites helpers on top of booksById.
 
-BookArchivist = BookArchivist or {}
-BookArchivist.Core = BookArchivist.Core or {}
+local BA = BookArchivist
 
 local Favorites = BookArchivist.Favorites or {}
 BookArchivist.Favorites = Favorites

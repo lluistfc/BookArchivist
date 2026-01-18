@@ -2,12 +2,12 @@
 -- BookArchivist_ImportWorker.lua
 -- Cooperative worker to import libraries without freezing the UI.
 
-BookArchivist = BookArchivist or {}
-BookArchivist.ImportWorker = BookArchivist.ImportWorker or {}
-local ImportWorker = BookArchivist.ImportWorker
+local BA = BookArchivist
+BA.ImportWorker = BA.ImportWorker or {}
+local ImportWorker = BA.ImportWorker
 ImportWorker.__index = ImportWorker
 
-local createFrame = BookArchivist.__createFrame
+local createFrame = BA.__createFrame
 	or (type(_G) == "table" and rawget(_G, "CreateFrame"))
 	or function()
 		local dummy = {}

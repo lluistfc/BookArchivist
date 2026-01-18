@@ -3,10 +3,10 @@
 -- Development-only UI options (debug checkbox)
 -- This file is NOT loaded in production releases
 
-BookArchivist = BookArchivist or {}
-BookArchivist.DevTools = BookArchivist.DevTools or {}
+local BA = BookArchivist
+BA.DevTools = BA.DevTools or {}
 
-local DevTools = BookArchivist.DevTools
+local DevTools = BA.DevTools
 
 -- ============================================================================
 -- DEV OPTIONS UI INTEGRATION

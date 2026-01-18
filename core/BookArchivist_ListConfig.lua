@@ -2,12 +2,12 @@
 -- BookArchivist_ListConfig.lua
 -- Centralized configuration for list options (page sizes, filters, sort modes).
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local ListConfig = {}
-BookArchivist.ListConfig = ListConfig
+BA.ListConfig = ListConfig
 
-local Core = BookArchivist.Core
+local Core = BA.Core
 
 -- Page sizes and defaults
 local LIST_PAGE_SIZE_DEFAULT = 25

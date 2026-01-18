@@ -2,14 +2,19 @@
 -- Throttled iteration system for large table operations
 -- Prevents UI freezing by processing data in chunks across multiple frames
 
-local ADDON_NAME = "BookArchivist"
-local BookArchivist = _G[ADDON_NAME]
-if not BookArchivist then
+-- Cache globals for hot-path performance
+local type, pcall, tostring = type, pcall, tostring
+local tinsert, tsort = table.insert, table.sort
+local debugprofilestop, GetTime, CreateFrame = debugprofilestop, GetTime, CreateFrame
+local math_min = math.min
+
+local BA = BookArchivist
+if not BA then
 	return
 end
 
 local Iterator = {}
-BookArchivist.Iterator = Iterator
+BA.Iterator = Iterator
 
 -- Track all active iterations
 local activeIterations = {}
@@ -66,14 +71,24 @@ function Iterator:Start(operation, dataSource, callback, options)
 		-- Map path: enumerate keys and sort for deterministic iteration
 		keys = {}
 		for k in pairs(dataSource) do
-			table.insert(keys, k)
+			tinsert(keys, k)
 		end
 
 		-- Sort keys for deterministic iteration order
-		-- This is important for progress reporting and debugging
-		table.sort(keys, function(a, b)
-			return tostring(a) < tostring(b)
-		end)
+		-- Optimize: avoid tostring() allocations for string keys
+		if #keys > 0 then
+			local firstType = type(keys[1])
+			if firstType == "string" then
+				tsort(keys) -- No comparator needed for strings
+			elseif firstType == "number" then
+				tsort(keys) -- Numbers also sort naturally
+			else
+				-- Mixed types: use tostring comparator
+				tsort(keys, function(a, b)
+					return tostring(a) < tostring(b)
+				end)
+			end
+		end
 	end
 
 	-- Create iteration state
@@ -102,8 +117,8 @@ function Iterator:Start(operation, dataSource, callback, options)
 	end)
 	state.frame = frame
 
-	if BookArchivist.LogInfo then
-		BookArchivist:LogInfo(
+	if BA.LogInfo then
+		BA:LogInfo(
 			string.format(
 				"Iterator started: %s (%d items, %d per chunk, %dms budget, %s mode)",
 				operation,
@@ -150,8 +165,8 @@ function Iterator:_ProcessChunk(operation)
 
 		if not success then
 			-- Callback error - log and abort
-			if BookArchivist.LogError then
-				BookArchivist:LogError(
+			if BA.LogError then
+				BA:LogError(
 					string.format(
 						"Iterator callback error in %s at index %d: %s",
 						operation,
@@ -166,8 +181,8 @@ function Iterator:_ProcessChunk(operation)
 
 		if shouldContinue == false then
 			-- User requested abort
-			if BookArchivist.LogInfo then
-				BookArchivist:LogInfo(
+			if BA.LogInfo then
+				BA:LogInfo(
 					string.format("Iterator aborted by callback: %s at index %d", operation, state.index)
 				)
 			end
@@ -187,7 +202,7 @@ function Iterator:_ProcessChunk(operation)
 
 	-- Call progress callback
 	if state.onProgress then
-		local progress = math.min(state.index / state.total, 1.0)
+		local progress = math_min(state.index / state.total, 1.0)
 		pcall(state.onProgress, progress, state.index, state.total)
 	end
 
@@ -200,9 +215,9 @@ function Iterator:_ProcessChunk(operation)
 			pcall(state.onComplete, state.context)
 		end
 
-		if BookArchivist.LogInfo then
+		if BA.LogInfo then
 			if aborted then
-				BookArchivist:LogInfo(
+				BA:LogInfo(
 					string.format(
 						"Iterator aborted: %s (processed %d/%d items in %.2fs)",
 						operation,
@@ -212,7 +227,7 @@ function Iterator:_ProcessChunk(operation)
 					)
 				)
 			else
-				BookArchivist:LogInfo(
+				BA:LogInfo(
 					string.format(
 						"Iterator complete: %s (processed %d items in %.2fs)",
 						operation,
@@ -275,7 +290,7 @@ function Iterator:GetStatus(operation)
 	end
 
 	local elapsed = GetTime() - state.startTime
-	local progress = math.min(state.index / state.total, 1.0)
+	local progress = math_min(state.index / state.total, 1.0)
 
 	return {
 		operation = state.operation,
@@ -291,11 +306,11 @@ end
 function Iterator:GetActiveOperations()
 	local operations = {}
 	for operation in pairs(activeIterations) do
-		table.insert(operations, operation)
+		tinsert(operations, operation)
 	end
 	return operations
 end
 
-if BookArchivist.LogInfo then
-	BookArchivist:LogInfo("Iterator module loaded")
+if BA.LogInfo then
+	BA:LogInfo("Iterator module loaded")
 end

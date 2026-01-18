@@ -2,9 +2,9 @@
 -- BookArchivist_Locale.lua
 -- Lightweight localization helper for UI strings.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
-local Core = BookArchivist.Core
+local Core = BA.Core
 
 local SUPPORTED_LOCALES = {
 	enUS = "enUS",
@@ -41,8 +41,8 @@ local function getActiveLocale()
 	return normalizeLocale(gameLocale)
 end
 
-local Locales = BookArchivist.__Locales or {}
-BookArchivist.__Locales = Locales
+local Locales = BA.__Locales or {}
+BA.__Locales = Locales
 
 local function resolve(key)
 	local active = getActiveLocale()
@@ -55,8 +55,8 @@ local function resolve(key)
 	return fallback or key
 end
 
-BookArchivist.L = BookArchivist.L or {}
-setmetatable(BookArchivist.L, {
+BA.L = BA.L or {}
+setmetatable(BA.L, {
 	__index = function(_, key)
 		return resolve(key)
 	end,

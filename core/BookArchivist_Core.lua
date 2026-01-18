@@ -2,7 +2,7 @@
 -- BookArchivist_Core.lua
 -- Shared data helpers, persistence, and SavedVariables management.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 BookArchivistDB = BookArchivistDB or nil
 
 local globalTime = type(_G) == "table" and rawget(_G, "time") or nil
@@ -12,7 +12,7 @@ local timeProvider = globalTime or osTime or function()
 end
 
 local Core = {}
-BookArchivist.Core = Core
+BA.Core = Core
 
 local BookId = BookArchivist.BookId
 local Serialize = BookArchivist.Serialize

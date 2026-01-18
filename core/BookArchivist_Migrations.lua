@@ -2,10 +2,10 @@
 -- BookArchivist_Migrations.lua
 -- Central migration dispatcher for BookArchivistDB.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
-local Migrations = BookArchivist.Migrations or {}
-BookArchivist.Migrations = Migrations
+local Migrations = BA.Migrations or {}
+BA.Migrations = Migrations
 
 local MIGRATIONS = {}
 
@@ -40,7 +40,7 @@ function MIGRATIONS.v2(db)
 
 	debug("Applying v2 (booksById + legacy freeze)")
 
-	local BookId = BookArchivist and BookArchivist.BookId or nil
+	local BookId = BA and BA.BookId or nil
 	local makeBookId = BookId and BookId.MakeBookIdV2 or nil
 
 	local legacyBooks = db.books or {}

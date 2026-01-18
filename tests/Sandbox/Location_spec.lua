@@ -6,6 +6,9 @@ describe("Location Module", function()
 	local Location
 	
 	setup(function()
+		-- Setup global namespace BEFORE loading module
+		_G.BookArchivist = _G.BookArchivist or {}
+		
 		-- Load the Location module
 		dofile("./core/BookArchivist_Location.lua")
 		Location = BookArchivist.Location
