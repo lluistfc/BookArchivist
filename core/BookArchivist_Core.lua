@@ -561,6 +561,10 @@ function Core:SetLastCategoryId(categoryId)
 	local id = (type(categoryId) == "string" and categoryId ~= "") and categoryId or "__all__"
 	db.uiState.lastCategoryId = id
 
+	if BA and BA.DebugPrint then
+		BA:DebugPrint(string.format("[Core] SetLastCategoryId: set to '%s'", tostring(id)))
+	end
+
 	-- Mirror category choice into the favorites-only list filter so the
 	-- list builder can continue to rely on filters for actual selection.
 	local ListConfig = BookArchivist.ListConfig
@@ -569,8 +573,18 @@ function Core:SetLastCategoryId(categoryId)
 		listOpts.filters = listOpts.filters or {}
 		if id == "__favorites__" then
 			listOpts.filters.favoritesOnly = true
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[Core] SetLastCategoryId: set favoritesOnly=true")
+			end
 		else
 			listOpts.filters.favoritesOnly = false
+			if BA and BA.DebugPrint then
+				BA:DebugPrint(string.format("[Core] SetLastCategoryId: set favoritesOnly=false (id='%s')", tostring(id)))
+			end
+		end
+	else
+		if BA and BA.DebugPrint then
+			BA:DebugPrint("[Core] SetLastCategoryId: WARNING - ListConfig not available!")
 		end
 	end
 end

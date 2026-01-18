@@ -92,6 +92,7 @@ Locales.ptBR = {
 	["CATEGORY_ALL"] = "Todos os livros",
 	["CATEGORY_FAVORITES"] = "Favoritos",
 	["CATEGORY_RECENT"] = "Lidos recentemente",
+	["CATEGORY_CUSTOM"] = "Livros personalizados",
 	["SORT_GROUP_CATEGORY"] = "Visualização",
 	["SORT_GROUP_ORDER"] = "Ordenar por",
 

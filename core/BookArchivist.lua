@@ -40,8 +40,9 @@ function BookArchivist:IsDebugEnabled()
 	if isInitializing then
 		return false
 	end
-	if Core and Core.IsDebugEnabled then
-		return Core:IsDebugEnabled()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.IsDebugEnabled then
+		return BA.Core:IsDebugEnabled()
 	end
 	return false
 end
@@ -199,16 +200,19 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
 	end
 
 	if event == "ITEM_TEXT_BEGIN" then
-		if Capture and Capture.OnBegin then
-			Capture:OnBegin()
+		local BA = BookArchivist
+		if BA.Capture and BA.Capture.OnBegin then
+			BA.Capture:OnBegin()
 		end
 	elseif event == "ITEM_TEXT_READY" then
-		if Capture and Capture.OnReady then
-			Capture:OnReady()
+		local BA = BookArchivist
+		if BA.Capture and BA.Capture.OnReady then
+			BA.Capture:OnReady()
 		end
 	elseif event == "ITEM_TEXT_CLOSED" then
-		if Capture and Capture.OnClosed then
-			Capture:OnClosed()
+		local BA = BookArchivist
+		if BA.Capture and BA.Capture.OnClosed then
+			BA.Capture:OnClosed()
 		end
 	end
 end)
@@ -244,15 +248,17 @@ end
 -- Create a new custom (player-authored) book.
 -- This does not edit or mutate captured books.
 function BookArchivist:CreateCustomBook(title, pages, location)
-	if Core and Core.CreateCustomBook then
-		return Core:CreateCustomBook(title, pages, location)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.CreateCustomBook then
+		return BA.Core:CreateCustomBook(title, pages, location)
 	end
 	return nil
 end
 
 function BookArchivist:IsTooltipEnabled()
-	if Core and Core.IsTooltipEnabled then
-		return Core:IsTooltipEnabled()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.IsTooltipEnabled then
+		return BA.Core:IsTooltipEnabled()
 	end
 	local db = self:GetDB() or {}
 	local opts = db.options or {}
@@ -263,8 +269,9 @@ function BookArchivist:IsTooltipEnabled()
 end
 
 function BookArchivist:SetTooltipEnabled(state)
-	if Core and Core.SetTooltipEnabled then
-		Core:SetTooltipEnabled(state)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetTooltipEnabled then
+		BA.Core:SetTooltipEnabled(state)
 	else
 		local db = self:GetDB() or {}
 		db.options = db.options or {}
@@ -273,108 +280,124 @@ function BookArchivist:SetTooltipEnabled(state)
 end
 
 function BookArchivist:IsResumeLastPageEnabled()
-	if Core and Core.IsResumeLastPageEnabled then
-		return Core:IsResumeLastPageEnabled()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.IsResumeLastPageEnabled then
+		return BA.Core:IsResumeLastPageEnabled()
 	end
 	return true
 end
 
 function BookArchivist:SetResumeLastPageEnabled(state)
-	if Core and Core.SetResumeLastPageEnabled then
-		Core:SetResumeLastPageEnabled(state)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetResumeLastPageEnabled then
+		BA.Core:SetResumeLastPageEnabled(state)
 	end
 	syncOptionsUI()
 end
 
 function BookArchivist:GetListPageSize()
-	if Core and Core.GetListPageSize then
-		return Core:GetListPageSize()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.GetListPageSize then
+		return BA.Core:GetListPageSize()
 	end
 	return 25
 end
 
 function BookArchivist:SetListPageSize(size)
-	if Core and Core.SetListPageSize then
-		Core:SetListPageSize(size)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetListPageSize then
+		BA.Core:SetListPageSize(size)
 	end
 end
 
 function BookArchivist:GetListSortMode()
-	if Core and Core.GetSortMode then
-		return Core:GetSortMode()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.GetSortMode then
+		return BA.Core:GetSortMode()
 	end
 	return "lastSeen"
 end
 
 function BookArchivist:SetListSortMode(mode)
-	if Core and Core.SetSortMode then
-		Core:SetSortMode(mode)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetSortMode then
+		BA.Core:SetSortMode(mode)
 	end
 end
 
 function BookArchivist:ExportLibrary()
-	if Core and Core.ExportToString then
-		return Core:ExportToString()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.ExportToString then
+		return BA.Core:ExportToString()
 	end
 	return nil, "export unavailable"
 end
 
 function BookArchivist:GetListFilters()
-	if Core and Core.GetListFilters then
-		return Core:GetListFilters()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.GetListFilters then
+		return BA.Core:GetListFilters()
 	end
 	return {}
 end
 
 function BookArchivist:SetListFilter(filterKey, state)
-	if Core and Core.SetListFilter then
-		Core:SetListFilter(filterKey, state)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetListFilter then
+		BA.Core:SetListFilter(filterKey, state)
 	end
 end
 
 function BookArchivist:IsVirtualCategoriesEnabled()
-	if Core and Core.IsVirtualCategoriesEnabled then
-		return Core:IsVirtualCategoriesEnabled()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.IsVirtualCategoriesEnabled then
+		return BA.Core:IsVirtualCategoriesEnabled()
 	end
 	return true
 end
 
 function BookArchivist:GetLastCategoryId()
-	if Core and Core.GetLastCategoryId then
-		return Core:GetLastCategoryId()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.GetLastCategoryId then
+		return BA.Core:GetLastCategoryId()
 	end
 	return "__all__"
 end
 
 function BookArchivist:SetLastCategoryId(categoryId)
-	if Core and Core.SetLastCategoryId then
-		Core:SetLastCategoryId(categoryId)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetLastCategoryId then
+		BA.Core:SetLastCategoryId(categoryId)
 	end
 end
 
 function BookArchivist:GetLastBookId()
-	if Core and Core.GetLastBookId then
-		return Core:GetLastBookId()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.GetLastBookId then
+		return BA.Core:GetLastBookId()
 	end
 	return nil
 end
 
 function BookArchivist:SetLastBookId(bookId)
-	if Core and Core.SetLastBookId then
-		Core:SetLastBookId(bookId)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetLastBookId then
+		BA.Core:SetLastBookId(bookId)
 	end
 end
 
 function BookArchivist:GetLanguage()
-	if Core and Core.GetLanguage then
-		return Core:GetLanguage()
+	local BA = BookArchivist
+	if BA.Core and BA.Core.GetLanguage then
+		return BA.Core:GetLanguage()
 	end
 	return "enUS"
 end
 
 function BookArchivist:SetLanguage(lang)
-	if Core and Core.SetLanguage then
-		Core:SetLanguage(lang)
+	local BA = BookArchivist
+	if BA.Core and BA.Core.SetLanguage then
+		BA.Core:SetLanguage(lang)
 	end
 	local internal = self.UI and self.UI.Internal
 	if internal and internal.rebuildUIForLanguageChange then

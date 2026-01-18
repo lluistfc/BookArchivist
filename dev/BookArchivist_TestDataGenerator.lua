@@ -258,18 +258,36 @@ function Generator:ClearTestData()
 	local db = Core:GetDB()
 	local deletedCount = 0
 
-	-- Find and delete test books (those with titles matching our patterns)
+	-- Find and delete test books (those with titles matching our patterns or bookId patterns)
 	local toDelete = {}
 	for bookId, entry in pairs(db.booksById) do
+		local isTestBook = false
+		
+		-- Check for security test books (by title)
 		if entry and entry.title then
-			-- Check if title matches any of our test patterns
-			for _, testTitle in ipairs(BOOK_TITLES) do
-				if entry.title:find(testTitle, 1, true) then
-					table.insert(toDelete, bookId)
-					deletedCount = deletedCount + 1
-					break
+			if entry.title:find("SECURITY TEST:", 1, true) then
+				isTestBook = true
+			else
+				-- Check if title matches any of our regular test patterns
+				for _, testTitle in ipairs(BOOK_TITLES) do
+					if entry.title:find(testTitle, 1, true) then
+						isTestBook = true
+						break
+					end
 				end
 			end
+		end
+		
+		-- Also check bookId for test suffixes
+		if not isTestBook and bookId then
+			if bookId:find("_TEST_") or bookId:find("_SECURITY_TEST_") then
+				isTestBook = true
+			end
+		end
+		
+		if isTestBook then
+			table.insert(toDelete, bookId)
+			deletedCount = deletedCount + 1
 		end
 	end
 

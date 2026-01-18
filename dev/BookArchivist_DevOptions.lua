@@ -50,12 +50,19 @@ if BookArchivist.Core then
 
 	function Core:IsDebugEnabled()
 		local db = EnsureDB()
-		return db.options.debug and true or false
+		-- Read from the actual saved variable that the Settings UI uses
+		if db.options.debug ~= nil then
+			return db.options.debug and true or false
+		end
+		-- Fallback to old key for migration
+		return db.options.debugEnabled and true or false
 	end
 
 	function Core:SetDebugEnabled(state)
 		local db = EnsureDB()
+		-- Save to both keys for compatibility
 		db.options.debug = state and true or false
+		db.options.debugEnabled = state and true or false
 	end
 
 	function Core:IsUIDebugEnabled()

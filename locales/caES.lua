@@ -90,8 +90,7 @@ Locales.caES = {
 	["READER_FAVORITE_REMOVE"] = "Treu dels preferits",
 	["CATEGORY_ALL"] = "Tots els llibres",
 	["CATEGORY_FAVORITES"] = "Preferits",
-	["CATEGORY_RECENT"] = "Llegits recentment",
-	["SORT_GROUP_CATEGORY"] = "Vista",
+	["CATEGORY_RECENT"] = "Llegits recentment",	["CATEGORY_CUSTOM"] = "Llibres personalitzats",	["SORT_GROUP_CATEGORY"] = "Vista",
 	["SORT_GROUP_ORDER"] = "Ordena per",
 
 	-- Options panel

@@ -174,7 +174,13 @@ function ListUI:InitializeSortDropdown(dropdown)
 			local infoFav = UIDropDownMenu_CreateInfo()
 			infoFav.text = t("CATEGORY_FAVORITES")
 			infoFav.func = function()
+				if BA and BA.DebugPrint then
+					BA:DebugPrint("[DROPDOWN] Favorites clicked!")
+				end
 				ListUI:SetCategoryId("__favorites__")
+				if BA and BA.DebugPrint then
+					BA:DebugPrint("[DROPDOWN] After SetCategoryId call")
+				end
 				ListUI:UpdateSortDropdown()
 			end
 			infoFav.checked = (currentCategory == "__favorites__")
@@ -188,6 +194,15 @@ function ListUI:InitializeSortDropdown(dropdown)
 			end
 			infoRecent.checked = (currentCategory == "__recent__")
 			UIDropDownMenu_AddButton(infoRecent)
+
+			local infoCustom = UIDropDownMenu_CreateInfo()
+			infoCustom.text = t("CATEGORY_CUSTOM")
+			infoCustom.func = function()
+				ListUI:SetCategoryId("__custom__")
+				ListUI:UpdateSortDropdown()
+			end
+			infoCustom.checked = (currentCategory == "__custom__")
+			UIDropDownMenu_AddButton(infoCustom)
 
 			local sep = UIDropDownMenu_CreateInfo()
 			sep.disabled = true

@@ -111,6 +111,46 @@ Customize your experience with multiple language support, tooltip integration, a
   - Copy it with Ctrl+C and share it, or paste it into another character's Import panel (Options → Import).
   - Import happens automatically when you paste valid data.
 
+## Security
+
+BookArchivist implements robust security measures to protect against malicious imported content:
+
+### Safe Book Sharing
+
+**Imported books are automatically protected:**
+- ✅ **Texture validation** - Only whitelisted game textures are allowed (prevents UI spoofing)
+- ✅ **Content sanitization** - Oversized content is automatically truncated to safe limits
+- ✅ **Import tracking** - All imported books are tagged with metadata for audit trail
+
+**Safe import guidelines:**
+1. **Only import from trusted sources** - Friends, guildmates, or verified communities
+2. **Inspect before importing** - Paste import strings into a text editor first if unsure
+3. **Enable debug logging** - Use `/ba debug on` to see what's being imported
+
+**Content limits enforced:**
+- Title: 255 characters max
+- Page content: 10,000 characters max
+- Total pages: 100 max
+
+### Reporting Security Issues
+
+If you discover a security vulnerability:
+- **DO NOT** report via public GitHub issues
+- **Contact:** Discord or email (see SECURITY_ARCHITECTURE.md)
+- **Include:** Proof of concept, impact description, reproduction steps
+
+### For Developers
+
+Security-conscious developers should review:
+- [SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md) - Complete security design
+- [SECURITY_TESTING.md](docs/SECURITY_TESTING.md) - In-game testing procedures
+- [SECURITY_PLAN.md](docs/SECURITY_PLAN.md) - Implementation roadmap
+
+**Key security features:**
+- Zero-trust import validation (all imported content is validated)
+- Defense-in-depth (multiple layers of protection)
+- Fail-safe design (invalid content degrades gracefully)
+
 ## Architecture overview
 
 ### Core

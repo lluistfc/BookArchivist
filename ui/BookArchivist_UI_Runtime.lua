@@ -427,14 +427,14 @@ end
 
 SLASH_BOOKARCHIVISTLIST1 = "/balist"
 SlashCmdList["BOOKARCHIVISTLIST"] = function()
-	local addon = call(Internal.getAddon)
-	if not addon or not addon.GetDB then
+	local BA = call(Internal.getAddon)
+	if not BA or not BA.GetDB then
 		if Internal.logError then
 			Internal.logError("BookArchivist not ready.")
 		end
 		return
 	end
-	local db = addon:GetDB()
+	local db = BA:GetDB()
 	local order = db.order or {}
 	local books = db and (db.booksById or db.books) or {}
 	print(string.format("[BookArchivist] %d book(s) in archive", #order))
@@ -454,14 +454,14 @@ end
 
 SLASH_BOOKARCHIVISTDB1 = "/badb"
 SlashCmdList["BOOKARCHIVISTDB"] = function()
-	local addon = call(Internal.getAddon)
-	if not addon or not addon.GetDB then
+	local BA = call(Internal.getAddon)
+	if not BA or not BA.GetDB then
 		if Internal.logError then
 			Internal.logError("BookArchivist not ready.")
 		end
 		return
 	end
-	local db = addon:GetDB()
+	local db = BA:GetDB()
 	if not db then
 		print("[BookArchivist] DB missing")
 		return

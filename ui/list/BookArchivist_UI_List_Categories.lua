@@ -32,9 +32,36 @@ function ListUI:GetCategoryId()
 end
 
 function ListUI:SetCategoryId(categoryId)
+	if self.DebugPrint then
+		self:DebugPrint(string.format("[SETCATEGORY] SetCategoryId called with '%s'", tostring(categoryId)))
+	end
 	local ctx = self:GetContext()
-	if ctx and ctx.setCategoryId then
-		ctx.setCategoryId(categoryId)
+	if self.DebugPrint then
+		self:DebugPrint(string.format("[SETCATEGORY] ctx=%s", tostring(ctx)))
+	end
+	if ctx then
+		if self.DebugPrint then
+			self:DebugPrint(string.format("[SETCATEGORY] ctx.setCategoryId=%s", tostring(ctx.setCategoryId)))
+		end
+		if ctx.setCategoryId then
+			if self.DebugPrint then
+				self:DebugPrint("[SETCATEGORY] About to call ctx.setCategoryId")
+			end
+			ctx.setCategoryId(categoryId)
+			if self.DebugPrint then
+				self:DebugPrint("[SETCATEGORY] After ctx.setCategoryId call")
+				local actualId = ctx.getCategoryId and ctx.getCategoryId() or "unknown"
+				self:DebugPrint(string.format("[BookArchivist] SetCategoryId: set to '%s', confirmed as '%s'", tostring(categoryId), tostring(actualId)))
+			end
+		else
+			if self.LogError then
+				self:LogError("[SETCATEGORY] ERROR: ctx.setCategoryId is nil!")
+			end
+		end
+	else
+		if self.LogError then
+			self:LogError("[SETCATEGORY] ERROR: ctx is nil!")
+		end
 	end
 	if self.UpdateFilterButtons then
 		self:UpdateFilterButtons()
@@ -57,6 +84,12 @@ function ListUI:GetFiltersState()
 	local ctx = self:GetContext()
 	local persisted = ctx and ctx.getFilters and ctx.getFilters()
 	local filters = self.__state.filters
+	
+	-- Debug: Show what filters we're loading
+	if self.DebugPrint and persisted then
+		self:DebugPrint(string.format("[BookArchivist] GetFiltersState: favoritesOnly=%s", tostring(persisted.favoritesOnly)))
+	end
+	
 	for _, def in ipairs(QUICK_FILTERS) do
 		local key = def.key
 		local value

@@ -95,6 +95,7 @@ Locales.enUS = {
 	["CATEGORY_ALL"] = "All books",
 	["CATEGORY_FAVORITES"] = "Favorites",
 	["CATEGORY_RECENT"] = "Recently read",
+	["CATEGORY_CUSTOM"] = "Custom books",
 
 	-- Options panel
 	["OPTIONS_SUBTITLE_DEBUG"] = "Enable verbose diagnostics to troubleshoot refresh issues.",

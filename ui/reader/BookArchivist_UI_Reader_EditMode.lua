@@ -255,13 +255,13 @@ function EditMode:StartEditingBook(bookId)
 		self:InitializeUI()
 	end
 	
-	local addon = BookArchivist
-	if not addon or not addon.Core then
+	local BA = BookArchivist
+	if not BA or not BA.Core then
 		return
 	end
 	
 	-- Get book via Core service (Step 4: Reader uses aggregate reads)
-	local book = addon.Core:GetBook(bookId)
+	local book = BA.Core:GetBook(bookId)
 	if not book then
 		return
 	end

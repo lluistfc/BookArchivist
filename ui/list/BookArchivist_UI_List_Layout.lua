@@ -596,38 +596,6 @@ function ListUI:Create(uiFrame)
 		self:SetFrame("newBookButton", newBookButton)
 	end
 
-	local resumeButton = self:SafeCreateFrame("Button", nil, bottomButtonsHost, "UIPanelButtonTemplate")
-	if resumeButton then
-		resumeButton:SetHeight(26)
-		resumeButton:SetText(t("RESUME_LAST_BOOK"))
-		resumeButton:SetNormalFontObject(GameFontNormal)
-		local fontString = resumeButton:GetFontString()
-		if fontString then
-			fontString:SetTextColor(1.0, 0.82, 0.0)
-			fontString:SetWordWrap(false)
-		end
-		resumeButton:SetWidth(Metrics.BTN_W + 20)
-		resumeButton:SetPoint("RIGHT", bottomButtonsHost, "RIGHT", 0, 0)
-		resumeButton:SetScript("OnClick", function()
-			local addon = self.GetAddon and self:GetAddon()
-			if not addon or not addon.GetLastBookId then
-				return
-			end
-			local lastId = addon:GetLastBookId()
-			if not lastId then
-				return
-			end
-			if self.SetSelectedKey then
-				self:SetSelectedKey(lastId)
-			end
-			if self.NotifySelectionChanged then
-				self:NotifySelectionChanged()
-			end
-		end)
-		self:SetFrame("resumeButton", resumeButton)
-		resumeButton:Hide()
-	end
-
 	local listBlock = uiFrame.listBlock or uiFrame.ListInset
 	if not listBlock then
 		listBlock = self:SafeCreateFrame("Frame", nil, uiFrame, "InsetFrameTemplate3")
