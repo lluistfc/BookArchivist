@@ -48,9 +48,19 @@ BookArchivist's custom book feature and import/export system have been audited f
 1. **Create Texture Validator Module** (`core/BookArchivist_TextureValidator.lua`)
    ```lua
    -- Whitelist-based texture path validation
-   -- Reject: parent directory traversal, absolute paths, drive letters
-   -- Allow: Interface/Icons, Interface/Pictures, specific game textures
+   -- Checks: parent directory traversal (..), null bytes, path length
+   -- WoW's sandbox already blocks: absolute paths, drive letters
+   -- Allow: Interface/Icons, Interface/Pictures, Interface/GLUES, WorldMap
    ```
+
+**Security checks:**
+- Whitelist validation (only Interface\\Icons, Interface\\Pictures, Interface\\GLUES, WorldMap)
+- Parent directory traversal detection (..)
+- Null byte detection
+- Path length limits (500 chars)
+- Case-insensitive matching
+
+**Note:** Absolute path checks (drive letters, leading slashes) are NOT implemented - WoW's Lua sandbox already prevents these at the API level (SetTexture will fail). We focus on checks that WoW doesn't enforce (whitelist, parent traversal).
 
 2. **Add Validation to Rich Renderer**
    - Before `tex:SetTexture()`, validate path
@@ -64,7 +74,7 @@ BookArchivist's custom book feature and import/export system have been audited f
 
 4. **Testing Requirements**
    - Test valid paths (game icons, pictures)
-   - Test malicious paths (parent traversal, absolute)
+   - Test malicious paths (parent traversal)
    - Test UI spoofing attempts
    - Test resource exhaustion (large textures)
    - Test fallback behavior
