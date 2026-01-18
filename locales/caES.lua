@@ -10,8 +10,6 @@ Locales.caES = {
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Opcions de Book Archivist",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Obre el panell d'opcions",
-	["TEXTURE_VIEWER"] = "Visualitzador de Textures",
-	["TEXTURE_VIEWER_TOOLTIP"] = "Veure la textura d'edició",
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Llibres",
@@ -252,6 +250,7 @@ Locales.caES = {
 	["UNKNOWN_LOCATION"] = "Ubicació Desconeguda",
 	["CANCEL"] = "Cancel·lar",
 	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Títol del llibre…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Llibre Personalitzat",
 	["EXIT_EDIT_MODE_TITLE"] = "Sortir del mode d'edició?",
 	["EXIT_EDIT_MODE_TEXT"] = "Tens canvis sense desar. Descartar-los?",
 }

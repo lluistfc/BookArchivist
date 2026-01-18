@@ -870,6 +870,22 @@ function Core:SaveBook(book)
 	-- Ensure booksById table exists
 	db.booksById = db.booksById or {}
 	
+	-- Convert sourceType to source structure for database compatibility
+	if entry.sourceType then
+		if entry.sourceType == "CUSTOM" then
+			entry.source = {
+				type = "CUSTOM",
+				custom = true,
+			}
+		elseif entry.sourceType == "CAPTURED" then
+			entry.source = {
+				type = "CAPTURED",
+			}
+		end
+		-- Remove flat sourceType field (database uses source.type)
+		entry.sourceType = nil
+	end
+	
 	-- Save entry
 	db.booksById[bookId] = entry
 	

@@ -372,4 +372,142 @@ describe("Custom Book Creation", function()
 			assert.matches("content", entry.searchText:lower())
 		end)
 	end)
+
+	describe("Editing Custom Books", function()
+		it("retains source.type CUSTOM after UpdateBook", function()
+			local db = resetDB()
+
+			-- Create a custom book
+			local bookId = Core:CreateCustomBook("Original Title", { "Original content" })
+			
+			-- Verify initial state
+			local initialEntry = db.booksById[bookId]
+			assert.is_not_nil(initialEntry)
+			assert.are.equal("CUSTOM", initialEntry.source.type)
+			assert.is_true(initialEntry.source.custom)
+
+			-- Update the book via UpdateBook
+			local success = Core:UpdateBook(bookId, function(book)
+				book:SetTitle("Updated Title")
+				book:SetPageText(1, "Updated content")
+			end)
+
+			assert.is_true(success)
+
+			-- Verify source is still CUSTOM after update
+			local updatedEntry = db.booksById[bookId]
+			assert.is_not_nil(updatedEntry)
+			assert.are.equal("Updated Title", updatedEntry.title)
+			assert.are.equal("Updated content", updatedEntry.pages[1])
+			assert.are.equal("CUSTOM", updatedEntry.source.type)
+			assert.is_true(updatedEntry.source.custom)
+		end)
+
+		it("retains source.type CUSTOM after SaveBook", function()
+			local db = resetDB()
+
+			-- Create a custom book
+			local bookId = Core:CreateCustomBook("Test Book", { "Page 1" })
+			
+			-- Get the book, modify it, and save
+			local book = Core:GetBook(bookId)
+			assert.is_not_nil(book)
+			
+			book:SetTitle("Modified Title")
+			book:SetPageText(1, "Modified content")
+			
+			local success = Core:SaveBook(book)
+			assert.is_true(success)
+
+			-- Verify source is still CUSTOM
+			local savedEntry = db.booksById[bookId]
+			assert.is_not_nil(savedEntry)
+			assert.are.equal("Modified Title", savedEntry.title)
+			assert.are.equal("Modified content", savedEntry.pages[1])
+			assert.are.equal("CUSTOM", savedEntry.source.type)
+			assert.is_true(savedEntry.source.custom)
+		end)
+
+		it("preserves sourceType from Book aggregate to source structure", function()
+			local db = resetDB()
+
+			-- Create a custom book
+			local bookId = Core:CreateCustomBook("Book", { "Content" })
+			
+			-- Get the book aggregate
+			local book = Core:GetBook(bookId)
+			assert.is_not_nil(book)
+			
+			-- Modify and save
+			book:SetTitle("New Title")
+			Core:SaveBook(book)
+
+			-- Verify the database entry has proper source structure
+			local entry = db.booksById[bookId]
+			assert.is_table(entry.source)
+			assert.are.equal("CUSTOM", entry.source.type)
+			assert.is_true(entry.source.custom)
+			-- sourceType should be removed (it's internal to Book aggregate)
+			assert.is_nil(entry.sourceType)
+		end)
+
+		it("prevents editing CAPTURED books", function()
+			local db = resetDB()
+
+			-- Create a captured book entry manually
+			local capturedId = "b2:abc123"
+			db.booksById[capturedId] = {
+				id = capturedId,
+				key = capturedId,
+				title = "Captured Book",
+				pages = { "Captured content" },
+				source = {
+					type = "CAPTURED"
+				},
+				itemId = 12345,
+				createdAt = 1000,
+				updatedAt = 1000,
+				firstSeenAt = 1000,
+				lastSeenAt = 1000,
+			}
+
+			-- Try to update a CAPTURED book (should fail via Book aggregate validation)
+			local book = Core:GetBook(capturedId)
+			assert.is_not_nil(book)
+			
+			-- Captured books should not allow SetTitle
+			local success, err = book:SetTitle("New Title")
+			assert.is_false(success)
+			assert.is_string(err)
+			assert.matches("captured", err:lower())
+		end)
+
+		it("multiple edits preserve CUSTOM status", function()
+			local db = resetDB()
+
+			-- Create a custom book
+			local bookId = Core:CreateCustomBook("Book", { "Page 1", "Page 2" })
+
+			-- Edit 1
+			Core:UpdateBook(bookId, function(book)
+				book:SetTitle("Edit 1")
+			end)
+			assert.are.equal("CUSTOM", db.booksById[bookId].source.type)
+
+			-- Edit 2
+			Core:UpdateBook(bookId, function(book)
+				book:SetPageText(1, "Modified page 1")
+			end)
+			assert.are.equal("CUSTOM", db.booksById[bookId].source.type)
+
+			-- Edit 3 - modify second page
+			Core:UpdateBook(bookId, function(book)
+				book:SetPageText(2, "Modified page 2")
+			end)
+			assert.are.equal("CUSTOM", db.booksById[bookId].source.type)
+			assert.is_true(db.booksById[bookId].source.custom)
+			assert.are.equal(2, #db.booksById[bookId].pages)
+			assert.are.equal("Modified page 2", db.booksById[bookId].pages[2])
+		end)
+	end)
 end)

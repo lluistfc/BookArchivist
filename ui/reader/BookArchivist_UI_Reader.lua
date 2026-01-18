@@ -893,14 +893,21 @@ function ReaderUI:RenderSelected()
 
 	-- Show custom book icon (inscription) if this is a custom book
 	local customIcon = state.customBookIcon
+	local customIconFrame = state.customBookIconFrame
 	local editButton = state.editButton
 	local isCustomBook = entry and entry.source and entry.source.type == "CUSTOM"
 	
 	if customIcon then
 		if isCustomBook then
 			customIcon:Show()
+			if customIconFrame then
+				customIconFrame:Show()
+			end
 		else
 			customIcon:Hide()
+			if customIconFrame then
+				customIconFrame:Hide()
+			end
 		end
 	end
 	

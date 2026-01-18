@@ -284,7 +284,28 @@ function ListUI:CreateRowButtonStructure(button, rowHeight)
 	customIcon:SetTexture("Interface\\Icons\\INV_Inscription_Tradeskill01")
 	customIcon:SetAlpha(0.9)
 	customIcon:Hide()
+	
+	-- Create an invisible frame for tooltip support on texture
+	local customIconFrame = CreateFrame("Frame", nil, rowContent)
+	customIconFrame:SetAllPoints(customIcon)
+	customIconFrame:SetScript("OnEnter", function(self)
+		if not GameTooltip then
+			return
+		end
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		local text = BookArchivist.L["CUSTOM_BOOK_TOOLTIP"] or "Custom Book"
+		GameTooltip:SetText(text, 1, 0.82, 0)
+		GameTooltip:Show()
+	end)
+	customIconFrame:SetScript("OnLeave", function()
+		if GameTooltip then
+			GameTooltip:Hide()
+		end
+	end)
+	customIconFrame:Hide()
+	
 	button.customIcon = customIcon
+	button.customIconFrame = customIconFrame
 
 	button.titleText = rowContent:CreateFontString(nil, "OVERLAY")
 	button.titleText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")

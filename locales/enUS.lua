@@ -10,8 +10,6 @@ Locales.enUS = {
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Book Archivist Options",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Open the settings panel",
-	["TEXTURE_VIEWER"] = "Texture Viewer",
-	["TEXTURE_VIEWER_TOOLTIP"] = "View the edit texture",
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Books",
@@ -250,6 +248,7 @@ Locales.enUS = {
 	["UNKNOWN_LOCATION"] = "Unknown Location",
 	["CANCEL"] = "Cancel",
 	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Book title…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Custom Book",
 	["EXIT_EDIT_MODE_TITLE"] = "Exit Edit Mode?",
 	["EXIT_EDIT_MODE_TEXT"] = "You have unsaved changes. Discard them?",
 }

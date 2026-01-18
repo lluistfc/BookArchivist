@@ -792,6 +792,26 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			customIcon:SetTexture("Interface\\Icons\\INV_Inscription_Tradeskill01")
 			customIcon:SetAlpha(0.9)
 			customIcon:Hide()
+			
+			-- Create an invisible frame for tooltip support
+			local customIconFrame = CreateFrame("Frame", nil, actionsRail)
+			state.customBookIconFrame = customIconFrame
+			customIconFrame:SetSize(size, size)
+			customIconFrame:SetScript("OnEnter", function(self)
+				if not GameTooltip then
+					return
+				end
+				GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+				local text = BookArchivist.L["CUSTOM_BOOK_TOOLTIP"] or "Custom Book"
+				GameTooltip:SetText(text, 1, 0.82, 0)
+				GameTooltip:Show()
+			end)
+			customIconFrame:SetScript("OnLeave", function()
+				if GameTooltip then
+					GameTooltip:Hide()
+				end
+			end)
+			customIconFrame:Hide()
 		end
 		if customIcon then
 			customIcon:ClearAllPoints()
@@ -801,6 +821,13 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				customIcon:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
 			else
 				customIcon:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
+			
+			-- Position tooltip frame to match icon
+			local customIconFrame = state.customBookIconFrame
+			if customIconFrame then
+				customIconFrame:ClearAllPoints()
+				customIconFrame:SetAllPoints(customIcon)
 			end
 		end
 

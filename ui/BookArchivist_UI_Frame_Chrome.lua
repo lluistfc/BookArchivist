@@ -83,82 +83,6 @@ local function configureTitle(frame, title)
 	end
 end
 
-local function configureTextureViewerButton(frame, safeCreateFrame)
-	-- Local helper for tinting button textures
-	local function tint(texture, r, g, b)
-		if not texture then
-			return
-		end
-		texture:SetTexCoord(0, 1, 0, 1)
-		texture:SetVertexColor(r, g, b, 1)
-	end
-
-	local button = safeCreateFrame("Button", "BookArchivistTextureButton", frame, "UIPanelCloseButton")
-	if not button then
-		return
-	end
-
-	local optionsButton = frame.optionsButton
-	local width = 26
-	local height = 26
-	button:SetSize(width, height)
-	if optionsButton then
-		button:SetPoint("TOPRIGHT", optionsButton, "TOPLEFT", 0, 0)
-	else
-		local closeButton = frame.CloseButton or frame.CloseButtonFrame or frame.CloseButton2
-		if closeButton then
-			button:SetPoint("TOPRIGHT", closeButton, "TOPLEFT", -26, 0)
-		else
-			button:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -66, 0)
-		end
-	end
-
-	button:SetNormalTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Up")
-	button:SetPushedTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Down")
-	button:SetDisabledTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Disabled")
-	button:SetHighlightTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight", "ADD")
-
-	tint(button:GetNormalTexture(), 0.05, 0.4, 0.75)
-	tint(button:GetPushedTexture(), 0.03, 0.3, 0.6)
-	tint(button:GetDisabledTexture(), 0.03, 0.2, 0.3)
-
-	local highlight = button:GetHighlightTexture()
-	if highlight then
-		highlight:SetTexCoord(0, 1, 0, 1)
-		highlight:SetVertexColor(0.2, 0.8, 1, 0.65)
-	end
-
-	local icon = button:CreateTexture(nil, "ARTWORK", nil, 1)
-	icon:SetTexture("Interface\\Buttons\\UI-GuildButton-PublicNote-Up")
-	icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-	icon:SetPoint("CENTER", 0, 0)
-	icon:SetSize(width - 12, height - 12)
-	icon:SetVertexColor(0.1, 0.7, 0.95, 1)
-	button.icon = icon
-
-	button:SetScript("OnEnter", function(self)
-		if not GameTooltip then
-			return
-		end
-		GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-		GameTooltip:SetText(t("TEXTURE_VIEWER"), 1, 0.82, 0)
-		GameTooltip:AddLine(t("TEXTURE_VIEWER_TOOLTIP"), 0.9, 0.9, 0.9)
-		GameTooltip:Show()
-	end)
-	button:SetScript("OnLeave", function()
-		if GameTooltip then
-			GameTooltip:Hide()
-		end
-	end)
-	button:SetScript("OnClick", function()
-		if BookArchivist and type(BookArchivist.ToggleTextureViewer) == "function" then
-			BookArchivist:ToggleTextureViewer()
-		end
-	end)
-
-	frame.textureViewerButton = button
-end
-
 local function configureOptionsButton(frame, safeCreateFrame, onOptions)
 	-- Local helper for tinting button textures
 	local function tint(texture, r, g, b)
@@ -331,6 +255,5 @@ end
 
 FrameUI.ApplyPortrait = FrameUI.ApplyPortrait or applyPortrait
 FrameUI.ConfigureTitle = FrameUI.ConfigureTitle or configureTitle
-FrameUI.ConfigureTextureViewerButton = FrameUI.ConfigureTextureViewerButton or configureTextureViewerButton
 FrameUI.ConfigureOptionsButton = FrameUI.ConfigureOptionsButton or configureOptionsButton
 FrameUI.CreateHeaderBar = FrameUI.CreateHeaderBar or createHeaderBar

@@ -10,8 +10,7 @@ Locales.frFR = {
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Options de Book Archivist",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Ouvrir le panneau de configuration",
-	["TEXTURE_VIEWER"] = "Visionneuse de Textures",
-	["TEXTURE_VIEWER_TOOLTIP"] = "Voir la texture d'édition",
+
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Livres",
@@ -251,6 +250,7 @@ Locales.frFR = {
 	["UNKNOWN_LOCATION"] = "Emplacement Inconnu",
 	["CANCEL"] = "Annuler",
 	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Titre du livre…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Livre Personnalisé",
 	["EXIT_EDIT_MODE_TITLE"] = "Quitter le mode édition ?",
 	["EXIT_EDIT_MODE_TEXT"] = "Vous avez des modifications non enregistrées. Les abandonner ?",
 }

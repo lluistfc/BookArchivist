@@ -736,7 +736,11 @@ function ListUI:Create(uiFrame)
 
 		-- Show custom book icon (inscription profession icon)
 		if button.customIcon then
-			button.customIcon:SetShown(elementData.isCustomBook or false)
+			local showCustomIcon = elementData.isCustomBook or false
+			button.customIcon:SetShown(showCustomIcon)
+			if button.customIconFrame then
+				button.customIconFrame:SetShown(showCustomIcon)
+			end
 		end
 
 		-- Sync match badges (handles text, positioning, and visibility)

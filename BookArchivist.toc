@@ -80,7 +80,6 @@ ui/options/BookArchivist_UI_OptionsTemplates.xml
 ui/options/BookArchivist_UI_Options.lua
 ui/BookArchivist_UI.lua
 ui/BookArchivist_UI_Core.lua
-ui/BookArchivist_UI_TextureViewer.lua
 ui/BookArchivist_UI_Frame_Shell.lua
 ui/BookArchivist_UI_Frame_Layout.lua
 ui/BookArchivist_UI_Frame_Chrome.lua
