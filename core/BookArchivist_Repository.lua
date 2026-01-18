@@ -16,13 +16,8 @@ function Repository:Init(database)
 	db = database
 	if BA and BA.DebugPrint then
 		local orderCount = db and db.order and #db.order or 0
-		local booksCount = 0
-		if db and db.booksById then
-			for _ in pairs(db.booksById) do
-				booksCount = booksCount + 1
-			end
-		end
-		BA:DebugPrint("[Repository] Init: database set (order:", orderCount, "books:", booksCount, ")")
+		local hasBooks = db and db.booksById and next(db.booksById) ~= nil
+		BA:DebugPrint("[Repository] Init: database set (order:", orderCount, "hasBooks:", hasBooks, ")")
 	end
 end
 
@@ -33,13 +28,8 @@ function Repository:GetDB()
 	if db then
 		if BA and BA.DebugPrint then
 			local orderCount = db.order and #db.order or 0
-			local booksCount = 0
-			if db.booksById then
-				for _ in pairs(db.booksById) do
-					booksCount = booksCount + 1
-				end
-			end
-			BA:DebugPrint("[Repository] GetDB: returning injected db (order:", orderCount, "books:", booksCount, ")")
+			local hasBooks = db.booksById and next(db.booksById) ~= nil
+			BA:DebugPrint("[Repository] GetDB: returning injected db (order:", orderCount, "hasBooks:", hasBooks, ")")
 		end
 		return db
 	end
@@ -47,13 +37,8 @@ function Repository:GetDB()
 	if BookArchivistDB then
 		if BA and BA.DebugPrint then
 			local orderCount = BookArchivistDB.order and #BookArchivistDB.order or 0
-			local booksCount = 0
-			if BookArchivistDB.booksById then
-				for _ in pairs(BookArchivistDB.booksById) do
-					booksCount = booksCount + 1
-				end
-			end
-			BA:DebugPrint("[Repository] GetDB: returning global BookArchivistDB (order:", orderCount, "books:", booksCount, ")")
+			local hasBooks = BookArchivistDB.booksById and next(BookArchivistDB.booksById) ~= nil
+			BA:DebugPrint("[Repository] GetDB: returning global BookArchivistDB (order:", orderCount, "hasBooks:", hasBooks, ")")
 		end
 		return BookArchivistDB
 	end
