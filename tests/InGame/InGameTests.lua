@@ -326,7 +326,7 @@ local function runLocationTest()
 		end
 	end
 
-	local hasBuildFunc = BA.Location and BA.Location.BuildWorldLocation ~= nil
+	local hasBuildFunc = BookArchivist.Location and BookArchivist.Location.BuildWorldLocation ~= nil
 	table.insert(details, {
 		label = "BuildWorldLocation",
 		value = hasBuildFunc and "Available" or "Missing",
