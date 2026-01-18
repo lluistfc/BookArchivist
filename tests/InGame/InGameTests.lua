@@ -1,11 +1,6 @@
 -- InGameTests.lua
 -- Test runner for BookArchivist in-game tests (consumed by MechanicIntegration.lua)
 
-local BA = BookArchivist
-BA.InGameTests = BA.InGameTests or {}
-
-local InGameTests = BA.InGameTests
-
 -- Test definitions
 local tests = {
 	-- Core API Integration Tests (run directly in-game)
@@ -41,6 +36,14 @@ local tests = {
 
 -- Test implementations (Core tests)
 local function runBookAggregateTest()
+	if not BookArchivist then
+		return {
+			passed = false,
+			message = "BookArchivist not loaded",
+			details = {},
+		}
+	end
+
 	local details = {}
 	local allPassed = true
 
@@ -124,6 +127,14 @@ local function runBookAggregateTest()
 end
 
 local function runTooltipTest()
+	if not BookArchivist then
+		return {
+			passed = false,
+			message = "BookArchivist not loaded",
+			details = {},
+		}
+	end
+
 	local details = {}
 	local allPassed = true
 
@@ -182,6 +193,14 @@ local function runTooltipTest()
 end
 
 local function runCaptureTest()
+	if not BookArchivist then
+		return {
+			passed = false,
+			message = "BookArchivist not loaded",
+			details = {},
+		}
+	end
+
 	local details = {}
 	local allPassed = true
 
@@ -250,6 +269,14 @@ local function runCaptureTest()
 end
 
 local function runLocationTest()
+	if not BookArchivist then
+		return {
+			passed = false,
+			message = "BookArchivist not loaded",
+			details = {},
+		}
+	end
+
 	local details = {}
 	local allPassed = true
 
@@ -299,7 +326,7 @@ local function runLocationTest()
 		end
 	end
 
-	local hasBuildFunc = BookArchivist.Location and BookArchivist.Location.BuildWorldLocation ~= nil
+	local hasBuildFunc = BA.Location and BA.Location.BuildWorldLocation ~= nil
 	table.insert(details, {
 		label = "BuildWorldLocation",
 		value = hasBuildFunc and "Available" or "Missing",
@@ -317,11 +344,24 @@ local function runLocationTest()
 end
 
 -- Public API (consumed by MechanicIntegration)
-function InGameTests.GetAll()
+-- Initialize namespace when functions are called (lazy init)
+local API = {}
+
+function API.GetAll()
 	return tests
 end
 
-function InGameTests.Run(testId)
+function API.Run(testId)
+	if not BookArchivist then
+		return {
+			passed = false,
+			message = "BookArchivist not loaded",
+			details = {},
+			duration = 0,
+			id = testId,
+		}
+	end
+
 	local startTime = debugprofilestop()
 	local result
 
@@ -347,14 +387,18 @@ function InGameTests.Run(testId)
 	return result
 end
 
-function InGameTests.RunAll()
-	local allTests = InGameTests.GetAll()
+function API.RunAll()
+	if not BookArchivist then
+		return 0, 0, {}
+	end
+
+	local allTests = API.GetAll()
 	local passed = 0
 	local total = #allTests
 	local results = {}
 
 	for _, test in ipairs(allTests) do
-		local result = InGameTests.Run(test.id)
+		local result = API.Run(test.id)
 		results[test.id] = result
 		if result.passed then
 			passed = passed + 1
@@ -362,4 +406,19 @@ function InGameTests.RunAll()
 	end
 
 	return passed, total, results
+end
+
+-- Assign to BookArchivist namespace when available
+if BookArchivist then
+	BookArchivist.InGameTests = API
+else
+	-- Defer initialization until BookArchivist is available
+	local frame = CreateFrame("Frame")
+	frame:RegisterEvent("ADDON_LOADED")
+	frame:SetScript("OnEvent", function(_, event, addonName)
+		if addonName == "BookArchivist" and BookArchivist then
+			BookArchivist.InGameTests = API
+			frame:UnregisterAllEvents()
+		end
+	end)
 end
