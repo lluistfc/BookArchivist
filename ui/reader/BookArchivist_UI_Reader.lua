@@ -6,6 +6,7 @@ local ReaderUI = {}
 BA.UI.Reader = ReaderUI
 
 local L = BookArchivist and BookArchivist.L or {}
+local Metrics = BookArchivist and BookArchivist.Metrics or {}
 local function t(key)
 	return (L and L[key]) or key
 end
@@ -647,6 +648,17 @@ function ReaderUI:RenderSelected()
 		if favoriteBtn and favoriteBtn.Hide then
 			favoriteBtn:Hide()
 		end
+		-- Hide custom book icon when no book selected
+		if state.customBookIcon then
+			state.customBookIcon:Hide()
+		end
+		if state.customBookIconFrame then
+			state.customBookIconFrame:Hide()
+		end
+		-- Hide edit button when no book selected
+		if state.editButton then
+			state.editButton:Hide()
+		end
 		if state.countText then
 			state.countText:SetText("")
 		end
@@ -903,12 +915,37 @@ function ReaderUI:RenderSelected()
 			if customIconFrame then
 				customIconFrame:Show()
 			end
+			-- Reposition favorite button to left of custom icon
+			if favoriteBtn then
+				favoriteBtn:ClearAllPoints()
+				favoriteBtn:SetPoint("RIGHT", customIcon, "LEFT", -(Metrics.GAP_S or 4), 0)
+			end
 		else
 			customIcon:Hide()
 			if customIconFrame then
 				customIconFrame:Hide()
 			end
+			-- Reposition favorite button to left of delete button (skip hidden custom icon)
+			if favoriteBtn then
+				favoriteBtn:ClearAllPoints()
+				local deleteButton = getDeleteButton()
+				if deleteButton then
+					favoriteBtn:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+				else
+					local actionsRail = state.actionsRail
+					if actionsRail then
+						favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+					end
+				end
+			end
 		end
+	end
+	
+	-- Reposition share button to left of favorite button (always)
+	local shareButton = state.shareButton or getWidget("shareButton")
+	if shareButton and favoriteBtn then
+		shareButton:ClearAllPoints()
+		shareButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
 	end
 	
 	-- Show edit button only for custom books

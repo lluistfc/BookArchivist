@@ -26,20 +26,10 @@ end
 function Repository:GetDB()
 	-- Return injected database if available
 	if db then
-		if BA and BA.DebugPrint then
-			local orderCount = db.order and #db.order or 0
-			local hasBooks = db.booksById and next(db.booksById) ~= nil
-			BA:DebugPrint("[Repository] GetDB: returning injected db (order:", orderCount, "hasBooks:", hasBooks, ")")
-		end
 		return db
 	end
 	-- Fallback to global BookArchivistDB (for initialization sequence)
 	if BookArchivistDB then
-		if BA and BA.DebugPrint then
-			local orderCount = BookArchivistDB.order and #BookArchivistDB.order or 0
-			local hasBooks = BookArchivistDB.booksById and next(BookArchivistDB.booksById) ~= nil
-			BA:DebugPrint("[Repository] GetDB: returning global BookArchivistDB (order:", orderCount, "hasBooks:", hasBooks, ")")
-		end
 		return BookArchivistDB
 	end
 	-- Error only if both are nil

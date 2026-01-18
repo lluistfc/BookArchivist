@@ -215,16 +215,7 @@ end)
 
 function BookArchivist:GetDB()
 	if BookArchivist.Core and BookArchivist.Core.GetDB then
-		local db = BookArchivist.Core:GetDB()
-		local orderCount = db and db.order and #db.order or 0
-		local booksCount = 0
-		if db and db.booksById then
-			for _ in pairs(db.booksById) do
-				booksCount = booksCount + 1
-			end
-		end
-		self:DebugPrint("[BookArchivist] GetDB: returning from Core (order:", orderCount, "books:", booksCount, ")")
-		return db
+		return BookArchivist.Core:GetDB()
 	end
 	self:DebugPrint("[BookArchivist] GetDB: Core not available, returning empty table")
 	return {}
@@ -238,10 +229,6 @@ function BookArchivist:ExportBook(bookId)
 end
 
 function BookArchivist:Delete(key)
-	if BookArchivist and BookArchivist.DebugPrint then
-		BookArchivist:DebugPrint("[BookArchivist] Delete wrapper called for key:", key)
-		BookArchivist:DebugPrint("[BookArchivist] Core exists:", BookArchivist.Core ~= nil, "Core.Delete exists:", BookArchivist.Core and BookArchivist.Core.Delete ~= nil)
-	end
 	if BookArchivist.Core and BookArchivist.Core.Delete then
 		BookArchivist.Core:Delete(key)
 	else

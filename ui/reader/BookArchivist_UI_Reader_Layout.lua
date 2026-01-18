@@ -773,16 +773,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				end
 			end)
 		end
-		if favoriteBtn then
-			favoriteBtn:ClearAllPoints()
-			if deleteButton then
-				favoriteBtn:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
-			else
-				favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
-			end
-		end
-
-		-- Custom book icon (inscription profession icon)
+		-- Custom book icon (inscription profession icon) - create before positioning favorite
 		local customIcon = state.customBookIcon
 		if not customIcon then
 			customIcon = actionsRail:CreateTexture(nil, "ARTWORK")
@@ -815,9 +806,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		end
 		if customIcon then
 			customIcon:ClearAllPoints()
-			if favoriteBtn then
-				customIcon:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
-			elseif deleteButton then
+			if deleteButton then
 				customIcon:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
 			else
 				customIcon:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
@@ -831,12 +820,22 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			end
 		end
 
-		-- Position share button to the left of custom icon
+		-- Position favorite button to left of custom icon (will be repositioned in ShowBook for non-custom books)
+		if favoriteBtn then
+			favoriteBtn:ClearAllPoints()
+			if customIcon then
+				favoriteBtn:SetPoint("RIGHT", customIcon, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif deleteButton then
+				favoriteBtn:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			else
+				favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
+		end
+
+		-- Position share button (will be repositioned dynamically in ShowBook)
 		if shareButton then
 			shareButton:ClearAllPoints()
-			if customIcon then
-				shareButton:SetPoint("RIGHT", customIcon, "LEFT", -(Metrics.GAP_S or 4), 0)
-			elseif favoriteBtn then
+			if favoriteBtn then
 				shareButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
 			elseif deleteButton then
 				shareButton:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
