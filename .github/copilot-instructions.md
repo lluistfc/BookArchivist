@@ -4,6 +4,308 @@ Repository-wide rules for WoW addon development. Follow unless explicitly overri
 
 ---
 
+## ⚠️ CRITICAL: Module Initialization & Load Order
+
+### The Load Order Problem
+
+**NEVER assign module references to local variables at file load time.**
+
+```lua
+-- ❌ WRONG - Assigned at load time (module might be nil)
+local Core = BookArchivist.Core
+
+-- ✅ CORRECT - Resolved at runtime (module exists when called)
+if BookArchivist.Core and BookArchivist.Core.GetDB then
+    return BookArchivist.Core:GetDB()
+end
+```
+
+**Why?** TOC loads files sequentially:
+1. `core/BookArchivist.lua` loads first (line 19)
+2. `core/BookArchivist_Core.lua` loads later (line 32)
+3. When BookArchivist.lua loads, `BookArchivist.Core` is `nil`
+4. Local variable captures `nil` permanently
+5. Later when Core.lua assigns `BA.Core`, the local variable still holds `nil`
+
+**Solution:** Always use `BookArchivist.ModuleName` directly - lookups resolve at runtime.
+
+### Initialization Sequence (ADDON_LOADED)
+
+```
+1. BookArchivistDB loaded from SavedVariables (WoW engine)
+2. ADDON_LOADED event fires
+3. Set isInitializing = true (prevents circular deps)
+4. Repository:Init(BookArchivistDB) - inject initial DB reference
+5. Core:EnsureDB() - runs migrations, may create NEW table
+6. Repository:Init(BookArchivistDB) - re-inject migrated DB reference
+7. Set isInitializing = false
+8. Initialize Minimap, Tooltip, ChatLinks modules
+```
+
+**Critical:** Repository needs TWO Init() calls:
+- First: Before EnsureDB (so Core can access DB during migrations)
+- Second: After EnsureDB (DB reference might have changed)
+
+---
+
+## 🐛 Debug System Architecture
+
+### Debug Print Pattern
+
+```lua
+-- Production-safe debug logging (guards against nil BookArchivist)
+if BA and BA.DebugPrint then
+    BA:DebugPrint("[Module] Message")
+end
+
+-- Or for BookArchivist itself (always safe)
+BookArchivist:DebugPrint("[BookArchivist] Message")
+```
+
+### Debug System Flow
+
+```
+IsDebugEnabled() ← checks options.debug in DB
+    ↓
+DebugPrint(...) ← only prints if debug enabled
+    ↓
+storeDebugMessage() ← saves to circular buffer (5000 entries)
+    ↓
+chatMessage() ← prints to chat
+```
+
+**Test Environment:** Tests don't provide DebugPrint mock - always guard calls with existence checks.
+
+### When to Use Debug Logging
+
+✅ **Use for:**
+- Initialization checkpoints (module loaded, DB state)
+- Data flow tracing (order count, hasBooks flag)
+- Error conditions before fallbacks
+- State transitions (async operations starting/completing)
+
+❌ **Don't use for:**
+- Hot paths (called thousands of times per second)
+- Inside iteration loops
+- Performance-critical rendering code
+
+### Performance-Conscious Logging
+
+```lua
+-- ❌ WRONG - O(n) iteration for logging
+local count = 0
+for _ in pairs(db.booksById) do
+    count = count + 1
+end
+BA:DebugPrint("[Module] books:", count)
+
+-- ✅ CORRECT - O(1) check
+local hasBooks = db.booksById and next(db.booksById) ~= nil
+BA:DebugPrint("[Module] hasBooks:", hasBooks)
+```
+
+---
+
+## 🧪 Test Infrastructure
+
+### Repository Pattern for Test Isolation
+
+**Production:**
+```lua
+-- BookArchivist.lua (ADDON_LOADED)
+Repository:Init(BookArchivistDB)  -- Inject global DB
+
+-- Any module
+local db = Repository:GetDB()  -- Returns BookArchivistDB
+```
+
+**Tests:**
+```lua
+-- before_each
+local testDB = { booksById = {}, order = {} }
+Repository:Init(testDB)  -- Inject test DB
+
+-- Test code
+local db = Repository:GetDB()  -- Returns testDB (isolated!)
+
+-- after_each
+Repository:Init(BookArchivistDB)  -- Restore production DB
+```
+
+### Test Database Setup Pattern
+
+```lua
+describe("My Module", function()
+    local Module
+    local originalDB
+    
+    before_each(function()
+        -- 1. Backup original global
+        originalDB = BookArchivistDB
+        
+        -- 2. Setup namespace
+        helper.setupNamespace()
+        
+        -- 3. Load modules
+        helper.loadFile("core/BookArchivist_Repository.lua")
+        helper.loadFile("core/MyModule.lua")
+        
+        Module = BookArchivist.MyModule
+        
+        -- 4. Create test DB
+        BookArchivistDB = {
+            dbVersion = 3,
+            booksById = {},
+            order = {},
+            indexes = {
+                objectToBookId = {},
+                itemToBookIds = {},
+                titleToBookIds = {}
+            }
+        }
+        
+        -- 5. Initialize Repository with test DB
+        BookArchivist.Repository:Init(BookArchivistDB)
+    end)
+    
+    after_each(function()
+        -- 6. Restore original global
+        BookArchivistDB = originalDB
+        
+        -- 7. Restore Repository to production DB
+        BookArchivist.Repository:Init(BookArchivistDB)
+    end)
+end)
+```
+
+**Why this works:**
+- Each test gets a fresh, isolated database
+- Repository injects test DB for duration of test
+- No pollution between tests
+- Production DB restored after test
+
+---
+
+## 🚧 Common Pitfalls (Learn From Past Mistakes)
+
+### 1. Local Variable Module References at Load Time
+
+**Problem:** Assigning `local Core = BookArchivist.Core` at module load time captures `nil`
+
+**Symptom:** GetDB returns empty table, minimap icon missing, 0 books despite SavedVariables having data
+
+**Solution:** Always use `BookArchivist.ModuleName` directly in function bodies
+
+```lua
+-- ❌ WRONG - At file top (load time)
+local Core = BookArchivist.Core
+function MyModule:DoWork()
+    return Core:GetDB()  -- Core is nil!
+end
+
+-- ✅ CORRECT - Runtime resolution
+function MyModule:DoWork()
+    if BookArchivist.Core and BookArchivist.Core.GetDB then
+        return BookArchivist.Core:GetDB()
+    end
+end
+```
+
+### 2. Unsafe Debug Logging in Tests
+
+**Problem:** Calling `BA:DebugPrint()` without existence check crashes tests
+
+**Symptom:** `attempt to call method 'DebugPrint' (a nil value)` in test runs
+
+**Solution:** Always guard debug calls with existence checks
+
+```lua
+-- ❌ WRONG - Crashes tests
+BA:DebugPrint("[Module] Message")
+
+-- ✅ CORRECT - Test-safe
+if BA and BA.DebugPrint then
+    BA:DebugPrint("[Module] Message")
+end
+```
+
+### 3. O(n) Iteration in Debug Logging
+
+**Problem:** Iterating all books to count them for debug log
+
+**Symptom:** Performance degradation with large databases
+
+**Solution:** Use `next()` for existence check (O(1))
+
+```lua
+-- ❌ WRONG - O(n) iteration
+local count = 0
+for _ in pairs(db.booksById) do count = count + 1 end
+DebugPrint("books:", count)
+
+-- ✅ CORRECT - O(1) check
+local hasBooks = db.booksById and next(db.booksById) ~= nil
+DebugPrint("hasBooks:", hasBooks)
+```
+
+### 4. Repository Not Re-initialized After EnsureDB
+
+**Problem:** Repository holds reference to old DB table before migrations
+
+**Symptom:** Database appears empty even though SavedVariables has data
+
+**Solution:** Call Repository:Init() TWICE - before and after EnsureDB
+
+```lua
+-- First init (before EnsureDB)
+Repository:Init(BookArchivistDB)
+
+-- EnsureDB may create NEW table reference
+Core:EnsureDB()
+
+-- Second init (after EnsureDB) - CRITICAL!
+Repository:Init(BookArchivistDB)
+```
+
+### 5. Using Undefined BA Variable in Tests
+
+**Problem:** Using shorthand `BA` instead of `BookArchivist` in test files
+
+**Symptom:** `attempt to index global 'BA' (a nil value)` error
+
+**Solution:** Always use full `BookArchivist` namespace in tests unless BA is explicitly defined as local
+
+```lua
+-- ❌ WRONG - BA not defined
+local hasBuildFunc = BA.Location and BA.Location.BuildWorldLocation
+
+-- ✅ CORRECT - Full namespace
+local hasBuildFunc = BookArchivist.Location and BookArchivist.Location.BuildWorldLocation
+```
+
+### 6. Forgetting Test Database Restoration
+
+**Problem:** Not restoring original BookArchivistDB in after_each
+
+**Symptom:** Test pollution, unpredictable failures, side effects between tests
+
+**Solution:** Always backup and restore global DB
+
+```lua
+before_each(function()
+    originalDB = BookArchivistDB  -- Backup
+    BookArchivistDB = { test = "data" }
+    Repository:Init(BookArchivistDB)
+end)
+
+after_each(function()
+    BookArchivistDB = originalDB  -- Restore
+    Repository:Init(BookArchivistDB)
+end)
+```
+
+---
+
 ## ⛔ MANDATORY GATE: TEST-DRIVEN DEVELOPMENT
 
 **STOP: Read this before writing ANY code.**
