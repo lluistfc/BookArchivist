@@ -19,8 +19,14 @@ end
 ---Get current database
 ---@return table The active database
 function Repository:GetDB()
-	if not db then
-		error("BookArchivist.Repository: Not initialized - call Init(db) first")
+	-- Return injected database if available
+	if db then
+		return db
 	end
-	return db
+	-- Fallback to global BookArchivistDB (for initialization sequence)
+	if BookArchivistDB then
+		return BookArchivistDB
+	end
+	-- Error only if both are nil
+	error("BookArchivist.Repository: Database not available - neither injected nor global exists")
 end

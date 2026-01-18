@@ -50,7 +50,7 @@ describe("BookArchivist.Repository", function()
 			
 			assert.has_error(function()
 				freshRepo:GetDB()
-			end, "BookArchivist.Repository: Not initialized - call Init(db) first")
+			end, "BookArchivist.Repository: Database not available - neither injected nor global exists")
 		end)
 	end)
 
