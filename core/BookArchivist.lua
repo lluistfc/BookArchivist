@@ -6,12 +6,7 @@ local ADDON_NAME = ...
 
 BookArchivist = BookArchivist or {}
 
-local Core = BookArchivist.Core
-local Capture = BookArchivist.Capture
-local Location = BookArchivist.Location
-local MinimapModule = BookArchivist.Minimap
-local TooltipModule = BookArchivist.Tooltip
-local ChatLinks = BookArchivist.ChatLinks
+-- Core modules resolve at runtime (not load time) due to TOC load order
 
 -- Debug log storage (available before UI loads)
 local debugLog = {}
@@ -133,14 +128,39 @@ local function handleAddonLoaded(name)
 	-- Set initialization guard to prevent circular dependency
 	isInitializing = true
 	
+	-- DEBUG: Check SavedVariables loaded
+	BookArchivist:DebugPrint("[BookArchivist] ADDON_LOADED: BookArchivistDB exists:", BookArchivistDB ~= nil)
+	if BookArchivistDB then
+		local orderCount = BookArchivistDB.order and #BookArchivistDB.order or 0
+		local booksCount = 0
+		if BookArchivistDB.booksById then
+			for _ in pairs(BookArchivistDB.booksById) do
+				booksCount = booksCount + 1
+			end
+		end
+		BookArchivist:DebugPrint("[BookArchivist] ADDON_LOADED: order count:", orderCount, "booksById count:", booksCount)
+	end
+	
 	-- Initialize Repository early (before EnsureDB needs it)
 	-- Start with nil, EnsureDB will create/migrate the actual DB
 	if BookArchivist.Repository and BookArchivist.Repository.Init then
 		BookArchivist.Repository:Init(BookArchivistDB)
 	end
 
-	if Core and Core.EnsureDB then
-		Core:EnsureDB()
+	if BookArchivist.Core and BookArchivist.Core.EnsureDB then
+		BookArchivist.Core:EnsureDB()
+	end
+	
+	-- DEBUG: Check after EnsureDB
+	if BookArchivistDB then
+		local orderCount = BookArchivistDB.order and #BookArchivistDB.order or 0
+		local booksCount = 0
+		if BookArchivistDB.booksById then
+			for _ in pairs(BookArchivistDB.booksById) do
+				booksCount = booksCount + 1
+			end
+		end
+		BookArchivist:DebugPrint("[BookArchivist] After EnsureDB: order count:", orderCount, "booksById count:", booksCount)
 	end
 	
 	-- Re-initialize Repository with the ensured/migrated database
@@ -152,8 +172,8 @@ local function handleAddonLoaded(name)
 	isInitializing = false
 
 	-- Initialize debug logging state from DB
-	if type(BookArchivist.EnableDebugLogging) == "function" and Core and Core.IsDebugEnabled then
-		local debugState = Core:IsDebugEnabled()
+	if type(BookArchivist.EnableDebugLogging) == "function" and BookArchivist.Core and BookArchivist.Core.IsDebugEnabled then
+		local debugEnabled = BookArchivist.Core:IsDebugEnabled()
 		BookArchivist.EnableDebugLogging(debugState, true)
 	end
 
@@ -161,14 +181,14 @@ local function handleAddonLoaded(name)
 	if optionsUI and optionsUI.OnAddonLoaded then
 		optionsUI:OnAddonLoaded(name)
 	end
-	if MinimapModule and MinimapModule.Initialize then
-		MinimapModule:Initialize()
+	if BookArchivist.Minimap and BookArchivist.Minimap.Initialize then
+		BookArchivist.Minimap:Initialize()
 	end
-	if TooltipModule and TooltipModule.Initialize then
-		TooltipModule:Initialize()
+	if BookArchivist.Tooltip and BookArchivist.Tooltip.Initialize then
+		BookArchivist.Tooltip:Initialize()
 	end
-	if ChatLinks and ChatLinks.Init then
-		ChatLinks:Init()
+	if BookArchivist.ChatLinks and BookArchivist.ChatLinks.Init then
+		BookArchivist.ChatLinks:Init()
 	end
 end
 
@@ -194,15 +214,25 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
 end)
 
 function BookArchivist:GetDB()
-	if Core and Core.GetDB then
-		return Core:GetDB()
+	if BookArchivist.Core and BookArchivist.Core.GetDB then
+		local db = BookArchivist.Core:GetDB()
+		local orderCount = db and db.order and #db.order or 0
+		local booksCount = 0
+		if db and db.booksById then
+			for _ in pairs(db.booksById) do
+				booksCount = booksCount + 1
+			end
+		end
+		self:DebugPrint("[BookArchivist] GetDB: returning from Core (order:", orderCount, "books:", booksCount, ")")
+		return db
 	end
+	self:DebugPrint("[BookArchivist] GetDB: Core not available, returning empty table")
 	return {}
 end
 
 function BookArchivist:ExportBook(bookId)
-	if Core and Core.ExportBookToString then
-		return Core:ExportBookToString(bookId)
+	if BookArchivist.Core and BookArchivist.Core.ExportBookToString then
+		return BookArchivist.Core:ExportBookToString(bookId)
 	end
 	return nil, "export unavailable"
 end

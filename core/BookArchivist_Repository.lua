@@ -14,6 +14,14 @@ local db = nil
 ---@param database table The database to use
 function Repository:Init(database)
 	db = database
+	local orderCount = db and db.order and #db.order or 0
+	local booksCount = 0
+	if db and db.booksById then
+		for _ in pairs(db.booksById) do
+			booksCount = booksCount + 1
+		end
+	end
+	BA:DebugPrint("[Repository] Init: database set (order:", orderCount, "books:", booksCount, ")")
 end
 
 ---Get current database
@@ -21,10 +29,26 @@ end
 function Repository:GetDB()
 	-- Return injected database if available
 	if db then
+		local orderCount = db.order and #db.order or 0
+		local booksCount = 0
+		if db.booksById then
+			for _ in pairs(db.booksById) do
+				booksCount = booksCount + 1
+			end
+		end
+		BA:DebugPrint("[Repository] GetDB: returning injected db (order:", orderCount, "books:", booksCount, ")")
 		return db
 	end
 	-- Fallback to global BookArchivistDB (for initialization sequence)
 	if BookArchivistDB then
+		local orderCount = BookArchivistDB.order and #BookArchivistDB.order or 0
+		local booksCount = 0
+		if BookArchivistDB.booksById then
+			for _ in pairs(BookArchivistDB.booksById) do
+				booksCount = booksCount + 1
+			end
+		end
+		BA:DebugPrint("[Repository] GetDB: returning global BookArchivistDB (order:", orderCount, "books:", booksCount, ")")
 		return BookArchivistDB
 	end
 	-- Error only if both are nil
