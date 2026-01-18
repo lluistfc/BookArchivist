@@ -548,15 +548,15 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				fontString:SetTextColor(1.0, 0.82, 0.0)
 			end
 			resumeBtn:SetScript("OnClick", function()
-				local addon = BookArchivist
-				if not addon or not addon.GetLastBookId then
+				local BA = BookArchivist
+				if not BA or not BA.GetLastBookId then
 					return
 				end
-				local lastId = addon:GetLastBookId()
+				local lastId = BA:GetLastBookId()
 				if not lastId then
 					return
 				end
-				local listUI = addon.UI and addon.UI.List
+				local listUI = BA.UI and BA.UI.List
 				if listUI then
 					if listUI.SetSelectedKey then
 						listUI:SetSelectedKey(lastId)
@@ -688,7 +688,7 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				end
 			end)
 			shareButton:SetScript("OnClick", function()
-				local addon = getAddon and getAddon()
+				local BA = getAddon and getAddon()
 				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
 
 				-- Delegate to Share module
@@ -740,11 +740,11 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 					return
 				end
 				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-				local addon = getAddon and getAddon()
+				local BA = getAddon and getAddon()
 				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
 				local isFav = false
-				if addon and addon.Favorites and key and addon.Favorites.IsFavorite then
-					isFav = addon.Favorites:IsFavorite(key)
+				if BA and BA.Favorites and key and BA.Favorites.IsFavorite then
+					isFav = BA.Favorites:IsFavorite(key)
 				end
 				if isFav then
 					GameTooltip:SetText(t("READER_FAVORITE_REMOVE"), 1, 1, 1)
@@ -759,14 +759,14 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				end
 			end)
 			favoriteBtn:SetScript("OnClick", function(self)
-				local addon = getAddon and getAddon()
+				local BA = getAddon and getAddon()
 				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
-				if not (addon and addon.Favorites and addon.Favorites.Toggle and key) then
+				if not (BA and BA.Favorites and BA.Favorites.Toggle and key) then
 					syncFavoriteVisual(self, false)
 					return
 				end
-				addon.Favorites:Toggle(key)
-				local isFav = addon.Favorites:IsFavorite(key)
+				BA.Favorites:Toggle(key)
+				local isFav = BA.Favorites:IsFavorite(key)
 				syncFavoriteVisual(self, isFav)
 				if addon.RefreshUI then
 					addon:RefreshUI()

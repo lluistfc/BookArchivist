@@ -92,6 +92,7 @@ Locales.frFR = {
 	["CATEGORY_ALL"] = "Tous les livres",
 	["CATEGORY_FAVORITES"] = "Favoris",
 	["CATEGORY_RECENT"] = "Récemment lus",
+	["CATEGORY_CUSTOM"] = "Livres personnalisés",
 	["SORT_GROUP_CATEGORY"] = "Vue",
 	["SORT_GROUP_ORDER"] = "Trier par",
 

@@ -91,8 +91,7 @@ Locales.esES = {
 	["READER_FAVORITE_REMOVE"] = "Quitar de Favoritos",
 	["CATEGORY_ALL"] = "Todos los libros",
 	["CATEGORY_FAVORITES"] = "Favoritos",
-	["CATEGORY_RECENT"] = "Leídos recientemente",
-	["SORT_GROUP_CATEGORY"] = "Vista",
+	["CATEGORY_RECENT"] = "Leídos recientemente",	["CATEGORY_CUSTOM"] = "Libros personalizados",	["SORT_GROUP_CATEGORY"] = "Vista",
 	["SORT_GROUP_ORDER"] = "Ordenar por",
 
 	-- Options panel

@@ -153,60 +153,73 @@ local function initializeModules()
 			debugMessage = debugMessage,
 			getUIFrame = Internal.getUIFrame,
 			getSortMode = function()
-				local addon = Internal.getAddon()
-				if addon and addon.GetListSortMode then
-					return addon:GetListSortMode()
+				local BA = Internal.getAddon()
+				if BA and BA.GetListSortMode then
+					return BA:GetListSortMode()
 				end
 			end,
 			setSortMode = function(mode)
-				local addon = Internal.getAddon()
-				if addon and addon.SetListSortMode then
-					addon:SetListSortMode(mode)
+				local BA = Internal.getAddon()
+				if BA and BA.SetListSortMode then
+					BA:SetListSortMode(mode)
 				end
 			end,
 			getPageSize = function()
-				local addon = Internal.getAddon()
-				if addon and addon.GetListPageSize then
-					return addon:GetListPageSize()
+				local BA = Internal.getAddon()
+				if BA and BA.GetListPageSize then
+					return BA:GetListPageSize()
 				end
 				return nil
 			end,
 			setPageSize = function(size)
-				local addon = Internal.getAddon()
-				if addon and addon.SetListPageSize then
-					addon:SetListPageSize(size)
+				local BA = Internal.getAddon()
+				if BA and BA.SetListPageSize then
+					BA:SetListPageSize(size)
 				end
 			end,
 			getFilters = function()
-				local addon = Internal.getAddon()
-				if addon and addon.GetListFilters then
-					return addon:GetListFilters()
+				local BA = Internal.getAddon()
+				if BA and BA.GetListFilters then
+					return BA:GetListFilters()
 				end
 				return nil
 			end,
 			setFilter = function(filterKey, state)
-				local addon = Internal.getAddon()
-				if addon and addon.SetListFilter then
-					addon:SetListFilter(filterKey, state)
+				local BA = Internal.getAddon()
+				if BA and BA.SetListFilter then
+					BA:SetListFilter(filterKey, state)
 				end
 			end,
 			getCategoryId = function()
-				local addon = Internal.getAddon()
-				if addon and addon.GetLastCategoryId then
-					return addon:GetLastCategoryId()
+				local BA = Internal.getAddon()
+				if BA and BA.GetLastCategoryId then
+					return BA:GetLastCategoryId()
 				end
 				return "__all__"
 			end,
 			setCategoryId = function(categoryId)
-				local addon = Internal.getAddon()
-				if addon and addon.SetLastCategoryId then
-					addon:SetLastCategoryId(categoryId)
+				local BA = Internal.getAddon()
+				if BA then
+					if BA.DebugPrint then
+						BA:DebugPrint(string.format("[UI_Core.setCategoryId] called with '%s'", tostring(categoryId)))
+					end
+					if BA.SetLastCategoryId then
+						BA:SetLastCategoryId(categoryId)
+					else
+						if BA.LogError then
+							BA:LogError("[UI_Core] ERROR: BA.SetLastCategoryId is nil!")
+						end
+					end
+				else
+					if debugPrint then
+						debugPrint("[UI_Core] ERROR: BA is nil in setCategoryId!")
+					end
 				end
 			end,
 			isVirtualCategoriesEnabled = function()
-				local addon = Internal.getAddon()
-				if addon and addon.IsVirtualCategoriesEnabled then
-					return addon:IsVirtualCategoriesEnabled()
+				local BA = Internal.getAddon()
+				if BA and BA.IsVirtualCategoriesEnabled then
+					return BA:IsVirtualCategoriesEnabled()
 				end
 				return true
 			end,

@@ -92,6 +92,7 @@ Locales.itIT = {
 	["CATEGORY_ALL"] = "Tutti i libri",
 	["CATEGORY_FAVORITES"] = "Preferiti",
 	["CATEGORY_RECENT"] = "Letti di recente",
+	["CATEGORY_CUSTOM"] = "Libri personalizzati",
 	["SORT_GROUP_CATEGORY"] = "Vista",
 	["SORT_GROUP_ORDER"] = "Ordina per",
 

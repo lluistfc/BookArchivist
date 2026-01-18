@@ -85,11 +85,11 @@ function ListUI:ShowBookContextMenu(anchorButton, bookKey)
 	if not anchorButton or not bookKey then
 		return
 	end
-	local addon = self:GetAddon()
-	if not addon or not addon.Favorites or not addon.Favorites.IsFavorite then
+	local BA = self:GetAddon()
+	if not BA or not BA.Favorites or not BA.Favorites.IsFavorite then
 		return
 	end
-	local isFav = addon.Favorites:IsFavorite(bookKey)
+	local isFav = BA.Favorites:IsFavorite(bookKey)
 	local menuFrame = self.GetLocationMenuFrame and self:GetLocationMenuFrame() or nil
 	if not menuFrame then
 		return
@@ -100,10 +100,10 @@ function ListUI:ShowBookContextMenu(anchorButton, bookKey)
 			text = label,
 			notCheckable = true,
 			func = function()
-				if isFav and addon.Favorites.Set then
-					addon.Favorites:Set(bookKey, false)
+				if isFav and BA.Favorites.Set then
+					BA.Favorites:Set(bookKey, false)
 				else
-					addon.Favorites:Set(bookKey, true)
+					BA.Favorites:Set(bookKey, true)
 				end
 				if addon.RefreshUI then
 					addon:RefreshUI()

@@ -291,13 +291,40 @@ function ImportWorker:_Step(_elapsed)
 				local inE = self.incomingBooks and self.incomingBooks[bookId]
 
 				if type(bookId) == "string" and type(inE) == "table" then
+					-- Sanitize incoming book content (Phase 3)
+					if BA.ContentSanitizer and BA.ContentSanitizer.SanitizeBook then
+						local sanitized, report = BA.ContentSanitizer.SanitizeBook(inE, { reportChanges = true })
+						if sanitized then
+							inE = sanitized
+							-- Log sanitization warnings if content was modified
+							if report and (report.titleTruncated or report.pageTruncated or report.pageCountTruncated) then
+								BA:DebugPrint("[ImportWorker] Sanitized book:", bookId)
+								if report.titleTruncated then
+									BA:DebugPrint("  - Title truncated from", report.originalTitleLength, "to", report.sanitizedTitleLength)
+								end
+								if report.pageTruncated then
+									BA:DebugPrint("  - Page content truncated")
+								end
+								if report.pageCountTruncated then
+									BA:DebugPrint("  - Page count truncated from", report.originalPageCount, "to", report.sanitizedPageCount)
+								end
+							end
+						end
+					end
+					
 					local existing = db.booksById[bookId]
 					if not existing then
 						db.booksById[bookId] = CloneTable(inE)
 						self.stats.newCount = self.stats.newCount + 1
+						-- Mark as imported (Phase 2)
+						self:MarkAsImported(db.booksById[bookId])
 					else
 						if self:_MergeOne(existing, inE, bookId) then
 							self.stats.mergedCount = self.stats.mergedCount + 1
+						end
+						-- If existing book wasn't marked as imported before, mark it now
+						if not self:IsImported(existing) then
+							self:MarkAsImported(existing)
 						end
 					end
 
@@ -419,4 +446,63 @@ function ImportWorker:_Step(_elapsed)
 			return
 		end
 	end
+end
+-- Phase 2: Import Metadata Tracking
+-- Helper methods to mark books as imported and manage trust
+
+---Mark a book entry as imported (add security metadata)
+---@param bookEntry table The book entry to mark
+function ImportWorker:MarkAsImported(bookEntry)
+	if not bookEntry or type(bookEntry) ~= "table" then
+		return
+	end
+	
+	local now = time and time() or (os and os.time and os.time()) or 0
+	
+	bookEntry.importMetadata = {
+		importedAt = now,
+		source = "IMPORT",
+		trusted = false
+	}
+end
+
+---Mark a book as trusted (allows relaxed validation)
+---@param bookEntry table The book entry to trust
+function ImportWorker:MarkAsTrusted(bookEntry)
+	if not bookEntry or type(bookEntry) ~= "table" then
+		return
+	end
+	
+	if not bookEntry.importMetadata then
+		-- Create metadata if it doesn't exist
+		self:MarkAsImported(bookEntry)
+	end
+	
+	bookEntry.importMetadata.trusted = true
+end
+
+---Check if a book is from an import (has import metadata)
+---@param bookEntry table The book entry to check
+---@return boolean
+function ImportWorker:IsImported(bookEntry)
+	if not bookEntry or type(bookEntry) ~= "table" then
+		return false
+	end
+	
+	return bookEntry.importMetadata ~= nil and bookEntry.importMetadata.source == "IMPORT"
+end
+
+---Check if an imported book is trusted
+---@param bookEntry table The book entry to check
+---@return boolean
+function ImportWorker:IsTrusted(bookEntry)
+	if not bookEntry or type(bookEntry) ~= "table" then
+		return false
+	end
+	
+	if not bookEntry.importMetadata then
+		return false
+	end
+	
+	return bookEntry.importMetadata.trusted == true
 end

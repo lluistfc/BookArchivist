@@ -271,7 +271,22 @@ local function renderRichHTMLPage(text)
 			local tex = acquireTextureForKind("image")
 			if tex and block.src and block.src ~= "" then
 				tex:ClearAllPoints()
-				tex:SetTexture(block.src)
+			
+			-- Security: Validate texture path before rendering
+			local texturePath = block.src
+			if BA.TextureValidator then
+				local valid, reason = BA.TextureValidator.IsValidTexturePath(texturePath)
+				if not valid then
+					-- Log security rejection
+					if BA and BA.DebugPrint then
+						BA:DebugPrint("[Reader] Rejected texture path:", texturePath, "reason:", reason)
+					end
+					-- Use fallback texture for security
+					texturePath = BA.TextureValidator.GetFallbackTexture()
+				end
+			end
+			
+			tex:SetTexture(texturePath)
 				local w = block.width or contentWidth
 				local h = block.height or math.floor(w * 0.62 + 0.5)
 				w = math.min(w, contentWidth)

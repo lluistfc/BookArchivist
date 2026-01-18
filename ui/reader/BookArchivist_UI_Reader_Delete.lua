@@ -139,13 +139,13 @@ local function configureDeleteButton(button)
 		end
 	end)
 	button:SetScript("OnClick", function()
-		local addon = getAddon and getAddon()
-		if not addon then
+		local BA = getAddon and getAddon()
+		if not BA then
 			return
 		end
 		local key = getSelectedKey and getSelectedKey()
 		if key then
-			local db = addon.GetDB and addon:GetDB()
+			local db = BA.GetDB and BA:GetDB()
 			local books
 			if db and db.booksById and next(db.booksById) ~= nil then
 				books = db.booksById

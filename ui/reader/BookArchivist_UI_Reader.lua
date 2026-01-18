@@ -274,8 +274,8 @@ local function clampPageIndex(order, index)
 	return index
 end
 
-local function shouldResumeLastPage(addon)
-	return addon and addon.IsResumeLastPageEnabled and addon:IsResumeLastPageEnabled()
+local function shouldResumeLastPage(BA)
+	return BA and BA.IsResumeLastPageEnabled and BA:IsResumeLastPageEnabled()
 end
 
 local function renderBookContent(text)
@@ -537,12 +537,12 @@ function ReaderUI:RenderSelected()
 		return
 	end
 
-	local addon = getAddon()
-	if not addon then
+	local BA = getAddon()
+	if not BA then
 		debugPrint("[BookArchivist] renderSelected: addon missing")
 		return
 	end
-	local db = addon:GetDB()
+	local db = BA:GetDB()
 
 	local key = getSelectedKey()
 	local books
@@ -570,8 +570,8 @@ function ReaderUI:RenderSelected()
 				end
 
 				local locationCount = 0
-				if addon.GetLocationTree then
-					local tree = addon:GetLocationTree()
+				if BA.GetLocationTree then
+					local tree = BA:GetLocationTree()
 					if tree and tree.childNames then
 						locationCount = #tree.childNames
 					end
@@ -698,12 +698,12 @@ function ReaderUI:RenderSelected()
 		readerNavRow:Show()
 	end
 
-	if addon.SetLastBookId and key then
-		addon:SetLastBookId(key)
+	if BA.SetLastBookId and key then
+		BA:SetLastBookId(key)
 	end
 
-	if addon.Recent and addon.Recent.MarkOpened and key then
-		addon.Recent:MarkOpened(key)
+	if BA.Recent and BA.Recent.MarkOpened and key then
+		BA.Recent:MarkOpened(key)
 	end
 
 	-- Track reading history for Book Echo
@@ -764,7 +764,7 @@ function ReaderUI:RenderSelected()
 	state.lastTrackedPageIndex = currentPageIndex
 
 	-- Use Book aggregate for reads (Step 4: Reader reads from aggregate)
-	local bookAggregate = addon and addon.Core and addon.Core.GetBook and addon.Core:GetBook(key)
+	local bookAggregate = BA and BA.Core and BA.Core.GetBook and BA.Core:GetBook(key)
 	
 	bookTitle:SetText((bookAggregate and bookAggregate:GetTitle()) or entry.title or t("BOOK_UNTITLED"))
 	bookTitle:SetTextColor(1, 0.82, 0)
@@ -798,7 +798,7 @@ function ReaderUI:RenderSelected()
 	state.pageOrder = buildPageOrder(entry)
 	local totalPages = #state.pageOrder
 	if previousKey ~= key then
-		if shouldResumeLastPage(addon) and type(entry.lastPageNum) == "number" and totalPages > 0 then
+		if shouldResumeLastPage(BA) and type(entry.lastPageNum) == "number" and totalPages > 0 then
 			local targetIndex
 			for i, pageNum in ipairs(state.pageOrder) do
 				if pageNum == entry.lastPageNum then
@@ -835,7 +835,7 @@ function ReaderUI:RenderSelected()
 			entry.lastPageRead = pageNum
 		end
 		
-		if shouldResumeLastPage(addon) then
+		if shouldResumeLastPage(BA) then
 			if pageNum then
 				entry.lastPageNum = pageNum
 			else
@@ -891,10 +891,10 @@ function ReaderUI:RenderSelected()
 		if favoriteBtn.Show then
 			favoriteBtn:Show()
 		end
-		local addon = getAddon()
+		local BA = getAddon()
 		local isFav = false
-		if addon and addon.Favorites and addon.Favorites.IsFavorite and key then
-			isFav = addon.Favorites:IsFavorite(key)
+		if BA and BA.Favorites and BA.Favorites.IsFavorite and key then
+			isFav = BA.Favorites:IsFavorite(key)
 		end
 		if ReaderUI.__syncFavoriteVisual then
 			ReaderUI.__syncFavoriteVisual(favoriteBtn, isFav)
@@ -976,14 +976,14 @@ function ReaderUI:ShowExportForBook(bookKey)
 		return
 	end
 
-	local addon = getAddon()
+	local BA = getAddon()
 	if not addon then
 		return
 	end
 
 	local Share = BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
 	if Share and Share.ShareCurrentBook then
-		Share:ShareCurrentBook(addon, bookKey)
+		Share:ShareCurrentBook(BA, bookKey)
 	end
 end
 
@@ -1076,8 +1076,8 @@ function ReaderUI:SaveCreateBook()
 	if not w then
 		return
 	end
-	local addon = getAddon()
-	if not (addon and addon.CreateCustomBook) then
+	local BA = getAddon()
+	if not (BA and BA.CreateCustomBook) then
 		return
 	end
 	
@@ -1119,7 +1119,7 @@ function ReaderUI:SaveCreateBook()
 	end
 
 	local pages = { [1] = tostring(p1 or ""), [2] = tostring(p2 or "") }
-	local id = addon:CreateCustomBook(tostring(title or ""), pages)
+	local id = BA:CreateCustomBook(tostring(title or ""), pages)
 	if not id then
 		if Internal and Internal.chatMessage then
 			Internal.chatMessage("|cFFFF0000" .. (t("BOOK_SAVE_FAILED") or "Failed to save book") .. "|r")
@@ -1135,8 +1135,8 @@ function ReaderUI:SaveCreateBook()
 	-- Close modal, refresh UI, and select the new book.
 	w.frame:Hide()
 	state.isCreatingCustomBook = false
-	if addon.RefreshUI then
-		addon:RefreshUI()
+	if BA.RefreshUI then
+		BA:RefreshUI()
 	end
 
 	-- Select new book and notify list to open reader.
@@ -1153,3 +1153,4 @@ function ReaderUI:SaveCreateBook()
 		self:RenderSelected()
 	end
 end
+

@@ -85,6 +85,13 @@ function ListUI:RebuildFiltered()
 
 	local categoryId = (self.GetCategoryId and self:GetCategoryId()) or "__all__"
 	local isRecentView = (categoryId == "__recent__")
+	local isCustomView = (categoryId == "__custom__")
+	
+	self:DebugPrint(
+		string.format("[BookArchivist] rebuildFiltered: categoryId='%s', isRecent=%s, isCustom=%s", 
+			tostring(categoryId), tostring(isRecentView), tostring(isCustomView))
+	)
+	
 	local baseKeys
 	if isRecentView and addon.Recent and addon.Recent.GetList then
 		baseKeys = addon.Recent:GetList()
@@ -180,7 +187,17 @@ function ListUI:RebuildFiltered()
 				context.filtered = context.filtered or {}
 
 				local entry = books[key]
-				if entry and matches(self, entry, tokens) then
+				local passesFilter = entry and matches(self, entry, tokens)
+				
+				-- Apply custom books category filter
+				if passesFilter and isCustomView then
+					local isCustomBook = key and type(key) == "string" and key:match("^CUSTOM_BOOK_")
+					if not isCustomBook then
+						passesFilter = false
+					end
+				end
+				
+				if passesFilter then
 					table.insert(context.filtered, key)
 					if key == selectedKey then
 						context.selectionStillValid = true

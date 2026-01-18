@@ -91,6 +91,7 @@ Locales.deDE = {
 	["CATEGORY_ALL"] = "Alle Bücher",
 	["CATEGORY_FAVORITES"] = "Favoriten",
 	["CATEGORY_RECENT"] = "Kürzlich gelesen",
+	["CATEGORY_CUSTOM"] = "Benutzerdefinierte Bücher",
 	["SORT_GROUP_CATEGORY"] = "Ansicht",
 	["SORT_GROUP_ORDER"] = "Sortieren nach",
 
