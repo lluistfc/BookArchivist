@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global, undefined-field
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local ReaderUI = BookArchivist.UI.Reader or {}
-BookArchivist.UI.Reader = ReaderUI
+local ReaderUI = BA.UI.Reader or {}
+BA.UI.Reader = ReaderUI
 
 --
 -- Shared HTML helpers for the reader. These are intentionally kept

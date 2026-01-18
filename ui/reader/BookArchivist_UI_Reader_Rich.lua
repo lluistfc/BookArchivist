@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global, undefined-field
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local ReaderUI = BookArchivist.UI.Reader or {}
-BookArchivist.UI.Reader = ReaderUI
+local ReaderUI = BA.UI.Reader or {}
+BA.UI.Reader = ReaderUI
 
 local state = ReaderUI.__state or {}
 ReaderUI.__state = state
@@ -11,12 +11,12 @@ ReaderUI.__state = state
 local getWidget = ReaderUI.__getWidget
 local safeCreateFrame = ReaderUI.__safeCreateFrame
 local debugPrint = ReaderUI.__debugPrint or function(...)
-	BookArchivist:DebugPrint(...)
+	BA:DebugPrint(...)
 end
 
 local function isUIDebugEnabled()
-	if BookArchivist and BookArchivist.IsUIDebugEnabled then
-		return BookArchivist:IsUIDebugEnabled() and true or false
+	if BA and BA.IsUIDebugEnabled then
+		return BA:IsUIDebugEnabled() and true or false
 	end
 	return false
 end

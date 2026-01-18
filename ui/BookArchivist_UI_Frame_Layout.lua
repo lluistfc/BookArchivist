@@ -1,12 +1,12 @@
 ---@diagnostic disable: undefined-global, undefined-field
 -- Shared layout helpers for the main Book Archivist frame.
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local FrameUI = BookArchivist.UI.Frame or {}
-BookArchivist.UI.Frame = FrameUI
-local Internal = BookArchivist.UI.Internal
+local FrameUI = BA.UI.Frame or {}
+BA.UI.Frame = FrameUI
+local Internal = BA.UI.Internal
 
 local Metrics = BookArchivist.UI.Metrics
 	or {

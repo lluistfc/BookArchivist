@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global, undefined-field
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local ReaderUI = BookArchivist.UI.Reader or {}
-BookArchivist.UI.Reader = ReaderUI
+local ReaderUI = BA.UI.Reader or {}
+BA.UI.Reader = ReaderUI
 
 local function t(key)
 	local L = BookArchivist and BookArchivist.L or {}

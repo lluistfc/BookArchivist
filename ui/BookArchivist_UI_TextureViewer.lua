@@ -1,18 +1,18 @@
 ---@diagnostic disable: undefined-global, undefined-field
 -- Texture viewer frame for displaying the book archivist edit texture
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
 local TextureViewer = {}
-BookArchivist.UI.TextureViewer = TextureViewer
+BA.UI.TextureViewer = TextureViewer
 
-local L = BookArchivist and BookArchivist.L or {}
+local L = BA and BA.L or {}
 local function t(key)
 	return (L and L[key]) or key
 end
 
-local Internal = BookArchivist.UI.Internal
+local Internal = BA.UI.Internal
 
 -- Frame reference
 local textureViewerFrame = nil

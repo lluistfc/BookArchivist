@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global, undefined-field
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
 local ListUI = {}
-BookArchivist.UI.List = ListUI
+BA.UI.List = ListUI
 
 local DEFAULT_LIST_MODES = {
 	BOOKS = "books",

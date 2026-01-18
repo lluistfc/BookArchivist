@@ -5,22 +5,22 @@
 local isInitialized = false
 local needsRefresh = false
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local ListUI = BookArchivist.UI.List
-local ReaderUI = BookArchivist.UI.Reader
+local ListUI = BA.UI.List
+local ReaderUI = BA.UI.Reader
 
-local Internal = BookArchivist.UI.Internal or {}
-BookArchivist.UI.Internal = Internal
+local Internal = BA.UI.Internal or {}
+BA.UI.Internal = Internal
 Internal.ListUI = ListUI
 Internal.ReaderUI = ReaderUI
 
 local function ensureAddon()
-	if not BookArchivist or not BookArchivist.GetDB then
+	if not BA or not BA.GetDB then
 		return nil
 	end
-	return BookArchivist
+	return BA
 end
 
 local cachedAddon = ensureAddon()
