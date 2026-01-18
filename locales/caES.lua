@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global
 -- Catalan (caES) locale definitions for BookArchivist
 
-BookArchivist = BookArchivist or {}
-BookArchivist.__Locales = BookArchivist.__Locales or {}
-local Locales = BookArchivist.__Locales
+local BA = BookArchivist
+BA.__Locales = BA.__Locales or {}
+local Locales = BA.__Locales
 
 Locales.caES = {
 	-- Addon & options
@@ -229,4 +229,28 @@ Locales.caES = {
 	["LOC_CONTEXT_SHORES"] = "al llarg de les costes de",
 	["LOC_CONTEXT_ISLE"] = "a l'illa de",
 	["LOC_CONTEXT_IN"] = "a",
+	["NEW_BOOK"] = "Llibre Nou",
+	["SAVE_BOOK"] = "Desar",
+	["BOOK_TITLE_PLACEHOLDER"] = "Introdueix el títol del llibre...",
+	["BOOK_TITLE_REQUIRED"] = "Si us plau introdueix un títol pel llibre",
+	["BOOK_CONTENT_REQUIRED"] = "Si us plau escriu contingut en almenys una pàgina",
+	["BOOK_SAVE_FAILED"] = "Error en desar el llibre",
+	["BOOK_SAVED_SUCCESS"] = "Llibre desat amb èxit!",
+	["SAVE_BOOK_TOOLTIP"] = "Desar aquest llibre a la teva biblioteca",
+	["BOOK_TITLE"] = "Títol",
+	["BOOK_LOCATION"] = "Ubicació",
+	["NO_LOCATION_SET"] = "Sense ubicació establerta",
+	["USE_CURRENT_LOC"] = "Usar Actual",
+	["PAGE_CONTENT"] = "Contingut de la Pàgina",
+	["PAGE"] = "Pàgina",
+	["PREV_PAGE"] = "< Anterior",
+	["NEXT_PAGE"] = "Següent >",
+	["ADD_PAGE"] = "Afegir Pàgina",
+	["PAGE_ADDED"] = "Pàgina afegida",
+	["UNKNOWN_LOCATION"] = "Ubicació Desconeguda",
+	["CANCEL"] = "Cancel·lar",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Títol del llibre…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Llibre Personalitzat",
+	["EXIT_EDIT_MODE_TITLE"] = "Sortir del mode d'edició?",
+	["EXIT_EDIT_MODE_TEXT"] = "Tens canvis sense desar. Descartar-los?",
 }

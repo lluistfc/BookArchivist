@@ -36,6 +36,11 @@ local function resetDB()
 		booksById = {},
 		recent = { list = {} },
 		uiState = {},
+		indexes = {
+			objectToBookId = {},
+			itemToBookIds = {},
+			titleToBookIds = {},
+		},
 	}
 	return BookArchivist.Core.__db
 end
@@ -229,6 +234,189 @@ describe("Order Management (Core Module)", function()
 			assert.are.equal("book1", db.order[1]) -- First book1 remains
 			assert.are.equal("book2", db.order[2])
 			assert.are.equal("book3", db.order[3])
+		end)
+
+		describe("Index cleanup", function()
+			it("should remove book from title index", function()
+				local db = resetDB()
+				local bookId = "book1"
+				db.booksById[bookId] = {
+					id = bookId,
+					title = "Test Book",
+					pages = { "Content" },
+				}
+				db.order = { bookId }
+				
+				-- Manually set up title index
+				db.indexes.titleToBookIds = db.indexes.titleToBookIds or {}
+				db.indexes.titleToBookIds["test book"] = { bookId }
+				
+				BookArchivist.Core:Delete(bookId)
+				
+				-- Book should be removed from booksById
+				assert.is_nil(db.booksById[bookId])
+				
+				-- Title index should be cleaned up
+				assert.is_nil(db.indexes.titleToBookIds["test book"])
+			end)
+
+			it("should remove book from item index", function()
+				local db = resetDB()
+				local bookId = "book1"
+				db.booksById[bookId] = {
+					id = bookId,
+					title = "Test Book",
+					itemId = 12345,
+					pages = { "Content" },
+				}
+				db.order = { bookId }
+				
+				-- Manually set up item index
+				db.indexes.itemToBookIds = db.indexes.itemToBookIds or {}
+				db.indexes.itemToBookIds[12345] = { bookId }
+				
+				BookArchivist.Core:Delete(bookId)
+				
+				-- Book should be removed from booksById
+				assert.is_nil(db.booksById[bookId])
+				
+				-- Item index should be cleaned up
+				assert.is_nil(db.indexes.itemToBookIds[12345])
+			end)
+
+			it("should remove book from object index", function()
+				local db = resetDB()
+				local bookId = "book1"
+				db.booksById[bookId] = {
+					id = bookId,
+					title = "Test Book",
+					objectId = 67890,
+					pages = { "Content" },
+				}
+				db.order = { bookId }
+				
+				-- Manually set up object index
+				db.indexes.objectToBookId = db.indexes.objectToBookId or {}
+				db.indexes.objectToBookId[67890] = bookId
+				
+				BookArchivist.Core:Delete(bookId)
+				
+				-- Book should be removed from booksById
+				assert.is_nil(db.booksById[bookId])
+				
+				-- Object index should be cleaned up
+				assert.is_nil(db.indexes.objectToBookId[67890])
+			end)
+
+			it("should clean up all indexes for a book with multiple index entries", function()
+				local db = resetDB()
+				local bookId = "book1"
+				db.booksById[bookId] = {
+					id = bookId,
+					title = "Complete Book",
+					itemId = 12345,
+					objectId = 67890,
+					pages = { "Content" },
+				}
+				db.order = { bookId }
+				
+				-- Set up all indexes
+				db.indexes.titleToBookIds = db.indexes.titleToBookIds or {}
+				db.indexes.titleToBookIds["complete book"] = { bookId }
+				db.indexes.itemToBookIds = db.indexes.itemToBookIds or {}
+				db.indexes.itemToBookIds[12345] = { bookId }
+				db.indexes.objectToBookId = db.indexes.objectToBookId or {}
+				db.indexes.objectToBookId[67890] = bookId
+				
+				BookArchivist.Core:Delete(bookId)
+				
+				-- Book should be removed from booksById
+				assert.is_nil(db.booksById[bookId])
+				
+				-- All indexes should be cleaned up
+				assert.is_nil(db.indexes.titleToBookIds["complete book"])
+				assert.is_nil(db.indexes.itemToBookIds[12345])
+				assert.is_nil(db.indexes.objectToBookId[67890])
+			end)
+
+			it("should only remove target book from multi-book title index", function()
+				local db = resetDB()
+				local bookId1 = "book1"
+				local bookId2 = "book2"
+				
+				db.booksById[bookId1] = {
+					id = bookId1,
+					title = "Shared Title",
+					pages = { "Content 1" },
+				}
+				db.booksById[bookId2] = {
+					id = bookId2,
+					title = "Shared Title",
+					pages = { "Content 2" },
+				}
+				db.order = { bookId1, bookId2 }
+				
+				-- Both books share the same title
+				db.indexes.titleToBookIds = db.indexes.titleToBookIds or {}
+				db.indexes.titleToBookIds["shared title"] = { bookId1, bookId2 }
+				
+				BookArchivist.Core:Delete(bookId1)
+				
+				-- bookId1 should be removed
+				assert.is_nil(db.booksById[bookId1])
+				
+				-- bookId2 should remain in booksById
+				assert.is_not_nil(db.booksById[bookId2])
+				
+				-- Title index should only contain bookId2
+				assert.is_not_nil(db.indexes.titleToBookIds["shared title"])
+				assert.are.equal(1, #db.indexes.titleToBookIds["shared title"])
+				assert.are.equal(bookId2, db.indexes.titleToBookIds["shared title"][1])
+			end)
+
+			it("should handle book with no indexes gracefully", function()
+				local db = resetDB()
+				local bookId = "book1"
+				db.booksById[bookId] = {
+					id = bookId,
+					title = "No Indexes Book",
+					pages = { "Content" },
+					-- No itemId, no objectId
+				}
+				db.order = { bookId }
+				
+				-- Don't set up any indexes
+				
+				-- Should not error
+				assert.has_no.errors(function()
+					BookArchivist.Core:Delete(bookId)
+				end)
+				
+				-- Book should be removed
+				assert.is_nil(db.booksById[bookId])
+			end)
+
+			it("should handle missing indexes table gracefully", function()
+				local db = resetDB()
+				local bookId = "book1"
+				db.booksById[bookId] = {
+					id = bookId,
+					title = "Test",
+					pages = { "Content" },
+				}
+				db.order = { bookId }
+				
+				-- Remove indexes table entirely
+				db.indexes = nil
+				
+				-- Should not error
+				assert.has_no.errors(function()
+					BookArchivist.Core:Delete(bookId)
+				end)
+				
+				-- Book should still be removed
+				assert.is_nil(db.booksById[bookId])
+			end)
 		end)
 	end)
 

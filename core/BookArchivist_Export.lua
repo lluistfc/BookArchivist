@@ -1,5 +1,5 @@
 ---@diagnostic disable: undefined-global
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Core = BookArchivist.Core
 if not Core then

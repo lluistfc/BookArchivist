@@ -1,12 +1,12 @@
 -- BookArchivist_Capture.lua
 -- Converts ItemText events into persisted entries via the core module.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
-local Core = BookArchivist.Core
-local Location = BookArchivist.Location
+local Core = BA.Core
+local Location = BA.Location
 local Capture = {}
-BookArchivist.Capture = Capture
+BA.Capture = Capture
 
 ---@class BookArchivistCaptureSession
 ---@field title string

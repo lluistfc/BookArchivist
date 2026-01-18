@@ -2,10 +2,10 @@
 -- BookArchivist_Serialize.lua
 -- Deterministic table serializer/deserializer for export/import.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Serialize = {}
-BookArchivist.Serialize = Serialize
+BA.Serialize = Serialize
 
 local MAX_DEPTH = 20
 

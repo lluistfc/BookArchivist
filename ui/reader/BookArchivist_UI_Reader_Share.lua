@@ -4,14 +4,14 @@
 
 local ADDON_NAME = ...
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
-BookArchivist.UI.Reader = BookArchivist.UI.Reader or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
+BA.UI.Reader = BA.UI.Reader or {}
 
 local ReaderShare = {}
-BookArchivist.UI.Reader.Share = ReaderShare
+BA.UI.Reader.Share = ReaderShare
 
-local L = BookArchivist and BookArchivist.L or {}
+local L = BA and BA.L or {}
 local function t(key)
 	return (L and L[key]) or key
 end
@@ -20,7 +20,7 @@ local shareFrame
 
 -- Helper to get CreateFrame (safe version)
 local function getCreateFrame()
-	return BookArchivist.__createFrame
+	return BA.__createFrame
 		or CreateFrame
 		or function()
 			local dummy = {}

@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global, undefined-field
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local ReaderUI = BookArchivist.UI.Reader or {}
-BookArchivist.UI.Reader = ReaderUI
+local ReaderUI = BA.UI.Reader or {}
+BA.UI.Reader = ReaderUI
 
 local function t(key)
 	local L = BookArchivist and BookArchivist.L or {}
@@ -157,7 +157,13 @@ local function configureDeleteButton(button)
 			if StaticPopup_Show and popupRegistry and popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE then
 				StaticPopup_Show("BOOKARCHIVIST_CONFIRM_DELETE", title, nil, {
 					onAccept = function()
-						addon:Delete(key)
+						if BookArchivist and BookArchivist.Delete then
+							BookArchivist:Delete(key)
+						else
+							if BA and BA.DebugPrint then
+								BA:DebugPrint("[DeleteBtn] ERROR: BookArchivist or BookArchivist.Delete is nil!")
+							end
+						end
 						if setSelectedKey then
 							setSelectedKey(nil)
 						end
@@ -170,6 +176,7 @@ local function configureDeleteButton(button)
 					end,
 				})
 			else
+
 				addon:Delete(key)
 				if setSelectedKey then
 					setSelectedKey(nil)
@@ -180,6 +187,10 @@ local function configureDeleteButton(button)
 				if chatMessage then
 					chatMessage(t("READER_DELETE_CHAT_SUCCESS"))
 				end
+			end
+		else
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[DeleteBtn] OnClick: no key, aborting")
 			end
 		end
 	end)

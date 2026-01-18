@@ -4,13 +4,13 @@
 
 local ADDON_NAME = ...
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local MinimapModule = {}
-BookArchivist.Minimap = MinimapModule
+BA.Minimap = MinimapModule
 
 local LibStub = _G.LibStub
-local L = BookArchivist.L or {}
+local L = BA.L or {}
 
 -- LibDataBroker object
 local ldb = LibStub and LibStub:GetLibrary("LibDataBroker-1.1", true)
@@ -19,6 +19,7 @@ local icon = LibStub and LibStub:GetLibrary("LibDBIcon-1.0", true)
 local dataObject
 
 function MinimapModule:Initialize()
+	BookArchivist:DebugPrint("[Minimap] Initialize called, ldb:", ldb ~= nil, "icon:", icon ~= nil)
 	if not ldb or not icon then
 		BookArchivist:DebugPrint("[Minimap] LibDBIcon not available")
 		return false

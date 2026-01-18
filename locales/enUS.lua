@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global
 -- English locale definitions for BookArchivist
 
-BookArchivist = BookArchivist or {}
-BookArchivist.__Locales = BookArchivist.__Locales or {}
-local Locales = BookArchivist.__Locales
+local BA = BookArchivist
+BA.__Locales = BA.__Locales or {}
+local Locales = BA.__Locales
 
 Locales.enUS = {
 	-- Addon & options
@@ -227,4 +227,28 @@ Locales.enUS = {
 	["LOC_CONTEXT_SHORES"] = "along the shores of",
 	["LOC_CONTEXT_ISLE"] = "upon the isle of",
 	["LOC_CONTEXT_IN"] = "in",
+	["NEW_BOOK"] = "New Book",
+	["SAVE_BOOK"] = "Save",
+	["BOOK_TITLE_PLACEHOLDER"] = "Enter book title...",
+	["BOOK_TITLE_REQUIRED"] = "Please enter a book title",
+	["BOOK_CONTENT_REQUIRED"] = "Please write some content in at least one page",
+	["BOOK_SAVE_FAILED"] = "Failed to save book",
+	["BOOK_SAVED_SUCCESS"] = "Book saved successfully!",
+	["SAVE_BOOK_TOOLTIP"] = "Save this book to your library",
+	["BOOK_TITLE"] = "Title",
+	["BOOK_LOCATION"] = "Location",
+	["NO_LOCATION_SET"] = "No location set",
+	["USE_CURRENT_LOC"] = "Use Current",
+	["PAGE_CONTENT"] = "Page Content",
+	["PAGE"] = "Page",
+	["PREV_PAGE"] = "< Prev",
+	["NEXT_PAGE"] = "Next >",
+	["ADD_PAGE"] = "Add Page",
+	["PAGE_ADDED"] = "Page added",
+	["UNKNOWN_LOCATION"] = "Unknown Location",
+	["CANCEL"] = "Cancel",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Book title…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Custom Book",
+	["EXIT_EDIT_MODE_TITLE"] = "Exit Edit Mode?",
+	["EXIT_EDIT_MODE_TEXT"] = "You have unsaved changes. Discard them?",
 }

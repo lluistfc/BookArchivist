@@ -1,13 +1,22 @@
 ---@diagnostic disable: undefined-global, undefined-field
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
 local ReaderUI = {}
-BookArchivist.UI.Reader = ReaderUI
+BA.UI.Reader = ReaderUI
 
 local L = BookArchivist and BookArchivist.L or {}
+local Metrics = BookArchivist and BookArchivist.Metrics or {}
 local function t(key)
 	return (L and L[key]) or key
+end
+
+-- Helper function to trim whitespace from strings
+local function trim(s)
+	if not s or s == "" then
+		return ""
+	end
+	return s:match("^%s*(.-)%s*$") or ""
 end
 
 local ctx
@@ -494,6 +503,12 @@ function ReaderUI:Init(context)
 end
 
 function ReaderUI:RenderSelected()
+	-- Don't render if edit mode is active
+	local EditMode = ReaderUI.EditMode
+	if EditMode and EditMode.IsEditing and EditMode:IsEditing() then
+		return
+	end
+	
 	local ui = state.readerBlock or (ctx and ctx.getUIFrame and ctx.getUIFrame())
 	if not ui then
 		return
@@ -633,6 +648,17 @@ function ReaderUI:RenderSelected()
 		if favoriteBtn and favoriteBtn.Hide then
 			favoriteBtn:Hide()
 		end
+		-- Hide custom book icon when no book selected
+		if state.customBookIcon then
+			state.customBookIcon:Hide()
+		end
+		if state.customBookIconFrame then
+			state.customBookIconFrame:Hide()
+		end
+		-- Hide edit button when no book selected
+		if state.editButton then
+			state.editButton:Hide()
+		end
 		if state.countText then
 			state.countText:SetText("")
 		end
@@ -653,6 +679,11 @@ function ReaderUI:RenderSelected()
 	local textScroll = state.textScroll or getWidget("textScroll")
 	if textScroll then
 		textScroll:Show()
+	end
+	-- Ensure the scroll target is visible; OpenCreateBook hides it.
+	local textChild = state.textChild or getWidget("textChild")
+	if textChild and textChild.Show then
+		textChild:Show()
 	end
 
 	-- Show scrollbar (will auto-hide if content fits)
@@ -732,20 +763,27 @@ function ReaderUI:RenderSelected()
 	state.lastTrackedBookId = key
 	state.lastTrackedPageIndex = currentPageIndex
 
-	bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
+	-- Use Book aggregate for reads (Step 4: Reader reads from aggregate)
+	local bookAggregate = addon and addon.Core and addon.Core.GetBook and addon.Core:GetBook(key)
+	
+	bookTitle:SetText((bookAggregate and bookAggregate:GetTitle()) or entry.title or t("BOOK_UNTITLED"))
 	bookTitle:SetTextColor(1, 0.82, 0)
 
 	local meta = {}
-	if entry.creator and entry.creator ~= "" then
-		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_CREATOR"), entry.creator))
+	local creator = bookAggregate and bookAggregate:GetCreator() or entry.creator
+	if creator and creator ~= "" then
+		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_CREATOR"), creator))
 	end
-	if entry.material and entry.material ~= "" then
-		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_MATERIAL"), entry.material))
+	local material = bookAggregate and bookAggregate:GetMaterial() or entry.material
+	if material and material ~= "" then
+		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_MATERIAL"), material))
 	end
-	if entry.lastSeenAt then
-		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_LAST_VIEWED"), fmtTime(entry.lastSeenAt)))
+	local lastSeenAt = bookAggregate and bookAggregate:GetLastSeenAt() or entry.lastSeenAt
+	if lastSeenAt then
+		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_LAST_VIEWED"), fmtTime(lastSeenAt)))
 	end
-	local locationLine = formatLocationLine(entry.location)
+	local location = bookAggregate and bookAggregate:GetLocation() or entry.location
+	local locationLine = formatLocationLine(location)
 	if locationLine then
 		table.insert(meta, locationLine)
 	end
@@ -785,7 +823,12 @@ function ReaderUI:RenderSelected()
 	else
 		local pageIndex = state.currentPageIndex
 		local pageNum = state.pageOrder[pageIndex]
-		pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
+		-- Use Book aggregate to get page text if available
+		if bookAggregate then
+			pageText = bookAggregate:GetPageText(pageNum)
+		else
+			pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
+		end
 		
 		-- Track lastPageRead for Book Echo
 		if pageNum then
@@ -859,6 +902,69 @@ function ReaderUI:RenderSelected()
 			favoriteBtn:SetChecked(isFav)
 		end
 	end
+
+	-- Show custom book icon (inscription) if this is a custom book
+	local customIcon = state.customBookIcon
+	local customIconFrame = state.customBookIconFrame
+	local editButton = state.editButton
+	local isCustomBook = entry and entry.source and entry.source.type == "CUSTOM"
+	
+	if customIcon then
+		if isCustomBook then
+			customIcon:Show()
+			if customIconFrame then
+				customIconFrame:Show()
+			end
+			-- Reposition favorite button to left of custom icon
+			if favoriteBtn then
+				favoriteBtn:ClearAllPoints()
+				favoriteBtn:SetPoint("RIGHT", customIcon, "LEFT", -(Metrics.GAP_S or 4), 0)
+			end
+		else
+			customIcon:Hide()
+			if customIconFrame then
+				customIconFrame:Hide()
+			end
+			-- Reposition favorite button to left of delete button (skip hidden custom icon)
+			if favoriteBtn then
+				favoriteBtn:ClearAllPoints()
+				local deleteButton = getDeleteButton()
+				if deleteButton then
+					favoriteBtn:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+				else
+					local actionsRail = state.actionsRail
+					if actionsRail then
+						favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+					end
+				end
+			end
+		end
+	end
+	
+	-- Reposition share button to left of favorite button (always)
+	local shareButton = state.shareButton or getWidget("shareButton")
+	if shareButton and favoriteBtn then
+		shareButton:ClearAllPoints()
+		shareButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
+	end
+	
+	-- Show edit button only for custom books
+	-- When edit button is shown, hide page indicator to avoid overlap
+	local pageIndicator = state.pageIndicator
+	if editButton then
+		if isCustomBook then
+			editButton:Show()
+			if pageIndicator then
+				pageIndicator:Hide()
+			end
+		else
+			editButton:Hide()
+			if pageIndicator then
+				pageIndicator:Show()
+			end
+		end
+	end
+
 	self:UpdatePageControlsDisplay(totalPages)
 end
 
@@ -878,5 +984,172 @@ function ReaderUI:ShowExportForBook(bookKey)
 	local Share = BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
 	if Share and Share.ShareCurrentBook then
 		Share:ShareCurrentBook(addon, bookKey)
+	end
+end
+
+-- ---------------------------------------------------------------------------
+-- Custom book creation UI (scribe desk)
+-- ---------------------------------------------------------------------------
+
+local function getCreateWidgets()
+	local frame = getWidget("createBookFrame") or state.createBookFrame
+	if not frame then
+		return nil
+	end
+	return {
+		frame = frame,
+		titleBox = getWidget("createBookTitle") or state.createBookTitle,
+		leftEdit = getWidget("createBookLeftEdit") or state.createBookLeftEdit,
+		rightEdit = getWidget("createBookRightEdit") or state.createBookRightEdit,
+	}
+end
+
+function ReaderUI:OpenCreateBook()
+	local w = getCreateWidgets()
+	if not w then
+		return
+	end
+
+	-- Hide reader content while the modal is open (matches the intended mockup).
+	-- We keep the outer window and left list intact, but the right content area
+	-- becomes exclusively the scribe desk.
+	if state.readerNavRow and state.readerNavRow.Hide then
+		state.readerNavRow:Hide()
+	end
+	if state.textScroll and state.textScroll.Hide then
+		state.textScroll:Hide()
+	end
+	if state.textScrollBar and state.textScrollBar.Hide then
+		state.textScrollBar:Hide()
+	end
+	if state.textChild and state.textChild.Hide then
+		state.textChild:Hide()
+	end
+	if state.emptyStateFrame and state.emptyStateFrame.Hide then
+		state.emptyStateFrame:Hide()
+	end
+	if state.bookTitle and state.bookTitle.SetText then
+		state.bookTitle:SetText(t("NEW_BOOK"))
+	end
+	if state.echoText and state.echoText.SetText then
+		state.echoText:SetText("")
+	end
+	if state.locationText and state.locationText.SetText then
+		state.locationText:SetText("")
+	end
+	if state.pageIndicator and state.pageIndicator.SetText then
+		state.pageIndicator:SetText("")
+	end
+
+	-- Clear fields for a new book session.
+	if w.titleBox and w.titleBox.SetText then
+		w.titleBox:SetText("")
+		if w.titleBox.SetFocus then
+			w.titleBox:SetFocus()
+		end
+	end
+	if w.leftEdit and w.leftEdit.SetText then
+		w.leftEdit:SetText("")
+	end
+	if w.rightEdit and w.rightEdit.SetText then
+		w.rightEdit:SetText("")
+	end
+	w.frame:Show()
+	state.isCreatingCustomBook = true
+end
+
+function ReaderUI:CancelCreateBook()
+	local w = getCreateWidgets()
+	if not w then
+		return
+	end
+	w.frame:Hide()
+	state.isCreatingCustomBook = false
+	-- Restore normal reader rendering.
+	if self.RenderSelected then
+		self:RenderSelected()
+	end
+end
+
+function ReaderUI:SaveCreateBook()
+	local w = getCreateWidgets()
+	if not w then
+		return
+	end
+	local addon = getAddon()
+	if not (addon and addon.CreateCustomBook) then
+		return
+	end
+	
+	-- Get and validate inputs
+	local title = (w.titleBox and w.titleBox.GetText and w.titleBox:GetText()) or ""
+	title = trim(title)
+	
+	if title == "" then
+		-- Show error feedback
+		if w.titleBox then
+			w.titleBox:SetFocus()
+			-- Flash the title box to indicate error
+			UIFrameFlash(w.titleBox, 0.5, 0.5, 1.0, false, 0, 0)
+		end
+		-- Show error message
+		if Internal and Internal.chatMessage then
+			Internal.chatMessage("|cFFFF0000" .. (t("BOOK_TITLE_REQUIRED") or "Please enter a book title") .. "|r")
+		end
+		return
+	end
+	
+	local p1 = (w.leftEdit and w.leftEdit.GetText and w.leftEdit:GetText()) or ""
+	local p2 = (w.rightEdit and w.rightEdit.GetText and w.rightEdit:GetText()) or ""
+	
+	-- Trim pages
+	p1 = trim(p1)
+	p2 = trim(p2)
+	
+	-- Check if at least one page has content
+	if p1 == "" and p2 == "" then
+		-- Show error feedback
+		if w.leftEdit then
+			w.leftEdit:SetFocus()
+		end
+		if Internal and Internal.chatMessage then
+			Internal.chatMessage("|cFFFF0000" .. (t("BOOK_CONTENT_REQUIRED") or "Please write some content in at least one page") .. "|r")
+		end
+		return
+	end
+
+	local pages = { [1] = tostring(p1 or ""), [2] = tostring(p2 or "") }
+	local id = addon:CreateCustomBook(tostring(title or ""), pages)
+	if not id then
+		if Internal and Internal.chatMessage then
+			Internal.chatMessage("|cFFFF0000" .. (t("BOOK_SAVE_FAILED") or "Failed to save book") .. "|r")
+		end
+		return
+	end
+
+	-- Success feedback
+	if Internal and Internal.chatMessage then
+		Internal.chatMessage("|cFF00FF00" .. (t("BOOK_SAVED_SUCCESS") or "Book saved successfully!") .. "|r")
+	end
+
+	-- Close modal, refresh UI, and select the new book.
+	w.frame:Hide()
+	state.isCreatingCustomBook = false
+	if addon.RefreshUI then
+		addon:RefreshUI()
+	end
+
+	-- Select new book and notify list to open reader.
+	if setSelectedKey then
+		setSelectedKey(id)
+	end
+	local listUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.List
+	if listUI and listUI.NotifySelectionChanged then
+		listUI:NotifySelectionChanged()
+	end
+
+	-- RenderSelected will be triggered by selection change; keep a fallback.
+	if self.RenderSelected then
+		self:RenderSelected()
 	end
 end

@@ -2,7 +2,7 @@
 -- BookArchivist_BookId.lua
 -- Helpers for stable BookArchivist book IDs (v2).
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 -- Bit library handling for fnv1a32 hash function:
 -- In WoW: bit or bit32 is provided by the game client
@@ -21,8 +21,8 @@ if not (bit or bit32) then
 	--@end-do-not-package@
 end
 
-local BookId = BookArchivist.BookId or {}
-BookArchivist.BookId = BookId
+local BookId = BA.BookId or {}
+BA.BookId = BookId
 
 local function trim(s)
 	if not s then

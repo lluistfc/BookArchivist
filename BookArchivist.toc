@@ -16,8 +16,10 @@ libs\AceGUI-3.0\AceGUI-3.0.xml
 libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 libs\LibDBIcon-1.0\LibDBIcon-1.0\lib.xml
 
+core/BookArchivist.lua
 core/BookArchivist_Repository.lua
 core/BookArchivist_BookId.lua
+core/BookArchivist_Book.lua
 core/BookArchivist_Migrations.lua
 core/BookArchivist_DBSafety.lua
 core/BookArchivist_Iterator.lua
@@ -42,7 +44,6 @@ core/BookArchivist_Location.lua
 core/BookArchivist_ChatLinks.lua
 core/BookArchivist_Capture.lua
 core/BookArchivist_Minimap.lua
-core/BookArchivist.lua
 locales/enUS.lua
 locales/esES.lua
 locales/caES.lua
@@ -67,6 +68,7 @@ ui/list/BookArchivist_UI_List_Filter.lua
 ui/list/BookArchivist_UI_List_Location.lua
 ui/list/BookArchivist_UI_List_Rows.lua
 ui/reader/BookArchivist_UI_Reader.lua
+ui/reader/BookArchivist_UI_Reader_EditMode.lua
 ui/reader/BookArchivist_UI_Reader_ArtifactAtlas.lua
 ui/reader/BookArchivist_UI_Reader_HTML.lua
 ui/reader/BookArchivist_UI_Reader_Rich_Parse.lua

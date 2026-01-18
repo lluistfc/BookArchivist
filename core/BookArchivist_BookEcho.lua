@@ -2,12 +2,12 @@
 -- BookArchivist_BookEcho.lua
 -- Memory reflection system - generates contextual echoes based on reading history
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local BookEcho = {}
-BookArchivist.BookEcho = BookEcho
+BA.BookEcho = BookEcho
 
-local L = BookArchivist.L or {}
+local L = BA.L or {}
 
 -- Location context patterns (order matters: most specific first)
 local LOCATION_CONTEXTS = {
@@ -77,7 +77,7 @@ end
 local function formatTimeAgo(timestamp)
 	if not timestamp then return nil end
 	
-	local now = BookArchivist.Core and BookArchivist.Core:Now() or time()
+	local now = BA.Core and BA.Core:Now() or time()
 	local diff = now - timestamp
 	
 	if diff < 0 then return nil end
@@ -103,7 +103,7 @@ end
 function BookEcho:GetEchoText(bookId)
 	if not bookId then return nil end
 	
-	local db = BookArchivist.Repository:GetDB()
+	local db = BA.Repository:GetDB()
 	local book = db.booksById[bookId]
 	if not book then return nil end
 	

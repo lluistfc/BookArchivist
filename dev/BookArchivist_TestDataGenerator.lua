@@ -3,14 +3,14 @@
 -- Development tool for generating test books to stress-test performance.
 -- DO NOT load this in production - it's for development only.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Generator = {}
-BookArchivist.TestDataGenerator = Generator
+BA.TestDataGenerator = Generator
 
 -- Module loaded confirmation
-if BookArchivist and BookArchivist.DebugPrint then
-	BookArchivist:DebugPrint("[TestDataGenerator] Module loaded")
+if BA and BA.DebugPrint then
+	BA:DebugPrint("[TestDataGenerator] Module loaded")
 end
 
 local LOREM_IPSUM = {

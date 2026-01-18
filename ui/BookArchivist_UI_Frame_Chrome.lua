@@ -1,12 +1,12 @@
 ---@diagnostic disable: undefined-global, undefined-field
 -- Frame chrome (header, portrait, title, options button) helpers.
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local FrameUI = BookArchivist.UI.Frame or {}
-BookArchivist.UI.Frame = FrameUI
-local Internal = BookArchivist.UI.Internal
+local FrameUI = BA.UI.Frame or {}
+BA.UI.Frame = FrameUI
+local Internal = BA.UI.Internal
 
 local L = BookArchivist and BookArchivist.L or {}
 local function t(key)

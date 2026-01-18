@@ -2,10 +2,10 @@
 -- BookArchivist_Profiler.lua
 -- Performance profiling infrastructure for measuring and optimizing hot paths.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Profiler = {}
-BookArchivist.Profiler = Profiler
+BA.Profiler = Profiler
 
 local profiles = {}
 local startTimes = {}

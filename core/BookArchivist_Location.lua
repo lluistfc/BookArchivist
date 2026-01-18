@@ -2,10 +2,10 @@
 -- BookArchivist_Location.lua
 -- Tracks player location context and loot provenance for BookArchivist entries.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Location = {}
-BookArchivist.Location = Location
+BA.Location = Location
 
 local recentLoot = {}
 local guidNameCache = {}
@@ -90,7 +90,7 @@ local function buildZoneData()
 	end
 
 	if #chain == 0 then
-		local L = BookArchivist and BookArchivist.L or {}
+		local L = BA and BA.L or {}
 		local unknown = (L and L["LOCATION_UNKNOWN_ZONE"]) or "Unknown Zone"
 		chain = { unknown }
 	end

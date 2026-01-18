@@ -2,7 +2,7 @@
 -- BookArchivist_Core.lua
 -- Shared data helpers, persistence, and SavedVariables management.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 BookArchivistDB = BookArchivistDB or nil
 
 local globalTime = type(_G) == "table" and rawget(_G, "time") or nil
@@ -12,7 +12,7 @@ local timeProvider = globalTime or osTime or function()
 end
 
 local Core = {}
-BookArchivist.Core = Core
+BA.Core = Core
 
 local BookId = BookArchivist.BookId
 local Serialize = BookArchivist.Serialize
@@ -307,6 +307,9 @@ function Core:GetDB()
 		return Repository:GetDB()
 	end
 	-- Fallback for early initialization before Repository is loaded
+	if BookArchivist and BookArchivist.DebugPrint then
+		BookArchivist:DebugPrint("[Core] GetDB: Repository not available, using ensureDB fallback")
+	end
 	return ensureDB()
 end
 
@@ -712,6 +715,215 @@ function Core:InjectEntry(entry, opts)
 	else
 		self:TouchOrder(entry.key)
 	end
+end
+
+-- ---------------------------------------------------------------------------
+-- Custom (player-authored) books
+-- ---------------------------------------------------------------------------
+
+local function ensureCustomIndex(db)
+	db.indexes = db.indexes or {}
+	db.indexes.custom = db.indexes.custom or { counter = 0 }
+	return db.indexes.custom
+end
+
+---Generate a unique, stable ID for a custom book.
+---@return string
+function Core:NextCustomBookId()
+	ensureDB()
+	local db = BookArchivistDB
+	local custom = ensureCustomIndex(db)
+	custom.counter = (tonumber(custom.counter) or 0) + 1
+	-- Use time-based component + monotonic counter to avoid collisions.
+	local ts = now() or 0
+	return string.format("c:%d:%d", ts, custom.counter)
+end
+
+---Create and persist a new custom book entry.
+---============================================================================
+--- Book Aggregate Service (Step 2: Thin service layer)
+---============================================================================
+
+---Get a book by ID, wrapped as a Book aggregate
+---@param bookId string Book ID
+---@return table|nil Book instance or nil if not found
+function Core:GetBook(bookId)
+	local db = self:GetDB()
+	if not db or not db.booksById then
+		return nil
+	end
+	
+	local entry = db.booksById[bookId]
+	if not entry then
+		return nil
+	end
+	
+	local BookModule = BookArchivist.Book
+	if not BookModule or not BookModule.FromEntry then
+		BookArchivist:LogError("Book module not loaded")
+		return nil
+	end
+	
+	return BookModule.FromEntry(entry)
+end
+
+---Create a new custom book
+---@param title string Book title
+---@param pages table Array of page text strings
+---@param creator string|nil Creator name (defaults to player name)
+---@param location table|nil Location metadata
+---@return string|nil bookId The ID of the created book, or nil on failure
+---@return string|nil error Error message if failed
+function Core:CreateCustomBook(title, pages, creator, location)
+	local BookModule = BookArchivist.Book
+	if not BookModule or not BookModule.NewCustom then
+		return nil, "Book module not loaded"
+	end
+	
+	-- Provide default title if nil/empty (for graceful handling)
+	if not title or title == "" then
+		title = "Untitled Book"
+	end
+	
+	-- Generate stable ID using NextCustomBookId (maintains counter)
+	local bookId = self:NextCustomBookId()
+	if not bookId then
+		return nil, "Failed to generate book ID"
+	end
+	
+	-- Get player name if creator not provided
+	if not creator or creator == "" then
+		creator = (type(UnitName) == "function" and UnitName("player")) or "Unknown"
+	end
+	
+	-- Create book aggregate
+	local book = BookModule.NewCustom(bookId, title, creator)
+	
+	-- Set pages if provided
+	if type(pages) == "table" then
+		for i, pageText in ipairs(pages) do
+			local success, err = book:SetPageText(i, pageText)
+			if not success then
+				return nil, "Failed to set page " .. i .. ": " .. (err or "unknown error")
+			end
+		end
+	end
+	
+	-- Set location if provided
+	if location then
+		book:SetLocation(location)
+	end
+	
+	-- Validate invariants
+	local valid, validationErr = book:Validate()
+	if not valid then
+		return nil, "Book validation failed: " .. (validationErr or "unknown error")
+	end
+	
+	-- Convert to entry and inject (uses InjectEntry for order management)
+	local entry = book:ToEntry()
+	entry.key = bookId -- Ensure key field exists for InjectEntry
+	
+	-- Set source type properly for custom books
+	entry.source = {
+		type = "CUSTOM",
+		custom = true,
+	}
+	
+	-- Use InjectEntry with append flag to maintain order
+	self:InjectEntry(entry, { append = true })
+	
+	return bookId
+end
+
+---Save a book aggregate to the database
+---@param book table Book aggregate instance
+---@return boolean success True if saved successfully
+---@return string|nil error Error message if failed
+function Core:SaveBook(book)
+	if type(book) ~= "table" or not book.ToEntry then
+		return false, "Invalid book object"
+	end
+	
+	-- Validate before saving
+	if book.Validate then
+		local valid, err = book:Validate()
+		if not valid then
+			return false, "Validation failed: " .. (err or "unknown error")
+		end
+	end
+	
+	-- Convert to entry
+	local entry = book:ToEntry()
+	local bookId = entry.id
+	
+	if not bookId or bookId == "" then
+		return false, "Book ID is required"
+	end
+	
+	-- Get database
+	local db = self:GetDB()
+	if not db then
+		return false, "Database not initialized"
+	end
+	
+	-- Ensure booksById table exists
+	db.booksById = db.booksById or {}
+	
+	-- Convert sourceType to source structure for database compatibility
+	if entry.sourceType then
+		if entry.sourceType == "CUSTOM" then
+			entry.source = {
+				type = "CUSTOM",
+				custom = true,
+			}
+		elseif entry.sourceType == "CAPTURED" then
+			entry.source = {
+				type = "CAPTURED",
+			}
+		end
+		-- Remove flat sourceType field (database uses source.type)
+		entry.sourceType = nil
+	end
+	
+	-- Save entry
+	db.booksById[bookId] = entry
+	
+	-- Update title index (custom books don't have item/object IDs to index)
+	if entry.title then
+		self:IndexTitleForBook(entry.title, bookId)
+	end
+	
+	-- Update order tracking
+	self:TouchOrder(bookId)
+	
+	return true
+end
+
+---Update a book via callback function (transaction-like)
+---@param bookId string Book ID
+---@param updateFn function Function that receives book and performs mutations
+---@return boolean success True if update succeeded
+---@return string|nil error Error message if failed
+function Core:UpdateBook(bookId, updateFn)
+	if type(updateFn) ~= "function" then
+		return false, "Update function is required"
+	end
+	
+	-- Load book
+	local book = self:GetBook(bookId)
+	if not book then
+		return false, "Book not found: " .. tostring(bookId)
+	end
+	
+	-- Apply updates via callback
+	local success, err = pcall(updateFn, book)
+	if not success then
+		return false, "Update function failed: " .. tostring(err)
+	end
+	
+	-- Save modified book
+	return self:SaveBook(book)
 end
 
 function Core:Now()

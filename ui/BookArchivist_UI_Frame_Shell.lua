@@ -3,11 +3,11 @@
 -- Minimal frame shell that appears instantly (<5ms) to prevent game freeze
 -- Full content built asynchronously after shell is visible
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local FrameUI = BookArchivist.UI.Frame or {}
-BookArchivist.UI.Frame = FrameUI
+local FrameUI = BA.UI.Frame or {}
+BA.UI.Frame = FrameUI
 
 -- Default dimensions
 FrameUI.DEFAULT_WIDTH = FrameUI.DEFAULT_WIDTH or 1080

@@ -4,14 +4,14 @@
 -- This file is NOT loaded in production releases
 -- DO NOT include this in BookArchivist.toc
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 -- ============================================================================
 -- DEV TOOLS MODULE
 -- ============================================================================
 
 local DevTools = {}
-BookArchivist.DevTools = DevTools
+BA.DevTools = DevTools
 
 local debugChatEnabled = false
 local gridOverlaysVisible = false

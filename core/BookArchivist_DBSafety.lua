@@ -2,7 +2,7 @@
 -- BookArchivist_DBSafety.lua
 -- SavedVariables corruption detection, backup, and recovery system.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local DBSafety = {}
 BookArchivist.DBSafety = DBSafety

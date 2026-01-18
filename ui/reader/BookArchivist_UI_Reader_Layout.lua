@@ -290,6 +290,34 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	end
 	state.nextButton = nextButton
 
+	-- Edit button for custom books (centered in nav row)
+	local editButton = safeCreateFrame
+		and safeCreateFrame("Button", nil, readerNavRow or readerHeaderRow, "UIPanelButtonTemplate")
+	if editButton then
+		editButton:SetSize(Metrics.BTN_W or 60, 22)
+		editButton:SetPoint("CENTER", readerNavRow or readerHeaderRow, "CENTER", 0, 0)
+		editButton:SetText(t("EDIT") or "Edit")
+		editButton:SetNormalFontObject(GameFontNormal)
+		local fontString = editButton:GetFontString()
+		if fontString then
+			fontString:SetTextColor(0.6, 0.8, 1.0)
+		end
+		editButton:SetScript("OnClick", function()
+			local EditMode = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.EditMode
+			if EditMode and EditMode.StartEditingBook then
+				local selectedKey = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
+				if selectedKey then
+					EditMode:StartEditingBook(selectedKey)
+				end
+			end
+		end)
+		editButton:Hide() -- Initially hidden, shown only for custom books
+		if rememberWidget then
+			rememberWidget("editButton", editButton)
+		end
+	end
+	state.editButton = editButton
+
 	local pageIndicatorParent = readerNavRow or readerHeaderRow
 	local pageIndicator = pageIndicatorParent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	pageIndicator:SetPoint("CENTER", pageIndicatorParent, "CENTER", 0, 0)
@@ -745,16 +773,66 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				end
 			end)
 		end
+		-- Custom book icon (inscription profession icon) - create before positioning favorite
+		local customIcon = state.customBookIcon
+		if not customIcon then
+			customIcon = actionsRail:CreateTexture(nil, "ARTWORK")
+			state.customBookIcon = customIcon
+			local size = Metrics.BTN_H or 22
+			customIcon:SetSize(size, size)
+			customIcon:SetTexture("Interface\\Icons\\INV_Inscription_Tradeskill01")
+			customIcon:SetAlpha(0.9)
+			customIcon:Hide()
+			
+			-- Create an invisible frame for tooltip support
+			local customIconFrame = CreateFrame("Frame", nil, actionsRail)
+			state.customBookIconFrame = customIconFrame
+			customIconFrame:SetSize(size, size)
+			customIconFrame:SetScript("OnEnter", function(self)
+				if not GameTooltip then
+					return
+				end
+				GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+				local text = BookArchivist.L["CUSTOM_BOOK_TOOLTIP"] or "Custom Book"
+				GameTooltip:SetText(text, 1, 0.82, 0)
+				GameTooltip:Show()
+			end)
+			customIconFrame:SetScript("OnLeave", function()
+				if GameTooltip then
+					GameTooltip:Hide()
+				end
+			end)
+			customIconFrame:Hide()
+		end
+		if customIcon then
+			customIcon:ClearAllPoints()
+			if deleteButton then
+				customIcon:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			else
+				customIcon:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
+			
+			-- Position tooltip frame to match icon
+			local customIconFrame = state.customBookIconFrame
+			if customIconFrame then
+				customIconFrame:ClearAllPoints()
+				customIconFrame:SetAllPoints(customIcon)
+			end
+		end
+
+		-- Position favorite button to left of custom icon (will be repositioned in ShowBook for non-custom books)
 		if favoriteBtn then
 			favoriteBtn:ClearAllPoints()
-			if deleteButton then
+			if customIcon then
+				favoriteBtn:SetPoint("RIGHT", customIcon, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif deleteButton then
 				favoriteBtn:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
 			else
 				favoriteBtn:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
 			end
 		end
 
-		-- Position share button to the left of favorite button
+		-- Position share button (will be repositioned dynamically in ShowBook)
 		if shareButton then
 			shareButton:ClearAllPoints()
 			if favoriteBtn then
@@ -779,6 +857,33 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 	countText:SetJustifyV("MIDDLE")
 	countText:SetText("|cFF888888Books saved as you read them in-game|r")
 	uiFrame.countText = countText
+
+	-- -----------------------------------------------------------------------
+	-- Custom book creation/edit UI (simplified edit mode)
+	-- -----------------------------------------------------------------------
+	-- This UI appears within the existing reader panel, replacing the normal
+	-- reader content. It shows title, location, and page editor controls.
+	if safeCreateFrame and rememberWidget then
+		-- Create edit mode container
+		local editFrame = safeCreateFrame("Frame", "BookArchivistEditBookFrame", readerScrollRow or readerBlock)
+		if editFrame then
+			editFrame:SetAllPoints(readerScrollRow or readerBlock)
+			editFrame:Hide() -- Hidden by default
+			
+			-- Content container with padding
+			local editContent = safeCreateFrame("Frame", nil, editFrame)
+			editContent:SetPoint("TOPLEFT", editFrame, "TOPLEFT", padInset, -padInset)
+			editContent:SetPoint("BOTTOMRIGHT", editFrame, "BOTTOMRIGHT", -padInset, padInset)
+			
+			rememberWidget("editBookFrame", editFrame)
+			rememberWidget("editBookContent", editContent)
+			state.editBookFrame = editFrame
+			state.editBookContent = editContent
+			
+			-- We'll populate the edit controls dynamically in a separate function
+			-- to keep this initialization code clean
+		end
+	end
 
 	debugPrint("[BookArchivist] ReaderUI created")
 end

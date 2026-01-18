@@ -1,5 +1,5 @@
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
 local Metrics = {
 	PAD_OUTER = 12,
@@ -38,5 +38,5 @@ Metrics.PAD = Metrics.PAD_OUTER
 Metrics.GUTTER = Metrics.GAP_M
 Metrics.SUBHEADER_H = Metrics.LIST_HEADER_H
 
-BookArchivist.UI.Metrics = Metrics
+BA.UI.Metrics = Metrics
 return Metrics

@@ -3,11 +3,11 @@
 -- Orchestrates construction of the main Book Archivist frame visuals
 -- using helpers provided by the Frame_Chrome and Frame_Layout modules.
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local FrameUI = BookArchivist.UI.Frame or {}
-BookArchivist.UI.Frame = FrameUI
+local FrameUI = BA.UI.Frame or {}
+BA.UI.Frame = FrameUI
 
 FrameUI.DEFAULT_WIDTH = FrameUI.DEFAULT_WIDTH or 1080
 FrameUI.DEFAULT_HEIGHT = FrameUI.DEFAULT_HEIGHT or 680

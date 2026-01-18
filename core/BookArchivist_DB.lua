@@ -2,11 +2,11 @@
 -- BookArchivist_DB.lua
 -- DB initialization entrypoint that wires in migrations.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 BookArchivistDB = BookArchivistDB or nil
 
-local DB = BookArchivist.DB or {}
-BookArchivist.DB = DB
+local DB = BA.DB or {}
+BA.DB = DB
 
 local Migrations = BookArchivist.Migrations
 local DBSafety = BookArchivist.DBSafety

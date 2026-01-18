@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global
 -- German (deDE) locale definitions for BookArchivist
 
-BookArchivist = BookArchivist or {}
-BookArchivist.__Locales = BookArchivist.__Locales or {}
-local Locales = BookArchivist.__Locales
+local BA = BookArchivist
+BA.__Locales = BA.__Locales or {}
+local Locales = BA.__Locales
 
 Locales.deDE = {
 	-- Addon & options
@@ -228,4 +228,28 @@ Locales.deDE = {
 	["LOC_CONTEXT_SHORES"] = "entlang der Küsten von",
 	["LOC_CONTEXT_ISLE"] = "auf der Insel",
 	["LOC_CONTEXT_IN"] = "in",
+	["NEW_BOOK"] = "Neues Buch",
+	["SAVE_BOOK"] = "Speichern",
+	["BOOK_TITLE_PLACEHOLDER"] = "Buchtitel eingeben...",
+	["BOOK_TITLE_REQUIRED"] = "Bitte geben Sie einen Buchtitel ein",
+	["BOOK_CONTENT_REQUIRED"] = "Bitte schreiben Sie Inhalt auf mindestens einer Seite",
+	["BOOK_SAVE_FAILED"] = "Fehler beim Speichern des Buches",
+	["BOOK_SAVED_SUCCESS"] = "Buch erfolgreich gespeichert!",
+	["SAVE_BOOK_TOOLTIP"] = "Dieses Buch in Ihrer Bibliothek speichern",
+	["BOOK_TITLE"] = "Titel",
+	["BOOK_LOCATION"] = "Ort",
+	["NO_LOCATION_SET"] = "Kein Ort festgelegt",
+	["USE_CURRENT_LOC"] = "Aktuell verwenden",
+	["PAGE_CONTENT"] = "Seiteninhalt",
+	["PAGE"] = "Seite",
+	["PREV_PAGE"] = "< Zurück",
+	["NEXT_PAGE"] = "Weiter >",
+	["ADD_PAGE"] = "Seite hinzufügen",
+	["PAGE_ADDED"] = "Seite hinzugefügt",
+	["UNKNOWN_LOCATION"] = "Unbekannter Ort",
+	["CANCEL"] = "Abbrechen",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Buchtitel…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Benutzerdefiniertes Buch",
+	["EXIT_EDIT_MODE_TITLE"] = "Bearbeitungsmodus verlassen?",
+	["EXIT_EDIT_MODE_TEXT"] = "Sie haben nicht gespeicherte Änderungen. Verwerfen?",
 }

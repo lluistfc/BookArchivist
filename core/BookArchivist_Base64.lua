@@ -2,10 +2,10 @@
 -- BookArchivist_Base64.lua
 -- Minimal Base64 encoder/decoder for export/import.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Base64 = {}
-BookArchivist.Base64 = Base64
+BA.Base64 = Base64
 
 local b64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 local b64bytes = {}

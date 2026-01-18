@@ -1,15 +1,16 @@
 ---@diagnostic disable: undefined-global
 -- French (frFR) locale definitions for BookArchivist
 
-BookArchivist = BookArchivist or {}
-BookArchivist.__Locales = BookArchivist.__Locales or {}
-local Locales = BookArchivist.__Locales
+local BA = BookArchivist
+BA.__Locales = BA.__Locales or {}
+local Locales = BA.__Locales
 
 Locales.frFR = {
 	-- Addon & options
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Options de Book Archivist",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Ouvrir le panneau de configuration",
+
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Livres",
@@ -228,4 +229,28 @@ Locales.frFR = {
 	["LOC_CONTEXT_SHORES"] = "le long des côtes de",
 	["LOC_CONTEXT_ISLE"] = "sur l'île de",
 	["LOC_CONTEXT_IN"] = "à",
+	["NEW_BOOK"] = "Nouveau Livre",
+	["SAVE_BOOK"] = "Enregistrer",
+	["BOOK_TITLE_PLACEHOLDER"] = "Entrez le titre du livre...",
+	["BOOK_TITLE_REQUIRED"] = "Veuillez entrer un titre pour le livre",
+	["BOOK_CONTENT_REQUIRED"] = "Veuillez écrire du contenu dans au moins une page",
+	["BOOK_SAVE_FAILED"] = "Échec de l'enregistrement du livre",
+	["BOOK_SAVED_SUCCESS"] = "Livre enregistré avec succès!",
+	["SAVE_BOOK_TOOLTIP"] = "Enregistrer ce livre dans votre bibliothèque",
+	["BOOK_TITLE"] = "Titre",
+	["BOOK_LOCATION"] = "Emplacement",
+	["NO_LOCATION_SET"] = "Aucun emplacement défini",
+	["USE_CURRENT_LOC"] = "Utiliser l'actuel",
+	["PAGE_CONTENT"] = "Contenu de la Page",
+	["PAGE"] = "Page",
+	["PREV_PAGE"] = "< Précédent",
+	["NEXT_PAGE"] = "Suivant >",
+	["ADD_PAGE"] = "Ajouter une Page",
+	["PAGE_ADDED"] = "Page ajoutée",
+	["UNKNOWN_LOCATION"] = "Emplacement Inconnu",
+	["CANCEL"] = "Annuler",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Titre du livre…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Livre Personnalisé",
+	["EXIT_EDIT_MODE_TITLE"] = "Quitter le mode édition ?",
+	["EXIT_EDIT_MODE_TEXT"] = "Vous avez des modifications non enregistrées. Les abandonner ?",
 }

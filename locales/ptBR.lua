@@ -1,15 +1,16 @@
 ---@diagnostic disable: undefined-global
 -- Portuguese (ptBR/ptPT) locale definitions for BookArchivist
 
-BookArchivist = BookArchivist or {}
-BookArchivist.__Locales = BookArchivist.__Locales or {}
-local Locales = BookArchivist.__Locales
+local BA = BookArchivist
+BA.__Locales = BA.__Locales or {}
+local Locales = BA.__Locales
 
 Locales.ptBR = {
 	-- Addon & options
 	["ADDON_TITLE"] = "Book Archivist",
 	["OPTIONS_TITLE"] = "Opções do Book Archivist",
 	["OPTIONS_TOOLTIP_OPEN_PANEL"] = "Abrir o painel de opções",
+
 
 	-- List header / tabs
 	["BOOKS_TAB"] = "Livros",
@@ -228,4 +229,28 @@ Locales.ptBR = {
 	["LOC_CONTEXT_SHORES"] = "ao longo das costas de",
 	["LOC_CONTEXT_ISLE"] = "na ilha de",
 	["LOC_CONTEXT_IN"] = "em",
+	["NEW_BOOK"] = "Novo Livro",
+	["SAVE_BOOK"] = "Salvar",
+	["BOOK_TITLE_PLACEHOLDER"] = "Digite o título do livro...",
+	["BOOK_TITLE_REQUIRED"] = "Por favor digite um título para o livro",
+	["BOOK_CONTENT_REQUIRED"] = "Por favor escreva conteúdo em pelo menos uma página",
+	["BOOK_SAVE_FAILED"] = "Falha ao salvar o livro",
+	["BOOK_SAVED_SUCCESS"] = "Livro salvo com sucesso!",
+	["SAVE_BOOK_TOOLTIP"] = "Salvar este livro na sua biblioteca",
+	["BOOK_TITLE"] = "Título",
+	["BOOK_LOCATION"] = "Localização",
+	["NO_LOCATION_SET"] = "Nenhuma localização definida",
+	["USE_CURRENT_LOC"] = "Usar Atual",
+	["PAGE_CONTENT"] = "Conteúdo da Página",
+	["PAGE"] = "Página",
+	["PREV_PAGE"] = "< Anterior",
+	["NEXT_PAGE"] = "Próxima >",
+	["ADD_PAGE"] = "Adicionar Página",
+	["PAGE_ADDED"] = "Página adicionada",
+	["UNKNOWN_LOCATION"] = "Localização Desconhecida",
+	["CANCEL"] = "Cancelar",
+	["CUSTOM_BOOK_TITLE_PLACEHOLDER"] = "Título do livro…",
+	["CUSTOM_BOOK_TOOLTIP"] = "Livro Personalizado",
+	["EXIT_EDIT_MODE_TITLE"] = "Sair do modo de edição?",
+	["EXIT_EDIT_MODE_TEXT"] = "Você tem alterações não salvas. Descartá-las?",
 }

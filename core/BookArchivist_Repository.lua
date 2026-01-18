@@ -2,10 +2,10 @@
 -- BookArchivist_Repository.lua
 -- Central database repository - single source of truth for all DB access
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 local Repository = {}
-BookArchivist.Repository = Repository
+BA.Repository = Repository
 
 -- The database instance to use (injected via Init)
 local db = nil
@@ -14,13 +14,24 @@ local db = nil
 ---@param database table The database to use
 function Repository:Init(database)
 	db = database
+	if BA and BA.DebugPrint then
+		local orderCount = db and db.order and #db.order or 0
+		local hasBooks = db and db.booksById and next(db.booksById) ~= nil
+		BA:DebugPrint("[Repository] Init: database set (order:", orderCount, "hasBooks:", hasBooks, ")")
+	end
 end
 
 ---Get current database
 ---@return table The active database
 function Repository:GetDB()
-	if not db then
-		error("BookArchivist.Repository: Not initialized - call Init(db) first")
+	-- Return injected database if available
+	if db then
+		return db
 	end
-	return db
+	-- Fallback to global BookArchivistDB (for initialization sequence)
+	if BookArchivistDB then
+		return BookArchivistDB
+	end
+	-- Error only if both are nil
+	error("BookArchivist.Repository: Database not available - neither injected nor global exists")
 end

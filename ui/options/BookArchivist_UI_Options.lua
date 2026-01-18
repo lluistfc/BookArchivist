@@ -13,11 +13,11 @@
 
 local ADDON_NAME = ...
 
-BookArchivist = BookArchivist or {}
-BookArchivist.UI = BookArchivist.UI or {}
+local BA = BookArchivist
+BA.UI = BA.UI or {}
 
-local OptionsUI = BookArchivist.UI.Options or {}
-BookArchivist.UI.Options = OptionsUI
+local OptionsUI = BA.UI.Options or {}
+BA.UI.Options = OptionsUI
 
 local function L(key)
 	local t = BookArchivist and BookArchivist.L

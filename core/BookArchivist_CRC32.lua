@@ -2,7 +2,7 @@
 -- BookArchivist_CRC32.lua
 -- Simple CRC32 helper used by the export/import pipeline.
 
-BookArchivist = BookArchivist or {}
+local BA = BookArchivist
 
 -- Bit library handling:
 -- In WoW: bit32 or bit is provided by the game client
