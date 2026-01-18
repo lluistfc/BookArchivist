@@ -806,16 +806,39 @@ end
 
 For deep dives into specific systems, reference these Claude skills:
 
-| Skill | Topic | Key Content |
-|-------|-------|-------------|
-| [k-savedvariables](../.claude/skills/k-savedvariables/SKILL.md) | Database & Persistence | BookArchivistDB schema, Repository pattern, indexes, migrations |
-| [k-capture](../.claude/skills/k-capture/SKILL.md) | Book Capture System | ItemText events, session lifecycle, incremental persistence |
-| [k-favorites](../.claude/skills/k-favorites/SKILL.md) | Favorites & Recent | MRU list, favorite flags, virtual categories |
-| [k-tooltip](../.claude/skills/k-tooltip/SKILL.md) | Tooltip Integration | GameTooltip hooks, index lookups, "Archived" indicator |
-| [k-import-export](../.claude/skills/k-import-export/SKILL.md) | Import/Export | BDB1 format, async import worker, merge semantics |
-| [k-ui-refresh](../.claude/skills/k-ui-refresh/SKILL.md) | UI Refresh Flow | ViewModel, RefreshUI pipeline, lazy initialization |
-| [k-list-panel](../.claude/skills/k-list-panel/SKILL.md) | List Panel UI | Async filtering, sorting, pagination, categories |
-| [k-reader-panel](../.claude/skills/k-reader-panel/SKILL.md) | Reader Panel UI | Content rendering, SimpleHTML, navigation, actions |
+| Skill | Topic | Triggers | Key Content |
+|-------|-------|----------|-------------|
+| [k-savedvariables](../.claude/skills/k-savedvariables/SKILL.md) | Database & Persistence | database, BookArchivistDB, schema, booksById, indexes, Repository, persistence, migration | BookArchivistDB schema, Repository pattern (Init/GetDB), indexes (item/object/title), migrations (v1→v2→v3), data flow patterns |
+| [k-capture](../.claude/skills/k-capture/SKILL.md) | Book Capture System | capture, ItemText, ITEM_TEXT_BEGIN, ITEM_TEXT_READY, OnReady, session, location | ItemText event flow (BEGIN→READY→CLOSED), session lifecycle, incremental persistence (per-page saves), location resolution (BuildWorldLocation) |
+| [k-favorites](../.claude/skills/k-favorites/SKILL.md) | Favorites & Recent | favorites, recent, MRU, isFavorite, MarkOpened, virtual categories, lastReadAt | Favorite flags (Set/Toggle/IsFavorite), MRU list management (Recent:MarkOpened/GetList), virtual category toggle, stale entry cleanup |
+| [k-tooltip](../.claude/skills/k-tooltip/SKILL.md) | Tooltip Integration | tooltip, GameTooltip, Archived, TooltipDataProcessor, item tooltip, object tooltip | GameTooltip hooks (TooltipDataProcessor), index lookups (O(1) performance), item vs object detection, GUID parsing, "Archived ✓" indicator |
+| [k-import-export](../.claude/skills/k-import-export/SKILL.md) | Import/Export | import, export, BDB1, ImportWorker, merge, compression, LibDeflate, share | BDB1 envelope format, async import worker (6-phase pipeline), merge semantics (ID-based, preserves existing), compression support |
+| [k-ui-refresh](../.claude/skills/k-ui-refresh/SKILL.md) | UI Refresh Flow | RefreshUI, ViewModel, UI state, refresh loop, lazy init, UI coordination | ViewModel state management, safe refresh execution (guarding), lazy initialization patterns, Reader/List coordination, avoiding infinite loops |
+| [k-list-panel](../.claude/skills/k-list-panel/SKILL.md) | List Panel UI | list panel, Books tab, Locations tab, filtering, sorting, pagination, search | Async filtering (Iterator), sorting (ApplySort), pagination (PaginateArray), category system (All Books/Favorites/Recent), search bar, row pooling |
+| [k-reader-panel](../.claude/skills/k-reader-panel/SKILL.md) | Reader Panel UI | reader panel, ShowBook, SimpleHTML, page navigation, favorite, share, delete | Content display (ShowBook), SimpleHTML rendering (HTML tags/fallback), page navigation (multi-page), favorite/share/delete buttons, HTML detection |
+
+### How to Use Skills
+
+**When to read a skill:**
+1. User mentions a trigger keyword (e.g., "database", "capture", "tooltip")
+2. Working on related functionality (e.g., modifying persistence code → read k-savedvariables)
+3. Debugging issues in a specific system (e.g., filtering not working → read k-list-panel)
+4. Need detailed understanding of architecture (e.g., how refresh works → read k-ui-refresh)
+
+**Detection Pattern:**
+```
+User request contains: "tooltip", "GameTooltip", or "Archived"
+→ Read skill: .claude/skills/k-tooltip/SKILL.md
+→ Get: Hook patterns, index usage, O(1) lookups
+
+User request contains: "import", "export", "BDB1", or "share"
+→ Read skill: .claude/skills/k-import-export/SKILL.md
+→ Get: 6-phase pipeline, merge semantics, compression
+
+User request contains: "database", "Repository", "BookArchivistDB"
+→ Read skill: .claude/skills/k-savedvariables/SKILL.md
+→ Get: Schema structure, Repository pattern, test isolation
+```
 
 **Full details:** Each skill references complete documentation in `.github/copilot-skills/`
 
