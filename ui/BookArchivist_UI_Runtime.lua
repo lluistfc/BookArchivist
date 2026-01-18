@@ -235,8 +235,7 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 			print("  |cFFFFFF00/ba pool|r - Show frame pool statistics")
 			print("  |cFFFFFF00/ba profile|r - Profiler commands")
 			print("  |cFFFFFF00/ba iter|r - Iterator commands")
-			print("  |cFFFFFF00/ba gentest <count>|r - Generate test books")
-			print("  |cFFFFFF00/ba uigrid|r - Toggle UI debug grid")
+			print("  |cFFFFFF00/ba gentest <count>|r - Generate test books")		print("  |cFFFFFF00/ba gentest security [count]|r - Generate security test books")			print("  |cFFFFFF00/ba uigrid|r - Toggle UI debug grid")
 		end
 		return
 	end

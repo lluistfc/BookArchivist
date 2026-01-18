@@ -734,19 +734,21 @@ local function hookMainSlashCommands()
 				return
 			end
 
-			local count = tonumber(rest)
-			if count and count > 0 then
-				Generator:GenerateBooks(count, { uniqueTitles = true })
-			else
-				chatMessage("|cFFFF0000Usage:|r /ba gentest <count>")
-				chatMessage("Example: /ba gentest 1000")
-			end
+		-- Check for "security" flag
+		if rest == "security" or rest:match("^(%d+)%s+security$") or rest:match("^security%s+(%d+)$") then
+			local count = tonumber(rest:match("%d+")) or 8
+			Generator:GenerateSecurityTestBooks(count)
 			return
 		end
 
-		if verb == "genpreset" then
-			local Generator = BookArchivist.TestDataGenerator
-			if not Generator then
+		local count = tonumber(rest)
+		if count and count > 0 then
+			Generator:GenerateBooks(count, { uniqueTitles = true })
+		else
+			chatMessage("|cFFFF0000Usage:|r /ba gentest <count>")
+			chatMessage("       /ba gentest security [count]")
+			chatMessage("Example: /ba gentest 1000")
+			chatMessage("         /ba gentest security 8")
 				chatMessage("|cFFFF0000BookArchivist:|r TestDataGenerator not loaded!")
 				return
 			end

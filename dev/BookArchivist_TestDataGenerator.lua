@@ -390,3 +390,129 @@ function Generator:GeneratePreset(preset)
 	print(string.format("|cFF00FF00Generating preset:|r %s", preset))
 	self:GenerateBooks(config.count, config)
 end
+
+--- Generate test books with malicious texture paths for security testing
+--- Creates HTML books with various attack vectors to validate TextureValidator
+--- @param count number Number of security test books to generate
+function Generator:GenerateSecurityTestBooks(count)
+	local Core = BookArchivist.Core
+	local BookId = BookArchivist.BookId
+
+	if not Core or not BookId then
+		print("|cFFFF0000BookArchivist TestDataGenerator:|r Core modules not loaded!")
+		return
+	end
+
+	print(string.format("|cFF00FF00Generating %d security test books...|r", count))
+	print("|cFFFFFF00These books contain malicious texture paths to test TextureValidator|r")
+
+	local startTime = debugprofilestop()
+	local db = Core:GetDB()
+
+	-- Security test cases with malicious texture paths
+	local securityTests = {
+		{
+			name = "Parent Traversal Attack",
+			texturePath = "Interface\\Icons\\..\\..\\System32\\calc.exe",
+			description = "Attempts directory traversal with .."
+		},
+		{
+			name = "Addon Path Spoofing",
+			texturePath = "Interface\\AddOns\\OtherAddon\\logo.tga",
+			description = "Tries to load texture from non-whitelisted addon"
+		},
+		{
+			name = "Absolute Path (Drive)",
+			texturePath = "C:\\Windows\\System32\\kernel32.dll",
+			description = "Absolute path with drive letter (blocked by WoW)"
+		},
+		{
+			name = "Absolute Path (Slash)",
+			texturePath = "/etc/passwd",
+			description = "Unix-style absolute path (blocked by WoW)"
+		},
+		{
+			name = "Double Parent Traversal",
+			texturePath = "Interface\\Pictures\\..\\..\\..\\..\\evil.blp",
+			description = "Multiple parent directory attempts"
+		},
+		{
+			name = "Mixed Slash Attack",
+			texturePath = "Interface/Icons/../../../Windows/evil.tga",
+			description = "Mixed forward/backslash traversal"
+		},
+		{
+			name = "Very Long Path",
+			texturePath = "Interface\\Icons\\" .. string.rep("A", 600),
+			description = "Exceeds 500 character limit"
+		},
+		{
+			name = "Trailing Slash",
+			texturePath = "Interface\\Icons\\",
+			description = "Incomplete path with trailing slash"
+		},
+	}
+
+	for i = 1, count do
+		local testCase = securityTests[((i - 1) % #securityTests) + 1]
+		
+		-- Create HTML content with malicious texture
+		local htmlContent = string.format([[<html><body>
+<h1>Security Test: %s</h1>
+<p>This book tests security validation for texture paths.</p>
+<br/>
+<p><b>Attack Vector:</b> %s</p>
+<br/>
+<p><b>Expected Behavior:</b> Texture should be rejected and fallback icon displayed.</p>
+<br/>
+<img src="%s" width="64" height="64" />
+<br/>
+<p>If you see the default book icon above, the security system is working correctly.</p>
+<p>If you see something unexpected, the security validation may have failed.</p>
+<br/>
+<p><b>Test Path:</b> <font color="red">%s</font></p>
+</body></html>]], testCase.name, testCase.description, testCase.texturePath, testCase.texturePath)
+
+		local entry = {
+			title = "SECURITY TEST: " .. testCase.name,
+			creator = "TestDataGenerator",
+			material = "Security Test",
+			pages = { htmlContent },
+			firstSeenAt = time(),
+			lastSeenAt = time(),
+			lastReadAt = nil,
+			seenCount = 1,
+			isFavorite = false,
+			location = {
+				mapID = 1453,
+				zone = "Test Zone",
+				subzone = "Security Lab",
+				x = 0.5,
+				y = 0.5,
+				zoneChain = { "Test", "Security Lab", "Validation Suite" },
+			},
+		}
+
+		local bookId = BookId:MakeBookIdV2(entry) .. "_SECURITY_TEST_" .. i
+
+		-- Add to database
+		db.booksById[bookId] = entry
+		Core:AppendOrder(bookId)
+
+		-- Build search text if module exists
+		if Core.BuildSearchText then
+			entry.searchText = Core:BuildSearchText(entry.title, entry.pages)
+		end
+	end
+
+	local elapsed = debugprofilestop() - startTime
+	local finalCount = db.order and #db.order or 0
+
+	print(string.format("|cFF00FF00Security test books created:|r"))
+	print(string.format("  Books created: %d", count))
+	print(string.format("  Database now has: %d books total", finalCount))
+	print(string.format("  Time elapsed: %.2f ms", elapsed))
+	print("|cFFFFFF00Open the book UI with /ba and search for 'SECURITY TEST' to view them.|r")
+	print("|cFF00FF00Expected: All malicious textures should show fallback book icon|r")
+	print("|cFFFF0000Debug mode recommended: /ba debug on|r")
+end
