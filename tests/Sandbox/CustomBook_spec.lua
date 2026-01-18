@@ -70,6 +70,7 @@ describe("Custom Book Creation", function()
 		BookArchivist = nil
 		BookArchivistDB = nil
 		helper.setupNamespace()
+		helper.loadFile("core/BookArchivist_Book.lua") -- Load Book aggregate module
 		helper.loadFile("core/BookArchivist_Core.lua")
 		helper.loadFile("core/BookArchivist_Order.lua") -- Load Order module for AppendOrder
 		Core = BookArchivist.Core
@@ -182,7 +183,8 @@ describe("Custom Book Creation", function()
 				capturedAt = 1234567890,
 			}
 
-			local bookId = Core:CreateCustomBook(title, pages, location)
+			-- New signature: CreateCustomBook(title, pages, creator, location)
+			local bookId = Core:CreateCustomBook(title, pages, nil, location)
 
 			assert.is_not_nil(bookId)
 
@@ -204,7 +206,8 @@ describe("Custom Book Creation", function()
 
 			local entry = db.booksById[bookId]
 			assert.is_not_nil(entry)
-			assert.are.equal("", entry.title)
+			-- Now provides default "Untitled Book" instead of empty string
+			assert.are.equal("Untitled Book", entry.title)
 		end)
 
 		it("handles nil pages gracefully", function()
@@ -350,7 +353,7 @@ describe("Custom Book Creation", function()
 		it("builds search text for custom books", function()
 			local db = resetDB()
 
-			-- Mock BuildSearchText
+			-- Mock BuildSearchText (though Book aggregate builds its own)
 			local searchTextBuilt = false
 			Core.BuildSearchText = function(self, title, pages)
 				searchTextBuilt = true
@@ -360,10 +363,13 @@ describe("Custom Book Creation", function()
 			local bookId = Core:CreateCustomBook("Searchable Title", { "Searchable content" })
 
 			local entry = db.booksById[bookId]
+			-- InjectEntry will call BuildSearchText, so this should be true
 			assert.is_true(searchTextBuilt)
 			assert.is_string(entry.searchText)
-			assert.matches("Searchable Title", entry.searchText)
-			assert.matches("Searchable content", entry.searchText)
+			-- SearchText is normalized (lowercase, etc.) by Book aggregate
+			assert.matches("searchable", entry.searchText:lower())
+			assert.matches("title", entry.searchText:lower())
+			assert.matches("content", entry.searchText:lower())
 		end)
 	end)
 end)

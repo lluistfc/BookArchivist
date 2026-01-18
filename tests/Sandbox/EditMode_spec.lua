@@ -130,6 +130,7 @@ describe("EditMode", function()
 		_G.BookArchivistDB = nil
 		BookArchivistDB = nil
 		helper.setupNamespace()
+		helper.loadFile("core/BookArchivist_Book.lua") -- Load Book aggregate module
 		helper.loadFile("core/BookArchivist_Core.lua")
 		helper.loadFile("core/BookArchivist_Order.lua")
 		-- DON'T load Search - let BuildSearchText be nil
@@ -210,10 +211,11 @@ describe("EditMode", function()
 			local state = setupMockWidgets()
 
 			-- Create a custom book with simple string pages
+			-- Note: CreateCustomBook(title, pages, creator, location) - location is 4th param
 			local bookId = Core:CreateCustomBook("My Test Book", {
 				"Page 1 content",
 				"Page 2 content",
-			}, {
+			}, nil, {  -- nil creator (defaults to player name), then location
 				zoneText = "Stormwind City",
 				zone = "Stormwind City",
 			})
@@ -222,6 +224,7 @@ describe("EditMode", function()
 			local entry = db.booksById[bookId]
 			assert.is_not_nil(entry)
 			assert.equals("My Test Book", entry.title)
+			assert.is_not_nil(entry.location, "Location should be set")
 
 			-- Simulate StartEditingBook behavior
 			local editSession = {
@@ -426,11 +429,11 @@ describe("EditMode", function()
 		end)
 	end)
 
-	describe("UpdateCustomBook", function()
+	describe("UpdateBook (new aggregate API)", function()
 		it("updates existing book without creating duplicate", function()
 			local db = resetDB()
 
-			-- Create original book with simple string
+			-- Create original book
 			local bookId = Core:CreateCustomBook("Original Title", {"Original content"})
 
 			local originalCount = 0
@@ -439,8 +442,11 @@ describe("EditMode", function()
 			end
 			assert.equals(1, originalCount)
 
-			-- Update the book with simple string
-			local success = Core:UpdateCustomBook(bookId, "Updated Title", {"Updated content"})
+			-- Update the book using new aggregate API
+			local success = Core:UpdateBook(bookId, function(book)
+				book:SetTitle("Updated Title")
+				book:SetPageText(1, "Updated content")
+			end)
 
 			assert.is_true(success, "Update should succeed")
 
@@ -460,11 +466,16 @@ describe("EditMode", function()
 		it("updates multi-page books correctly", function()
 			local db = resetDB()
 
-			-- Create with simple strings
+			-- Create with multiple pages
 			local bookId = Core:CreateCustomBook("Multi-page", {"Page 1", "Page 2"})
 
-			-- Update with simple strings
-			local success = Core:UpdateCustomBook(bookId, "Multi-page Updated", {"New Page 1", "New Page 2", "New Page 3"})
+			-- Update using aggregate API
+			local success = Core:UpdateBook(bookId, function(book)
+				book:SetTitle("Multi-page Updated")
+				book:SetPageText(1, "New Page 1")
+				book:SetPageText(2, "New Page 2")
+				book:SetPageText(3, "New Page 3")
+			end)
 
 			assert.is_true(success)
 			
@@ -476,30 +487,41 @@ describe("EditMode", function()
 		it("rejects updating non-existent book", function()
 			local db = resetDB()
 
-			-- Try to update with simple string
-			local success = Core:UpdateCustomBook("nonexistent", "Title", {"Content"})
+			-- Try to update non-existent book
+			local success, err = Core:UpdateBook("nonexistent", function(book)
+				book:SetTitle("Title")
+			end)
 
 			assert.is_false(success, "Should fail for non-existent book")
+			assert.is_not_nil(err)
 		end)
 
 		it("rejects updating non-custom books", function()
 			local db = resetDB()
 
-			-- Create non-custom book with simple string
+			-- Create non-custom (captured) book directly in DB
 			local nonCustomId = "b:12345:1"
 			db.booksById[nonCustomId] = {
+				id = nonCustomId,
 				key = nonCustomId,
 				title = "Captured Book",
 				pages = { "Not editable" },
+				itemId = 12345,
 				source = {
 					type = "ITEM",
 					itemID = 12345,
 				},
 			}
 
-			-- Try to update with simple string
-			local success = Core:UpdateCustomBook(nonCustomId, "Hacked Title", {"Hacked"})
+			-- Try to update via aggregate API - should fail because captured books are read-only
+			local success, err = Core:UpdateBook(nonCustomId, function(book)
+				local titleSuccess, titleErr = book:SetTitle("Hacked Title")
+				if not titleSuccess then
+					error(titleErr or "Cannot modify")
+				end
+			end)
 
+			-- The update function will throw an error because SetTitle fails on captured books
 			assert.is_false(success, "Should reject non-custom books")
 			assert.equals("Captured Book", db.booksById[nonCustomId].title, "Title should not change")
 		end)

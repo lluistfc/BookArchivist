@@ -256,34 +256,23 @@ function EditMode:StartEditingBook(bookId)
 	end
 	
 	local addon = BookArchivist
-	if not addon or not addon.Repository then
+	if not addon or not addon.Core then
 		return
 	end
 	
-	-- Get the book entry
-	local db = addon.Repository:GetDB()
-	if not db or not db.booksById then
-		return
-	end
-	
-	local entry = db.booksById[bookId]
-	if not entry then
+	-- Get book via Core service (Step 4: Reader uses aggregate reads)
+	local book = addon.Core:GetBook(bookId)
+	if not book then
 		return
 	end
 	
 	-- Only allow editing custom books
-	if not entry.source or entry.source.type ~= "CUSTOM" then
+	if not book:IsEditable() then
 		return
 	end
 	
-	-- Load book data into edit session
-	local pages = {}
-	if entry.pages then
-		for i, page in ipairs(entry.pages) do
-			-- Pages are stored as strings directly, not as tables with .text
-			pages[i] = (type(page) == "string" and page) or (type(page) == "table" and page.text) or ""
-		end
-	end
+	-- Load book data into edit session from aggregate
+	local pages = book:GetPages()
 	if #pages == 0 then
 		pages = { "" } -- Ensure at least one page
 	end
@@ -291,8 +280,8 @@ function EditMode:StartEditingBook(bookId)
 	editSession = {
 		isEditing = true,
 		bookId = bookId,
-		title = entry.title or "",
-		location = entry.location,
+		title = book:GetTitle(),
+		location = book:GetLocation(),
 		pages = pages,
 		currentPageIndex = 1,
 	}
@@ -517,7 +506,7 @@ function EditMode:SaveBook()
 		return
 	end
 	
-	-- Save the book (create or update)
+	-- Save the book using Core service methods (Step 3: UI uses Core, not DB)
 	local Core = BookArchivist and BookArchivist.Core
 	if not Core then
 		if Internal and Internal.chatMessage then
@@ -528,23 +517,51 @@ function EditMode:SaveBook()
 	
 	local bookId = editSession.bookId
 	local success = false
+	local errorMsg = nil
 	
 	if bookId then
-		-- Update existing book
-		if Core.UpdateCustomBook then
-			success = Core:UpdateCustomBook(bookId, title, editSession.pages, editSession.location)
-		end
+		-- Update existing book via aggregate
+		success, errorMsg = Core:UpdateBook(bookId, function(book)
+			-- Update title
+			local titleSuccess, titleErr = book:SetTitle(title)
+			if not titleSuccess then
+				error("Failed to set title: " .. (titleErr or "unknown error"))
+			end
+			
+			-- Update pages
+			for i, pageText in ipairs(editSession.pages) do
+				local pageSuccess, pageErr = book:SetPageText(i, pageText)
+				if not pageSuccess then
+					error("Failed to set page " .. i .. ": " .. (pageErr or "unknown error"))
+				end
+			end
+			
+			-- Update location
+			if editSession.location then
+				local locSuccess, locErr = book:SetLocation(editSession.location)
+				if not locSuccess then
+					error("Failed to set location: " .. (locErr or "unknown error"))
+				end
+			end
+		end)
 	else
-		-- Create new book
-		if Core.CreateCustomBook then
-			bookId = Core:CreateCustomBook(title, editSession.pages, editSession.location)
-			success = (bookId ~= nil)
-		end
+		-- Create new book via Core service
+		bookId, errorMsg = Core:CreateCustomBook(
+			title,
+			editSession.pages,
+			UnitName("player"),
+			editSession.location
+		)
+		success = (bookId ~= nil)
 	end
 	
 	if not success or not bookId then
 		if Internal and Internal.chatMessage then
-			Internal.chatMessage("|cFFFF0000" .. (t("BOOK_SAVE_FAILED") or "Failed to save book") .. "|r")
+			local msg = t("BOOK_SAVE_FAILED") or "Failed to save book"
+			if errorMsg then
+				msg = msg .. ": " .. errorMsg
+			end
+			Internal.chatMessage("|cFFFF0000" .. msg .. "|r")
 		end
 		return
 	end

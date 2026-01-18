@@ -10,6 +10,13 @@ local InGameTests = BA.InGameTests
 local tests = {
 	-- Core API Integration Tests (run directly in-game)
 	{
+		id = "book_aggregate",
+		name = "Book Aggregate",
+		category = "Core",
+		type = "auto",
+		description = "Verifies Book aggregate module and Core service layer",
+	},
+	{
 		id = "tooltip_integration",
 		name = "Tooltip Integration",
 		category = "Core",
@@ -33,6 +40,89 @@ local tests = {
 }
 
 -- Test implementations (Core tests)
+local function runBookAggregateTest()
+	local details = {}
+	local allPassed = true
+
+	local hasModule = BookArchivist.Book ~= nil
+	table.insert(details, {
+		label = "Book module",
+		value = hasModule and "Loaded" or "Missing",
+		status = hasModule and "pass" or "fail",
+	})
+	if not hasModule then
+		allPassed = false
+	end
+
+	if hasModule then
+		local hasNewCustom = BookArchivist.Book.NewCustom ~= nil
+		table.insert(details, {
+			label = "NewCustom constructor",
+			value = hasNewCustom and "Available" or "Missing",
+			status = hasNewCustom and "pass" or "fail",
+		})
+		if not hasNewCustom then
+			allPassed = false
+		end
+
+		local hasFromEntry = BookArchivist.Book.FromEntry ~= nil
+		table.insert(details, {
+			label = "FromEntry constructor",
+			value = hasFromEntry and "Available" or "Missing",
+			status = hasFromEntry and "pass" or "fail",
+		})
+		if not hasFromEntry then
+			allPassed = false
+		end
+	end
+
+	local hasGetBook = BookArchivist.Core and BookArchivist.Core.GetBook ~= nil
+	table.insert(details, {
+		label = "Core:GetBook",
+		value = hasGetBook and "Available" or "Missing",
+		status = hasGetBook and "pass" or "fail",
+	})
+	if not hasGetBook then
+		allPassed = false
+	end
+
+	local hasSaveBook = BookArchivist.Core and BookArchivist.Core.SaveBook ~= nil
+	table.insert(details, {
+		label = "Core:SaveBook",
+		value = hasSaveBook and "Available" or "Missing",
+		status = hasSaveBook and "pass" or "fail",
+	})
+	if not hasSaveBook then
+		allPassed = false
+	end
+
+	local hasUpdateBook = BookArchivist.Core and BookArchivist.Core.UpdateBook ~= nil
+	table.insert(details, {
+		label = "Core:UpdateBook",
+		value = hasUpdateBook and "Available" or "Missing",
+		status = hasUpdateBook and "pass" or "fail",
+	})
+	if not hasUpdateBook then
+		allPassed = false
+	end
+
+	local hasCreateCustom = BookArchivist.Core and BookArchivist.Core.CreateCustomBook ~= nil
+	table.insert(details, {
+		label = "Core:CreateCustomBook",
+		value = hasCreateCustom and "Available" or "Missing",
+		status = hasCreateCustom and "pass" or "fail",
+	})
+	if not hasCreateCustom then
+		allPassed = false
+	end
+
+	return {
+		passed = allPassed,
+		message = allPassed and "Book aggregate ready" or "Book aggregate incomplete",
+		details = details,
+	}
+end
+
 local function runTooltipTest()
 	local details = {}
 	local allPassed = true
@@ -235,7 +325,9 @@ function InGameTests.Run(testId)
 	local startTime = debugprofilestop()
 	local result
 
-	if testId == "tooltip_integration" then
+	if testId == "book_aggregate" then
+		result = runBookAggregateTest()
+	elseif testId == "tooltip_integration" then
 		result = runTooltipTest()
 	elseif testId == "itemtext_capture" then
 		result = runCaptureTest()

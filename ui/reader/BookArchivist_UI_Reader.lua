@@ -751,20 +751,27 @@ function ReaderUI:RenderSelected()
 	state.lastTrackedBookId = key
 	state.lastTrackedPageIndex = currentPageIndex
 
-	bookTitle:SetText(entry.title or t("BOOK_UNTITLED"))
+	-- Use Book aggregate for reads (Step 4: Reader reads from aggregate)
+	local bookAggregate = addon and addon.Core and addon.Core.GetBook and addon.Core:GetBook(key)
+	
+	bookTitle:SetText((bookAggregate and bookAggregate:GetTitle()) or entry.title or t("BOOK_UNTITLED"))
 	bookTitle:SetTextColor(1, 0.82, 0)
 
 	local meta = {}
-	if entry.creator and entry.creator ~= "" then
-		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_CREATOR"), entry.creator))
+	local creator = bookAggregate and bookAggregate:GetCreator() or entry.creator
+	if creator and creator ~= "" then
+		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_CREATOR"), creator))
 	end
-	if entry.material and entry.material ~= "" then
-		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_MATERIAL"), entry.material))
+	local material = bookAggregate and bookAggregate:GetMaterial() or entry.material
+	if material and material ~= "" then
+		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_MATERIAL"), material))
 	end
-	if entry.lastSeenAt then
-		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_LAST_VIEWED"), fmtTime(entry.lastSeenAt)))
+	local lastSeenAt = bookAggregate and bookAggregate:GetLastSeenAt() or entry.lastSeenAt
+	if lastSeenAt then
+		table.insert(meta, string.format("|cFFFFD100%s|r %s", t("READER_META_LAST_VIEWED"), fmtTime(lastSeenAt)))
 	end
-	local locationLine = formatLocationLine(entry.location)
+	local location = bookAggregate and bookAggregate:GetLocation() or entry.location
+	local locationLine = formatLocationLine(location)
 	if locationLine then
 		table.insert(meta, locationLine)
 	end
@@ -804,7 +811,12 @@ function ReaderUI:RenderSelected()
 	else
 		local pageIndex = state.currentPageIndex
 		local pageNum = state.pageOrder[pageIndex]
-		pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
+		-- Use Book aggregate to get page text if available
+		if bookAggregate then
+			pageText = bookAggregate:GetPageText(pageNum)
+		else
+			pageText = (entry.pages and pageNum and entry.pages[pageNum]) or ""
+		end
 		
 		-- Track lastPageRead for Book Echo
 		if pageNum then
