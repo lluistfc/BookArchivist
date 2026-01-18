@@ -31,6 +31,12 @@ if popupRegistry and not popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE then
 		button1 = YES,
 		button2 = NO,
 		OnAccept = function(_, data)
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[DeleteBtn] Popup OnAccept called, data exists:", data ~= nil)
+				if data then
+					BA:DebugPrint("[DeleteBtn] Popup OnAccept data.onAccept exists:", data.onAccept ~= nil)
+				end
+			end
 			if data and data.onAccept then
 				data.onAccept()
 			end
@@ -139,25 +145,82 @@ local function configureDeleteButton(button)
 		end
 	end)
 	button:SetScript("OnClick", function()
+		if BA and BA.DebugPrint then
+			BA:DebugPrint("[DeleteBtn] OnClick fired!")
+		end
 		local addon = getAddon and getAddon()
 		if not addon then
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[DeleteBtn] OnClick: addon is nil")
+			end
 			return
 		end
+		if BA and BA.DebugPrint then
+			BA:DebugPrint("[DeleteBtn] OnClick: addon exists")
+		end
 		local key = getSelectedKey and getSelectedKey()
+		if BA and BA.DebugPrint then
+			BA:DebugPrint("[DeleteBtn] OnClick: key=", key)
+		end
 		if key then
 			local db = addon.GetDB and addon:GetDB()
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[DeleteBtn] OnClick: db exists:", db ~= nil)
+			end
 			local books
 			if db and db.booksById and next(db.booksById) ~= nil then
 				books = db.booksById
+				if BA and BA.DebugPrint then
+					BA:DebugPrint("[DeleteBtn] OnClick: using booksById")
+				end
 			else
 				books = db and db.books or nil
+				if BA and BA.DebugPrint then
+					BA:DebugPrint("[DeleteBtn] OnClick: using legacy books")
+				end
 			end
 			local entry = books and books[key]
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[DeleteBtn] OnClick: entry exists:", entry ~= nil)
+			end
 			local title = entry and entry.title or key
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[DeleteBtn] OnClick: title=", title)
+				BA:DebugPrint("[DeleteBtn] OnClick: StaticPopup_Show exists:", StaticPopup_Show ~= nil)
+				BA:DebugPrint("[DeleteBtn] OnClick: popupRegistry exists:", popupRegistry ~= nil)
+				if popupRegistry then
+					BA:DebugPrint("[DeleteBtn] OnClick: CONFIRM_DELETE exists:", popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE ~= nil)
+				end
+			end
 			if StaticPopup_Show and popupRegistry and popupRegistry.BOOKARCHIVIST_CONFIRM_DELETE then
+				if BA and BA.DebugPrint then
+					BA:DebugPrint("[DeleteBtn] OnClick: showing confirmation dialog")
+				end
 				StaticPopup_Show("BOOKARCHIVIST_CONFIRM_DELETE", title, nil, {
 					onAccept = function()
-						addon:Delete(key)
+						if BA and BA.DebugPrint then
+							BA:DebugPrint("[DeleteBtn] onAccept callback fired!")
+							BA:DebugPrint("[DeleteBtn] addon exists:", addon ~= nil)
+							if addon then
+								BA:DebugPrint("[DeleteBtn] addon.Delete exists:", addon.Delete ~= nil)
+								BA:DebugPrint("[DeleteBtn] addon type:", type(addon))
+							end
+							BA:DebugPrint("[DeleteBtn] BookArchivist exists:", BookArchivist ~= nil)
+							if BookArchivist then
+								BA:DebugPrint("[DeleteBtn] BookArchivist.Delete exists:", BookArchivist.Delete ~= nil)
+							end
+						end
+						-- Use global BookArchivist directly
+						if BookArchivist and BookArchivist.Delete then
+							if BA and BA.DebugPrint then
+								BA:DebugPrint("[DeleteBtn] Calling BookArchivist:Delete with key:", key)
+							end
+							BookArchivist:Delete(key)
+						else
+							if BA and BA.DebugPrint then
+								BA:DebugPrint("[DeleteBtn] ERROR: BookArchivist or BookArchivist.Delete is nil!")
+							end
+						end
 						if setSelectedKey then
 							setSelectedKey(nil)
 						end
@@ -170,6 +233,9 @@ local function configureDeleteButton(button)
 					end,
 				})
 			else
+				if BA and BA.DebugPrint then
+					BA:DebugPrint("[DeleteBtn] OnClick: deleting directly (no confirmation)")
+				end
 				addon:Delete(key)
 				if setSelectedKey then
 					setSelectedKey(nil)
@@ -180,6 +246,10 @@ local function configureDeleteButton(button)
 				if chatMessage then
 					chatMessage(t("READER_DELETE_CHAT_SUCCESS"))
 				end
+			end
+		else
+			if BA and BA.DebugPrint then
+				BA:DebugPrint("[DeleteBtn] OnClick: no key, aborting")
 			end
 		end
 	end)

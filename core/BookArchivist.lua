@@ -238,8 +238,16 @@ function BookArchivist:ExportBook(bookId)
 end
 
 function BookArchivist:Delete(key)
-	if Core and Core.Delete then
-		Core:Delete(key)
+	if BookArchivist and BookArchivist.DebugPrint then
+		BookArchivist:DebugPrint("[BookArchivist] Delete wrapper called for key:", key)
+		BookArchivist:DebugPrint("[BookArchivist] Core exists:", BookArchivist.Core ~= nil, "Core.Delete exists:", BookArchivist.Core and BookArchivist.Core.Delete ~= nil)
+	end
+	if BookArchivist.Core and BookArchivist.Core.Delete then
+		BookArchivist.Core:Delete(key)
+	else
+		if BookArchivist and BookArchivist.DebugPrint then
+			BookArchivist:DebugPrint("[BookArchivist] Delete: Core or Core.Delete is nil!")
+		end
 	end
 	if type(self.RefreshUI) == "function" then
 		self:RefreshUI()
