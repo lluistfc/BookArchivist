@@ -6,7 +6,10 @@ local ADDON_NAME = ...
 
 BookArchivist = BookArchivist or {}
 
--- Core modules resolve at runtime (not load time) due to TOC load order
+-- CRITICAL: Core modules MUST be resolved at runtime (not file load time)
+-- TOC loads this file before BookArchivist_Core.lua, so BookArchivist.Core is nil at load time.
+-- NEVER use: local Core = BookArchivist.Core (captures nil permanently)
+-- ALWAYS use: if BookArchivist.Core and BookArchivist.Core.Method then ... (runtime resolution)
 
 -- Debug log storage (available before UI loads)
 local debugLog = {}
