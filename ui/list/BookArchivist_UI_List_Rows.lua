@@ -35,12 +35,12 @@ function ListUI:UpdateList()
 		return
 	end
 
-	local addon = self:GetAddon()
-	if not addon then
+	local BA = self:GetAddon()
+	if not BA then
 		self:DebugPrint("[BookArchivist] updateList: addon missing")
 		return
 	end
-	local db = addon:GetDB()
+	local db = BA:GetDB()
 	if not db then
 		self:DebugPrint("[BookArchivist] updateList: DB missing")
 		return

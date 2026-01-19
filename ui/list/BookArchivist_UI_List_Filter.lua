@@ -54,8 +54,8 @@ function ListUI:RebuildFiltered()
 	wipe(filtered)
 	self:DisableDeleteButton()
 
-	local addon = self:GetAddon()
-	if not addon then
+	local BA = self:GetAddon()
+	if not BA then
 		self:DebugPrint("[BookArchivist] rebuildFiltered: addon missing")
 		self:LogError("BookArchivist addon missing during rebuildFiltered")
 		self.__state.isLoading = false
@@ -65,7 +65,7 @@ function ListUI:RebuildFiltered()
 		return
 	end
 
-	local db = addon:GetDB()
+	local db = BA:GetDB()
 	if not db then
 		self:DebugPrint("[BookArchivist] rebuildFiltered: DB missing")
 		self:LogError("BookArchivist DB missing during rebuildFiltered")
@@ -93,8 +93,8 @@ function ListUI:RebuildFiltered()
 	)
 	
 	local baseKeys
-	if isRecentView and addon.Recent and addon.Recent.GetList then
-		baseKeys = addon.Recent:GetList()
+	if isRecentView and BA.Recent and BA.Recent.GetList then
+		baseKeys = BA.Recent:GetList()
 	else
 		baseKeys = order
 	end

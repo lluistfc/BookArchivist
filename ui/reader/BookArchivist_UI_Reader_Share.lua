@@ -30,8 +30,16 @@ local function getCreateFrame()
 		end
 end
 
--- Show the share popup with the export string
-function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
+--- Show the share popup with the export string.
+-- Displays a modal dialog containing the export string for a single book,
+-- with options to copy the string or share via chat link.
+--
+-- @param exportStr string The BDB1-encoded export string for the book
+-- @param bookTitle string|nil The title of the book being shared (for display)
+-- @param bookKey string The unique book ID (used for chat link registration)
+-- @param exportContext table|nil Optional context for storing export payload (e.g., { lastExportPayload = exportStr })
+-- @param bookData table|nil The complete book entry from booksById (stored for chat link registration)
+function ReaderShare:Show(exportStr, bookTitle, bookKey, exportContext, bookData)
 	if not exportStr or exportStr == "" then
 		BookArchivist:DebugPrint("|cFFFF0000[BookArchivist]|r Failed to generate export string.")
 		return
@@ -40,6 +48,7 @@ function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
 	BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r Show() called with:")
 	BookArchivist:DebugPrint("  bookTitle:", bookTitle)
 	BookArchivist:DebugPrint("  bookKey:", bookKey)
+	BookArchivist:DebugPrint("  exportContext:", exportContext and "present" or "nil")
 	BookArchivist:DebugPrint("  bookData:", bookData and "present" or "nil")
 
 	-- Get or create the share modal frame
@@ -191,7 +200,7 @@ function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
 	-- Store book context for Share to Chat button (update EVERY time Show() is called)
 	shareFrame.bookTitle = bookTitle
 	shareFrame.bookKey = bookKey
-	shareFrame.addon = addon
+	shareFrame.exportContext = exportContext
 	shareFrame.bookData = bookData
 
 	BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r Stored in shareFrame:")
@@ -220,15 +229,24 @@ function ReaderShare:Show(exportStr, bookTitle, bookKey, addon, bookData)
 	end)
 end
 
--- Generate export for the currently selected book and show share popup
-function ReaderShare:ShareCurrentBook(addon, bookKey)
-	if not (addon and bookKey) then
-		BookArchivist:DebugPrint("|cFFFF0000[BookArchivist]|r No book selected.")
+--- Generate export for the currently selected book and show share popup.
+-- This is the main entry point called by the share button in the reader.
+-- It retrieves book data from the database, generates the export string,
+-- and displays the share dialog.
+--
+-- @param exportFns table Export function context with:
+--                       - ExportBook: function(bookKey) -> exportStr, err (optional)
+--                       - Export: function() -> exportStr, err (fallback)
+--                       - lastExportPayload: string (optional, for storing result)
+-- @param bookKey string The unique book ID to share (from booksById)
+function ReaderShare:ShareCurrentBook(exportFns, bookKey)
+	if not (exportFns and bookKey) then
+		BookArchivist:DebugPrint("|cFFFF0000[BookArchivist]|r No export functions or book key provided.")
 		return
 	end
 
 	BookArchivist:DebugPrint("|cFF4A7EBB[Share DEBUG]|r ShareCurrentBook called:")
-	BookArchivist:DebugPrint("  addon:", addon)
+	BookArchivist:DebugPrint("  exportFns:", exportFns and "present" or "nil")
 	BookArchivist:DebugPrint("  bookKey:", bookKey)
 
 	-- Get book data directly from DB
@@ -241,17 +259,17 @@ function ReaderShare:ShareCurrentBook(addon, bookKey)
 
 	-- Generate export for single book
 	local exportStr, err
-	if addon.ExportBook then
-		exportStr, err = addon:ExportBook(bookKey)
-	elseif addon.Export then
+	if exportFns.ExportBook then
+		exportStr, err = exportFns.ExportBook(bookKey)
+	elseif exportFns.Export then
 		-- Fallback to full export if ExportBook doesn't exist
-		exportStr, err = addon:Export()
+		exportStr, err = exportFns.Export()
 	end
 
 	if exportStr and exportStr ~= "" then
-		-- Store for quick access
-		if addon then
-			addon.__lastExportPayload = exportStr
+		-- Store for quick access (if context table provided)
+		if exportFns then
+			exportFns.lastExportPayload = exportStr
 		end
 
 		-- Register book as "linked" for auto-response to requests
@@ -260,7 +278,7 @@ function ReaderShare:ShareCurrentBook(addon, bookKey)
 		end
 
 		-- Show share popup with book title and context
-		self:Show(exportStr, bookTitle, bookKey, addon, bookData)
+		self:Show(exportStr, bookTitle, bookKey, exportFns, bookData)
 	else
 		local errMsg = err or "unknown error"
 		BookArchivist:DebugPrint("|cFFFF0000[BookArchivist]|r Failed to generate export string: " .. tostring(errMsg))

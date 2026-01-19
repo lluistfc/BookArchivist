@@ -648,16 +648,16 @@ function ListUI:NavigateUp()
 end
 
 function ListUI:RebuildLocationTree()
-	local addon = self:GetAddon()
+	local BA = self:GetAddon()
 	local state = getLocationState(self)
-	if not addon then
+	if not BA then
 		state.root = nil
 		state.rows = {}
 		state.activeNode = nil
 		return
 	end
 
-	local db = addon:GetDB()
+	local db = BA:GetDB()
 
 	-- Invalidate cache when explicitly rebuilding (data may have changed)
 	treeCache = {}

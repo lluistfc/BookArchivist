@@ -695,8 +695,17 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 					and BookArchivist.UI
 					and BookArchivist.UI.Reader
 					and BookArchivist.UI.Reader.Share
-				if ReaderShare and ReaderShare.ShareCurrentBook then
-					ReaderShare:ShareCurrentBook(addon, key)
+				if ReaderShare and ReaderShare.ShareCurrentBook and BA then
+					-- Create minimal export context instead of passing entire addon
+					local exportFns = {
+						ExportBook = BA.ExportBook and function(bookKey)
+							return BA:ExportBook(bookKey)
+						end,
+						Export = BA.Export and function()
+							return BA:Export()
+						end
+					}
+					ReaderShare:ShareCurrentBook(exportFns, key)
 				end
 			end)
 		end
@@ -767,8 +776,8 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				BA.Favorites:Toggle(key)
 				local isFav = BA.Favorites:IsFavorite(key)
 				syncFavoriteVisual(self, isFav)
-				if addon.RefreshUI then
-					addon:RefreshUI()
+				if BA.RefreshUI then
+					BA:RefreshUI()
 				end
 			end)
 		end

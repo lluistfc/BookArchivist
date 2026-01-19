@@ -482,9 +482,9 @@ function ListUI:Create(uiFrame)
 			fontString:SetTextColor(1.0, 0.82, 0.0)
 		end
 		optionsButton:SetScript("OnClick", function()
-			local addon = self:GetAddon()
-			if addon and addon.OpenOptionsPanel then
-				addon:OpenOptionsPanel()
+			local BA = self:GetAddon()
+			if BA and BA.OpenOptionsPanel then
+				BA:OpenOptionsPanel()
 			elseif BookArchivist and BookArchivist.OpenOptionsPanel then
 				BookArchivist:OpenOptionsPanel()
 			end

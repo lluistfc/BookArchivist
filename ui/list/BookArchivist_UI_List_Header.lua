@@ -109,8 +109,8 @@ function ListUI:UpdateCountsDisplay()
 	if not headerCount or not headerCount.SetText then
 		return
 	end
-	local addon = self:GetAddon()
-	local db = addon and addon:GetDB() or {}
+	local BA = self:GetAddon()
+	local db = BA and BA:GetDB() or {}
 	local total = db.order and #db.order or 0
 	local modes = self:GetListModes()
 	local mode = self:GetListMode()

@@ -977,13 +977,22 @@ function ReaderUI:ShowExportForBook(bookKey)
 	end
 
 	local BA = getAddon()
-	if not addon then
+	if not BA then
 		return
 	end
 
 	local Share = BookArchivist.UI and BookArchivist.UI.Reader and BookArchivist.UI.Reader.Share
 	if Share and Share.ShareCurrentBook then
-		Share:ShareCurrentBook(BA, bookKey)
+		-- Create minimal export context instead of passing entire addon
+		local exportFns = {
+			ExportBook = BA.ExportBook and function(bKey)
+				return BA:ExportBook(bKey)
+			end,
+			Export = BA.Export and function()
+				return BA:Export()
+			end
+		}
+		Share:ShareCurrentBook(exportFns, bookKey)
 	end
 end
 
