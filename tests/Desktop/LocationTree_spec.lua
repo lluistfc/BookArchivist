@@ -375,10 +375,14 @@ describe("BookArchivist_UI_List_Location", function()
 				children = {
 					Kalimdor = {
 						name = "Kalimdor",
+						children = {},
+						childNames = {},
 						books = {}
 					},
 					["Eastern Kingdoms"] = {
 						name = "Eastern Kingdoms",
+						children = {},
+						childNames = {},
 						books = {}
 					}
 				},
@@ -418,6 +422,162 @@ describe("BookArchivist_UI_List_Location", function()
 			assert.are.equal("back", rows[1].kind)
 			assert.are.equal("book", rows[2].kind)
 			assert.are.equal("book", rows[3].kind)
+		end)
+
+		it("should show both subzones AND books from all descendant nodes", function()
+			-- Scenario: Books captured in "Zone > Subzone" should be visible when viewing "Zone"
+			-- BUT only if the Zone itself has at least one book directly
+			local state = ListUI:GetLocationState()
+			state.path = {"Azeroth", "Khaz Algar", "Isle of Dorn"}
+			state.root = {
+				children = {
+					Azeroth = {
+						name = "Azeroth",
+						children = {
+							["Khaz Algar"] = {
+								name = "Khaz Algar",
+								children = {
+									["Isle of Dorn"] = {
+										name = "Isle of Dorn",
+										children = {
+											["Fungal Folly"] = {
+												name = "Fungal Folly",
+												children = {},
+												childNames = {},
+												books = {"b2:book_in_fungal_folly"}
+											}
+										},
+										childNames = {"Fungal Folly"},
+										books = {"b2:book_in_isle", "b2:book_in_isle_2"}
+									}
+								},
+								childNames = {"Isle of Dorn"}
+							}
+						},
+						childNames = {"Khaz Algar"}
+					}
+				},
+				childNames = {"Azeroth"}
+			}
+			-- Navigate to "Isle of Dorn" which has both subzones (Fungal Folly) AND books directly
+			state.activeNode = state.root.children.Azeroth.children["Khaz Algar"].children["Isle of Dorn"]
+
+			ListUI.RebuildLocationRows(state, ListUI, 25, 1)
+
+			local rows = state.rows
+			-- Expected: 1 back button + 1 subzone (Fungal Folly) + 3 books (2 in Isle, 1 in Fungal Folly)
+			assert.are.equal(5, #rows)
+			assert.are.equal("back", rows[1].kind)
+			-- First should be the subzone
+			assert.are.equal("location", rows[2].kind)
+			assert.are.equal("Fungal Folly", rows[2].name)
+			-- Then books (from Isle of Dorn AND Fungal Folly)
+			assert.are.equal("book", rows[3].kind)
+			assert.are.equal("book", rows[4].kind)
+			assert.are.equal("book", rows[5].kind)
+			
+			-- Verify totalRows includes all items (subzone + all books)
+			assert.are.equal(4, state.totalRows) -- 1 subzone + 3 books
+		end)
+
+		it("should show only subzones when zone has no direct books (only in descendants)", function()
+			-- Scenario: Zone has NO books directly, only in subzones
+			-- Should show ONLY subzones, not books from descendants
+			local state = ListUI:GetLocationState()
+			state.path = {"Azeroth"}
+			state.root = {
+				children = {
+					Azeroth = {
+						name = "Azeroth",
+						children = {
+							["Khaz Algar"] = {
+								name = "Khaz Algar",
+								children = {
+									["Isle of Dorn"] = {
+										name = "Isle of Dorn",
+										children = {},
+										childNames = {},
+										books = {"b2:book_in_isle"}
+									}
+								},
+								childNames = {"Isle of Dorn"},
+								books = {} -- No direct books in Khaz Algar
+							}
+						},
+						childNames = {"Khaz Algar"},
+						books = {} -- No direct books in Azeroth
+					}
+				},
+				childNames = {"Azeroth"}
+			}
+			state.activeNode = state.root.children.Azeroth
+
+			ListUI.RebuildLocationRows(state, ListUI, 25, 1)
+
+			local rows = state.rows
+			-- Expected: 1 back button + 1 subzone (Khaz Algar), NO books
+			assert.are.equal(2, #rows)
+			assert.are.equal("back", rows[1].kind)
+			assert.are.equal("location", rows[2].kind)
+			assert.are.equal("Khaz Algar", rows[2].name)
+			
+			-- Verify totalRows is just the subzone (no books)
+			assert.are.equal(1, state.totalRows) -- 1 subzone only
+		end)
+
+		it("should show books from deeply nested subzones", function()
+			-- Scenario: Books in "Zone > Sub1 > Sub2 > Sub3" should appear when viewing "Zone"
+			local state = ListUI:GetLocationState()
+			state.path = {"Zone"}
+			state.root = {
+				children = {
+					Zone = {
+						name = "Zone",
+						children = {
+							Sub1 = {
+								name = "Sub1",
+								children = {
+									Sub2 = {
+										name = "Sub2",
+										children = {
+											Sub3 = {
+												name = "Sub3",
+												children = {},
+												childNames = {},
+												books = {"b2:deep_book_1", "b2:deep_book_2"}
+											}
+										},
+										childNames = {"Sub3"},
+										books = {"b2:mid_book"}
+									}
+								},
+								childNames = {"Sub2"},
+								books = {"b2:sub1_book"}
+							}
+						},
+						childNames = {"Sub1"},
+						books = {"b2:zone_book"}
+					}
+				},
+				childNames = {"Zone"}
+			}
+			state.activeNode = state.root.children.Zone
+
+			ListUI.RebuildLocationRows(state, ListUI, 25, 1)
+
+			local rows = state.rows
+			-- Expected: 1 back + 1 subzone (Sub1) + 5 books (1 in Zone, 1 in Sub1, 1 in Sub2, 2 in Sub3)
+			assert.are.equal(7, #rows)
+			assert.are.equal("back", rows[1].kind)
+			assert.are.equal("location", rows[2].kind)
+			assert.are.equal("Sub1", rows[2].name)
+			-- Remaining rows should all be books (from all levels)
+			for i = 3, 7 do
+				assert.are.equal("book", rows[i].kind)
+			end
+			
+			-- Verify totalRows includes all items
+			assert.are.equal(6, state.totalRows) -- 1 subzone + 5 books from all levels
 		end)
 
 		it("should paginate location rows", function()
