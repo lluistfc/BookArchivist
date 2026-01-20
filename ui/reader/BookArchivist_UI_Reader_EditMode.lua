@@ -214,12 +214,26 @@ function EditMode:StartNewBook()
 		self:InitializeUI()
 	end
 	
-	-- Reset session
+	-- Get current location for new books
+	local Location = BookArchivist and BookArchivist.Location
+	local currentLocation = nil
+	local locText = t("NO_LOCATION_SET")
+	
+	if Location and Location.BuildWorldLocation then
+		currentLocation = Location:BuildWorldLocation()
+		if currentLocation and currentLocation.zoneText then
+			locText = currentLocation.zoneText
+		elseif currentLocation then
+			locText = t("UNKNOWN_LOCATION")
+		end
+	end
+	
+	-- Reset session with current location
 	editSession = {
 		isEditing = true,
 		bookId = nil,
 		title = "",
-		location = nil,
+		location = currentLocation,
 		pages = { "" }, -- Start with one empty page
 		currentPageIndex = 1,
 	}
@@ -233,9 +247,12 @@ function EditMode:StartNewBook()
 		state.editTitleBox:SetFocus()
 	end
 	
-	-- Clear location
+	-- Set location display
 	if state.editLocationDisplay then
-		state.editLocationDisplay:SetText(t("NO_LOCATION_SET"))
+		state.editLocationDisplay:SetText(locText)
+		if currentLocation then
+			state.editLocationDisplay:SetTextColor(1, 0.82, 0)
+		end
 	end
 	
 	-- Clear page content
