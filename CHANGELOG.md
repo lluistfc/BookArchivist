@@ -2,6 +2,38 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.2] - 2026-01-20
+
+**Quality of life improvements for book creation and location navigation**
+
+### Added
+
+- **Smart Location Default**
+  - New custom books automatically use your current location as default
+  - Location field now pre-populated when creating books
+  - "Use Current Location" button remains available for manual updates when editing
+
+- **Improved Location Navigation**
+  - Books in subzones now visible when viewing parent zones that contain books
+  - Cleaner navigation through zones without books (shows only subzones)
+  - Recursive book collection from all descendant locations
+  - Example: Books in "Isle of Dorn > Fungal Folly" now appear when viewing "Isle of Dorn"
+
+### Changed
+
+- **Location Filtering Logic**
+  - Zones with direct books show both subzones and all descendant books
+  - Zones without direct books show only subzones for navigation
+  - Improved drill-down experience through location hierarchies
+
+### Technical
+
+- Refactored to Book Aggregate Root pattern for better module encapsulation
+- Added `collectAllBooksRecursive()` for hierarchical book collection
+- Added comprehensive tests for location filtering with subzones
+- Tests cover deeply nested locations (4+ levels)
+- 801 tests passing (3 new tests added)
+
 ## [2.3.1] - 2026-01-17
 
 **Feature release: Minimap improvements and library management tools**

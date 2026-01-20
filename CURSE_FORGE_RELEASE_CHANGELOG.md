@@ -1,3 +1,37 @@
+# 2.3.2
+
+**New Feature: Create Your Own Books!**
+
+This release adds the ability to create custom books in BookArchivist, along with improvements to location navigation.
+
+## What's New
+
+### Create Custom Books ✍️
+
+You can now write your own books!
+- **Create Books**: New "Create Book" button in the main window
+- **Full Editor**: Add title, multi-page content, and location information
+- **Edit Anytime**: Edit or delete your custom books later
+- **Custom Icon**: See a special icon ✨ next to your custom books
+- **Filter by Custom**: New "Custom Books" option in the View dropdown
+
+### Smart Location Defaults 📍
+
+Creating books is now easier:
+- **Auto-Location**: New books automatically use your current location
+- **No Empty Fields**: Location is pre-filled when you create a book
+- **Update Anytime**: Change location when editing with "Use Current Location" button
+
+### Better Location Navigation 🗺️
+
+Finding books in nested zones is much easier:
+- **See All Books**: Books in subzones now appear when viewing parent zones
+- **Example**: Books captured in "Isle of Dorn > Fungal Folly" now show up when viewing "Isle of Dorn"
+- **Cleaner Navigation**: Zones without books show only subzones (no empty results)
+- **Smart Display**: Only zones with books directly show their descendant books
+
+---
+
 # 2.3.1
 
 **Feature Release: Minimap Improvements**
