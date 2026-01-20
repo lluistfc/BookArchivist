@@ -178,6 +178,37 @@ local function markTotals(node)
 	return total
 end
 
+-- Collect all books from a node and all its descendants
+local function collectAllBooksRecursive(node)
+	if not node then
+		return {}
+	end
+	
+	local allBooks = {}
+	
+	-- Add books directly in this node
+	if node.books then
+		for _, bookKey in ipairs(node.books) do
+			table.insert(allBooks, bookKey)
+		end
+	end
+	
+	-- Recursively add books from all child nodes
+	if node.childNames and node.children then
+		for _, childName in ipairs(node.childNames) do
+			local child = node.children[childName]
+			if child then
+				local childBooks = collectAllBooksRecursive(child)
+				for _, bookKey in ipairs(childBooks) do
+					table.insert(allBooks, bookKey)
+				end
+			end
+		end
+	end
+	
+	return allBooks
+end
+
 local function getLocationState(self)
 	local state = self:GetLocationState()
 	state.path = state.path or {}
@@ -232,11 +263,20 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
 	local path = state.path or {}
 
 	local childNames = node.childNames or {}
-	local books = node.books or {}
+	
+	-- Check if current node has books directly (not just in descendants)
+	local hasDirectBooks = node.books and #node.books > 0
+	
+	-- Only collect all books recursively if this node has at least one book directly
+	-- Otherwise just show subzones for navigation
+	local books = {}
+	if hasDirectBooks then
+		books = collectAllBooksRecursive(node)
+	end
 
 	-- Filter books by current search query if applicable
 	local hasSearch = listUI.GetSearchQuery and listUI:GetSearchQuery() ~= ""
-	if hasSearch and not (childNames and #childNames > 0) then
+	if hasSearch and hasDirectBooks and not (childNames and #childNames > 0) then
 		-- We're showing books and have a search query - use filtered keys
 		local filtered = listUI.GetFilteredKeys and listUI:GetFilteredKeys() or {}
 		if listUI.DebugPrint then
@@ -264,29 +304,39 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
 		end
 	end
 
-	-- Determine what we're showing
+	-- Show both subzones AND books (subzones first, then books)
 	local hasChildren = childNames and #childNames > 0
-	local items = hasChildren and childNames or books
+	local combinedItems = {}
+	
+	-- Add subzones first (marked with type)
+	if hasChildren then
+		for _, childName in ipairs(childNames) do
+			table.insert(combinedItems, { type = "location", name = childName })
+		end
+	end
+	
+	-- Add books after subzones (marked with type)
+	for _, bookKey in ipairs(books) do
+		table.insert(combinedItems, { type = "book", key = bookKey })
+	end
 
-	-- Use shared pagination helper
-	local paginated, totalItems, page, totalPages, startIdx, endIdx = listUI:PaginateArray(items, pageSize, currentPage)
+	-- Use shared pagination helper on combined list
+	local paginated, totalItems, page, totalPages, startIdx, endIdx = listUI:PaginateArray(combinedItems, pageSize, currentPage)
 
 	-- Add back button if not at root
 	if #path > 0 then
 		table.insert(rows, { kind = "back" })
 	end
 
-	-- Add paginated items
-	if hasChildren then
-		for _, childName in ipairs(paginated) do
+	-- Add paginated items (both locations and books)
+	for _, item in ipairs(paginated) do
+		if item.type == "location" then
 			table.insert(
 				rows,
-				{ kind = "location", name = childName, node = node.children and node.children[childName] }
+				{ kind = "location", name = item.name, node = node.children and node.children[item.name] }
 			)
-		end
-	else
-		for i, key in ipairs(paginated) do
-			table.insert(rows, { kind = "book", key = key })
+		elseif item.type == "book" then
+			table.insert(rows, { kind = "book", key = item.key })
 		end
 	end
 
