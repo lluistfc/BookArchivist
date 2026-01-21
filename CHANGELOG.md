@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.3] - 2026-01-21
+
+**Hotfix: Dev options UI leak**
+
+### Fixed
+
+- **Reset Button UI Leak** (Dev mode only)
+  - Fixed "Reset all read counts" button appearing in all options panels
+  - Button now only visible when viewing BookArchivist's options
+  - Properly scoped visibility to BookArchivist settings category
+
 ## [2.3.2] - 2026-01-20
 
 **Quality of life improvements for book creation and location navigation**

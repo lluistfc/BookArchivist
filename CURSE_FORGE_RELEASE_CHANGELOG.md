@@ -1,3 +1,19 @@
+# 2.3.3
+
+**Hotfix: Dev Options UI Leak**
+
+This is a minor hotfix for developers running BookArchivist in development mode.
+
+## What's Fixed
+
+### Dev Mode Button Fix 🔧
+
+- **Fixed UI Leak**: The "Reset all read counts" button (dev mode only) no longer appears in other addons' options panels
+- **Proper Scoping**: Button now correctly shows only when viewing BookArchivist's options
+- **Note**: This only affects users running the addon with development files loaded
+
+---
+
 # 2.3.2
 
 **New Feature: Create Your Own Books!**
