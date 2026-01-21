@@ -240,6 +240,7 @@ local function InjectDebugSettingIntoOptionsPanel()
 		-- Need to account for production options above (tooltip, resume, language, import button, debug mode)
 		-- Each takes ~40-50px, so echo checkbox is around Y=-270
 		resetButton:SetPoint("TOPLEFT", container, "TOPLEFT", 280, -270)
+		resetButton:Hide() -- Initially hidden
 		
 		resetButton:SetScript("OnClick", function()
 			StaticPopup_Show("BOOKARCHIVIST_CONFIRM_RESET_COUNTS")
@@ -257,8 +258,37 @@ local function InjectDebugSettingIntoOptionsPanel()
 		end)
 	end
 	
-	-- Hook into settings panel show to create button
-	hooksecurefunc(SettingsPanel, "Show", CreateResetButton)
+	local function UpdateResetButtonVisibility()
+		if not resetButton then
+			CreateResetButton()
+		end
+		
+		-- Check if BookArchivist's settings panel is currently shown
+		local settingsPanel = SettingsPanel
+		if not settingsPanel then return end
+		
+		-- Get the current category being displayed
+		local currentCategory = settingsPanel:GetCurrentCategory()
+		if not currentCategory then
+			resetButton:Hide()
+			return
+		end
+		
+		-- Show button only when BookArchivist category is active
+		if currentCategory == category then
+			resetButton:Show()
+		else
+			resetButton:Hide()
+		end
+	end
+	
+	-- Hook into settings panel show to update button visibility
+	hooksecurefunc(SettingsPanel, "Show", UpdateResetButtonVisibility)
+	
+	-- Also hook category change to update visibility
+	if SettingsPanel.SetCurrentCategory then
+		hooksecurefunc(SettingsPanel, "SetCurrentCategory", UpdateResetButtonVisibility)
+	end
 
 	-- Register grid mode dropdown
 	do
