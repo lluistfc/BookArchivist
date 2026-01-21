@@ -197,7 +197,7 @@ endif
 test-sandbox:
 ifeq ($(DETECTED_OS),Windows)
 	@pwsh -NoProfile -Command "Write-Host 'Running Sandbox tests (via Mechanic)...' -ForegroundColor Cyan"
-	@pwsh -NoProfile -Command "cd $(MECHANIC_DIR); & '$(MECHANIC_CLI)' call sandbox.test -i '{\"addon\": \"BookArchivist\"}'"
+	@pwsh -NoProfile -Command "cd $(MECHANIC_DIR); & '$(MECHANIC_CLI)' call sandbox.test '{\"addon\": \"BookArchivist\"}'"
 else
 	@echo "Running Sandbox tests (via Mechanic)..."
 	@cd "$(MECHANIC_DIR)" && "$(MECHANIC_CLI)" call sandbox.test -i '{"addon": "BookArchivist"}'
@@ -324,7 +324,7 @@ endif
 
 # Addon linking
 link:
-	@$(MECHANIC_CLI) call addon.sync "{\"addon\": \"BookArchivist\"}"
+	@$(MECHANIC_CLI) call addon.sync '{"addon": "BookArchivist"}'
 
 unlink:
 ifeq ($(DETECTED_OS),Windows)
