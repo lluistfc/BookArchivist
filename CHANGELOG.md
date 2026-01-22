@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.5] - 2026-01-22
+
+**Fix: CurseForge release packaging**
+
+### Fixed
+
+- **Tests Folder in Release**
+  - Fixed Git tracking Tests folder with wrong case (tests → Tests)
+  - CurseForge packager (Linux, case-sensitive) was including the folder despite ignore rules
+  - Added lowercase `tests` to .pkgmeta ignore as safety net
+
 ## [2.3.4] - 2026-01-22
 
 **Hotfix: Fresh install initialization**

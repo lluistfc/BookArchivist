@@ -1,3 +1,18 @@
+# 2.3.5
+
+**Fix: Smaller Download Size**
+
+Removed test files that were accidentally included in the CurseForge release.
+
+## What's Fixed
+
+### Packaging Fix 📦
+
+- **Removed Test Files**: The `tests` folder is no longer included in the release
+- **Smaller Download**: Release package is now lighter without development test files
+
+---
+
 # 2.3.4
 
 **Hotfix: Fresh Install Fix**

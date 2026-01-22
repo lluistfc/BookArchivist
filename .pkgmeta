@@ -29,6 +29,7 @@ ignore:
     # Development and test files
     - dev
     - Tests
+    - tests
     - scripts
     - docs
     - coverage
@@ -41,16 +42,19 @@ ignore:
     - libs/LibDeflate/.git
     - libs/LibDeflate/.github
     - libs/LibDeflate/.travis
-    - libs/LibDeflate/.appveyor.yml
     - libs/LibDeflate/.travis.yml
+    - libs/LibDeflate/.appveyor
+    - libs/LibDeflate/.appveyor.yml
     - libs/LibDeflate/.gitignore
     - libs/LibDeflate/.pkgmeta
+    - libs/LibDeflate/.luacov
     - libs/LibDeflate/README.md
     - libs/LibDeflate/changelog.md
     - libs/LibDeflate/LICENSE.txt
     - libs/LibDeflate/*.rockspec
     - libs/LibDeflate/.luacheckrc
     - libs/LibStub/tests
+    - libs/LibStub/.svn
     - libs/LibStub/.pkgmeta
     - libs/LibDBIcon-1.0/.pkgmeta
     - libs/LibDataBroker-1.1/README.textile
