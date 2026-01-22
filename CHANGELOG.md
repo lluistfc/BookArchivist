@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.4] - 2026-01-22
+
+**Hotfix: Fresh install initialization**
+
+### Fixed
+
+- **Fresh Install Corruption Detection**
+  - Fixed false corruption detection on fresh addon installs
+  - Database was not being properly initialized before validation ran
+  - Repository returns nil during early init instead of throwing error
+  - Core:GetDB falls back to ensureDB() when Repository returns nil
+  - ListConfig returns defaults when Core unavailable (prevents empty DB creation)
+  - UI_Options uses Core:EnsureDB() instead of creating empty tables
+  - Added nil checks in BookEcho and RandomBook modules
+
+- **Dev Environment Stack Overflow** (Dev mode only)
+  - Fixed circular call chain causing stack overflow on fresh install
+  - DevOptions now accesses BookArchivistDB directly to avoid circular calls
+
+### Technical
+
+- Eliminated circular dependency: GetDB → Core:EnsureDB → DebugPrint → IsDebugEnabled → GetDB
+- DBSafety now logs debug info when detecting corruption
+- Fixed variable name bug in DBSafety corruption popup (error → errorMsg)
+- 801 tests passing
+
 ## [2.3.3] - 2026-01-21
 
 **Hotfix: Dev options UI leak**

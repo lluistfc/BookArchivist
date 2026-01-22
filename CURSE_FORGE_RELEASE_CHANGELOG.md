@@ -1,3 +1,19 @@
+# 2.3.4
+
+**Hotfix: Fresh Install Fix**
+
+Fixed an issue where the addon incorrectly detected database corruption on brand new installations.
+
+## What's Fixed
+
+### Fresh Install 🆕
+
+- **Fixed Corruption Popup**: New users no longer see a false "Database Corruption Detected" message
+- **Proper Initialization**: The addon now correctly creates a fresh database on first install
+- **No Data Loss**: This was a false positive - no actual corruption occurred
+
+---
+
 # 2.3.3
 
 **Hotfix: Dev Options UI Leak**
