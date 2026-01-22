@@ -22,7 +22,7 @@ function Repository:Init(database)
 end
 
 ---Get current database
----@return table The active database
+---@return table|nil The active database (nil during early initialization)
 function Repository:GetDB()
 	-- Return injected database if available
 	if db then
@@ -32,6 +32,7 @@ function Repository:GetDB()
 	if BookArchivistDB then
 		return BookArchivistDB
 	end
-	-- Error only if both are nil
-	error("BookArchivist.Repository: Database not available - neither injected nor global exists")
+	-- During initialization, both might be nil - return nil instead of erroring
+	-- Caller (Core:GetDB) will handle this with its own fallback to ensureDB()
+	return nil
 end

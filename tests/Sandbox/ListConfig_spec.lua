@@ -105,32 +105,35 @@ describe("ListConfig Module", function()
 			assert.equals("table", type(listOpts.filters))
 		end)
 
-		it("should initialize database via fallback when Core.EnsureDB missing", function()
+		it("should return defaults when Core.EnsureDB missing", function()
 			_G.BookArchivistDB = nil
 			local fallbackListConfig = loadListConfigWithCore(nil)
 
 			local listOpts = fallbackListConfig:EnsureListOptions()
 
-			assert.is_not_nil(_G.BookArchivistDB)
-			assert.is_not_nil(_G.BookArchivistDB.options)
-			assert.is_not_nil(_G.BookArchivistDB.options.list)
-			assert.equals(_G.BookArchivistDB.options.list, listOpts)
+			-- Should return default options without creating global DB
+			assert.is_nil(_G.BookArchivistDB)
+			assert.is_not_nil(listOpts)
+			assert.equals("lastSeen", listOpts.sortMode)
+			assert.equals(25, listOpts.pageSize)
+			assert.equals("table", type(listOpts.filters))
 
 			_G.BookArchivistDB = nil
 			Repository:Init(testDB)
 		end)
 
-		it("should reuse fallback db when Core.EnsureDB is not a function", function()
+		it("should return defaults when Core.EnsureDB is not a function", function()
 			_G.BookArchivistDB = nil
 			local fakeCore = { EnsureDB = "not a function" }
 			local fallbackListConfig = loadListConfigWithCore(fakeCore)
 
 			local firstOpts = fallbackListConfig:EnsureListOptions()
-			firstOpts.sortMode = "title"
 			local secondOpts = fallbackListConfig:EnsureListOptions()
 
-			assert.equals(firstOpts, secondOpts)
-			assert.equals("title", secondOpts.sortMode)
+			-- Should return fresh defaults each time (no global DB state)
+			assert.is_nil(_G.BookArchivistDB)
+			assert.equals("lastSeen", firstOpts.sortMode)
+			assert.equals("lastSeen", secondOpts.sortMode)
 
 			_G.BookArchivistDB = nil
 			Repository:Init(testDB)

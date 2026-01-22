@@ -29,13 +29,24 @@ end
 -- ----------------------------
 
 local function EnsureDB()
-	BookArchivistDB = BookArchivistDB or {}
-	BookArchivistDB.options = BookArchivistDB.options or {}
-	return BookArchivistDB
+	-- Use Core:EnsureDB() which properly initializes the database
+	-- This prevents creating an invalid empty {} that triggers corruption detection
+	local Core = BookArchivist.Core
+	if Core and type(Core.EnsureDB) == "function" then
+		return Core:EnsureDB()
+	end
+	-- Fallback: return global if it exists and is valid
+	if BookArchivistDB and type(BookArchivistDB) == "table" and BookArchivistDB.booksById then
+		return BookArchivistDB
+	end
+	-- Database not ready - return nil (callers must handle this)
+	return nil
 end
 
 local function GetDBOption(key, defaultValue)
 	local db = EnsureDB()
+	if not db then return defaultValue end
+	db.options = db.options or {}
 	local v = db.options[key]
 	if v == nil then
 		db.options[key] = defaultValue
@@ -46,6 +57,8 @@ end
 
 local function SetDBOption(key, value)
 	local db = EnsureDB()
+	if not db then return end
+	db.options = db.options or {}
 	db.options[key] = value
 end
 
@@ -106,7 +119,20 @@ local function RegisterNativeSettings()
 		return
 	end
 
-	EnsureDB()
+	-- Ensure database is properly initialized before setting up options
+	local db = EnsureDB()
+	if not db then
+		-- Database not ready - this shouldn't happen if called after ADDON_LOADED
+		if BookArchivist and BookArchivist.DebugPrint then
+			BookArchivist:DebugPrint("[UI_Options] WARNING: Database not available, deferring options registration")
+		end
+		return
+	end
+	
+	-- Ensure options tables exist
+	db.options = db.options or {}
+	db.options.tooltip = db.options.tooltip or { enabled = true }
+	db.options.ui = db.options.ui or {}
 
 	local categoryName = L("ADDON_TITLE")
 	local category, layout = Settings.RegisterVerticalLayoutCategory(categoryName)
@@ -121,9 +147,7 @@ local function RegisterNativeSettings()
 	do
 		local variable = "tooltip"
 		local variableKey = "enabled"
-		-- Ensure tooltip table exists
-		BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or { enabled = true }
-		local variableTbl = BookArchivistDB.options.tooltip
+		local variableTbl = db.options.tooltip
 		local defaultValue = true
 		local name = L("OPTIONS_TOOLTIP_LABEL")
 
@@ -133,14 +157,15 @@ local function RegisterNativeSettings()
 		-- Override SetValue to ensure it persists to the database
 		if setting then
 			setting.SetValue = function(self, value)
-				-- Ensure database exists
-				BookArchivistDB = BookArchivistDB or {}
-				BookArchivistDB.options = BookArchivistDB.options or {}
-				BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or {}
+				-- Get properly initialized database
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+				db.options.tooltip = db.options.tooltip or {}
 
 				-- Convert to boolean and persist to tooltip.enabled
 				local boolValue = value and true or false
-				BookArchivistDB.options.tooltip.enabled = boolValue
+				db.options.tooltip.enabled = boolValue
 
 				-- Apply runtime state immediately
 				if BookArchivist and BookArchivist.SetTooltipEnabled then
@@ -149,13 +174,14 @@ local function RegisterNativeSettings()
 			end
 
 			setting.GetValue = function(self)
-				-- Ensure database exists
-				BookArchivistDB = BookArchivistDB or {}
-				BookArchivistDB.options = BookArchivistDB.options or {}
-				BookArchivistDB.options.tooltip = BookArchivistDB.options.tooltip or { enabled = true }
+				-- Get properly initialized database
+				local db = EnsureDB()
+				if not db then return defaultValue end
+				db.options = db.options or {}
+				db.options.tooltip = db.options.tooltip or { enabled = true }
 
 				-- Return current value from database
-				local value = BookArchivistDB.options.tooltip.enabled
+				local value = db.options.tooltip.enabled
 				if value == nil then
 					return defaultValue
 				end
@@ -176,9 +202,7 @@ local function RegisterNativeSettings()
 		local variable = "resumeLastPage"
 		local variableKey = variable
 		-- Store in options.ui.resumeLastPage to match Core implementation
-		BookArchivistDB.options = BookArchivistDB.options or {}
-		BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
-		local variableTbl = BookArchivistDB.options.ui
+		local variableTbl = db.options.ui
 		local defaultValue = true
 		local name = L("OPTIONS_RESUME_LAST_PAGE_LABEL")
 
@@ -192,14 +216,15 @@ local function RegisterNativeSettings()
 		if setting then
 			local originalSetValue = setting.SetValue
 			setting.SetValue = function(self, value)
-				-- Ensure database exists
-				BookArchivistDB = BookArchivistDB or {}
-				BookArchivistDB.options = BookArchivistDB.options or {}
-				BookArchivistDB.options.ui = BookArchivistDB.options.ui or {}
+				-- Get properly initialized database
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+				db.options.ui = db.options.ui or {}
 
 				-- Convert to boolean and persist
 				local boolValue = value and true or false
-				BookArchivistDB.options.ui.resumeLastPage = boolValue
+				db.options.ui.resumeLastPage = boolValue
 
 				-- Call original if it exists
 				if originalSetValue then
@@ -230,7 +255,7 @@ local function RegisterNativeSettings()
 	do
 		local variable = "language"
 		local variableKey = variable
-		local variableTbl = BookArchivistDB.options
+		local variableTbl = db.options
 		local defaultValue = (type(GetLocale) == "function" and GetLocale()) or "enUS"
 		local name = L("LANGUAGE_LABEL")
 
@@ -244,12 +269,13 @@ local function RegisterNativeSettings()
 		if setting then
 			local originalSetValue = setting.SetValue
 			setting.SetValue = function(self, value)
-				-- Ensure database exists
-				BookArchivistDB = BookArchivistDB or {}
-				BookArchivistDB.options = BookArchivistDB.options or {}
+				-- Get properly initialized database
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
 
 				-- Persist to database
-				BookArchivistDB.options.language = value
+				db.options.language = value
 
 				-- Call original if it exists
 				if originalSetValue then

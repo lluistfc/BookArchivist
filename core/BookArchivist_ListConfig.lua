@@ -37,16 +37,27 @@ local VALID_SORT_MODES = {
 
 local function ensureDB()
 	if not Core or type(Core.EnsureDB) ~= "function" then
-		BookArchivistDB = BookArchivistDB or {}
-		BookArchivistDB.options = BookArchivistDB.options or {}
-		BookArchivistDB.options.list = BookArchivistDB.options.list or {}
-		return BookArchivistDB
+		-- Core module not loaded - this should never happen in normal operation
+		-- Return nil and let caller handle the error
+		if BookArchivist and BookArchivist.DebugPrint then
+			BookArchivist:DebugPrint("[ListConfig] WARNING: Core module not available, cannot ensure DB")
+		end
+		return nil
 	end
 	return Core:EnsureDB()
 end
 
 function ListConfig:EnsureListOptions()
 	local db = ensureDB()
+	if not db then
+		-- Database not ready yet, return defaults
+		return {
+			sortMode = LIST_SORT_DEFAULT,
+			pageSize = LIST_PAGE_SIZE_DEFAULT,
+			filters = LIST_FILTER_DEFAULTS,
+		}
+	end
+	
 	db.options = db.options or {}
 	db.options.list = db.options.list or {}
 	local listOpts = db.options.list

@@ -145,12 +145,13 @@ local function handleAddonLoaded(name)
 		BookArchivist:DebugPrint("[BookArchivist] ADDON_LOADED: order count:", orderCount, "booksById count:", booksCount)
 	end
 	
-	-- Initialize Repository early (before EnsureDB needs it)
-	-- Start with nil, EnsureDB will create/migrate the actual DB
+	-- Initialize Repository with current DB state (may be nil on fresh install)
+	-- Repository's GetDB() will return nil, which Core:GetDB() handles via ensureDB() fallback
 	if BookArchivist.Repository and BookArchivist.Repository.Init then
 		BookArchivist.Repository:Init(BookArchivistDB)
 	end
 
+	-- EnsureDB handles fresh installs, migrations, and corruption detection
 	if BookArchivist.Core and BookArchivist.Core.EnsureDB then
 		BookArchivist.Core:EnsureDB()
 	end

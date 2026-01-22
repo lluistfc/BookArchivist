@@ -304,11 +304,15 @@ function Core:GetDB()
 	-- Delegate to Repository for test isolation support
 	local Repository = BookArchivist.Repository
 	if Repository and Repository.GetDB then
-		return Repository:GetDB()
+		local db = Repository:GetDB()
+		-- Repository returns nil during early initialization
+		if db then
+			return db
+		end
 	end
-	-- Fallback for early initialization before Repository is loaded
+	-- Fallback for early initialization
 	if BookArchivist and BookArchivist.DebugPrint then
-		BookArchivist:DebugPrint("[Core] GetDB: Repository not available, using ensureDB fallback")
+		BookArchivist:DebugPrint("[Core] GetDB: Using ensureDB fallback (DB not yet initialized)")
 	end
 	return ensureDB()
 end

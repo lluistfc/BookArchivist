@@ -104,6 +104,7 @@ function BookEcho:GetEchoText(bookId)
 	if not bookId then return nil end
 	
 	local db = BA.Repository:GetDB()
+	if not db then return nil end
 	local book = db.booksById[bookId]
 	if not book then return nil end
 	

@@ -17,15 +17,23 @@ local function L(key)
 	return (t and t[key]) or key
 end
 
-local function EnsureDB()
-	BookArchivistDB = BookArchivistDB or {}
-	BookArchivistDB.options = BookArchivistDB.options or {}
-	return BookArchivistDB
+-- Get the database directly, returning nil if not properly initialized
+-- IMPORTANT: This must NOT call Core:EnsureDB() to avoid circular calls
+-- (GetDB → Core:EnsureDB → DebugPrint → IsDebugEnabled → GetDB → stack overflow)
+local function GetDB()
+	-- Only return the global if it's properly initialized
+	if BookArchivistDB and (BookArchivistDB.booksById or BookArchivistDB.books) then
+		return BookArchivistDB
+	end
+	-- DB not ready - return nil to signal caller should defer
+	return nil
 end
 
 -- Initialize debug options in database if needed
 local function ensureDebugOptions()
-	local db = EnsureDB()
+	local db = GetDB()
+	if not db then return end  -- DB not ready yet
+	db.options = db.options or {}
 	if db.options.debug == nil then
 		db.options.debug = false
 	end
@@ -48,30 +56,40 @@ end
 if BookArchivist.Core then
 	local Core = BookArchivist.Core
 
+	-- IMPORTANT: IsDebugEnabled must access BookArchivistDB directly
+	-- to avoid circular calls (IsDebugEnabled → GetDB → ... → DebugPrint → IsDebugEnabled)
 	function Core:IsDebugEnabled()
-		local db = EnsureDB()
+		if not BookArchivistDB then return false end
+		local opts = BookArchivistDB.options
+		if not opts then return false end
 		-- Read from the actual saved variable that the Settings UI uses
-		if db.options.debug ~= nil then
-			return db.options.debug and true or false
+		if opts.debug ~= nil then
+			return opts.debug and true or false
 		end
 		-- Fallback to old key for migration
-		return db.options.debugEnabled and true or false
+		return opts.debugEnabled and true or false
 	end
 
 	function Core:SetDebugEnabled(state)
-		local db = EnsureDB()
+		local db = GetDB()
+		if not db then return end
+		db.options = db.options or {}
 		-- Save to both keys for compatibility
 		db.options.debug = state and true or false
 		db.options.debugEnabled = state and true or false
 	end
 
 	function Core:IsUIDebugEnabled()
-		local db = EnsureDB()
-		return db.options.uiDebug and true or false
+		if not BookArchivistDB then return false end
+		local opts = BookArchivistDB.options
+		if not opts then return false end
+		return opts.uiDebug and true or false
 	end
 
 	function Core:SetUIDebugEnabled(state)
-		local db = EnsureDB()
+		local db = GetDB()
+		if not db then return end
+		db.options = db.options or {}
 		db.options.uiDebug = state and true or false
 	end
 end

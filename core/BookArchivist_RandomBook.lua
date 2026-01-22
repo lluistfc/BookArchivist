@@ -10,6 +10,7 @@ BookArchivist.RandomBook = RandomBook
 --- @return string|nil bookId The randomly selected book ID, or nil if library is empty
 function RandomBook:SelectRandomBook(excludeBookId)
 	local db = BookArchivist.Repository:GetDB()
+	if not db then return nil end
 	local order = db.order or {}
 	
 	if #order == 0 then
@@ -50,6 +51,7 @@ function RandomBook:NavigateToBookLocation(bookId)
 	end
 	
 	local db = BookArchivist.Repository:GetDB()
+	if not db then return false end
 	local book = db.booksById and db.booksById[bookId]
 	
 	if not book then

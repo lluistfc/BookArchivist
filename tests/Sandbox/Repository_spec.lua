@@ -42,15 +42,16 @@ describe("BookArchivist.Repository", function()
 			assert.is_true(result.test)
 		end)
 
-		it("should error if not initialized", function()
+		it("should return nil if not initialized and global DB doesn't exist", function()
 			-- Create fresh Repository without initialization
 			helper.setupNamespace()
 			helper.loadFile("core/BookArchivist_Repository.lua")
 			local freshRepo = BookArchivist.Repository
 			
-			assert.has_error(function()
-				freshRepo:GetDB()
-			end, "BookArchivist.Repository: Database not available - neither injected nor global exists")
+			-- During early initialization, Repository returns nil instead of erroring
+			-- This allows Core:GetDB() to fall back to ensureDB()
+			local result = freshRepo:GetDB()
+			assert.is_nil(result)
 		end)
 	end)
 

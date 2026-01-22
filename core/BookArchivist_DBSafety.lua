@@ -151,19 +151,36 @@ end
 --- Safely load the database with corruption detection
 --- @return table Database (fresh if corrupted)
 function DBSafety:SafeLoad()
+	-- Debug: Log entry into SafeLoad
+	if BookArchivist and BookArchivist.DebugPrint then
+		BookArchivist:DebugPrint("[DBSafety] SafeLoad called, BookArchivistDB is:", BookArchivistDB and "table" or "nil")
+		if BookArchivistDB then
+			local keys = {}
+			for k in pairs(BookArchivistDB) do table.insert(keys, tostring(k)) end
+			BookArchivist:DebugPrint("[DBSafety] BookArchivistDB keys:", table.concat(keys, ", "))
+		end
+	end
+	
 	-- Check if global DB exists
 	if not BookArchivistDB then
-		-- First-time initialization (only log if really needed)
-		return self:InitializeFreshDB()
+		-- First-time initialization - create and assign fresh DB
+		BookArchivistDB = self:InitializeFreshDB()
+		if BookArchivist and BookArchivist.DebugPrint then
+			BookArchivist:DebugPrint("[DBSafety] Created fresh DB")
+		end
+		return BookArchivistDB
 	end
 
 	-- Validate structure
-	local valid, error = self:ValidateStructure(BookArchivistDB)
+	local valid, errorMsg = self:ValidateStructure(BookArchivistDB)
 
 	if not valid then
 		-- CORRUPTION DETECTED - Handle it gracefully
 		if BookArchivist and BookArchivist.DebugPrint then
-			BookArchivist:DebugPrint("[DBSafety] CORRUPTION DETECTED: " .. tostring(error))
+			BookArchivist:DebugPrint("[DBSafety] CORRUPTION DETECTED: " .. tostring(errorMsg))
+			local keys = {}
+			for k in pairs(BookArchivistDB or {}) do table.insert(keys, tostring(k)) end
+			BookArchivist:DebugPrint("[DBSafety] BookArchivistDB keys: " .. table.concat(keys, ", "))
 		end
 
 		local corrupted = BookArchivistDB
@@ -179,7 +196,7 @@ function DBSafety:SafeLoad()
 						.. "|cFFFFFF00%s|r\n\n"
 						.. "A fresh database will be created.\n\n"
 						.. "|cFF888888Please report this to the addon author with details about what you were doing when this occurred.|r",
-					error or "Unknown error",
+					errorMsg or "Unknown error",
 					backupName
 				),
 				button1 = "OK, Create Fresh Database",
