@@ -1,3 +1,22 @@
+# 2.3.7
+
+**Fix: Tooltip Errors in WoW 12.x**
+
+Fixed tooltip errors when hovering certain world objects.
+
+## What's Fixed
+
+### Tooltip Compatibility 🛡️
+
+- **Fixed Tooltip Errors**: No more "secret value" errors when hovering world objects
+- **WoW 12.x Compatible**: Handles new economic data protection gracefully
+
+### What Was Happening?
+
+WoW 12.x now protects certain tooltip data (like sell prices) as "secret values". BookArchivist's tooltip system now safely skips these protected values instead of throwing errors.
+
+---
+
 # 2.3.6
 
 **Fix: Taint Error with Other Addons**

@@ -47,12 +47,21 @@ local function normalizeTitleKey(title)
 	if not title then
 		return ""
 	end
-	local s = tostring(title)
-	s = s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
-	s = s:gsub("^%s+", ""):gsub("%s+$", "")
-	s = s:lower()
-	s = s:gsub("%s+", " ")
-	return s
+	-- Guard against secret values (WoW 11.x security feature)
+	-- Some tooltip data is now protected and even type() returns "string"
+	-- but any operation on it fails. Wrap everything in pcall.
+	local ok, result = pcall(function()
+		local s = tostring(title)
+		s = s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+		s = s:gsub("^%s+", ""):gsub("%s+$", "")
+		s = s:lower()
+		s = s:gsub("%s+", " ")
+		return s
+	end)
+	if not ok or type(result) ~= "string" then
+		return ""
+	end
+	return result
 end
 
 local function isTitleArchived(title)

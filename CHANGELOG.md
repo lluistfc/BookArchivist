@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.7] - 2026-01-24
+
+**Fix: WoW 12.x tooltip compatibility**
+
+### Fixed
+
+- **Tooltip Secret Value Handling**
+  - Fixed tooltip errors when hovering world objects with protected data
+  - WoW 12.x marks certain tooltip values as "secret" for economy protection
+  - Tooltip title normalization now wrapped in pcall to gracefully skip protected values
+  - Error: "attempt to index local 's' (a secret value)"
+
+### Technical
+
+- Secret values in WoW 12.x can pass `type()` checks but fail on any string operation
+- 801 tests passing
+
 ## [2.3.6] - 2026-01-24
 
 **Fix: Addon taint causing ADDON_ACTION_FORBIDDEN errors**
