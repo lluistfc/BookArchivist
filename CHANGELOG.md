@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.6] - 2026-01-24
+
+**Fix: Addon taint causing ADDON_ACTION_FORBIDDEN errors**
+
+### Fixed
+
+- **Secure Execution Taint**
+  - Fixed ADDON_ACTION_FORBIDDEN error when using BookArchivist alongside other addons
+  - Removed defensive `SlashCmdList = SlashCmdList or {}` check that was tainting the global table
+  - Other addons (like RareScanner) could no longer call protected functions (e.g., SetRaidTarget)
+  - Root cause: Reassigning a global table to itself still taints it in WoW's secure environment
+
+- **SetItemRef Hook Best Practice**
+  - Changed SetItemRef hook to use `hooksecurefunc` instead of replacing the global function
+  - Prevents potential taint issues when handling chat link clicks
+
+### Technical
+
+- Global table assignment (even `X = X or {}`) causes taint propagation
+- `hooksecurefunc` allows hooking without replacing the original function
+- 801 tests passing
+
 ## [2.3.5] - 2026-01-22
 
 **Fix: CurseForge release packaging**

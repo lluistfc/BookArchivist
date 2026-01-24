@@ -1,3 +1,23 @@
+# 2.3.6
+
+**Fix: Taint Error with Other Addons**
+
+Fixed a taint issue that caused ADDON_ACTION_FORBIDDEN errors when using BookArchivist alongside other addons like RareScanner.
+
+## What's Fixed
+
+### Addon Compatibility 🔧
+
+- **Fixed Taint Error**: BookArchivist no longer causes "ADDON_ACTION_FORBIDDEN" errors
+- **Works with RareScanner**: Fixed issue where clicking RareScanner frames would trigger protected function errors
+- **Better Hook Safety**: Chat link handling now uses `hooksecurefunc` to avoid taint
+
+### What Was Happening?
+
+A defensive code pattern (`SlashCmdList = SlashCmdList or {}`) was accidentally tainting the global slash command table. This caused WoW to blame BookArchivist when other addons tried to use protected functions like SetRaidTarget.
+
+---
+
 # 2.3.5
 
 **Fix: Smaller Download Size**
