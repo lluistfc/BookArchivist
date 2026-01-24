@@ -80,43 +80,40 @@ local function InstallChatFilters()
 	end
 end
 
--- Hook SetItemRef to handle link clicks
-local originalSetItemRef = SetItemRef
-function SetItemRef(link, text, button, chatFrame)
-	-- Check if this is a BookArchivist link
-	if link and link:match("^bookarc:") then
-		BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Link clicked:", link)
-		local senderName, encodedTitle = link:match("^bookarc:([^:]+):(.+)$")
-		if not senderName then
-			BookArchivist:DebugPrint("|cFFFFAA00[ChatLinks DEBUG]|r Old format detected, using fallback")
-			-- Old format fallback
-			encodedTitle = link:sub(9)
-			senderName = "Unknown"
-		end
-
-		local title = encodedTitle:gsub("_", " "):gsub("||", "|")
-		senderName = senderName:gsub("_", " ")
-
-		BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Parsed link:")
-		BookArchivist:DebugPrint("  sender:", senderName)
-		BookArchivist:DebugPrint("  title:", title)
-
-		if IsShiftKeyDown() then
-			-- Shift-click: insert plain text into active editbox
-			local editbox = ChatEdit_GetActiveWindow()
-			if editbox then
-				editbox:Insert("[BookArchivist: " .. title .. "]")
-			end
-		else
-			-- Normal click: request data from sender
-			ChatLinks:RequestBookFromSender(senderName, title)
-		end
+-- Hook SetItemRef to handle link clicks (using hooksecurefunc to avoid taint)
+hooksecurefunc("SetItemRef", function(link, text, button, chatFrame)
+	-- Only process BookArchivist links
+	if not link or not link:match("^bookarc:") then
 		return
 	end
 
-	-- Not our link, call original handler
-	return originalSetItemRef(link, text, button, chatFrame)
-end
+	BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Link clicked:", link)
+	local senderName, encodedTitle = link:match("^bookarc:([^:]+):(.+)$")
+	if not senderName then
+		BookArchivist:DebugPrint("|cFFFFAA00[ChatLinks DEBUG]|r Old format detected, using fallback")
+		-- Old format fallback
+		encodedTitle = link:sub(9)
+		senderName = "Unknown"
+	end
+
+	local title = encodedTitle:gsub("_", " "):gsub("||", "|")
+	senderName = senderName:gsub("_", " ")
+
+	BookArchivist:DebugPrint("|cFF4A7EBB[ChatLinks DEBUG]|r Parsed link:")
+	BookArchivist:DebugPrint("  sender:", senderName)
+	BookArchivist:DebugPrint("  title:", title)
+
+	if IsShiftKeyDown() then
+		-- Shift-click: insert plain text into active editbox
+		local editbox = ChatEdit_GetActiveWindow()
+		if editbox then
+			editbox:Insert("[BookArchivist: " .. title .. "]")
+		end
+	else
+		-- Normal click: request data from sender
+		ChatLinks:RequestBookFromSender(senderName, title)
+	end
+end)
 
 -- Request book data from sender
 function ChatLinks:RequestBookFromSender(senderName, bookTitle)
@@ -624,6 +621,7 @@ end
 
 -- Initialize chat links system
 function ChatLinks:Init()
+	-- Install chat filters
 	InstallChatFilters()
 
 	-- Register AceComm handler

@@ -189,7 +189,8 @@ addonRoot.ToggleUI = toggleUI
 
 SLASH_BOOKARCHIVIST1 = "/ba"
 SLASH_BOOKARCHIVIST2 = "/bookarchivist"
-SlashCmdList = SlashCmdList or {}
+-- NOTE: Do NOT reassign SlashCmdList (e.g., SlashCmdList = SlashCmdList or {})
+-- Reassigning globals causes taint and ADDON_ACTION_FORBIDDEN errors
 
 SlashCmdList["BOOKARCHIVIST"] = function(msg)
 	local cleaned = trim(msg or "")
