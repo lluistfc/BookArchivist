@@ -286,3 +286,16 @@ Locales.enUS = {
 	["EXIT_EDIT_MODE_TITLE"] = "Exit Edit Mode?",
 	["EXIT_EDIT_MODE_TEXT"] = "You have unsaved changes. Discard them?",
 }
+
+-- ============================================================================
+-- Key Binding Localization (Global scope for Bindings.xml)
+-- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
+-- ============================================================================
+
+BINDING_HEADER_BOOKARCHIVIST = "Book Archivist"
+BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Toggle Book Archivist"
+BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Read Current Book (TTS)"
+BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Stop Reading (TTS)"
+BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Toggle Read Aloud (TTS)"
+BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Next Page"
+BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Previous Page"

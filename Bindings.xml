@@ -1,0 +1,53 @@
+<Bindings>
+    <!-- BookArchivist Key Bindings -->
+    <!-- These appear in WoW's Key Bindings menu under "BookArchivist" -->
+    
+    <!-- Toggle main window -->
+    <Binding name="BOOKARCHIVIST_TOGGLE" header="BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.ToggleUI then
+            BookArchivist:ToggleUI()
+        end
+    </Binding>
+    
+    <!-- Read current book aloud (TTS) -->
+    <Binding name="BOOKARCHIVIST_TTS_READ">
+        if BookArchivist and BookArchivist.TTS and BookArchivist.TTS.SpeakCurrentBook then
+            BookArchivist.TTS:SpeakCurrentBook()
+        end
+    </Binding>
+    
+    <!-- Stop TTS playback -->
+    <Binding name="BOOKARCHIVIST_TTS_STOP">
+        if BookArchivist and BookArchivist.TTS and BookArchivist.TTS.Stop then
+            BookArchivist.TTS:Stop()
+        end
+    </Binding>
+    
+    <!-- Toggle TTS (start/stop) - convenience binding -->
+    <Binding name="BOOKARCHIVIST_TTS_TOGGLE">
+        if BookArchivist and BookArchivist.TTS and BookArchivist.TTS.ToggleCurrentBook then
+            BookArchivist.TTS:ToggleCurrentBook()
+        end
+    </Binding>
+    
+    <!-- Navigate to next page in reader -->
+    <Binding name="BOOKARCHIVIST_PAGE_NEXT">
+        if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal then
+            local internal = BookArchivist.UI.Internal
+            if internal.navigatePageNext then
+                internal.navigatePageNext()
+            end
+        end
+    </Binding>
+    
+    <!-- Navigate to previous page in reader -->
+    <Binding name="BOOKARCHIVIST_PAGE_PREV">
+        if BookArchivist and BookArchivist.UI and BookArchivist.UI.Internal then
+            local internal = BookArchivist.UI.Internal
+            if internal.navigatePagePrev then
+                internal.navigatePagePrev()
+            end
+        end
+    </Binding>
+    
+</Bindings>
