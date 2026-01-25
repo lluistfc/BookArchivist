@@ -18,13 +18,11 @@ end
 function ListUI:UpdateList()
 	-- Skip if async filtering is in progress
 	if self.__state.isAsyncFiltering then
-		self:DebugPrint("[BookArchivist] updateList skipped (async filtering in progress)")
 		return
 	end
 
 	local dataProvider = self:GetDataProvider()
 	if not dataProvider then
-		self:DebugPrint("[BookArchivist] updateList skipped (data provider missing) - UI not fully initialized")
 		-- Clear loading state if it was set
 		if self.__state.isLoading then
 			self.__state.isLoading = false
@@ -96,8 +94,6 @@ function ListUI:UpdateList()
 				return
 			end
 		end
-
-		self:DebugPrint(string.format("[BookArchivist] updateList filtered=%d totalDB=%d", total, dbCount))
 
 		local pageSize = self:GetPageSize()
 		local page = self:GetPage()
@@ -201,8 +197,6 @@ function ListUI:UpdateList()
 	local requestedPage = self:GetPage() or 1
 	state.currentPage = requestedPage
 	
-	self:DebugPrint(string.format("[BookArchivist] UpdateList locations: rebuilding with page %d", requestedPage))
-	
 	-- Rebuild location rows with current page
 	if self.RebuildLocationRows then
 		local pageSize = self:GetPageSize()
@@ -223,7 +217,6 @@ function ListUI:UpdateList()
 	end
 
 	local rows = self:GetLocationRows()
-	self:DebugPrint(string.format("[BookArchivist] UpdateList locations: displaying %d rows", #rows))
 	
 	-- Debug: Show sample of book keys in rows
 	local sampleKeys = {}

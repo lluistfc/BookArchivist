@@ -72,6 +72,23 @@ Locales.itIT = {
 	["SHARE_TO_CHAT_BUTTON"] = "Condividi nella chat",
 	["SHARE_LINK_INSERTED"] = "Link inserito nella chat! Premi Invio per inviare.",
 
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copia",
+	["READER_COPY_TOOLTIP_BODY"] = "Copia il testo del libro negli appunti. Apre un popup dove puoi selezionare e copiare il testo semplice.",
+	["READER_COPY_POPUP_TITLE"] = "Copia il testo del libro",
+	["READER_COPY_POPUP_LABEL"] = "Seleziona il testo qui sotto e usa Ctrl+C per copiarlo negli appunti.",
+	["READER_COPY_SELECT_ALL"] = "Seleziona tutto",
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Imposta Waypoint",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Imposta un waypoint sulla mappa dove è stato scoperto questo libro.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Dati di posizione non disponibili per questo libro.",
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Leggi ad Alta Voce",
+	["READER_TTS_TOOLTIP_BODY"] = "Usa la sintesi vocale per leggere questo libro ad alta voce. Clicca di nuovo per fermare.",
+	["TTS_ENABLE_HINT"] = "Abilita Sintesi Vocale nelle Impostazioni WoW > Accessibilità per usare questa funzione.",
+	["READER_TTS_STOP"] = "Ferma Lettura",
+	["READER_TTS_STOP_TOOLTIP"] = "Ferma la riproduzione della sintesi vocale.",
+	["READER_TTS_UNAVAILABLE"] = "La sintesi vocale non è disponibile sul tuo sistema.",
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Importa libro",
 	["IMPORT_PROMPT_TEXT"] = "Incolla la stringa di esportazione del libro qui sotto:",
@@ -106,6 +123,8 @@ Locales.itIT = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Evidenzia i limiti del layout. Uguale a /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Riprendi all'ultima pagina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Se abilitato, riaprire un libro salvato ti riporta all'ultima pagina visualizzata invece di iniziare sempre dalla pagina 1.",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Dimensione carattere del lettore",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Regola la dimensione del testo nel pannello del lettore. 100% è la dimensione normale.",
 	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Esporta / Importa",
 	["OPTIONS_EXPORT_BUTTON"] = "Genera esportazione",
 	["OPTIONS_EXPORT_LABEL"] = "Esporta",

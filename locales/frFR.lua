@@ -72,6 +72,23 @@ Locales.frFR = {
 	["SHARE_TO_CHAT_BUTTON"] = "Partager dans le chat",
 	["SHARE_LINK_INSERTED"] = "Lien inséré dans le chat ! Appuyez sur Entrée pour envoyer.",
 
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copier",
+	["READER_COPY_TOOLTIP_BODY"] = "Copie le texte du livre dans le presse-papiers. Ouvre une fenêtre où vous pouvez sélectionner et copier le texte brut.",
+	["READER_COPY_POPUP_TITLE"] = "Copier le texte du livre",
+	["READER_COPY_POPUP_LABEL"] = "Sélectionnez le texte ci-dessous et utilisez Ctrl+C pour le copier dans le presse-papiers.",
+	["READER_COPY_SELECT_ALL"] = "Tout sélectionner",
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Placer un Repère",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Place un repère sur la carte à l'endroit où ce livre a été découvert.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Données de localisation non disponibles pour ce livre.",
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Lire à Voix Haute",
+	["READER_TTS_TOOLTIP_BODY"] = "Utilise la synthèse vocale pour lire ce livre à voix haute. Cliquez à nouveau pour arrêter.",
+	["TTS_ENABLE_HINT"] = "Activez la synthèse vocale dans Paramètres WoW > Accessibilité pour utiliser cette fonction.",
+	["READER_TTS_STOP"] = "Arrêter la Lecture",
+	["READER_TTS_STOP_TOOLTIP"] = "Arrête la lecture vocale.",
+	["READER_TTS_UNAVAILABLE"] = "La synthèse vocale n'est pas disponible sur votre système.",
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Importer le livre",
 	["IMPORT_PROMPT_TEXT"] = "Collez la chaîne d'exportation du livre ci-dessous :",
@@ -106,6 +123,8 @@ Locales.frFR = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Met en évidence les limites de mise en page. Identique à /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprendre à la dernière page",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si cette option est activée, rouvrir un livre enregistré revient à la dernière page lue au lieu de toujours commencer à la page 1.",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Taille de police du lecteur",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Ajustez la taille du texte dans le panneau du lecteur. 100% est la taille normale.",
 	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exporter / Importer",
 	["OPTIONS_EXPORT_BUTTON"] = "Générer l'export",
 	["OPTIONS_EXPORT_LABEL"] = "Exporter",

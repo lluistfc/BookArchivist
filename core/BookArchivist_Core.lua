@@ -649,14 +649,68 @@ function Core:PersistSession(session)
 	entry.material = entry.material ~= "" and entry.material or session.material
 	entry.source = entry.source or session.source
 	
-	-- Backfill location data if missing (e.g., books captured during v2.0.2-v2.0.3 bug)
-	-- Only update if: (1) session has location data, AND (2) existing book lacks it
+	-- Backfill location data if missing or incomplete
+	-- Only update fields that are missing, preserve existing data
+	-- IMPORTANT: For inventory items, only use loot-tracked coordinates (not read location)
+	-- because you can loot an item in one place and read it somewhere else
 	if session.location then
+		local isInventoryItem = session.sourceKind == "inventory" or 
+			(entry.source and entry.source.kind == "inventory")
+		local sessionHasLootCoords = session.location.context == "loot" and 
+			not session.location.isFallback
+		
 		if not entry.location then
-			-- No location data exists - backfill with current read location
-			entry.location = cloneTable(session.location)
+			-- No location data exists - backfill with current session location
+			-- For inventory items, only save if we have actual loot coordinates
+			if isInventoryItem then
+				-- For items: only save location if it's from loot tracking
+				if sessionHasLootCoords or session.location.context == "loot" then
+					entry.location = cloneTable(session.location)
+				end
+				-- Skip saving read location for items (meaningless for waypoints)
+			else
+				-- For world objects: read location IS the book location
+				entry.location = cloneTable(session.location)
+			end
+		else
+			-- Location exists - backfill any missing fields
+			local loc = entry.location
+			local sessionLoc = session.location
+			
+			-- Backfill basic location fields if missing (zone info is always useful)
+			if not loc.zoneText and sessionLoc.zoneText then
+				loc.zoneText = sessionLoc.zoneText
+			end
+			if not loc.subZone and sessionLoc.subZone then
+				loc.subZone = sessionLoc.subZone
+			end
+			if not loc.mapID and sessionLoc.mapID then
+				loc.mapID = sessionLoc.mapID
+			end
+			if not loc.instanceID and sessionLoc.instanceID then
+				loc.instanceID = sessionLoc.instanceID
+			end
+			
+			-- Backfill coordinates ONLY for world objects, or inventory items with loot coords
+			-- Don't backfill read location coords for inventory items
+			local shouldBackfillCoords = not isInventoryItem or sessionHasLootCoords
+			if shouldBackfillCoords then
+				if not loc.posX and sessionLoc.posX then
+					loc.posX = sessionLoc.posX
+				end
+				if not loc.posY and sessionLoc.posY then
+					loc.posY = sessionLoc.posY
+				end
+			end
+			
+			-- Backfill source info if missing
+			if not loc.mobName and sessionLoc.mobName then
+				loc.mobName = sessionLoc.mobName
+			end
+			if not loc.objectName and sessionLoc.objectName then
+				loc.objectName = sessionLoc.objectName
+			end
 		end
-		-- If entry.location already exists, preserve original capture location
 	end
 
 	if Core.BuildSearchText then

@@ -72,6 +72,23 @@ Locales.ptBR = {
 	["SHARE_TO_CHAT_BUTTON"] = "Compartilhar no chat",
 	["SHARE_LINK_INSERTED"] = "Link inserido no chat! Pressione Enter para enviar.",
 
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copiar",
+	["READER_COPY_TOOLTIP_BODY"] = "Copia o texto do livro para a área de transferência. Abre um popup onde você pode selecionar e copiar o texto simples.",
+	["READER_COPY_POPUP_TITLE"] = "Copiar texto do livro",
+	["READER_COPY_POPUP_LABEL"] = "Selecione o texto abaixo e use Ctrl+C para copiá-lo para a área de transferência.",
+	["READER_COPY_SELECT_ALL"] = "Selecionar tudo",
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Definir Marcador",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Define um marcador no mapa onde este livro foi descoberto.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Dados de localização não disponíveis para este livro.",
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Ler em Voz Alta",
+	["READER_TTS_TOOLTIP_BODY"] = "Usa texto para voz para ler este livro em voz alta. Clique novamente para parar.",
+	["TTS_ENABLE_HINT"] = "Ative Texto para Fala nas Configurações do WoW > Acessibilidade para usar este recurso.",
+	["READER_TTS_STOP"] = "Parar Leitura",
+	["READER_TTS_STOP_TOOLTIP"] = "Para a reprodução de texto para voz.",
+	["READER_TTS_UNAVAILABLE"] = "Texto para voz não está disponível no seu sistema.",
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Importar livro",
 	["IMPORT_PROMPT_TEXT"] = "Cole a string de exportação do livro abaixo:",
@@ -106,6 +123,8 @@ Locales.ptBR = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Destaca os limites do layout. Igual a /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Retomar na última página",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quando ativado, reabrir um livro salvo leva à última página visualizada em vez de começar sempre na página 1.",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Tamanho da fonte do leitor",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Ajusta o tamanho do texto no painel do leitor. 100% é o tamanho normal.",
 	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exportar / Importar",
 	["OPTIONS_EXPORT_BUTTON"] = "Gerar exportação",
 	["OPTIONS_EXPORT_LABEL"] = "Exportar",

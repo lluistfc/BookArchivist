@@ -250,6 +250,96 @@ local function RegisterNativeSettings()
 	end
 
 	-- ----------------------
+	-- Font Size slider
+	-- ----------------------
+	do
+		local variable = "fontSize"
+		local variableKey = variable
+		local variableTbl = db.options
+		local defaultValue = 1.0
+		local name = L("OPTIONS_FONT_SIZE_LABEL")
+		
+		-- Initialize default if not set
+		if not db.options.fontSize then
+			db.options.fontSize = defaultValue
+		end
+
+		local setting = Settings.RegisterAddOnSetting(
+			category, 
+			variable, 
+			variableKey, 
+			variableTbl, 
+			"number", 
+			name, 
+			defaultValue
+		)
+
+		-- Store reference for language updates
+		settingObjects.fontSize = setting
+
+		-- Override SetValue to ensure it persists and applies
+		if setting then
+			local originalSetValue = setting.SetValue
+			setting.SetValue = function(self, value)
+				-- Get properly initialized database
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+
+				-- Clamp value to valid range
+				value = math.max(0.8, math.min(1.5, value))
+				db.options.fontSize = value
+
+				-- Call original if it exists
+				if originalSetValue then
+					originalSetValue(self, value)
+				end
+
+				-- Apply font size via FontSize module
+				if BookArchivist.FontSize and BookArchivist.FontSize.SetScale then
+					BookArchivist.FontSize:SetScale(value)
+				end
+				
+				-- Refresh UI to apply new font size
+				if BookArchivist and BookArchivist.RefreshUI then
+					BookArchivist:RefreshUI()
+				end
+			end
+			
+			setting.GetValue = function(self)
+				local db = EnsureDB()
+				if not db then return defaultValue end
+				db.options = db.options or {}
+				return db.options.fontSize or defaultValue
+			end
+		end
+
+		-- Create slider options
+		local minValue = 0.8  -- 80%
+		local maxValue = 1.5  -- 150%
+		local step = 0.1      -- 10% increments
+
+		local options = Settings.CreateSliderOptions(minValue, maxValue, step)
+		options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
+			return string.format("%d%%", math.floor(value * 100 + 0.5))
+		end)
+
+		Settings.CreateSlider(category, setting, options, L("OPTIONS_FONT_SIZE_TOOLTIP"))
+
+		Settings.SetOnValueChangedCallback(variableKey, function(_, value)
+			-- Apply font size via FontSize module
+			if BookArchivist.FontSize and BookArchivist.FontSize.SetScale then
+				BookArchivist.FontSize:SetScale(value)
+			end
+			
+			-- Refresh UI to apply new font size
+			if BookArchivist and BookArchivist.RefreshUI then
+				BookArchivist:RefreshUI()
+			end
+		end)
+	end
+
+	-- ----------------------
 	-- Language dropdown
 	-- ----------------------
 	do

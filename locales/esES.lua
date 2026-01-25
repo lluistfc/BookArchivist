@@ -72,6 +72,23 @@ Locales.esES = {
 	["SHARE_TO_CHAT_BUTTON"] = "Compartir en el chat",
 	["SHARE_LINK_INSERTED"] = "¡Enlace insertado en el chat! Presiona Enter para enviar.",
 
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copiar",
+	["READER_COPY_TOOLTIP_BODY"] = "Copia el texto del libro al portapapeles. Abre una ventana donde puedes seleccionar y copiar el texto plano.",
+	["READER_COPY_POPUP_TITLE"] = "Copiar texto del libro",
+	["READER_COPY_POPUP_LABEL"] = "Selecciona el texto abajo y usa Ctrl+C para copiarlo al portapapeles.",
+	["READER_COPY_SELECT_ALL"] = "Seleccionar todo",
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Poner Marcador",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Coloca un marcador en el mapa donde se descubrió este libro.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Datos de ubicación no disponibles para este libro.",
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Leer en Voz Alta",
+	["READER_TTS_TOOLTIP_BODY"] = "Usa texto a voz para leer este libro en voz alta. Haz clic de nuevo para detener.",
+	["TTS_ENABLE_HINT"] = "Habilita Texto a Voz en Configuración de WoW > Accesibilidad para usar esta función.",
+	["READER_TTS_STOP"] = "Detener Lectura",
+	["READER_TTS_STOP_TOOLTIP"] = "Detener la reproducción de texto a voz.",
+	["READER_TTS_UNAVAILABLE"] = "Texto a voz no disponible en tu sistema.",
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Importar libro",
 	["IMPORT_PROMPT_TEXT"] = "Pega la cadena de exportación del libro a continuación:",
@@ -104,6 +121,8 @@ Locales.esES = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Resalta los límites de diseño para diagnosticar problemas. Igual que /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reanudar en la última página",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Si está activado, al volver a abrir un libro guardado se irá a la última página que viste en lugar de empezar siempre en la página 1.",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Tamaño de fuente del lector",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Ajusta el tamaño del texto en el panel del lector. 100% es el tamaño normal.",
 	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exportar / Importar",
 	["OPTIONS_EXPORT_BUTTON"] = "Generar exportación",
 	["OPTIONS_EXPORT_LABEL"] = "Exportar",

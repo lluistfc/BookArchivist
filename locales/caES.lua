@@ -71,6 +71,26 @@ Locales.caES = {
 	["SHARE_TO_CHAT_BUTTON"] = "Comparteix al xat",
 	["SHARE_LINK_INSERTED"] = "Enllaç inserit al xat! Prem Enter per enviar.",
 
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copia",
+	["READER_COPY_TOOLTIP_BODY"] = "Copia el text del llibre al porta-retalls. Obre una finestra on pots seleccionar i copiar el text pla.",
+	["READER_COPY_POPUP_TITLE"] = "Copia el text del llibre",
+	["READER_COPY_POPUP_LABEL"] = "Selecciona el text a sota i fes servir Ctrl+C per copiar-lo al porta-retalls.",
+	["READER_COPY_SELECT_ALL"] = "Selecciona-ho tot",
+
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Posar Marcador",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Col·loca un marcador al mapa on es va descobrir aquest llibre.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Dades d'ubicació no disponibles per a aquest llibre.",
+
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Llegir en Veu Alta",
+	["READER_TTS_TOOLTIP_BODY"] = "Utilitza text a veu per llegir aquest llibre en veu alta. Fes clic de nou per aturar.",
+	["TTS_ENABLE_HINT"] = "Activa Text a Veu a Configuració de WoW > Accessibilitat per usar aquesta funció.",
+	["READER_TTS_STOP"] = "Aturar Lectura",
+	["READER_TTS_STOP_TOOLTIP"] = "Atura la reproducció de text a veu.",
+	["READER_TTS_UNAVAILABLE"] = "Text a veu no disponible al teu sistema.",
+
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Importa llibre",
 	["IMPORT_PROMPT_TEXT"] = "Enganxa la cadena d'exportació del llibre a continuació:",
@@ -103,6 +123,8 @@ Locales.caES = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Ressalta els límits de disseny per diagnosticar problemes. Igual que /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprèn a l'última pàgina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quan està activat, en tornar a obrir un llibre desat s'anirà a l'última pàgina que vas veure en lloc de començar sempre a la pàgina 1.",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Mida de la lletra del lector",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Ajusta la mida del text al panell del lector. 100% és la mida normal.",
 	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exporta / Importa",
 	["OPTIONS_EXPORT_BUTTON"] = "Genera exportació",
 	["OPTIONS_EXPORT_LABEL"] = "Exporta",

@@ -143,7 +143,6 @@ local function setupUI()
 	else
 		Internal.setNeedsRefresh(true)
 	end
-	debugPrint("[BookArchivist] setupUI: finished, pending refresh (will flush in ensureUI)")
 	-- Don't flush here - let ensureUI handle it when everything is ready
 	return true
 end
@@ -333,7 +332,6 @@ local function ensureUI()
 	-- Don't mark as initialized yet - let async content build handle it
 	-- Don't flush pending refresh - let async completion trigger the first refresh
 	syncGridOverlayPreference()
-	debugPrint("[BookArchivist] ensureUI: setup started, waiting for async content build")
 	return true
 end
 

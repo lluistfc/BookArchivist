@@ -34,6 +34,7 @@ core/BookArchivist_ListConfig.lua
 core/BookArchivist_Search.lua
 core/BookArchivist_Export.lua
 core/BookArchivist_Options.lua
+core/BookArchivist_FontSize.lua
 core/BookArchivist_Order.lua
 core/BookArchivist_ImportWorker.lua
 core/BookArchivist_Recent.lua
@@ -43,6 +44,8 @@ core/BookArchivist_Tooltip.lua
 core/BookArchivist_TextureValidator.lua
 core/BookArchivist_ContentSanitizer.lua
 core/BookArchivist_Location.lua
+core/BookArchivist_Waypoint.lua
+core/BookArchivist_TTS.lua
 core/BookArchivist_ChatLinks.lua
 core/BookArchivist_Capture.lua
 core/BookArchivist_Minimap.lua
@@ -77,6 +80,7 @@ ui/reader/BookArchivist_UI_Reader_Rich_Parse.lua
 ui/reader/BookArchivist_UI_Reader_Rich.lua
 ui/reader/BookArchivist_UI_Reader_Delete.lua
 ui/reader/BookArchivist_UI_Reader_Share.lua
+ui/reader/BookArchivist_UI_Reader_Copy.lua
 ui/reader/BookArchivist_UI_Reader_Layout.lua
 ui/options/BookArchivist_UI_OptionsTemplates.xml
 ui/options/BookArchivist_UI_Options.lua
@@ -92,8 +96,8 @@ ui/BookArchivist_UI_Runtime.lua
 ## Dev Tools (optional, excluded from releases via .pkgmeta)
 ## These files will be silently ignored if not present
 #Tests/InGame/InGameTests.lua
-#dev/BookArchivist_MechanicIntegration.lua
-#dev/BookArchivist_DevTools.lua
-#dev/BookArchivist_DevOptions.lua
-#dev/BookArchivist_TestDataGenerator.lua
+dev/BookArchivist_MechanicIntegration.lua
+dev/BookArchivist_DevTools.lua
+dev/BookArchivist_DevOptions.lua
+dev/BookArchivist_TestDataGenerator.lua
 #@end-do-not-package@

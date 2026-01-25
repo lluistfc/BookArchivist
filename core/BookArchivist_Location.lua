@@ -7,9 +7,7 @@ local BA = BookArchivist
 local Location = {}
 BA.Location = Location
 
-local recentLoot = {}
 local guidNameCache = {}
-local MAX_LOOT_AGE = 60 * 60 * 6 -- six hours
 
 local function getGlobal(name)
 	if type(_G) ~= "table" then
@@ -111,15 +109,6 @@ local function extractItemID(link)
 	return itemID and tonumber(itemID) or nil
 end
 
-local function pruneLootMemory()
-	local now = nowSeconds()
-	for itemID, data in pairs(recentLoot) do
-		if not data.recordedAt or (now - data.recordedAt) > MAX_LOOT_AGE then
-			recentLoot[itemID] = nil
-		end
-	end
-end
-
 local function fetchNameFromTooltip(guid)
 	local TooltipInfo = getGlobal("C_TooltipInfo")
 	if not TooltipInfo or not TooltipInfo.GetHyperlink or not guid then
@@ -151,29 +140,46 @@ local function resolveGuidName(guid)
 	return nil
 end
 
+-- Get player map position (x, y coordinates) for the current map
+-- Returns nil if position cannot be determined (e.g., in instances)
+local function getPlayerPosition()
+	local C_Map = getGlobal("C_Map")
+	if not C_Map or not C_Map.GetBestMapForUnit or not C_Map.GetPlayerMapPosition then
+		return nil, nil
+	end
+	local mapID = C_Map.GetBestMapForUnit("player")
+	if not mapID then
+		return nil, nil
+	end
+	local position = C_Map.GetPlayerMapPosition(mapID, "player")
+	if not position then
+		return nil, nil
+	end
+	-- GetXY returns normalized coordinates (0-1 range)
+	local x, y = position:GetXY()
+	if x and y and (x > 0 or y > 0) then
+		return x, y
+	end
+	return nil, nil
+end
+
 function Location:BuildWorldLocation()
 	local zoneData = buildZoneData()
+	local posX, posY = getPlayerPosition()
 	return {
 		context = "world",
 		zoneChain = copyArray(zoneData.zoneChain),
 		zoneText = zoneData.zoneText,
 		mapID = zoneData.mapID,
+		posX = posX,
+		posY = posY,
 		capturedAt = nowSeconds(),
 	}
 end
 
+-- Loot location tracking is not implemented.
+-- Inventory items don't have discoverable coordinates.
+-- The tooltip directs users to Wowhead to find item sources.
 function Location:GetLootLocation(itemID)
-	itemID = type(itemID) == "number" and itemID or tonumber(itemID)
-	if not itemID then
-		return nil
-	end
-	pruneLootMemory()
-	local entry = recentLoot[itemID]
-	if not entry then
-		return nil
-	end
-	if not entry.recordedAt or (nowSeconds() - entry.recordedAt) > MAX_LOOT_AGE * 4 then
-		return nil
-	end
-	return cloneLocation(entry)
+	return nil
 end

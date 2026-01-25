@@ -279,15 +279,6 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
 	if hasSearch and hasDirectBooks and not (childNames and #childNames > 0) then
 		-- We're showing books and have a search query - use filtered keys
 		local filtered = listUI.GetFilteredKeys and listUI:GetFilteredKeys() or {}
-		if listUI.DebugPrint then
-			listUI:DebugPrint(
-				string.format(
-					"[BookArchivist] rebuildLocationRows: hasSearch=true, filtered=%d, books=%d",
-					#filtered,
-					#books
-				)
-			)
-		end
 		local filteredBooksInLocation = {}
 		for _, key in ipairs(filtered) do
 			-- Check if this book is in the current location
@@ -299,9 +290,6 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
 			end
 		end
 		books = filteredBooksInLocation
-		if listUI.DebugPrint then
-			listUI:DebugPrint(string.format("[BookArchivist] rebuildLocationRows: after filter, books=%d", #books))
-		end
 	end
 
 	-- Show both subzones AND books (subzones first, then books)
@@ -344,13 +332,6 @@ local function rebuildLocationRows(state, listUI, pageSize, currentPage)
 	state.totalRows = totalItems
 	state.currentPage = page
 	state.totalPages = totalPages
-	
-	if listUI.DebugPrint then
-		listUI:DebugPrint(string.format(
-			"[BookArchivist] rebuildLocationRows: page=%d/%d, items=%d, paginated=%d, rows=%d (startIdx=%d, endIdx=%d)",
-			page, totalPages, totalItems, #paginated, #rows, startIdx or 0, endIdx or 0
-		))
-	end
 end
 
 function ListUI:GetLocationRows()

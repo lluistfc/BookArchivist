@@ -87,11 +87,6 @@ function ListUI:RebuildFiltered()
 	local isRecentView = (categoryId == "__recent__")
 	local isCustomView = (categoryId == "__custom__")
 	
-	self:DebugPrint(
-		string.format("[BookArchivist] rebuildFiltered: categoryId='%s', isRecent=%s, isCustom=%s", 
-			tostring(categoryId), tostring(isRecentView), tostring(isCustomView))
-	)
-	
 	local baseKeys
 	if isRecentView and BA.Recent and BA.Recent.GetList then
 		baseKeys = BA.Recent:GetList()
@@ -99,9 +94,6 @@ function ListUI:RebuildFiltered()
 		baseKeys = order
 	end
 
-	self:DebugPrint(
-		string.format("[BookArchivist] rebuildFiltered: start (order=%d, category=%s)", #baseKeys, tostring(categoryId))
-	)
 	local query = self:GetSearchQuery()
 	local tokens = {}
 	for token in query:lower():gmatch("%S+") do
@@ -147,12 +139,6 @@ function ListUI:RebuildFiltered()
 				return
 			end
 		end
-
-		-- Throttled path for ALL datasets (not just >100)
-		-- Small datasets complete quickly but still yield to prevent freeze
-		self:DebugPrint(
-			string.format("[BookArchivist] rebuildFiltered: using throttled iteration for %d books", #baseKeys)
-		)
 
 		-- Set async filtering flag to prevent premature UpdateList
 		self.__state.isAsyncFiltering = true
@@ -258,24 +244,9 @@ function ListUI:RebuildFiltered()
 						local filteredKeys = self:GetFilteredKeys()
 						wipe(filteredKeys)
 
-						self:DebugPrint(
-							string.format(
-								"[BookArchivist] Async filter complete: context.filtered has %d items",
-								#(context.filtered or {})
-							)
-						)
-
 						for _, key in ipairs(context.filtered or {}) do
 							table.insert(filteredKeys, key)
 						end
-
-						self:DebugPrint(
-							string.format(
-								"[BookArchivist] rebuildFiltered: %d matched of %d (throttled)",
-								#filteredKeys,
-								#baseKeys
-							)
-						)
 
 						-- Clear loading state
 						self.__state.isLoading = false

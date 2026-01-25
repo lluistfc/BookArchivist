@@ -122,6 +122,10 @@ local function acquireFontStringForKind(kind)
 			if fs and fs.SetFontObject and template then
 				fs:SetFontObject(template)
 			end
+			-- Apply font size scaling if FontSize module is available
+			if BA.FontSize and BA.FontSize.ApplyToFontString then
+				BA.FontSize:ApplyToFontString(fs)
+			end
 			if fs then
 				fs:Show()
 			end
@@ -142,6 +146,11 @@ local function acquireFontStringForKind(kind)
 	fs:SetWordWrap(true)
 	fs:SetNonSpaceWrap(true)
 	fs:SetSpacing(2)
+
+	-- Apply font size scaling if FontSize module is available
+	if BA.FontSize and BA.FontSize.ApplyToFontString then
+		BA.FontSize:ApplyToFontString(fs)
+	end
 
 	local entry = { fs = fs, inUse = true }
 	table.insert(state.richTextPool, entry)

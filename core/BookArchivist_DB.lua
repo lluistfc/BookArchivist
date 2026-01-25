@@ -33,9 +33,6 @@ end
 
 function DB:Init()
 	-- Safety check and load DB with corruption detection
-	if not hasLoggedInitSummary then
-		debug("Init start with safety checks")
-	end
 
 	-- Use DBSafety to load and validate database
 	if DBSafety and DBSafety.SafeLoad then
@@ -109,17 +106,6 @@ function DB:Init()
 		end
 	end
 
-	if not hasLoggedInitSummary then
-		debug(
-			"DB init complete; effective dbVersion="
-				.. tostring(BookArchivistDB.dbVersion or 0)
-				.. ", has legacy books="
-				.. tostring(BookArchivistDB.books and next(BookArchivistDB.books) ~= nil)
-				.. ", has booksById="
-				.. tostring(BookArchivistDB.booksById and next(BookArchivistDB.booksById) ~= nil)
-		)
-		hasLoggedInitSummary = true
-	end
-
+	hasLoggedInitSummary = true
 	return BookArchivistDB
 end
