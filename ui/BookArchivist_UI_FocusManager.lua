@@ -382,13 +382,17 @@ local function updateIndicator()
     end
     
     -- === Update Block Navigation (top row) ===
+    -- Arrow icon tags for inline textures
+    local LEFT_ARROW = "|TInterface\\BUTTONS\\UI-SpellbookIcon-PrevPage-Up:12:12:0:0|t "
+    local RIGHT_ARROW = " |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage-Up:12:12:0:0|t"
+    
     -- Previous block
     local prevBlockIdx = blockIdx - 1
     if prevBlockIdx < 1 then prevBlockIdx = #FOCUS_BLOCKS end
     local prevBlock = FOCUS_BLOCKS[prevBlockIdx]
     local prevBlockHasElements = state.blockElements[prevBlockIdx] and #state.blockElements[prevBlockIdx] > 0
     if prevBlock and prevBlockHasElements then
-        panel.prevBlockLabel:SetText("← " .. t(prevBlock.name))
+        panel.prevBlockLabel:SetText(LEFT_ARROW .. t(prevBlock.name))
         panel.prevBlockLabel:SetTextColor(0.5, 0.7, 0.9)
     else
         panel.prevBlockLabel:SetText("")
@@ -403,7 +407,7 @@ local function updateIndicator()
     local nextBlock = FOCUS_BLOCKS[nextBlockIdx]
     local nextBlockHasElements = state.blockElements[nextBlockIdx] and #state.blockElements[nextBlockIdx] > 0
     if nextBlock and nextBlockHasElements then
-        panel.nextBlockLabel:SetText(t(nextBlock.name) .. " →")
+        panel.nextBlockLabel:SetText(t(nextBlock.name) .. RIGHT_ARROW)
         panel.nextBlockLabel:SetTextColor(0.5, 0.7, 0.9)
     else
         panel.nextBlockLabel:SetText("")
@@ -425,7 +429,7 @@ local function updateIndicator()
         if #prevName > 20 then
             prevName = prevName:sub(1, 18) .. "…"
         end
-        panel.prevElemLabel:SetText("← " .. prevName)
+        panel.prevElemLabel:SetText(LEFT_ARROW .. prevName)
     else
         panel.prevElemLabel:SetText("")
     end
@@ -440,7 +444,7 @@ local function updateIndicator()
         if #nextName > 20 then
             nextName = nextName:sub(1, 18) .. "…"
         end
-        panel.nextElemLabel:SetText(nextName .. " →")
+        panel.nextElemLabel:SetText(nextName .. RIGHT_ARROW)
     else
         panel.nextElemLabel:SetText("")
     end
