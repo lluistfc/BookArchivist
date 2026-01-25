@@ -285,17 +285,51 @@ Locales.enUS = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Custom Book",
 	["EXIT_EDIT_MODE_TITLE"] = "Exit Edit Mode?",
 	["EXIT_EDIT_MODE_TEXT"] = "You have unsaved changes. Discard them?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Next | Shift+Tab: Prev | Enter: Activate | Esc: Exit",
+	["FOCUS_NO_ELEMENTS"] = "No focusable elements",
+	["FOCUS_SEARCH_BOX"] = "Search box",
+	["FOCUS_BOOK_ROW"] = "Book",
+	["FOCUS_LOCATION_ROW"] = "Location",
+	["FOCUS_CATEGORY_HEADER"] = "Header",
+	["FOCUS_CATEGORY_TABS"] = "Tabs",
+	["FOCUS_CATEGORY_FILTERS"] = "Filters",
+	["FOCUS_CATEGORY_LIST"] = "Book List",
+	["FOCUS_CATEGORY_READER"] = "Reader Actions",
+	["FOCUS_CATEGORY_PAGINATION"] = "Pagination",
+	["FOCUS_CATEGORY_OTHER"] = "Other",
+	["FOCUS_BLOCK_HEADER"] = "Header",
+	["FOCUS_BLOCK_LIST"] = "List",
+	["FOCUS_BLOCK_READER"] = "Reader",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "First Page",
+	["PAGINATION_LAST"] = "Last Page",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Share Book",
+	["ACTION_COPY"] = "Copy Text",
+	["ACTION_WAYPOINT"] = "Set Waypoint",
+	["ACTION_FAVORITE"] = "Add to Favorites",
+	["ACTION_UNFAVORITE"] = "Remove from Favorites",
+	["ACTION_DELETE"] = "Delete Book",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Books Tab",
+	["TAB_LOCATIONS"] = "Locations Tab",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Preview",
+	["TTS_STOP_PREVIEW"] = "Stop",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Preview with TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Listen to your current page using text-to-speech. Useful for proofreading dictated text.",
+	["TTS_PREVIEW_EMPTY"] = "Nothing to preview. Write some content first.",
+	["TTS_PREVIEW_FAILED"] = "TTS preview failed: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Keybindings",
 }
 
--- ============================================================================
--- Key Binding Localization (Global scope for Bindings.xml)
--- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
--- ============================================================================
-
-BINDING_HEADER_BOOKARCHIVIST = "Book Archivist"
-BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Toggle Book Archivist"
-BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Read Current Book (TTS)"
-BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Stop Reading (TTS)"
-BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Toggle Read Aloud (TTS)"
-BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Next Page"
-BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Previous Page"
+-- Note: Key Binding globals (BINDING_HEADER_*, BINDING_NAME_*) are defined in
+-- Bindings.lua which loads earlier. Non-English locales override them.

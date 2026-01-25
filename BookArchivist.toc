@@ -86,6 +86,9 @@ ui/options/BookArchivist_UI_OptionsTemplates.xml
 ui/options/BookArchivist_UI_Options.lua
 ui/BookArchivist_UI.lua
 ui/BookArchivist_UI_Core.lua
+ui/BookArchivist_UI_FocusManager.lua
+ui/BookArchivist_UI_FocusRegistration.lua
+ui/BookArchivist_UI_KeybindingsPanel.lua
 ui/BookArchivist_UI_Frame_Shell.lua
 ui/BookArchivist_UI_Frame_Layout.lua
 ui/BookArchivist_UI_Frame_Chrome.lua

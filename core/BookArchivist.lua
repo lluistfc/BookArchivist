@@ -2,6 +2,23 @@
 -- BookArchivist.lua
 -- Bootstraps the addon by wiring core, capture, and example modules.
 
+-- ============================================================================
+-- Key Binding Localization (must be set early, before Key Bindings UI loads)
+-- ============================================================================
+BINDING_HEADER_BOOKARCHIVIST = "Book Archivist"
+BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Toggle Book Archivist"
+BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Read Current Book (TTS)"
+BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Toggle Read Aloud (TTS)"
+BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Next Page"
+BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Previous Page"
+BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "New Custom Book"
+BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT = "Focus Next Element"
+BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV = "Focus Previous Element"
+BINDING_NAME_BOOKARCHIVIST_FOCUS_ACTIVATE = "Activate Focused Element"
+BINDING_NAME_BOOKARCHIVIST_FOCUS_TOGGLE = "Toggle Focus Navigation"
+BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT_BLOCK = "Focus Next Block"
+BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV_BLOCK = "Focus Previous Block"
+
 local ADDON_NAME = ...
 
 BookArchivist = BookArchivist or {}
@@ -227,6 +244,20 @@ function BookArchivist:GetDB()
 	end
 	self:DebugPrint("[BookArchivist] GetDB: Core not available, returning empty table")
 	return {}
+end
+
+-- Check if the BookArchivist UI is currently visible
+-- Used by keybinding handlers to prevent actions when UI is closed
+function BookArchivist:IsUIVisible()
+	local ui = self.UI
+	local internal = ui and ui.Internal
+	if internal and internal.getUIFrame then
+		local frame = internal.getUIFrame()
+		if frame and frame.IsShown and frame:IsShown() then
+			return true
+		end
+	end
+	return false
 end
 
 function BookArchivist:ExportBook(bookId)

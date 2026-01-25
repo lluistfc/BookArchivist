@@ -272,4 +272,71 @@ Locales.deDE = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Benutzerdefiniertes Buch",
 	["EXIT_EDIT_MODE_TITLE"] = "Bearbeitungsmodus verlassen?",
 	["EXIT_EDIT_MODE_TEXT"] = "Sie haben nicht gespeicherte Änderungen. Verwerfen?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Nächst. | Shift+Tab: Vorh. | Enter: Aktivieren | Esc: Beenden",
+	["FOCUS_NO_ELEMENTS"] = "Keine fokussierbaren Elemente",
+	["FOCUS_SEARCH_BOX"] = "Suchfeld",
+	["FOCUS_BOOK_ROW"] = "Buch",
+	["FOCUS_LOCATION_ROW"] = "Ort",
+	["FOCUS_CATEGORY_HEADER"] = "Kopfzeile",
+	["FOCUS_CATEGORY_TABS"] = "Registerkarten",
+	["FOCUS_CATEGORY_FILTERS"] = "Filter",
+	["FOCUS_CATEGORY_LIST"] = "Buchliste",
+	["FOCUS_CATEGORY_READER"] = "Leseraktionen",
+	["FOCUS_CATEGORY_PAGINATION"] = "Seitennavigation",
+	["FOCUS_CATEGORY_OTHER"] = "Sonstiges",
+	["FOCUS_BLOCK_HEADER"] = "Kopfzeile",
+	["FOCUS_BLOCK_LIST"] = "Liste",
+	["FOCUS_BLOCK_READER"] = "Leser",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "Erste Seite",
+	["PAGINATION_LAST"] = "Letzte Seite",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Buch teilen",
+	["ACTION_COPY"] = "Text kopieren",
+	["ACTION_WAYPOINT"] = "Wegpunkt setzen",
+	["ACTION_FAVORITE"] = "Zu Favoriten hinzufügen",
+	["ACTION_UNFAVORITE"] = "Aus Favoriten entfernen",
+	["ACTION_DELETE"] = "Buch löschen",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Bücher-Tab",
+	["TAB_LOCATIONS"] = "Orte-Tab",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Vorschau",
+	["TTS_STOP_PREVIEW"] = "Stoppen",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Vorschau mit TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Hören Sie Ihre aktuelle Seite mit Text-zu-Sprache. Nützlich zum Überprüfen von diktiertem Text.",
+	["TTS_PREVIEW_EMPTY"] = "Nichts zum Vorhören. Schreiben Sie zuerst Inhalt.",
+	["TTS_PREVIEW_FAILED"] = "TTS-Vorschau fehlgeschlagen: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Tastenbelegungen",
 }
+
+-- ============================================================================
+-- Key Binding Localization (Global scope for Bindings.xml)
+-- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
+-- Only set if the game locale is German
+-- ============================================================================
+
+if GetLocale() == "deDE" then
+	BINDING_HEADER_BOOKARCHIVIST = "Book Archivist"
+	BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Book Archivist ein-/ausblenden"
+	BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Aktuelles Buch vorlesen (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Vorlesen stoppen (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Vorlesen umschalten (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Nächste Seite"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Vorherige Seite"
+	BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "Neues benutzerdefiniertes Buch"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT = "Nächstes Element fokussieren"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV = "Vorheriges Element fokussieren"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_ACTIVATE = "Fokussiertes Element aktivieren"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_TOGGLE = "Fokusnavigation umschalten"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT_BLOCK = "Nächster Bereich"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV_BLOCK = "Vorheriger Bereich"
+end

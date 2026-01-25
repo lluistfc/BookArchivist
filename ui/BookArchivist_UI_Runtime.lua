@@ -201,6 +201,16 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 		return
 	end
 
+	-- Debug focus navigation
+	if verb == "debugfocus" then
+		if BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusRegistration then
+			BookArchivist.UI.FocusRegistration:DebugScrollBox()
+		else
+			print("|cFFFF0000[BookArchivist] FocusRegistration not loaded|r")
+		end
+		return
+	end
+
 	-- Module status diagnostic - dev only
 	if verb == "modules" or verb == "modstatus" then
 		-- Module diagnostic requires dev tools

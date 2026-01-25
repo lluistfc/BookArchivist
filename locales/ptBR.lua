@@ -273,4 +273,71 @@ Locales.ptBR = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Livro Personalizado",
 	["EXIT_EDIT_MODE_TITLE"] = "Sair do modo de edição?",
 	["EXIT_EDIT_MODE_TEXT"] = "Você tem alterações não salvas. Descartá-las?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Próx. | Shift+Tab: Ant. | Enter: Ativar | Esc: Sair",
+	["FOCUS_NO_ELEMENTS"] = "Nenhum elemento focalizável",
+	["FOCUS_SEARCH_BOX"] = "Caixa de pesquisa",
+	["FOCUS_BOOK_ROW"] = "Livro",
+	["FOCUS_LOCATION_ROW"] = "Localização",
+	["FOCUS_CATEGORY_HEADER"] = "Cabeçalho",
+	["FOCUS_CATEGORY_TABS"] = "Abas",
+	["FOCUS_CATEGORY_FILTERS"] = "Filtros",
+	["FOCUS_CATEGORY_LIST"] = "Lista de Livros",
+	["FOCUS_CATEGORY_READER"] = "Ações do Leitor",
+	["FOCUS_CATEGORY_PAGINATION"] = "Paginação",
+	["FOCUS_CATEGORY_OTHER"] = "Outro",
+	["FOCUS_BLOCK_HEADER"] = "Cabeçalho",
+	["FOCUS_BLOCK_LIST"] = "Lista",
+	["FOCUS_BLOCK_READER"] = "Leitor",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "Primeira Página",
+	["PAGINATION_LAST"] = "Última Página",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Compartilhar Livro",
+	["ACTION_COPY"] = "Copiar Texto",
+	["ACTION_WAYPOINT"] = "Definir Waypoint",
+	["ACTION_FAVORITE"] = "Adicionar aos Favoritos",
+	["ACTION_UNFAVORITE"] = "Remover dos Favoritos",
+	["ACTION_DELETE"] = "Excluir Livro",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Aba Livros",
+	["TAB_LOCATIONS"] = "Aba Localizações",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Pré-visualizar",
+	["TTS_STOP_PREVIEW"] = "Parar",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Pré-visualizar com TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Ouça sua página atual usando texto para fala. Útil para revisar texto ditado.",
+	["TTS_PREVIEW_EMPTY"] = "Nada para pré-visualizar. Escreva conteúdo primeiro.",
+	["TTS_PREVIEW_FAILED"] = "Falha na pré-visualização TTS: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Atalhos de teclado",
 }
+
+-- ============================================================================
+-- Key Binding Localization (Global scope for Bindings.xml)
+-- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
+-- Only set if the game locale is Portuguese
+-- ============================================================================
+
+if GetLocale() == "ptBR" or GetLocale() == "ptPT" then
+	BINDING_HEADER_BOOKARCHIVIST = "Book Archivist"
+	BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Mostrar/Ocultar Book Archivist"
+	BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Ler livro atual (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Parar leitura (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Alternar leitura em voz alta (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Próxima página"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Página anterior"
+	BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "Novo livro personalizado"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT = "Próximo elemento"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV = "Elemento anterior"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_ACTIVATE = "Ativar elemento focado"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_TOGGLE = "Alternar navegação por foco"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT_BLOCK = "Próximo bloco"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV_BLOCK = "Bloco anterior"
+end

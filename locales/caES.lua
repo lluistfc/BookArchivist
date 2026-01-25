@@ -274,4 +274,58 @@ Locales.caES = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Llibre Personalitzat",
 	["EXIT_EDIT_MODE_TITLE"] = "Sortir del mode d'edició?",
 	["EXIT_EDIT_MODE_TEXT"] = "Tens canvis sense desar. Descartar-los?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Seg. | Shift+Tab: Ant. | Enter: Activar | Esc: Sortir",
+	["FOCUS_NO_ELEMENTS"] = "Sense elements enfocables",
+	["FOCUS_SEARCH_BOX"] = "Quadre de cerca",
+	["FOCUS_BOOK_ROW"] = "Llibre",
+	["FOCUS_LOCATION_ROW"] = "Ubicació",
+	["FOCUS_CATEGORY_HEADER"] = "Capçalera",
+	["FOCUS_CATEGORY_TABS"] = "Pestanyes",
+	["FOCUS_CATEGORY_FILTERS"] = "Filtres",
+	["FOCUS_CATEGORY_LIST"] = "Llista de Llibres",
+	["FOCUS_CATEGORY_READER"] = "Accions del Lector",
+	["FOCUS_CATEGORY_PAGINATION"] = "Paginació",
+	["FOCUS_CATEGORY_OTHER"] = "Altres",
+	["FOCUS_BLOCK_HEADER"] = "Capçalera",
+	["FOCUS_BLOCK_LIST"] = "Llista",
+	["FOCUS_BLOCK_READER"] = "Lector",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "Primera Pàgina",
+	["PAGINATION_LAST"] = "Última Pàgina",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Compartir Llibre",
+	["ACTION_COPY"] = "Copiar Text",
+	["ACTION_WAYPOINT"] = "Establir Waypoint",
+	["ACTION_FAVORITE"] = "Afegir a Favorits",
+	["ACTION_UNFAVORITE"] = "Treure de Favorits",
+	["ACTION_DELETE"] = "Eliminar Llibre",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Pestanya Llibres",
+	["TAB_LOCATIONS"] = "Pestanya Ubicacions",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Vista prèvia",
+	["TTS_STOP_PREVIEW"] = "Aturar",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Vista prèvia amb TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Escolta la teva pàgina actual amb text a veu. Útil per revisar text dictat.",
+	["TTS_PREVIEW_EMPTY"] = "Res a previsualitzar. Escriu contingut primer.",
+	["TTS_PREVIEW_FAILED"] = "Error en vista prèvia TTS: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Dreceres de teclat",
 }
+
+-- ============================================================================
+-- Key Binding Localization (Global scope for Bindings.xml)
+-- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
+-- Note: Catalan is not an official WoW locale, so these won't be used
+-- but are kept for completeness. WoW Catalan users typically use esES.
+-- ============================================================================
+
+-- Catalan bindings intentionally not set globally since WoW doesn't have caES locale
+-- Users who want Catalan would need to manually set their preference

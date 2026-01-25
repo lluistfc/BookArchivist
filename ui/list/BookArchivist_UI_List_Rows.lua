@@ -183,6 +183,12 @@ function ListUI:UpdateList()
 			if ReaderUI and ReaderUI.RenderSelected then
 				ReaderUI:RenderSelected()
 			end
+			
+			-- Refresh focus registrations after list rows are created
+			local FocusRegistration = BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusRegistration
+			if FocusRegistration and FocusRegistration.RegisterListRows then
+				FocusRegistration:RegisterListRows()
+			end
 		end)
 		return
 	end
@@ -358,6 +364,12 @@ function ListUI:UpdateList()
 		local ReaderUI = BookArchivist and BookArchivist.UI and BookArchivist.UI.Reader
 		if ReaderUI and ReaderUI.RenderSelected then
 			ReaderUI:RenderSelected()
+		end
+		
+		-- Refresh focus registration after list update
+		local FocusReg = BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusRegistration
+		if FocusReg and FocusReg.Refresh then
+			FocusReg:Refresh()
 		end
 	end)
 end

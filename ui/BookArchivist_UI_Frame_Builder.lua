@@ -101,6 +101,29 @@ function FrameUI:BuildContent(frame, opts)
 
 		-- Chunk 6: Final setup
 		function()
+			-- Configure OnHide handler to clean up focus navigation
+			frame:SetScript("OnHide", function()
+				if opts.debugPrint then
+					opts.debugPrint("[BookArchivist] UI OnHide fired")
+				end
+				-- Disable focus navigation when window closes
+				local FocusManager = BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusManager
+				if FocusManager and FocusManager.Disable then
+					FocusManager:Disable()
+				end
+				-- Hide keybindings panel
+				local KeybindingsPanel = BookArchivist and BookArchivist.UI and BookArchivist.UI.KeybindingsPanel
+				if KeybindingsPanel and KeybindingsPanel.Hide then
+					KeybindingsPanel:Hide()
+				end
+				if opts.onHide then
+					local ok, err = pcall(opts.onHide, frame)
+					if not ok and opts.logError then
+						opts.logError("Error in onHide: " .. tostring(err))
+					end
+				end
+			end)
+
 			-- Configure OnShow handler
 			frame:SetScript("OnShow", function()
 				if opts.debugPrint then
