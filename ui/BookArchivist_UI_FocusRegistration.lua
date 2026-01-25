@@ -123,7 +123,7 @@ function FocusRegistration:RegisterFilterElements()
                     button:Click()
                 end
             end
-        end, 20)
+        end, 20, { isDropdown = true })
     end
     
     -- Category dropdowns (All Books, Favorites, Recent)
@@ -290,9 +290,21 @@ function FocusRegistration:RegisterListRows()
     
     -- Method 2: Try WowScrollBoxList's GetFrames() iterator
     if #rowFrames == 0 and scrollBox and scrollBox.GetFrames then
-        for _, button in scrollBox:GetFrames() do
-            if isValidRow(button) then
-                table.insert(rowFrames, button)
+        local success, iterator = pcall(function() return scrollBox:GetFrames() end)
+        if success and iterator then
+            -- GetFrames returns an iterator function
+            if type(iterator) == "function" then
+                for button in iterator do
+                    if isValidRow(button) then
+                        table.insert(rowFrames, button)
+                    end
+                end
+            elseif type(iterator) == "table" then
+                for _, button in pairs(iterator) do
+                    if isValidRow(button) then
+                        table.insert(rowFrames, button)
+                    end
+                end
             end
         end
     end

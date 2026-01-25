@@ -27,6 +27,16 @@ local function t(key)
     return (L and L[key]) or key
 end
 
+-- Safe delayed execution (handles missing C_Timer)
+local function runAfterDelay(seconds, callback)
+    if C_Timer and C_Timer.After then
+        C_Timer.After(seconds, callback)
+    else
+        -- Fallback: run immediately (tests/sandboxes without C_Timer)
+        callback()
+    end
+end
+
 -- Block definitions (navigation groups)
 -- Each block contains related categories
 -- Block 1 (Header): Top bar - Help, Options, New Book, Search, Sort
@@ -68,6 +78,10 @@ local state = {
     highlightFrame = nil,      -- Visual highlight around focused element
     indicatorPanel = nil,      -- Floating panel showing focus target name
     lastScanTime = 0,          -- Debounce rescanning
+    -- Dropdown menu state
+    dropdownMode = false,      -- Are we navigating a dropdown menu?
+    dropdownElements = {},     -- Dropdown menu items
+    dropdownIndex = 0,         -- Current position in dropdown
 }
 
 -- Keybindings that already exist (don't include these in focus navigation)
@@ -97,11 +111,14 @@ local registeredElements = {}
     @param displayName string|function - Name to show in indicator (or function returning name)
     @param onActivate function - Called when user activates this element
     @param priority number - Order within category (lower = earlier)
+    @param options table - Optional: { isDropdown = true } for dropdown elements
 ]]
-function FocusManager:RegisterElement(id, frame, category, displayName, onActivate, priority)
+function FocusManager:RegisterElement(id, frame, category, displayName, onActivate, priority, options)
     if not id or not frame then
         return
     end
+    
+    options = options or {}
     
     registeredElements[id] = {
         id = id,
@@ -111,6 +128,7 @@ function FocusManager:RegisterElement(id, frame, category, displayName, onActiva
         onActivate = onActivate,
         priority = priority or 100,
         isRegistered = true,
+        isDropdown = options.isDropdown or false,
     }
     
     -- Mark element as focusable for scanning
@@ -148,6 +166,160 @@ end
 ]]
 local function getBlockIndex(category)
     return categoryToBlock[category] or 2 -- Default to "list" block
+end
+
+--[[
+    Scan visible dropdown menu items.
+    WoW dropdowns use DropDownList1, DropDownList2, etc.
+]]
+local function scanDropdownItems()
+    local items = {}
+    
+    -- Check DropDownList1 (most common)
+    local dropdownList = _G["DropDownList1"]
+    if not dropdownList or not dropdownList:IsShown() then
+        return items
+    end
+    
+    -- Scan buttons in the dropdown list
+    for i = 1, 32 do
+        local buttonName = "DropDownList1Button" .. i
+        local button = _G[buttonName]
+        if button and button:IsShown() then
+            -- Get button text
+            local textObj = _G[buttonName .. "NormalText"]
+            local text = textObj and textObj:GetText() or ("Item " .. i)
+            
+            -- Check if it's a title/header (not clickable)
+            local isTitle = button.isTitle
+            local isDisabled = button:IsEnabled() == false or button.disabled
+            
+            if not isTitle and not isDisabled and text and text ~= " " then
+                table.insert(items, {
+                    frame = button,
+                    text = text,
+                    index = i,
+                })
+            end
+        else
+            -- No more buttons visible
+            break
+        end
+    end
+    
+    return items
+end
+
+--[[
+    Highlight a dropdown menu item.
+]]
+local function highlightDropdownItem(index)
+    local items = state.dropdownElements
+    if not items or #items == 0 then
+        return
+    end
+    
+    -- Clamp index
+    if index < 1 then index = #items end
+    if index > #items then index = 1 end
+    
+    state.dropdownIndex = index
+    local item = items[index]
+    if not item or not item.frame then
+        return
+    end
+    
+    -- Position highlight on the dropdown item
+    local highlight = state.highlightFrame
+    if highlight then
+        highlight:ClearAllPoints()
+        highlight:SetPoint("TOPLEFT", item.frame, "TOPLEFT", -2, 2)
+        highlight:SetPoint("BOTTOMRIGHT", item.frame, "BOTTOMRIGHT", 2, -2)
+        highlight:Show()
+    end
+    
+    -- Update indicator panel for dropdown mode
+    local panel = state.indicatorPanel
+    if panel then
+        panel.blockLabel:SetText("[ Dropdown ]")
+        panel.prevBlockLabel:SetText("")
+        panel.nextBlockLabel:SetText("")
+        panel.header:SetText(t("SORT_DROPDOWN_PLACEHOLDER") or "Menu")
+        panel.label:SetText(item.text)
+        panel.counter:SetText(string.format("(%d / %d)", index, #items))
+        
+        -- Prev/next item labels
+        local prevIdx = index - 1
+        if prevIdx < 1 then prevIdx = #items end
+        local nextIdx = index + 1
+        if nextIdx > #items then nextIdx = 1 end
+        
+        local LEFT_ARROW = "|TInterface\\BUTTONS\\UI-SpellbookIcon-PrevPage-Up:12:12:0:0|t "
+        local RIGHT_ARROW = " |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage-Up:12:12:0:0|t"
+        
+        if items[prevIdx] and prevIdx ~= index then
+            local prevName = items[prevIdx].text
+            if #prevName > 18 then prevName = prevName:sub(1, 16) .. "…" end
+            panel.prevElemLabel:SetText(LEFT_ARROW .. prevName)
+        else
+            panel.prevElemLabel:SetText("")
+        end
+        
+        if items[nextIdx] and nextIdx ~= index then
+            local nextName = items[nextIdx].text
+            if #nextName > 18 then nextName = nextName:sub(1, 16) .. "…" end
+            panel.nextElemLabel:SetText(nextName .. RIGHT_ARROW)
+        else
+            panel.nextElemLabel:SetText("")
+        end
+        
+        panel:Show()
+    end
+end
+
+--[[
+    Enter dropdown navigation mode.
+]]
+local function enterDropdownMode()
+    local items = scanDropdownItems()
+    
+    if addonRoot and addonRoot.DebugPrint then
+        addonRoot:DebugPrint(string.format("[FocusManager] enterDropdownMode: found %d items", #items))
+    end
+    
+    if #items == 0 then
+        return false
+    end
+    
+    state.dropdownMode = true
+    state.dropdownElements = items
+    state.dropdownIndex = 1
+    
+    if addonRoot and addonRoot.DebugPrint then
+        addonRoot:DebugPrint("[FocusManager] Entered dropdown mode with " .. #items .. " items")
+        for i, item in ipairs(items) do
+            addonRoot:DebugPrint(string.format("  [%d] %s", i, item.text or "?"))
+        end
+    end
+    
+    -- Highlight first dropdown item
+    highlightDropdownItem(1)
+    
+    return true
+end
+
+--[[
+    Exit dropdown navigation mode.
+]]
+local function exitDropdownMode()
+    state.dropdownMode = false
+    state.dropdownElements = {}
+    state.dropdownIndex = 0
+    
+    -- Close dropdown if open
+    if CloseDropDownMenus then
+        CloseDropDownMenus()
+    end
 end
 
 --[[
@@ -518,6 +690,16 @@ function FocusManager:FocusNext()
         return
     end
     
+    -- Handle dropdown mode
+    if state.dropdownMode then
+        local newIndex = state.dropdownIndex + 1
+        if newIndex > #state.dropdownElements then
+            newIndex = 1
+        end
+        highlightDropdownItem(newIndex)
+        return true
+    end
+    
     -- Rescan if needed
     self:ScanFocusableElements()
     
@@ -568,6 +750,16 @@ function FocusManager:FocusPrev()
     if not state.enabled then
         self:Enable()
         return
+    end
+    
+    -- Handle dropdown mode
+    if state.dropdownMode then
+        local newIndex = state.dropdownIndex - 1
+        if newIndex < 1 then
+            newIndex = #state.dropdownElements
+        end
+        highlightDropdownItem(newIndex)
+        return true
     end
     
     -- Rescan if needed
@@ -682,6 +874,25 @@ function FocusManager:ActivateCurrent()
         return false
     end
     
+    -- Handle dropdown mode - click the selected dropdown item
+    if state.dropdownMode then
+        local items = state.dropdownElements
+        local index = state.dropdownIndex
+        if items and index >= 1 and index <= #items then
+            local item = items[index]
+            if item and item.frame and item.frame.Click then
+                item.frame:Click()
+            end
+        end
+        -- Exit dropdown mode after selection
+        exitDropdownMode()
+        -- Restore focus highlight on the original element
+        if state.currentIndex > 0 then
+            self:FocusElement(state.currentIndex)
+        end
+        return true
+    end
+    
     local elements = state.focusableElements
     local index = state.currentIndex
     
@@ -694,11 +905,28 @@ function FocusManager:ActivateCurrent()
         return false
     end
     
+    -- Check if this is a dropdown element (from registration flag or name pattern)
+    local isDropdown = elem.isDropdown or (elem.id and (elem.id:find("Dropdown") or elem.id:find("dropdown")))
+    
+    if addonRoot and addonRoot.DebugPrint then
+        addonRoot:DebugPrint(string.format("[FocusManager] ActivateCurrent: %s, isDropdown=%s, elem.isDropdown=%s",
+            tostring(elem.id), tostring(isDropdown), tostring(elem.isDropdown)))
+    end
+    
     -- Call custom activation handler if provided
     if elem.onActivate then
         local ok, err = pcall(elem.onActivate, elem.frame)
         if not ok and addonRoot.DebugPrint then
             addonRoot:DebugPrint("[FocusManager] Activation failed: " .. tostring(err))
+        end
+        -- Check if dropdown opened and enter dropdown mode
+        if isDropdown then
+            if addonRoot and addonRoot.DebugPrint then
+                addonRoot:DebugPrint("[FocusManager] Scheduling dropdown mode entry in 50ms")
+            end
+            runAfterDelay(0.05, function()
+                enterDropdownMode()
+            end)
         end
         return ok
     end
@@ -709,11 +937,23 @@ function FocusManager:ActivateCurrent()
         -- Check for different frame types
         if frame.Click then
             frame:Click()
+            -- Check if dropdown opened
+            if isDropdown then
+                runAfterDelay(0.05, function()
+                    enterDropdownMode()
+                end)
+            end
             return true
         elseif frame.GetScript then
             local onClick = frame:GetScript("OnClick")
             if onClick then
                 onClick(frame, "LeftButton", false)
+                -- Check if dropdown opened
+                if isDropdown then
+                    runAfterDelay(0.05, function()
+                        enterDropdownMode()
+                    end)
+                end
                 return true
             end
         end
@@ -732,6 +972,12 @@ function FocusManager:ActivateCurrent()
                 local button = _G[name .. "Button"]
                 if button and button.Click then
                     button:Click()
+                    -- Check if dropdown opened
+                    if isDropdown then
+                        runAfterDelay(0.05, function()
+                            enterDropdownMode()
+                        end)
+                    end
                     return true
                 end
             end
@@ -807,8 +1053,15 @@ end
 
 --[[
     Toggle focus navigation mode.
+    If in dropdown mode, cancels the dropdown first.
 ]]
 function FocusManager:Toggle()
+    -- If in dropdown mode, cancel dropdown instead of toggling focus
+    if state.dropdownMode then
+        self:CancelDropdown()
+        return
+    end
+    
     if state.enabled then
         self:Disable()
     else
@@ -821,6 +1074,28 @@ end
 ]]
 function FocusManager:IsEnabled()
     return state.enabled
+end
+
+--[[
+    Check if currently navigating a dropdown menu.
+]]
+function FocusManager:IsInDropdownMode()
+    return state.dropdownMode
+end
+
+--[[
+    Cancel dropdown navigation and return to normal focus mode.
+]]
+function FocusManager:CancelDropdown()
+    if state.dropdownMode then
+        exitDropdownMode()
+        -- Restore focus highlight on the original element
+        if state.currentIndex > 0 then
+            self:FocusElement(state.currentIndex)
+        end
+        return true
+    end
+    return false
 end
 
 --[[
@@ -882,6 +1157,10 @@ function FocusManager:GetState()
             list = state.blockElements[2] and #state.blockElements[2] or 0,
             reader = state.blockElements[3] and #state.blockElements[3] or 0,
         },
+        -- Dropdown navigation state
+        dropdownMode = state.dropdownMode,
+        dropdownIndex = state.dropdownIndex,
+        dropdownItemCount = #state.dropdownElements,
     }
 end
 
@@ -939,6 +1218,13 @@ addonRoot.FocusPrevBlock = function()
         return
     end
     FocusManager:PrevBlock()
+end
+
+addonRoot.FocusCancelDropdown = function()
+    if not addonRoot:IsUIVisible() then
+        return
+    end
+    FocusManager:CancelDropdown()
 end
 
 return FocusManager
