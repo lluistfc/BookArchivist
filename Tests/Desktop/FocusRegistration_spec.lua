@@ -89,6 +89,8 @@ describe("BookArchivist.UI.FocusRegistration", function()
                     SetVertexColor = function() end,
                     SetBlendMode = function() end,
                     SetAllPoints = function() end,
+                    SetHeight = function() end,
+                    SetColorTexture = function() end,
                 }
             end
             frame.CreateFontString = function()
@@ -98,6 +100,8 @@ describe("BookArchivist.UI.FocusRegistration", function()
                     SetText = function() end,
                     GetText = function() return "" end,
                     GetStringWidth = function() return 100 end,
+                    SetWidth = function() end,
+                    SetJustifyH = function() end,
                 }
             end
             frame.SetWidth = function() end

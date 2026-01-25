@@ -236,7 +236,7 @@ local function createIndicatorPanel()
     local frame = CreateFrame("Frame", "BookArchivistFocusIndicator", UIParent, "BackdropTemplate")
     frame:SetFrameStrata("TOOLTIP")
     frame:SetFrameLevel(200)
-    frame:SetSize(300, 65)
+    frame:SetSize(340, 110)
     frame:SetPoint("TOP", UIParent, "TOP", 0, -100)
     frame:SetBackdrop({
         bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -248,40 +248,82 @@ local function createIndicatorPanel()
     frame:SetBackdropBorderColor(1.0, 0.82, 0.0, 1.0)
     frame:Hide()
     
-    -- Block indicator (top)
-    local blockLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    blockLabel:SetPoint("TOP", frame, "TOP", 0, -6)
+    -- === TOP ROW: Block Navigation ===
+    -- Previous block (left arrow)
+    local prevBlockLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    prevBlockLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -8)
+    prevBlockLabel:SetTextColor(0.5, 0.5, 0.5)
+    prevBlockLabel:SetText("")
+    frame.prevBlockLabel = prevBlockLabel
+    
+    -- Current block (center, prominent)
+    local blockLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    blockLabel:SetPoint("TOP", frame, "TOP", 0, -8)
     blockLabel:SetTextColor(0.5, 0.8, 1.0)
     blockLabel:SetText("")
     frame.blockLabel = blockLabel
     
-    -- Header text (category)
+    -- Next block (right arrow)
+    local nextBlockLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    nextBlockLabel:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -12, -8)
+    nextBlockLabel:SetTextColor(0.5, 0.5, 0.5)
+    nextBlockLabel:SetText("")
+    frame.nextBlockLabel = nextBlockLabel
+    
+    -- Separator line (visual)
+    local sep1 = frame:CreateTexture(nil, "ARTWORK")
+    sep1:SetHeight(1)
+    sep1:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -26)
+    sep1:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -26)
+    sep1:SetColorTexture(0.4, 0.4, 0.4, 0.5)
+    
+    -- === MIDDLE ROW: Current Element ===
+    -- Category header
     local header = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    header:SetPoint("TOP", blockLabel, "BOTTOM", 0, -2)
+    header:SetPoint("TOP", frame, "TOP", 0, -32)
     header:SetTextColor(0.7, 0.7, 0.7)
     header:SetText("")
     frame.header = header
     
-    -- Main focus target name
+    -- Main focus target name (prominent, gold)
     local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     label:SetPoint("TOP", header, "BOTTOM", 0, -2)
     label:SetTextColor(1.0, 0.82, 0.0)
     label:SetText("")
     frame.label = label
     
-    -- Instructions
-    local instructions = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    instructions:SetPoint("BOTTOM", frame, "BOTTOM", 0, 6)
-    instructions:SetTextColor(0.6, 0.6, 0.6)
-    instructions:SetText(t("FOCUS_INSTRUCTIONS"))
-    frame.instructions = instructions
-    
     -- Counter (current/total in block)
     local counter = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    counter:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -6)
-    counter:SetTextColor(0.7, 0.7, 0.7)
+    counter:SetPoint("TOP", label, "BOTTOM", 0, -2)
+    counter:SetTextColor(0.6, 0.6, 0.6)
     counter:SetText("")
     frame.counter = counter
+    
+    -- Separator line 2
+    local sep2 = frame:CreateTexture(nil, "ARTWORK")
+    sep2:SetHeight(1)
+    sep2:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -78)
+    sep2:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -78)
+    sep2:SetColorTexture(0.4, 0.4, 0.4, 0.5)
+    
+    -- === BOTTOM ROW: Prev/Next Elements ===
+    -- Previous element (left)
+    local prevElemLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    prevElemLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 12, 8)
+    prevElemLabel:SetWidth(140)
+    prevElemLabel:SetJustifyH("LEFT")
+    prevElemLabel:SetTextColor(0.5, 0.5, 0.5)
+    prevElemLabel:SetText("")
+    frame.prevElemLabel = prevElemLabel
+    
+    -- Next element (right)
+    local nextElemLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    nextElemLabel:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 8)
+    nextElemLabel:SetWidth(140)
+    nextElemLabel:SetJustifyH("RIGHT")
+    nextElemLabel:SetTextColor(0.5, 0.5, 0.5)
+    nextElemLabel:SetText("")
+    frame.nextElemLabel = nextElemLabel
     
     state.indicatorPanel = frame
     return frame
@@ -339,15 +381,73 @@ local function updateIndicator()
         end
     end
     
-    -- Update text
-    panel.blockLabel:SetText("[" .. t(block.name) .. "]")
+    -- === Update Block Navigation (top row) ===
+    -- Previous block
+    local prevBlockIdx = blockIdx - 1
+    if prevBlockIdx < 1 then prevBlockIdx = #FOCUS_BLOCKS end
+    local prevBlock = FOCUS_BLOCKS[prevBlockIdx]
+    local prevBlockHasElements = state.blockElements[prevBlockIdx] and #state.blockElements[prevBlockIdx] > 0
+    if prevBlock and prevBlockHasElements then
+        panel.prevBlockLabel:SetText("← " .. t(prevBlock.name))
+        panel.prevBlockLabel:SetTextColor(0.5, 0.7, 0.9)
+    else
+        panel.prevBlockLabel:SetText("")
+    end
+    
+    -- Current block
+    panel.blockLabel:SetText("[ " .. t(block.name) .. " ]")
+    
+    -- Next block
+    local nextBlockIdx = blockIdx + 1
+    if nextBlockIdx > #FOCUS_BLOCKS then nextBlockIdx = 1 end
+    local nextBlock = FOCUS_BLOCKS[nextBlockIdx]
+    local nextBlockHasElements = state.blockElements[nextBlockIdx] and #state.blockElements[nextBlockIdx] > 0
+    if nextBlock and nextBlockHasElements then
+        panel.nextBlockLabel:SetText(t(nextBlock.name) .. " →")
+        panel.nextBlockLabel:SetTextColor(0.5, 0.7, 0.9)
+    else
+        panel.nextBlockLabel:SetText("")
+    end
+    
+    -- === Update Current Element (middle row) ===
     panel.label:SetText(getDisplayName(elem))
     panel.header:SetText(t("FOCUS_CATEGORY_" .. string.upper(elem.category)) or elem.category)
-    panel.counter:SetText(string.format("%d / %d", posInBlock, #blockElements))
+    panel.counter:SetText(string.format("(%d / %d)", posInBlock, #blockElements))
     
-    -- Resize frame to fit content
+    -- === Update Prev/Next Elements (bottom row) ===
+    -- Previous element in block
+    local prevPosInBlock = posInBlock - 1
+    if prevPosInBlock < 1 then prevPosInBlock = #blockElements end
+    local prevElem = blockElements[prevPosInBlock]
+    if prevElem and prevElem.element and prevPosInBlock ~= posInBlock then
+        local prevName = getDisplayName(prevElem.element)
+        -- Truncate if too long
+        if #prevName > 20 then
+            prevName = prevName:sub(1, 18) .. "…"
+        end
+        panel.prevElemLabel:SetText("← " .. prevName)
+    else
+        panel.prevElemLabel:SetText("")
+    end
+    
+    -- Next element in block
+    local nextPosInBlock = posInBlock + 1
+    if nextPosInBlock > #blockElements then nextPosInBlock = 1 end
+    local nextElem = blockElements[nextPosInBlock]
+    if nextElem and nextElem.element and nextPosInBlock ~= posInBlock then
+        local nextName = getDisplayName(nextElem.element)
+        -- Truncate if too long
+        if #nextName > 20 then
+            nextName = nextName:sub(1, 18) .. "…"
+        end
+        panel.nextElemLabel:SetText(nextName .. " →")
+    else
+        panel.nextElemLabel:SetText("")
+    end
+    
+    -- Resize frame to fit content (based on main label)
     local labelWidth = panel.label:GetStringWidth()
-    local newWidth = math.max(200, labelWidth + 40)
+    local newWidth = math.max(340, labelWidth + 60)
     panel:SetWidth(newWidth)
     
     panel:Show()

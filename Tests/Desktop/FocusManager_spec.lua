@@ -77,6 +77,8 @@ describe("BookArchivist.UI.FocusManager", function()
                     SetVertexColor = function() end,
                     SetBlendMode = function() end,
                     SetAllPoints = function() end,
+                    SetHeight = function() end,
+                    SetColorTexture = function() end,
                 }
             end
             frame.CreateFontString = function()
@@ -86,6 +88,8 @@ describe("BookArchivist.UI.FocusManager", function()
                     SetText = function(self, text) self.text = text end,
                     GetText = function(self) return self.text end,
                     GetStringWidth = function() return 100 end,
+                    SetWidth = function() end,
+                    SetJustifyH = function() end,
                 }
             end
             frame.SetWidth = function() end
