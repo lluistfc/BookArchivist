@@ -19,22 +19,6 @@
         end
     </Binding>
     
-    <!-- Toggle TTS (start/stop) - requires UI visible to start -->
-    <Binding name="BOOKARCHIVIST_TTS_TOGGLE" category="BINDING_HEADER_BOOKARCHIVIST">
-        if BookArchivist and BookArchivist.TTS then
-            -- Stop always works, but start requires UI visible
-            if BookArchivist.TTS.IsSpeaking and BookArchivist.TTS:IsSpeaking() then
-                if BookArchivist.TTS.Stop then
-                    BookArchivist.TTS:Stop()
-                end
-            elseif BookArchivist.IsUIVisible and BookArchivist:IsUIVisible() then
-                if BookArchivist.TTS.ToggleCurrentBook then
-                    BookArchivist.TTS:ToggleCurrentBook()
-                end
-            end
-        end
-    </Binding>
-    
     <!-- Navigate to next page - context sensitive based on focus block -->
     <!-- List block: navigates list pagination | Reader block: navigates book pages -->
     <Binding name="BOOKARCHIVIST_PAGE_NEXT" category="BINDING_HEADER_BOOKARCHIVIST">

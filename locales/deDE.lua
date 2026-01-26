@@ -329,7 +329,6 @@ if GetLocale() == "deDE" then
 	BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Book Archivist ein-/ausblenden"
 	BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Aktuelles Buch vorlesen (TTS)"
 	BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Vorlesen stoppen (TTS)"
-	BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Vorlesen umschalten (TTS)"
 	BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Nächste Seite"
 	BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Vorherige Seite"
 	BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "Neues benutzerdefiniertes Buch"

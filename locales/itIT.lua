@@ -329,7 +329,6 @@ if GetLocale() == "itIT" then
 	BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Mostra/Nascondi Book Archivist"
 	BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Leggi libro corrente (TTS)"
 	BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Interrompi lettura (TTS)"
-	BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Attiva/disattiva lettura ad alta voce (TTS)"
 	BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Pagina successiva"
 	BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Pagina precedente"
 	BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "Nuovo libro personalizzato"

@@ -131,7 +131,10 @@ function FocusRegistration:RegisterFilterElements()
 end
 
 --[[
-    Register reader action elements (Share, Copy, Waypoint, Favorite, Delete).
+    Register reader action elements (Waypoint, Copy, Share, Favorite, Delete).
+    Priority order matches visual left-to-right layout in actionsRail:
+      [TTS] [Waypoint] [Copy] [Share] [Favorite] [CustomIcon?] [Delete]
+    TTS has its own keybinding so is excluded from focus navigation.
 ]]
 function FocusRegistration:RegisterReaderElements()
     local FM = addonRoot.UI.FocusManager
@@ -139,10 +142,10 @@ function FocusRegistration:RegisterReaderElements()
         return
     end
     
-    -- Share button (skip if there's a binding for it)
-    local shareButton = _G["BookArchivistShareButton"]
-    if shareButton then
-        FM:RegisterElement("reader-share", shareButton, "reader", t("ACTION_SHARE"), function(frame)
+    -- Waypoint button (leftmost after TTS)
+    local waypointButton = _G["BookArchivistWaypointButton"]
+    if waypointButton then
+        FM:RegisterElement("reader-waypoint", waypointButton, "reader", t("ACTION_WAYPOINT"), function(frame)
             if frame.Click then frame:Click() end
         end, 10)
     end
@@ -155,10 +158,10 @@ function FocusRegistration:RegisterReaderElements()
         end, 20)
     end
     
-    -- Waypoint button
-    local waypointButton = _G["BookArchivistWaypointButton"]
-    if waypointButton then
-        FM:RegisterElement("reader-waypoint", waypointButton, "reader", t("ACTION_WAYPOINT"), function(frame)
+    -- Share button
+    local shareButton = _G["BookArchivistShareButton"]
+    if shareButton then
+        FM:RegisterElement("reader-share", shareButton, "reader", t("ACTION_SHARE"), function(frame)
             if frame.Click then frame:Click() end
         end, 30)
     end
@@ -184,7 +187,7 @@ function FocusRegistration:RegisterReaderElements()
         end, 40)
     end
     
-    -- Delete button
+    -- Delete button (rightmost)
     local deleteButton = _G["BookArchivistDeleteButton"]
     if deleteButton then
         FM:RegisterElement("reader-delete", deleteButton, "reader", t("ACTION_DELETE"), function(frame)
@@ -192,7 +195,7 @@ function FocusRegistration:RegisterReaderElements()
         end, 50)
     end
     
-    -- TTS button is excluded (has its own bindings)
+    -- TTS button is excluded (has its own keybinding)
 end
 
 --[[

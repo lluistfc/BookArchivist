@@ -330,7 +330,6 @@ if GetLocale() == "ptBR" or GetLocale() == "ptPT" then
 	BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Mostrar/Ocultar Book Archivist"
 	BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Ler livro atual (TTS)"
 	BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Parar leitura (TTS)"
-	BINDING_NAME_BOOKARCHIVIST_TTS_TOGGLE = "Alternar leitura em voz alta (TTS)"
 	BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Próxima página"
 	BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Página anterior"
 	BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "Novo livro personalizado"
