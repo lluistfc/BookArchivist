@@ -401,6 +401,12 @@ function EditMode:ShowEditUI()
 	if state.editPageEdit and state.editPageEdit.frame then
 		state.editPageEdit.frame:Show()
 	end
+	
+	-- Refresh focus registration to include edit mode elements
+	local FocusReg = BookArchivist.UI and BookArchivist.UI.FocusRegistration
+	if FocusReg and FocusReg.Refresh then
+		FocusReg:Refresh()
+	end
 end
 
 -- Hide edit UI, show normal reader content
@@ -410,6 +416,12 @@ function EditMode:HideEditUI()
 	end
 	
 	editSession.isEditing = false
+	
+	-- Refresh focus registration to remove edit mode elements
+	local FocusReg = BookArchivist.UI and BookArchivist.UI.FocusRegistration
+	if FocusReg and FocusReg.Refresh then
+		FocusReg:Refresh()
+	end
 	
 	-- Restore normal reader UI
 	if ReaderUI.RenderSelected then

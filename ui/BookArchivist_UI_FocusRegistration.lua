@@ -196,6 +196,118 @@ function FocusRegistration:RegisterReaderElements()
 end
 
 --[[
+    Register edit mode elements (New Book / Edit Book UI).
+    These use the "reader" category since they replace the reader panel content.
+]]
+function FocusRegistration:RegisterEditModeElements()
+    local FM = addonRoot.UI.FocusManager
+    local ReaderUI = addonRoot.UI and addonRoot.UI.Reader
+    if not FM or not ReaderUI then
+        return
+    end
+    
+    local state = ReaderUI.__state
+    if not state then
+        return
+    end
+    
+    -- Check if edit mode is active
+    local EditMode = ReaderUI.EditMode
+    if not EditMode or not EditMode:IsEditing() then
+        -- Unregister edit elements when not in edit mode
+        FM:UnregisterElement("edit-title")
+        FM:UnregisterElement("edit-location")
+        FM:UnregisterElement("edit-content")
+        FM:UnregisterElement("edit-prev-page")
+        FM:UnregisterElement("edit-add-page")
+        FM:UnregisterElement("edit-next-page")
+        FM:UnregisterElement("edit-tts-preview")
+        FM:UnregisterElement("edit-save")
+        FM:UnregisterElement("edit-cancel")
+        return
+    end
+    
+    -- Title input box
+    local titleBox = state.editTitleBox
+    if titleBox then
+        FM:RegisterElement("edit-title", titleBox, "reader", t("BOOK_TITLE") or "Title", function(frame)
+            if frame.SetFocus then frame:SetFocus() end
+        end, 10)
+    end
+    
+    -- Use Current Location button
+    local useLocBtn = state.editUseCurrentLocBtn
+    if useLocBtn then
+        FM:RegisterElement("edit-location", useLocBtn, "reader", t("USE_CURRENT_LOC") or "Use Current Location", function(frame)
+            if frame.Click then frame:Click() end
+        end, 20)
+    end
+    
+    -- Page content edit (AceGUI MultiLineEditBox)
+    local pageEdit = state.editPageEdit
+    if pageEdit and pageEdit.frame then
+        -- For AceGUI widgets, we need to focus the internal editBox
+        FM:RegisterElement("edit-content", pageEdit.frame, "reader", t("PAGE_CONTENT") or "Page Content", function(frame)
+            if pageEdit.editBox and pageEdit.editBox.SetFocus then
+                pageEdit.editBox:SetFocus()
+            end
+        end, 30)
+    end
+    
+    -- Page navigation - Prev Page
+    local prevPageBtn = state.editPrevPageBtn
+    if prevPageBtn then
+        FM:RegisterElement("edit-prev-page", prevPageBtn, "reader", t("PREV_PAGE") or "Previous Page", function(frame)
+            if frame.Click then frame:Click() end
+        end, 40)
+    end
+    
+    -- Page navigation - Add Page
+    local addPageBtn = state.editAddPageBtn
+    if addPageBtn then
+        FM:RegisterElement("edit-add-page", addPageBtn, "reader", t("ADD_PAGE") or "Add Page", function(frame)
+            if frame.Click then frame:Click() end
+        end, 50)
+    end
+    
+    -- Page navigation - Next Page
+    local nextPageBtn = state.editNextPageBtn
+    if nextPageBtn then
+        FM:RegisterElement("edit-next-page", nextPageBtn, "reader", t("NEXT_PAGE") or "Next Page", function(frame)
+            if frame.Click then frame:Click() end
+        end, 60)
+    end
+    
+    -- TTS Preview button
+    local ttsPreviewBtn = state.editTTSPreviewBtn
+    if ttsPreviewBtn then
+        FM:RegisterElement("edit-tts-preview", ttsPreviewBtn, "reader", t("TTS_PREVIEW") or "Preview", function(frame)
+            if frame.Click then frame:Click() end
+        end, 70)
+    end
+    
+    -- Save button
+    local saveBtn = state.editSaveBtn
+    if saveBtn then
+        FM:RegisterElement("edit-save", saveBtn, "reader", t("SAVE_BOOK") or "Save Book", function(frame)
+            if frame.Click then frame:Click() end
+        end, 80)
+    end
+    
+    -- Cancel button
+    local cancelBtn = state.editCancelBtn
+    if cancelBtn then
+        FM:RegisterElement("edit-cancel", cancelBtn, "reader", t("CANCEL") or "Cancel", function(frame)
+            if frame.Click then frame:Click() end
+        end, 90)
+    end
+    
+    if addonRoot.DebugPrint then
+        addonRoot:DebugPrint("[FocusRegistration] RegisterEditModeElements: registered edit mode elements")
+    end
+end
+
+--[[
     Register pagination elements.
 ]]
 function FocusRegistration:RegisterPaginationElements()
@@ -490,6 +602,7 @@ end
 function FocusRegistration:Refresh()
     -- Re-register dynamic elements
     self:RegisterReaderElements()
+    self:RegisterEditModeElements()
     self:RegisterListRows()
     
     -- Tell FocusManager to refresh
