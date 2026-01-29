@@ -111,7 +111,7 @@ local registeredElements = {}
     @param displayName string|function - Name to show in indicator (or function returning name)
     @param onActivate function - Called when user activates this element
     @param priority number - Order within category (lower = earlier)
-    @param options table - Optional: { isDropdown = true } for dropdown elements
+    @param options table - Optional: { isDropdown = true, bookData = table } for dropdown elements or TTS data
 ]]
 function FocusManager:RegisterElement(id, frame, category, displayName, onActivate, priority, options)
     if not id or not frame then
@@ -129,6 +129,7 @@ function FocusManager:RegisterElement(id, frame, category, displayName, onActiva
         priority = priority or 100,
         isRegistered = true,
         isDropdown = options.isDropdown or false,
+        bookData = options.bookData or nil,  -- For TTS: book/location data
     }
     
     -- Mark element as focusable for scanning
@@ -630,6 +631,74 @@ local function updateIndicator()
 end
 
 --[[
+    Check if TTS for focus navigation is enabled.
+]]
+local function isTTSFocusEnabled()
+    local db = BookArchivistDB
+    if not db or not db.options or not db.options.accessibility then
+        return false
+    end
+    return db.options.accessibility.ttsFocusNavigation == true
+end
+
+--[[
+    Check if TTS for list item focus is enabled.
+]]
+local function isTTSListItemEnabled()
+    local db = BookArchivistDB
+    if not db or not db.options or not db.options.accessibility then
+        return false
+    end
+    return db.options.accessibility.ttsListItemFocus == true
+end
+
+--[[
+    Announce an element via TTS if enabled.
+    For list items, includes additional context (book title, location).
+]]
+local function announceElement(elem)
+    if not elem then return end
+    
+    local TTS = addonRoot and addonRoot.TTS
+    if not TTS or not TTS.SpeakUI then return end
+    
+    local displayName = getDisplayName(elem)
+    local category = elem.category
+    
+    -- Check if this is a list item (book/location row)
+    local isListItem = category == "list"
+    
+    if isListItem then
+        -- List item TTS (book title + optional location)
+        if not isTTSListItemEnabled() then return end
+        
+        -- Get additional context from the element's data
+        local announcement = displayName
+        
+        -- Get book data (may be a function that returns the data)
+        local bookData = elem.bookData
+        if type(bookData) == "function" then
+            bookData = bookData()
+        end
+        
+        -- If in Locations mode and it's a location item, announce title + location name
+        if bookData and bookData.itemKind == "location" and bookData.locationName then
+            -- This is a location header, announce as "Location: [name]"
+            announcement = bookData.locationName
+        elseif bookData and bookData.zoneName then
+            -- For book items with zone info, announce "Book Title, Zone Name"
+            announcement = displayName .. ", " .. bookData.zoneName
+        end
+        
+        TTS:SpeakUI(announcement)
+    else
+        -- UI element TTS (tabs, buttons, etc.)
+        if not isTTSFocusEnabled() then return end
+        TTS:SpeakUI(displayName)
+    end
+end
+
+--[[
     Focus on a specific element by index.
 ]]
 function FocusManager:FocusElement(index)
@@ -677,6 +746,9 @@ function FocusManager:FocusElement(index)
             end
         end
     end
+    
+    -- Announce via TTS if enabled
+    announceElement(elem)
     
     return true
 end

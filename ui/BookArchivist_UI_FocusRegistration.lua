@@ -492,6 +492,18 @@ function FocusRegistration:RegisterListRows()
             return t("FOCUS_BOOK_ROW") .. " " .. rowIndex
         end
         
+        -- Build book data for TTS announcements
+        local bookDataForTTS = function()
+            return {
+                bookKey = capturedButton.bookKey,
+                itemKind = capturedButton.itemKind,
+                locationName = capturedButton.locationName,
+                -- For location items, get the zone name from metaText
+                zoneName = (capturedButton.itemKind == "location" and capturedButton.metaText) 
+                    and capturedButton.metaText:GetText() or nil,
+            }
+        end
+        
         FM:RegisterElement("list-row-" .. count, button, "list", displayName, function(frame)
             if frame.Click then
                 frame:Click()
@@ -501,7 +513,7 @@ function FocusRegistration:RegisterListRows()
                     onClick(frame, "LeftButton", false)
                 end
             end
-        end, rowIndex)
+        end, rowIndex, { bookData = bookDataForTTS })
     end
     
     -- Debug: Print count if debug mode is on

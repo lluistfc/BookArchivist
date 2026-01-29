@@ -394,6 +394,86 @@ local function RegisterNativeSettings()
 		Settings.CreateDropdown(category, setting, GetLanguageOptions, L("LANGUAGE_LABEL"))
 	end
 
+	-- ----------------------
+	-- Accessibility: TTS for Focus Navigation
+	-- ----------------------
+	do
+		local variable = "ttsFocusNavigation"
+		local variableKey = variable
+		db.options.accessibility = db.options.accessibility or {}
+		local variableTbl = db.options.accessibility
+		local defaultValue = false
+		local name = L("OPTIONS_TTS_FOCUS_NAV_LABEL")
+
+		local setting = Settings.RegisterAddOnSetting(
+			category, variable, variableKey, variableTbl, "boolean", name, defaultValue
+		)
+
+		settingObjects.ttsFocusNavigation = setting
+
+		if setting then
+			setting.SetValue = function(self, value)
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				db.options.accessibility.ttsFocusNavigation = value and true or false
+			end
+
+			setting.GetValue = function(self)
+				local db = EnsureDB()
+				if not db then return defaultValue end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				local value = db.options.accessibility.ttsFocusNavigation
+				if value == nil then return defaultValue end
+				return value and true or false
+			end
+		end
+
+		Settings.CreateCheckbox(category, setting, L("OPTIONS_TTS_FOCUS_NAV_TOOLTIP"))
+	end
+
+	-- ----------------------
+	-- Accessibility: TTS for List Item Focus
+	-- ----------------------
+	do
+		local variable = "ttsListItemFocus"
+		local variableKey = variable
+		db.options.accessibility = db.options.accessibility or {}
+		local variableTbl = db.options.accessibility
+		local defaultValue = false
+		local name = L("OPTIONS_TTS_LIST_ITEM_LABEL")
+
+		local setting = Settings.RegisterAddOnSetting(
+			category, variable, variableKey, variableTbl, "boolean", name, defaultValue
+		)
+
+		settingObjects.ttsListItemFocus = setting
+
+		if setting then
+			setting.SetValue = function(self, value)
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				db.options.accessibility.ttsListItemFocus = value and true or false
+			end
+
+			setting.GetValue = function(self)
+				local db = EnsureDB()
+				if not db then return defaultValue end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				local value = db.options.accessibility.ttsListItemFocus
+				if value == nil then return defaultValue end
+				return value and true or false
+			end
+		end
+
+		Settings.CreateCheckbox(category, setting, L("OPTIONS_TTS_LIST_ITEM_TOOLTIP"))
+	end
+
 	-- Add custom button to open tools window
 	if layout and layout.AddInitializer then
 		local initializer = Settings.CreateElementInitializer("BookArchivistToolsButtonTemplate", {})

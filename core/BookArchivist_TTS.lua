@@ -340,6 +340,67 @@ function TTS:Speak(text)
     return false, "TextToSpeech_Speak not available"
 end
 
+-- Speak a short UI announcement (for accessibility)
+-- This doesn't track speaking state as it's meant for brief announcements
+function TTS:SpeakUI(text)
+    if not text or text == "" then
+        return false
+    end
+    
+    -- Clean text for TTS
+    local cleanedText = cleanTextForTTS(text)
+    if cleanedText == "" then
+        return false
+    end
+    
+    -- Get voice object
+    local voice = nil
+    local voices = C_VoiceChat and C_VoiceChat.GetTtsVoices and C_VoiceChat.GetTtsVoices() or {}
+    
+    -- Try to get user's configured voice
+    local settings = self:GetSettings()
+    local voiceID = settings.voiceID or 0
+    
+    if voiceID > 0 then
+        for _, v in ipairs(voices) do
+            if v.voiceID == voiceID then
+                voice = v
+                break
+            end
+        end
+    end
+    
+    -- Fallback: try user's TTS settings voice
+    if not voice and C_TTSSettings and C_TTSSettings.GetVoiceOptionID then
+        local ok, userVoiceID = pcall(C_TTSSettings.GetVoiceOptionID, 0)
+        if ok and userVoiceID then
+            for _, v in ipairs(voices) do
+                if v.voiceID == userVoiceID then
+                    voice = v
+                    break
+                end
+            end
+        end
+    end
+    
+    -- Final fallback: first available voice
+    if not voice and voices[1] then
+        voice = voices[1]
+    end
+    
+    if not voice then
+        return false
+    end
+    
+    -- Use Blizzard's TextToSpeech_Speak
+    if TextToSpeech_Speak then
+        TextToSpeech_Speak(cleanedText, voice)
+        return true
+    end
+    
+    return false
+end
+
 -- Toggle speech for the given text (start/stop)
 function TTS:Toggle(text)
     if self:IsSpeaking() then
