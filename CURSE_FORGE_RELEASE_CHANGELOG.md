@@ -1,3 +1,44 @@
+# 2.4.0-alpha.1
+
+**Feature: Lorekeeper-Inspired Accessibility Enhancements**
+
+Major accessibility update with full keyboard navigation, Text-to-Speech support, and new reader features.
+
+## What's New
+
+### Full Keyboard Navigation ⌨️
+
+- **Block-Based Focus System**: Navigate between Header, List, and Reader sections
+- **Tab Navigation**: Tab/Shift+Tab cycles through elements within each block
+- **Custom Keybindings**: Assign your own keys in ESC → Key Bindings → Book Archivist
+- **Visual Indicators**: Gold highlight shows current focus, floating panel displays target name
+
+### Text-to-Speech (TTS) 🔊
+
+- **Read Aloud Button**: Have any book read to you using WoW's built-in TTS
+- **TTS Accessibility Options**: 
+  - Announce focused UI elements (tabs, buttons) during keyboard navigation
+  - Announce book titles and locations when navigating the list
+- **Stop Anytime**: Click the button again to stop playback
+
+### New Reader Features 📖
+
+- **Set Waypoint**: Place a map marker at the book's discovery location
+- **Copy Text**: Export book content as plain text to clipboard
+- **Font Size Slider**: Adjust reader text from 50% to 200% in Options
+- **Share Popup**: Now supports keyboard navigation with "Copied!" indicator
+
+### New Keybindings
+
+Available in ESC → Key Bindings → Book Archivist:
+- Toggle BookArchivist Window
+- Toggle Focus Mode / Focus Next / Focus Previous
+- Focus Next Block / Previous Block
+- Activate Focused Element
+- Toggle Read Aloud (TTS)
+
+---
+
 # 2.3.7
 
 **Fix: Tooltip Errors in WoW 12.x**

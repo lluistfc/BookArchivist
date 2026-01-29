@@ -2,6 +2,65 @@
 
 All notable changes to this project are documented here.
 
+## [2.4.0-alpha.1] - 2026-01-29
+
+**Feature: Lorekeeper-inspired accessibility and UI enhancements**
+
+This alpha release introduces major accessibility improvements inspired by the Lorekeeper addon, including full keyboard navigation, Text-to-Speech support, and new reader features.
+
+### Added
+
+- **Full Keyboard Navigation**
+  - Block-based focus navigation system (Header → List → Reader)
+  - Tab/Shift+Tab cycles within current block
+  - Custom keybindings for focus control (assignable in Key Bindings menu)
+  - Visual highlight indicator for focused elements
+  - Floating indicator panel showing current focus target
+  - Keybindings panel in Options for quick reference
+
+- **Text-to-Speech (TTS) Support**
+  - Read Aloud button to hear book content spoken
+  - Uses WoW's built-in TTS system
+  - Stop Reading button to cancel playback
+  - TTS settings follow WoW's Accessibility preferences
+
+- **TTS Accessibility Options** (NEW)
+  - "TTS: Announce focused elements" - announces tabs and buttons during keyboard navigation
+  - "TTS: Announce list items" - announces book titles and location names when focusing list rows
+
+- **Share Popup Keyboard Navigation**
+  - Focus navigation for Share popup buttons (Share to Chat, Select All, Close)
+  - Tab/Shift+Tab and custom keybinds work in popup
+  - "Copied!" indicator when Ctrl+C is pressed
+  - EditBox accessible via mouse for text selection
+
+- **Reader Panel Enhancements**
+  - Set Waypoint button - place map marker at book's discovery location
+  - Copy Text button - export plain text to clipboard
+  - Adjustable font size slider in Options (50%-200%)
+
+- **New Keybindings** (ESC → Key Bindings → Book Archivist)
+  - Toggle BookArchivist Window
+  - Toggle Focus Mode
+  - Focus Next/Previous Element
+  - Focus Next/Previous Block
+  - Activate Focused Element
+  - Toggle Read Aloud (TTS)
+
+### Changed
+
+- Reader action buttons reorganized: TTS → Waypoint → Copy → Share → Favorite → Delete
+- Improved focus registration for dynamic list rows
+- Enhanced locale support with translations for all new features (7 languages)
+
+### Technical
+
+- New modules: TTS, Waypoint, FontSize, FocusManager, FocusRegistration
+- Bindings.xml for keybind definitions
+- 929 tests passing
+
+---
+
 ## [2.3.7] - 2026-01-24
 
 **Fix: WoW 12.x tooltip compatibility**
