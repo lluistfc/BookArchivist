@@ -553,8 +553,7 @@ function ReaderUI:RenderSelected()
 	end
 	local entry = key and books and books[key] or nil
 	if not entry then
-		debugPrint("[BookArchivist] renderSelected: no entry for key", tostring(key))
-		-- Show empty state
+		-- Show empty state (normal when no book selected)
 		local emptyStateFrame = state.emptyStateFrame or getWidget("emptyStateFrame")
 		if emptyStateFrame then
 			-- Update stats footer
@@ -658,6 +657,21 @@ function ReaderUI:RenderSelected()
 		-- Hide edit button when no book selected
 		if state.editButton then
 			state.editButton:Hide()
+		end
+		-- Hide copy button when no book selected
+		local copyButton = state.copyButton or getWidget("copyButton")
+		if copyButton and copyButton.Hide then
+			copyButton:Hide()
+		end
+		-- Hide waypoint button when no book selected
+		local waypointButton = state.waypointButton or getWidget("waypointButton")
+		if waypointButton and waypointButton.Hide then
+			waypointButton:Hide()
+		end
+		-- Hide TTS button when no book selected
+		local ttsButton = state.ttsButton or getWidget("ttsButton")
+		if ttsButton and ttsButton.Hide then
+			ttsButton:Hide()
 		end
 		if state.countText then
 			state.countText:SetText("")
@@ -792,6 +806,11 @@ function ReaderUI:RenderSelected()
 	else
 		metaDisplay:SetText(table.concat(meta, "\n"))
 	end
+	
+	-- Update header height to accommodate title (may wrap to multiple lines)
+	if ReaderUI.UpdateHeaderHeight then
+		ReaderUI.UpdateHeaderHeight()
+	end
 
 	local previousKey = state.currentEntryKey
 	state.currentEntryKey = key
@@ -866,6 +885,21 @@ function ReaderUI:RenderSelected()
 		if shareButton.Show then
 			shareButton:Show()
 		end
+	end
+	-- Show copy button when book is selected
+	local copyButton = state.copyButton or getWidget("copyButton")
+	if copyButton and copyButton.Show then
+		copyButton:Show()
+	end
+	-- Show waypoint button when book is selected
+	local waypointButton = state.waypointButton or getWidget("waypointButton")
+	if waypointButton and waypointButton.Show then
+		waypointButton:Show()
+	end
+	-- Show TTS button when book is selected
+	local ttsButton = state.ttsButton or getWidget("ttsButton")
+	if ttsButton and ttsButton.Show then
+		ttsButton:Show()
 	end
 
 	local pageCount = 0
@@ -946,6 +980,67 @@ function ReaderUI:RenderSelected()
 	if shareButton and favoriteBtn then
 		shareButton:ClearAllPoints()
 		shareButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
+	end
+	
+	-- Update waypoint button state based on location data availability
+	local waypointButton = state.waypointButton or getWidget("waypointButton")
+	if waypointButton then
+		local BA = getAddon()
+		local hasWaypoint = false
+		if BA and BA.Waypoint and BA.Waypoint.HasValidLocation and entry then
+			hasWaypoint = BA.Waypoint:HasValidLocation(entry)
+		end
+		-- Show disabled visual overlay if no valid waypoint
+		local disabledOverlay = waypointButton.disabledOverlay
+		if disabledOverlay then
+			if hasWaypoint then
+				disabledOverlay:Hide()
+				if waypointButton.icon then
+					waypointButton.icon:SetDesaturated(false)
+					waypointButton.icon:SetAlpha(1)
+				end
+			else
+				disabledOverlay:Show()
+				if waypointButton.icon then
+					waypointButton.icon:SetDesaturated(true)
+					waypointButton.icon:SetAlpha(0.5)
+				end
+			end
+		end
+	end
+	
+	-- Update TTS button state
+	local ttsButton = state.ttsButton or getWidget("ttsButton")
+	if ttsButton then
+		local BA = getAddon()
+		local isSupported = BA and BA.TTS and BA.TTS.IsSupported and BA.TTS:IsSupported()
+		local isSpeaking = BA and BA.TTS and BA.TTS.IsSpeaking and BA.TTS:IsSpeaking()
+		-- Show disabled visual overlay if TTS not supported
+		local disabledOverlay = ttsButton.disabledOverlay
+		if disabledOverlay then
+			if isSupported then
+				disabledOverlay:Hide()
+				if ttsButton.icon then
+					ttsButton.icon:SetDesaturated(false)
+					ttsButton.icon:SetAlpha(1)
+				end
+			else
+				disabledOverlay:Show()
+				if ttsButton.icon then
+					ttsButton.icon:SetDesaturated(true)
+					ttsButton.icon:SetAlpha(0.5)
+				end
+			end
+		end
+		-- Show playing overlay if currently speaking
+		local playingOverlay = ttsButton.playingOverlay
+		if playingOverlay then
+			if isSpeaking then
+				playingOverlay:Show()
+			else
+				playingOverlay:Hide()
+			end
+		end
 	end
 	
 	-- Show edit button only for custom books

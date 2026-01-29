@@ -176,14 +176,34 @@ function EditMode:InitializeUI()
 	end)
 	state.editNextPageBtn = nextPageBtn
 	
-	-- Action buttons row (Save/Cancel)
+	-- Action buttons row (TTS Preview/Save/Cancel)
 	local actionRow = CreateFrame("Frame", nil, footerFrame)
-	actionRow:SetSize(240, 32)
+	actionRow:SetSize(360, 32)
 	actionRow:SetPoint("BOTTOM", footerFrame, "BOTTOM", 0, 4)
+	
+	-- TTS Preview button (hear what you've written)
+	local ttsPreviewBtn = CreateFrame("Button", nil, actionRow, "UIPanelButtonTemplate")
+	ttsPreviewBtn:SetSize(100, 32)
+	ttsPreviewBtn:SetPoint("LEFT", actionRow, "LEFT", 0, 0)
+	ttsPreviewBtn:SetText(t("TTS_PREVIEW") or "Preview")
+	ttsPreviewBtn:SetNormalFontObject(GameFontNormal)
+	ttsPreviewBtn:SetScript("OnClick", function()
+		EditMode:PreviewTTS()
+	end)
+	ttsPreviewBtn:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:SetText(t("TTS_PREVIEW_TOOLTIP_TITLE") or "Preview with TTS", 1, 1, 1)
+		GameTooltip:AddLine(t("TTS_PREVIEW_TOOLTIP_BODY") or "Listen to your current page using text-to-speech.", nil, nil, nil, true)
+		GameTooltip:Show()
+	end)
+	ttsPreviewBtn:SetScript("OnLeave", function()
+		GameTooltip:Hide()
+	end)
+	state.editTTSPreviewBtn = ttsPreviewBtn
 	
 	local saveBtn = CreateFrame("Button", nil, actionRow, "UIPanelButtonTemplate")
 	saveBtn:SetSize(110, 32)
-	saveBtn:SetPoint("LEFT", actionRow, "LEFT", 0, 0)
+	saveBtn:SetPoint("CENTER", actionRow, "CENTER", 0, 0)
 	saveBtn:SetText(t("SAVE_BOOK"))
 	saveBtn:SetNormalFontObject(GameFontNormal)
 	local saveFontString = saveBtn:GetFontString()
@@ -196,7 +216,7 @@ function EditMode:InitializeUI()
 	state.editSaveBtn = saveBtn
 	
 	local cancelBtn = CreateFrame("Button", nil, actionRow, "UIPanelButtonTemplate")
-	cancelBtn:SetSize(110, 32)
+	cancelBtn:SetSize(100, 32)
 	cancelBtn:SetPoint("RIGHT", actionRow, "RIGHT", 0, 0)
 	cancelBtn:SetText(t("CANCEL"))
 	cancelBtn:SetNormalFontObject(GameFontNormal)
@@ -381,6 +401,12 @@ function EditMode:ShowEditUI()
 	if state.editPageEdit and state.editPageEdit.frame then
 		state.editPageEdit.frame:Show()
 	end
+	
+	-- Refresh focus registration to include edit mode elements
+	local FocusReg = BookArchivist.UI and BookArchivist.UI.FocusRegistration
+	if FocusReg and FocusReg.Refresh then
+		FocusReg:Refresh()
+	end
 end
 
 -- Hide edit UI, show normal reader content
@@ -390,6 +416,12 @@ function EditMode:HideEditUI()
 	end
 	
 	editSession.isEditing = false
+	
+	-- Refresh focus registration to remove edit mode elements
+	local FocusReg = BookArchivist.UI and BookArchivist.UI.FocusRegistration
+	if FocusReg and FocusReg.Refresh then
+		FocusReg:Refresh()
+	end
 	
 	-- Restore normal reader UI
 	if ReaderUI.RenderSelected then
@@ -610,6 +642,56 @@ end
 -- Cancel editing
 function EditMode:Cancel()
 	self:HideEditUI()
+end
+
+-- Preview current page with TTS (accessibility feature)
+function EditMode:PreviewTTS()
+	local TTS = BookArchivist and BookArchivist.TTS
+	if not TTS then
+		if Internal and Internal.chatMessage then
+			Internal.chatMessage("|cFFFF0000" .. (t("READER_TTS_UNAVAILABLE") or "Text-to-speech is not available.") .. "|r")
+		end
+		return
+	end
+	
+	if not TTS:IsSupported() then
+		if Internal and Internal.chatMessage then
+			Internal.chatMessage("|cFFFF0000" .. (t("TTS_ENABLE_HINT") or "Enable Text-to-Speech in WoW Settings > Accessibility.") .. "|r")
+		end
+		return
+	end
+	
+	-- If already speaking, stop
+	if TTS:IsSpeaking() then
+		TTS:Stop()
+		-- Update button text
+		if state.editTTSPreviewBtn then
+			state.editTTSPreviewBtn:SetText(t("TTS_PREVIEW") or "Preview")
+		end
+		return
+	end
+	
+	-- Get current page text
+	local pageText = editSession.pages[editSession.currentPageIndex] or ""
+	if trim(pageText) == "" then
+		if Internal and Internal.chatMessage then
+			Internal.chatMessage("|cFFFFFF00" .. (t("TTS_PREVIEW_EMPTY") or "Nothing to preview. Write some content first.") .. "|r")
+		end
+		return
+	end
+	
+	-- Speak the page
+	local success, err = TTS:Speak(pageText)
+	if success then
+		-- Update button text to show stop option
+		if state.editTTSPreviewBtn then
+			state.editTTSPreviewBtn:SetText(t("TTS_STOP_PREVIEW") or "Stop")
+		end
+	else
+		if Internal and Internal.chatMessage then
+			Internal.chatMessage("|cFFFF0000" .. (t("TTS_PREVIEW_FAILED") or "TTS preview failed: ") .. (err or "unknown error") .. "|r")
+		end
+	end
 end
 
 -- Hook into ReaderUI

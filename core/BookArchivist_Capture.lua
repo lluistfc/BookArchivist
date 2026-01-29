@@ -92,6 +92,16 @@ local function currentSourceInfo()
 			src.kind = "world"
 		elseif objectType == "Item" then
 			src.kind = "inventory"
+			-- Try to get itemID from the Item GUID using C_Item API
+			if not src.itemID then
+				local C_Item = getGlobal("C_Item")
+				if C_Item and C_Item.GetItemIDByGUID then
+					local ok, itemID = pcall(C_Item.GetItemIDByGUID, guid)
+					if ok and itemID then
+						src.itemID = itemID
+					end
+				end
+			end
 		end
 	end
 

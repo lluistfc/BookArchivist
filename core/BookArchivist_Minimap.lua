@@ -19,9 +19,7 @@ local icon = LibStub and LibStub:GetLibrary("LibDBIcon-1.0", true)
 local dataObject
 
 function MinimapModule:Initialize()
-	BookArchivist:DebugPrint("[Minimap] Initialize called, ldb:", ldb ~= nil, "icon:", icon ~= nil)
 	if not ldb or not icon then
-		BookArchivist:DebugPrint("[Minimap] LibDBIcon not available")
 		return false
 	end
 
@@ -65,7 +63,6 @@ function MinimapModule:Initialize()
 	icon:Register("BookArchivist", dataObject, db.minimap)
 
 	self.initialized = true
-	BookArchivist:DebugPrint("[Minimap] Initialized with LibDBIcon")
 	return true
 end
 

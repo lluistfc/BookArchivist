@@ -67,9 +67,30 @@ Locales.caES = {
 	["READER_SHARE_POPUP_TITLE"] = "Cadena d'exportació del llibre",
 	["READER_SHARE_POPUP_LABEL"] = "Fes servir Ctrl+C per copiar aquesta cadena i després comparteix-la amb altres jugadors o enganxa-la en un altre client de Book Archivist.",
 	["READER_SHARE_SELECT_ALL"] = "Selecciona-ho tot",
+	["COPIED"] = "Copiat!",
 	["SHARE_CHAT_HINT"] = "Crea un enllaç clicable al xat, o copia la cadena d'exportació a sota per compartir directament.",
 	["SHARE_TO_CHAT_BUTTON"] = "Comparteix al xat",
 	["SHARE_LINK_INSERTED"] = "Enllaç inserit al xat! Prem Enter per enviar.",
+
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copia",
+	["READER_COPY_TOOLTIP_BODY"] = "Copia el text del llibre al porta-retalls. Obre una finestra on pots seleccionar i copiar el text pla.",
+	["READER_COPY_POPUP_TITLE"] = "Copia el text del llibre",
+	["READER_COPY_POPUP_LABEL"] = "Selecciona el text a sota i fes servir Ctrl+C per copiar-lo al porta-retalls.",
+	["READER_COPY_SELECT_ALL"] = "Selecciona-ho tot",
+
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Posar Marcador",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Col·loca un marcador al mapa on es va descobrir aquest llibre.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Dades d'ubicació no disponibles per a aquest llibre.",
+
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Llegir en Veu Alta",
+	["READER_TTS_TOOLTIP_BODY"] = "Utilitza text a veu per llegir aquest llibre en veu alta. Fes clic de nou per aturar.",
+	["TTS_ENABLE_HINT"] = "Activa Text a Veu a Configuració de WoW > Accessibilitat per usar aquesta funció.",
+	["READER_TTS_STOP"] = "Aturar Lectura",
+	["READER_TTS_STOP_TOOLTIP"] = "Atura la reproducció de text a veu.",
+	["READER_TTS_UNAVAILABLE"] = "Text a veu no disponible al teu sistema.",
 
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Importa llibre",
@@ -103,6 +124,12 @@ Locales.caES = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Ressalta els límits de disseny per diagnosticar problemes. Igual que /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Reprèn a l'última pàgina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Quan està activat, en tornar a obrir un llibre desat s'anirà a l'última pàgina que vas veure en lloc de començar sempre a la pàgina 1.",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Mida de la lletra del lector",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Ajusta la mida del text al panell del lector. 100% és la mida normal.",
+	["OPTIONS_TTS_FOCUS_NAV_LABEL"] = "TTS: Anunciar elements enfocats",
+	["OPTIONS_TTS_FOCUS_NAV_TOOLTIP"] = "Quan està habilitat, el text a veu anuncia els elements de la interfície (pestanyes, botons) mentre navegues amb el teclat.",
+	["OPTIONS_TTS_LIST_ITEM_LABEL"] = "TTS: Anunciar elements de la llista",
+	["OPTIONS_TTS_LIST_ITEM_TOOLTIP"] = "Quan està habilitat, el text a veu anuncia els títols dels llibres i noms d'ubicacions en enfocar elements a la llista.",
 	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Exporta / Importa",
 	["OPTIONS_EXPORT_BUTTON"] = "Genera exportació",
 	["OPTIONS_EXPORT_LABEL"] = "Exporta",
@@ -252,4 +279,58 @@ Locales.caES = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Llibre Personalitzat",
 	["EXIT_EDIT_MODE_TITLE"] = "Sortir del mode d'edició?",
 	["EXIT_EDIT_MODE_TEXT"] = "Tens canvis sense desar. Descartar-los?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Seg. | Shift+Tab: Ant. | Enter: Activar | Esc: Sortir",
+	["FOCUS_NO_ELEMENTS"] = "Sense elements enfocables",
+	["FOCUS_SEARCH_BOX"] = "Quadre de cerca",
+	["FOCUS_BOOK_ROW"] = "Llibre",
+	["FOCUS_LOCATION_ROW"] = "Ubicació",
+	["FOCUS_CATEGORY_HEADER"] = "Capçalera",
+	["FOCUS_CATEGORY_TABS"] = "Pestanyes",
+	["FOCUS_CATEGORY_FILTERS"] = "Filtres",
+	["FOCUS_CATEGORY_LIST"] = "Llista de Llibres",
+	["FOCUS_CATEGORY_READER"] = "Accions del Lector",
+	["FOCUS_CATEGORY_PAGINATION"] = "Paginació",
+	["FOCUS_CATEGORY_OTHER"] = "Altres",
+	["FOCUS_BLOCK_HEADER"] = "Capçalera",
+	["FOCUS_BLOCK_LIST"] = "Llista",
+	["FOCUS_BLOCK_READER"] = "Lector",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "Primera Pàgina",
+	["PAGINATION_LAST"] = "Última Pàgina",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Compartir Llibre",
+	["ACTION_COPY"] = "Copiar Text",
+	["ACTION_WAYPOINT"] = "Establir Waypoint",
+	["ACTION_FAVORITE"] = "Afegir a Favorits",
+	["ACTION_UNFAVORITE"] = "Treure de Favorits",
+	["ACTION_DELETE"] = "Eliminar Llibre",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Pestanya Llibres",
+	["TAB_LOCATIONS"] = "Pestanya Ubicacions",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Vista prèvia",
+	["TTS_STOP_PREVIEW"] = "Aturar",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Vista prèvia amb TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Escolta la teva pàgina actual amb text a veu. Útil per revisar text dictat.",
+	["TTS_PREVIEW_EMPTY"] = "Res a previsualitzar. Escriu contingut primer.",
+	["TTS_PREVIEW_FAILED"] = "Error en vista prèvia TTS: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Dreceres de teclat",
 }
+
+-- ============================================================================
+-- Key Binding Localization (Global scope for Bindings.xml)
+-- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
+-- Note: Catalan is not an official WoW locale, so these won't be used
+-- but are kept for completeness. WoW Catalan users typically use esES.
+-- ============================================================================
+
+-- Catalan bindings intentionally not set globally since WoW doesn't have caES locale
+-- Users who want Catalan would need to manually set their preference

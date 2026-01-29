@@ -822,7 +822,6 @@ function ListUI:Create(uiFrame)
 	if self.UpdateRandomButton then
 		self:UpdateRandomButton()
 	end
-	self:DebugPrint("[BookArchivist] ListUI created")
 end
 
 function ListUI:UpdateListModeUI()

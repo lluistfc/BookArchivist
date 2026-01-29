@@ -151,16 +151,6 @@ end
 --- Safely load the database with corruption detection
 --- @return table Database (fresh if corrupted)
 function DBSafety:SafeLoad()
-	-- Debug: Log entry into SafeLoad
-	if BookArchivist and BookArchivist.DebugPrint then
-		BookArchivist:DebugPrint("[DBSafety] SafeLoad called, BookArchivistDB is:", BookArchivistDB and "table" or "nil")
-		if BookArchivistDB then
-			local keys = {}
-			for k in pairs(BookArchivistDB) do table.insert(keys, tostring(k)) end
-			BookArchivist:DebugPrint("[DBSafety] BookArchivistDB keys:", table.concat(keys, ", "))
-		end
-	end
-	
 	-- Check if global DB exists
 	if not BookArchivistDB then
 		-- First-time initialization - create and assign fresh DB

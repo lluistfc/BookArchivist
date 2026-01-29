@@ -42,6 +42,13 @@ BookArchivist is a World of Warcraft addon that automatically records every “b
   - "Resume last book" feature to return to your most recent read.
   - **Random Book** button to discover forgotten books with automatic location context and pagination.
 
+- **Accessibility**
+  - Full keyboard navigation with customizable keybindings.
+  - Block-based focus system (Header, List, Reader) for efficient navigation.
+  - Dropdown menu keyboard navigation support.
+  - Visual focus indicator panel showing current element and navigation context.
+  - Screen reader-friendly text labels for all interactive elements.
+
 ## Screenshots
 
 ### Main Interface
@@ -150,6 +157,61 @@ Security-conscious developers should review:
 - Zero-trust import validation (all imported content is validated)
 - Defense-in-depth (multiple layers of protection)
 - Fail-safe design (invalid content degrades gracefully)
+
+## Accessibility
+
+BookArchivist includes a comprehensive keyboard navigation system for users who prefer or require keyboard-only interaction.
+
+### Focus Navigation System
+
+The addon UI is divided into three **blocks** for efficient navigation:
+- **Header** — Help, Options, Random Book, New Book buttons, search box, sort dropdown
+- **List** — Books/Locations tabs, book rows, pagination controls
+- **Reader** — Reader panel actions (TTS, Copy, Waypoint, Favorite, Delete)
+
+### Keybindings
+
+All keybindings are configurable via **Game Menu → Key Bindings → AddOns → BookArchivist**. No default keys are assigned—you must set your own bindings to avoid conflicts with your existing keybinds.
+
+| Action | Description |
+|--------|-------------|
+| **Focus Next Element** | Move to the next element within the current block |
+| **Focus Previous Element** | Move to the previous element within the current block |
+| **Next Block** | Jump to the first element of the next block |
+| **Previous Block** | Jump to the first element of the previous block |
+| **Activate Element** | Click/activate the currently focused element |
+| **Toggle Focus Mode** | Enable or disable focus navigation mode |
+
+### Focus Indicator Panel
+
+When focus mode is enabled, a floating indicator panel appears showing:
+- **Current block** name (Header, List, or Reader)
+- **Current element** name and position (e.g., "Help (1/6)")
+- **Previous/Next block** names for orientation
+- **Previous/Next element** names for context
+
+### Dropdown Menu Navigation
+
+When you activate a dropdown (like the Sort dropdown):
+1. The dropdown opens and focus mode automatically enters **dropdown navigation**
+2. Use **Focus Next/Previous** to navigate through dropdown items
+3. Press **Activate** to select an item
+4. Press **Toggle Focus Mode** to cancel and close the dropdown
+
+The indicator panel shows "[ Dropdown ]" and displays dropdown item names during dropdown navigation.
+
+### Tips for Keyboard Users
+
+- **Set up keybindings first** — Go to Game Menu → Key Bindings → AddOns → BookArchivist and assign keys that don't conflict with your existing bindings
+- **Start focus mode** by pressing your configured Toggle Focus Mode key when the BookArchivist window is open
+- **Navigate quickly** using block navigation to jump between Header, List, and Reader
+- **Search** by navigating to the search box and pressing Activate to focus it, then type your search
+- **Read books** by navigating to list rows and pressing Activate to select a book
+- **Page through books** by navigating to the Prev/Next page buttons in the Reader block
+
+### Screen Reader Compatibility
+
+While WoW has limited screen reader support, the focus indicator panel provides text labels for all focused elements, which can help users who rely on visual assistance or magnification tools.
 
 ## Architecture overview
 

@@ -1,0 +1,129 @@
+<Bindings>
+    <!-- BookArchivist Key Bindings -->
+    <!-- These appear in WoW's Key Bindings menu under "Book Archivist" -->
+    <!-- Using category attribute (not header) per AllTheThings pattern -->
+    
+    <!-- Toggle main window (only binding that works when UI is closed) -->
+    <Binding name="BOOKARCHIVIST_TOGGLE" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.ToggleUI then
+            BookArchivist:ToggleUI()
+        end
+    </Binding>
+    
+    <!-- Read current book aloud (TTS) - requires UI visible -->
+    <Binding name="BOOKARCHIVIST_TTS_READ" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.IsUIVisible and BookArchivist:IsUIVisible() then
+            if BookArchivist.TTS and BookArchivist.TTS.SpeakCurrentBook then
+                BookArchivist.TTS:SpeakCurrentBook()
+            end
+        end
+    </Binding>
+    
+    <!-- Navigate to next page - context sensitive based on focus block -->
+    <!-- List block: navigates list pagination | Reader block: navigates book pages -->
+    <Binding name="BOOKARCHIVIST_PAGE_NEXT" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.IsUIVisible and BookArchivist:IsUIVisible() then
+            local FM = BookArchivist.UI and BookArchivist.UI.FocusManager
+            local blockId = FM and FM.GetCurrentBlockId and FM:GetCurrentBlockId()
+            
+            if blockId == "list" then
+                -- Navigate list pagination
+                if BookArchivist.UI and BookArchivist.UI.List then
+                    local list = BookArchivist.UI.List
+                    if list.NextPage then list:NextPage() end
+                end
+            else
+                -- Default: navigate reader pages
+                if BookArchivist.UI and BookArchivist.UI.Internal then
+                    local internal = BookArchivist.UI.Internal
+                    if internal.navigatePageNext then
+                        internal.navigatePageNext()
+                    end
+                end
+            end
+        end
+    </Binding>
+    
+    <!-- Navigate to previous page - context sensitive based on focus block -->
+    <!-- List block: navigates list pagination | Reader block: navigates book pages -->
+    <Binding name="BOOKARCHIVIST_PAGE_PREV" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.IsUIVisible and BookArchivist:IsUIVisible() then
+            local FM = BookArchivist.UI and BookArchivist.UI.FocusManager
+            local blockId = FM and FM.GetCurrentBlockId and FM:GetCurrentBlockId()
+            
+            if blockId == "list" then
+                -- Navigate list pagination
+                if BookArchivist.UI and BookArchivist.UI.List then
+                    local list = BookArchivist.UI.List
+                    if list.PrevPage then list:PrevPage() end
+                end
+            else
+                -- Default: navigate reader pages
+                if BookArchivist.UI and BookArchivist.UI.Internal then
+                    local internal = BookArchivist.UI.Internal
+                    if internal.navigatePagePrev then
+                        internal.navigatePagePrev()
+                    end
+                end
+            end
+        end
+    </Binding>
+    
+    <!-- Create new custom book - requires UI visible -->
+    <Binding name="BOOKARCHIVIST_NEW_BOOK" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.IsUIVisible and BookArchivist:IsUIVisible() then
+            if BookArchivist.UI and BookArchivist.UI.Reader then
+                local reader = BookArchivist.UI.Reader
+                if reader.OpenCreateBook then
+                    reader.OpenCreateBook()
+                end
+            end
+        end
+    </Binding>
+    
+    <!-- Focus Navigation (accessibility keyboard navigation) -->
+    <!-- All focus bindings require UI to be visible -->
+    
+    <!-- Move focus to next UI element -->
+    <Binding name="BOOKARCHIVIST_FOCUS_NEXT" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.FocusNext then
+            BookArchivist.FocusNext()
+        end
+    </Binding>
+    
+    <!-- Move focus to previous UI element -->
+    <Binding name="BOOKARCHIVIST_FOCUS_PREV" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.FocusPrev then
+            BookArchivist.FocusPrev()
+        end
+    </Binding>
+    
+    <!-- Activate the currently focused element -->
+    <Binding name="BOOKARCHIVIST_FOCUS_ACTIVATE" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.FocusActivate then
+            BookArchivist.FocusActivate()
+        end
+    </Binding>
+    
+    <!-- Toggle focus navigation mode on/off -->
+    <Binding name="BOOKARCHIVIST_FOCUS_TOGGLE" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.FocusToggle then
+            BookArchivist.FocusToggle()
+        end
+    </Binding>
+    
+    <!-- Move to next block (Header -> List -> Reader) -->
+    <Binding name="BOOKARCHIVIST_FOCUS_NEXT_BLOCK" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.FocusNextBlock then
+            BookArchivist.FocusNextBlock()
+        end
+    </Binding>
+    
+    <!-- Move to previous block (Reader -> List -> Header) -->
+    <Binding name="BOOKARCHIVIST_FOCUS_PREV_BLOCK" category="BINDING_HEADER_BOOKARCHIVIST">
+        if BookArchivist and BookArchivist.FocusPrevBlock then
+            BookArchivist.FocusPrevBlock()
+        end
+    </Binding>
+    
+</Bindings>

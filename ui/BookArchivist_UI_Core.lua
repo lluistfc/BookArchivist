@@ -280,3 +280,21 @@ local function updateList()
 	end
 end
 Internal.updateList = updateList
+
+-- ============================================================================
+-- Page Navigation (for keybindings / accessibility)
+-- ============================================================================
+
+local function navigatePageNext()
+	if ReaderUI and ReaderUI.ChangePage then
+		ReaderUI:ChangePage(1)
+	end
+end
+Internal.navigatePageNext = navigatePageNext
+
+local function navigatePagePrev()
+	if ReaderUI and ReaderUI.ChangePage then
+		ReaderUI:ChangePage(-1)
+	end
+end
+Internal.navigatePagePrev = navigatePagePrev

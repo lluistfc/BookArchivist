@@ -85,11 +85,6 @@ function ListUI:GetFiltersState()
 	local persisted = ctx and ctx.getFilters and ctx.getFilters()
 	local filters = self.__state.filters
 	
-	-- Debug: Show what filters we're loading
-	if self.DebugPrint and persisted then
-		self:DebugPrint(string.format("[BookArchivist] GetFiltersState: favoritesOnly=%s", tostring(persisted.favoritesOnly)))
-	end
-	
 	for _, def in ipairs(QUICK_FILTERS) do
 		local key = def.key
 		local value

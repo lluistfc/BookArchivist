@@ -202,20 +202,15 @@ local function buildDeleteButton(parent)
 		return nil
 	end
 
-	deleteDebug("buildDeleteButton: starting", describeFrame(parent))
-
 	local button
 	if safeCreateFrame then
-		deleteDebug("buildDeleteButton: attempting safeCreateFrame with named button")
 		button = safeCreateFrame("Button", "BookArchivistDeleteButton", parent)
 		if not button then
-			deleteDebug("buildDeleteButton: named creation failed, retrying anonymous")
 			button = safeCreateFrame("Button", nil, parent)
 		end
 	end
 
 	if not button and CreateFrame then
-		deleteDebug("buildDeleteButton: fallback to CreateFrame")
 		local ok, created = pcall(CreateFrame, "Button", nil, parent)
 		if ok then
 			button = created
@@ -224,10 +219,8 @@ local function buildDeleteButton(parent)
 		end
 	end
 
-	if button then
-		deleteDebug("buildDeleteButton: success", describeFrame(button))
-	else
-		deleteDebug("buildDeleteButton: failed to create button (returning nil)")
+	if not button then
+		deleteDebug("buildDeleteButton: failed to create button")
 	end
 
 	return button
@@ -263,10 +256,8 @@ local function ensureDeleteButton(parent)
 
 	local button = state.deleteButton
 	if not button or not button.IsObjectType or not button:IsObjectType("Button") then
-		deleteDebug("ensureDeleteButton: creating new button on", describeFrame(parent))
 		button = buildDeleteButton(parent)
 		if not button then
-			deleteDebug("ensureDeleteButton: creation failed")
 			return nil
 		end
 		state.deleteButton = button
@@ -277,8 +268,6 @@ local function ensureDeleteButton(parent)
 			state.uiFrame.deleteBtn = button
 		end
 		configureDeleteButton(button)
-	else
-		deleteDebug("ensureDeleteButton: reusing existing button", describeFrame(button))
 	end
 
 	if button:GetParent() ~= parent then

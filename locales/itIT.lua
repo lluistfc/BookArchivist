@@ -68,10 +68,28 @@ Locales.itIT = {
 	["READER_SHARE_POPUP_TITLE"] = "Stringa di esportazione del libro",
 	["READER_SHARE_POPUP_LABEL"] = "Usa Ctrl+C per copiare questa stringa, quindi condividila con altri giocatori o incollala in un altro client di Book Archivist.",
 	["READER_SHARE_SELECT_ALL"] = "Seleziona tutto",
+	["COPIED"] = "Copiato!",
 	["SHARE_CHAT_HINT"] = "Crea un link cliccabile nella chat, o copia la stringa di esportazione qui sotto per condividere direttamente.",
 	["SHARE_TO_CHAT_BUTTON"] = "Condividi nella chat",
 	["SHARE_LINK_INSERTED"] = "Link inserito nella chat! Premi Invio per inviare.",
 
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copia",
+	["READER_COPY_TOOLTIP_BODY"] = "Copia il testo del libro negli appunti. Apre un popup dove puoi selezionare e copiare il testo semplice.",
+	["READER_COPY_POPUP_TITLE"] = "Copia il testo del libro",
+	["READER_COPY_POPUP_LABEL"] = "Seleziona il testo qui sotto e usa Ctrl+C per copiarlo negli appunti.",
+	["READER_COPY_SELECT_ALL"] = "Seleziona tutto",
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Imposta Waypoint",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Imposta un waypoint sulla mappa dove è stato scoperto questo libro.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Dati di posizione non disponibili per questo libro.",
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Leggi ad Alta Voce",
+	["READER_TTS_TOOLTIP_BODY"] = "Usa la sintesi vocale per leggere questo libro ad alta voce. Clicca di nuovo per fermare.",
+	["TTS_ENABLE_HINT"] = "Abilita Sintesi Vocale nelle Impostazioni WoW > Accessibilità per usare questa funzione.",
+	["READER_TTS_STOP"] = "Ferma Lettura",
+	["READER_TTS_STOP_TOOLTIP"] = "Ferma la riproduzione della sintesi vocale.",
+	["READER_TTS_UNAVAILABLE"] = "La sintesi vocale non è disponibile sul tuo sistema.",
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Importa libro",
 	["IMPORT_PROMPT_TEXT"] = "Incolla la stringa di esportazione del libro qui sotto:",
@@ -106,7 +124,11 @@ Locales.itIT = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Evidenzia i limiti del layout. Uguale a /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Riprendi all'ultima pagina",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Se abilitato, riaprire un libro salvato ti riporta all'ultima pagina visualizzata invece di iniziare sempre dalla pagina 1.",
-	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Esporta / Importa",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Dimensione carattere del lettore",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Regola la dimensione del testo nel pannello del lettore. 100% è la dimensione normale.",	["OPTIONS_TTS_FOCUS_NAV_LABEL"] = "TTS: Annuncia elementi focalizzati",
+	["OPTIONS_TTS_FOCUS_NAV_TOOLTIP"] = "Quando abilitato, la sintesi vocale annuncia gli elementi dell'interfaccia (schede, pulsanti) durante la navigazione da tastiera.",
+	["OPTIONS_TTS_LIST_ITEM_LABEL"] = "TTS: Annuncia elementi della lista",
+	["OPTIONS_TTS_LIST_ITEM_TOOLTIP"] = "Quando abilitato, la sintesi vocale annuncia i titoli dei libri e i nomi delle località quando gli elementi della lista sono focalizzati.",	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Esporta / Importa",
 	["OPTIONS_EXPORT_BUTTON"] = "Genera esportazione",
 	["OPTIONS_EXPORT_LABEL"] = "Esporta",
 	["OPTIONS_EXPORT_BUTTON_COPY"] = "Copia",
@@ -253,4 +275,70 @@ Locales.itIT = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Libro Personalizzato",
 	["EXIT_EDIT_MODE_TITLE"] = "Uscire dalla modalità di modifica?",
 	["EXIT_EDIT_MODE_TEXT"] = "Hai modifiche non salvate. Scartarle?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Succ. | Shift+Tab: Prec. | Invio: Attiva | Esc: Esci",
+	["FOCUS_NO_ELEMENTS"] = "Nessun elemento focalizzabile",
+	["FOCUS_SEARCH_BOX"] = "Campo di ricerca",
+	["FOCUS_BOOK_ROW"] = "Libro",
+	["FOCUS_LOCATION_ROW"] = "Posizione",
+	["FOCUS_CATEGORY_HEADER"] = "Intestazione",
+	["FOCUS_CATEGORY_TABS"] = "Schede",
+	["FOCUS_CATEGORY_FILTERS"] = "Filtri",
+	["FOCUS_CATEGORY_LIST"] = "Elenco Libri",
+	["FOCUS_CATEGORY_READER"] = "Azioni Lettore",
+	["FOCUS_CATEGORY_PAGINATION"] = "Impaginazione",
+	["FOCUS_CATEGORY_OTHER"] = "Altro",
+	["FOCUS_BLOCK_HEADER"] = "Intestazione",
+	["FOCUS_BLOCK_LIST"] = "Elenco",
+	["FOCUS_BLOCK_READER"] = "Lettore",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "Prima Pagina",
+	["PAGINATION_LAST"] = "Ultima Pagina",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Condividi Libro",
+	["ACTION_COPY"] = "Copia Testo",
+	["ACTION_WAYPOINT"] = "Imposta Waypoint",
+	["ACTION_FAVORITE"] = "Aggiungi ai Preferiti",
+	["ACTION_UNFAVORITE"] = "Rimuovi dai Preferiti",
+	["ACTION_DELETE"] = "Elimina Libro",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Scheda Libri",
+	["TAB_LOCATIONS"] = "Scheda Posizioni",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Anteprima",
+	["TTS_STOP_PREVIEW"] = "Ferma",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Anteprima con TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Ascolta la tua pagina corrente con la sintesi vocale. Utile per rivedere il testo dettato.",
+	["TTS_PREVIEW_EMPTY"] = "Niente da visualizzare. Scrivi prima del contenuto.",
+	["TTS_PREVIEW_FAILED"] = "Anteprima TTS fallita: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Tasti di scelta rapida",
 }
+
+-- ============================================================================
+-- Key Binding Localization (Global scope for Bindings.xml)
+-- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
+-- Only set if the game locale is Italian
+-- ============================================================================
+
+if GetLocale() == "itIT" then
+	BINDING_HEADER_BOOKARCHIVIST = "Book Archivist"
+	BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Mostra/Nascondi Book Archivist"
+	BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Leggi libro corrente (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Interrompi lettura (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Pagina successiva"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Pagina precedente"
+	BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "Nuovo libro personalizzato"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT = "Elemento successivo"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV = "Elemento precedente"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_ACTIVATE = "Attiva elemento selezionato"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_TOGGLE = "Attiva/disattiva navigazione a fuoco"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT_BLOCK = "Blocco successivo"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV_BLOCK = "Blocco precedente"
+end

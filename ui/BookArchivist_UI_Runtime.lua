@@ -34,17 +34,14 @@ local function refreshAllImpl()
 		Profiler:Start("UI_refreshAll")
 	end
 
-	BookArchivist:DebugMessage("|cFFFFFF00BookArchivist UI (refreshAllImpl) refreshing...|r")
 	local ui = call(Internal.getUIFrame)
 	if not ui or not call(Internal.getIsInitialized) then
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll skipped (UI not initialized)")
 		if Profiler then
 			Profiler:Stop("UI_refreshAll")
 		end
 		return
 	end
 
-	BookArchivist:DebugPrint("[BookArchivist] refreshAll")
 	local flags = call(Internal.getRefreshFlags) or { list = true, location = true, reader = true }
 	local needsList = flags.list
 	local needsLocation = flags.location
@@ -54,14 +51,10 @@ local function refreshAllImpl()
 		if Profiler then
 			Profiler:Start("UI_rebuildFiltered")
 		end
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildFiltered")
-		if
-			not Internal.safeStep
-			or not Internal.safeStep("BookArchivist rebuildFiltered", function()
+		if Internal.safeStep then
+			Internal.safeStep("BookArchivist rebuildFiltered", function()
 				call(Internal.rebuildFiltered)
 			end)
-		then
-			BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildFiltered failed")
 		end
 		if Profiler then
 			Profiler:Stop("UI_rebuildFiltered")
@@ -72,14 +65,12 @@ local function refreshAllImpl()
 	end
 
 	if needsLocation then
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting rebuildLocationView")
 		if
 			not Internal.safeStep
 			or not Internal.safeStep("BookArchivist rebuildLocationView", function()
 				call(Internal.rebuildLocationView)
 			end)
 		then
-			BookArchivist:DebugPrint("[BookArchivist] refreshAll: rebuildLocationView failed")
 			return
 		end
 		if Internal.markRefreshComplete then
@@ -88,20 +79,17 @@ local function refreshAllImpl()
 	end
 
 	if needsList or needsLocation then
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting updateList")
 		if
 			not Internal.safeStep
 			or not Internal.safeStep("BookArchivist updateList", function()
 				call(Internal.updateList)
 			end)
 		then
-			BookArchivist:DebugPrint("[BookArchivist] refreshAll: updateList failed")
 			return
 		end
 	end
 
 	if needsReader then
-		BookArchivist:DebugPrint("[BookArchivist] refreshAll: starting renderSelected")
 		if Internal.safeStep then
 			Internal.safeStep("BookArchivist renderSelected", function()
 				call(Internal.renderSelected)
@@ -209,6 +197,16 @@ SlashCmdList["BOOKARCHIVIST"] = function(msg)
 	if verb == "tools" or verb == "import" or verb == "export" then
 		if BookArchivist and BookArchivist.UI and BookArchivist.UI.OptionsUI then
 			BookArchivist.UI.OptionsUI:OpenTools()
+		end
+		return
+	end
+
+	-- Debug focus navigation
+	if verb == "debugfocus" then
+		if BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusRegistration then
+			BookArchivist.UI.FocusRegistration:DebugScrollBox()
+		else
+			print("|cFFFF0000[BookArchivist] FocusRegistration not loaded|r")
 		end
 		return
 	end

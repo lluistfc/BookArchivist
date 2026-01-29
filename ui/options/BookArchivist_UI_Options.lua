@@ -250,6 +250,96 @@ local function RegisterNativeSettings()
 	end
 
 	-- ----------------------
+	-- Font Size slider
+	-- ----------------------
+	do
+		local variable = "fontSize"
+		local variableKey = variable
+		local variableTbl = db.options
+		local defaultValue = 1.0
+		local name = L("OPTIONS_FONT_SIZE_LABEL")
+		
+		-- Initialize default if not set
+		if not db.options.fontSize then
+			db.options.fontSize = defaultValue
+		end
+
+		local setting = Settings.RegisterAddOnSetting(
+			category, 
+			variable, 
+			variableKey, 
+			variableTbl, 
+			"number", 
+			name, 
+			defaultValue
+		)
+
+		-- Store reference for language updates
+		settingObjects.fontSize = setting
+
+		-- Override SetValue to ensure it persists and applies
+		if setting then
+			local originalSetValue = setting.SetValue
+			setting.SetValue = function(self, value)
+				-- Get properly initialized database
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+
+				-- Clamp value to valid range
+				value = math.max(0.8, math.min(1.5, value))
+				db.options.fontSize = value
+
+				-- Call original if it exists
+				if originalSetValue then
+					originalSetValue(self, value)
+				end
+
+				-- Apply font size via FontSize module
+				if BookArchivist.FontSize and BookArchivist.FontSize.SetScale then
+					BookArchivist.FontSize:SetScale(value)
+				end
+				
+				-- Refresh UI to apply new font size
+				if BookArchivist and BookArchivist.RefreshUI then
+					BookArchivist:RefreshUI()
+				end
+			end
+			
+			setting.GetValue = function(self)
+				local db = EnsureDB()
+				if not db then return defaultValue end
+				db.options = db.options or {}
+				return db.options.fontSize or defaultValue
+			end
+		end
+
+		-- Create slider options
+		local minValue = 0.8  -- 80%
+		local maxValue = 1.5  -- 150%
+		local step = 0.1      -- 10% increments
+
+		local options = Settings.CreateSliderOptions(minValue, maxValue, step)
+		options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
+			return string.format("%d%%", math.floor(value * 100 + 0.5))
+		end)
+
+		Settings.CreateSlider(category, setting, options, L("OPTIONS_FONT_SIZE_TOOLTIP"))
+
+		Settings.SetOnValueChangedCallback(variableKey, function(_, value)
+			-- Apply font size via FontSize module
+			if BookArchivist.FontSize and BookArchivist.FontSize.SetScale then
+				BookArchivist.FontSize:SetScale(value)
+			end
+			
+			-- Refresh UI to apply new font size
+			if BookArchivist and BookArchivist.RefreshUI then
+				BookArchivist:RefreshUI()
+			end
+		end)
+	end
+
+	-- ----------------------
 	-- Language dropdown
 	-- ----------------------
 	do
@@ -302,6 +392,86 @@ local function RegisterNativeSettings()
 		end
 
 		Settings.CreateDropdown(category, setting, GetLanguageOptions, L("LANGUAGE_LABEL"))
+	end
+
+	-- ----------------------
+	-- Accessibility: TTS for Focus Navigation
+	-- ----------------------
+	do
+		local variable = "ttsFocusNavigation"
+		local variableKey = variable
+		db.options.accessibility = db.options.accessibility or {}
+		local variableTbl = db.options.accessibility
+		local defaultValue = false
+		local name = L("OPTIONS_TTS_FOCUS_NAV_LABEL")
+
+		local setting = Settings.RegisterAddOnSetting(
+			category, variable, variableKey, variableTbl, "boolean", name, defaultValue
+		)
+
+		settingObjects.ttsFocusNavigation = setting
+
+		if setting then
+			setting.SetValue = function(self, value)
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				db.options.accessibility.ttsFocusNavigation = value and true or false
+			end
+
+			setting.GetValue = function(self)
+				local db = EnsureDB()
+				if not db then return defaultValue end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				local value = db.options.accessibility.ttsFocusNavigation
+				if value == nil then return defaultValue end
+				return value and true or false
+			end
+		end
+
+		Settings.CreateCheckbox(category, setting, L("OPTIONS_TTS_FOCUS_NAV_TOOLTIP"))
+	end
+
+	-- ----------------------
+	-- Accessibility: TTS for List Item Focus
+	-- ----------------------
+	do
+		local variable = "ttsListItemFocus"
+		local variableKey = variable
+		db.options.accessibility = db.options.accessibility or {}
+		local variableTbl = db.options.accessibility
+		local defaultValue = false
+		local name = L("OPTIONS_TTS_LIST_ITEM_LABEL")
+
+		local setting = Settings.RegisterAddOnSetting(
+			category, variable, variableKey, variableTbl, "boolean", name, defaultValue
+		)
+
+		settingObjects.ttsListItemFocus = setting
+
+		if setting then
+			setting.SetValue = function(self, value)
+				local db = EnsureDB()
+				if not db then return end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				db.options.accessibility.ttsListItemFocus = value and true or false
+			end
+
+			setting.GetValue = function(self)
+				local db = EnsureDB()
+				if not db then return defaultValue end
+				db.options = db.options or {}
+				db.options.accessibility = db.options.accessibility or {}
+				local value = db.options.accessibility.ttsListItemFocus
+				if value == nil then return defaultValue end
+				return value and true or false
+			end
+		end
+
+		Settings.CreateCheckbox(category, setting, L("OPTIONS_TTS_LIST_ITEM_TOOLTIP"))
 	end
 
 	-- Add custom button to open tools window

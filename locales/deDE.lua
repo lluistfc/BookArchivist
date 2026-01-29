@@ -67,10 +67,28 @@ Locales.deDE = {
 	["READER_SHARE_POPUP_TITLE"] = "Buch-Exportzeichenkette",
 	["READER_SHARE_POPUP_LABEL"] = "Verwende Strg+C, um diese Zeichenkette zu kopieren, und teile sie dann mit anderen Spielern oder füge sie in einem anderen Book Archivist-Client ein.",
 	["READER_SHARE_SELECT_ALL"] = "Alles auswählen",
+	["COPIED"] = "Kopiert!",
 	["SHARE_CHAT_HINT"] = "Erstellen Sie einen anklickbaren Chat-Link oder kopieren Sie die Exportzeichenfolge unten, um sie direkt zu teilen.",
 	["SHARE_TO_CHAT_BUTTON"] = "Im Chat teilen",
 	["SHARE_LINK_INSERTED"] = "Chat-Link eingefügt! Drücken Sie Enter zum Senden.",
 
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Kopieren",
+	["READER_COPY_TOOLTIP_BODY"] = "Kopiere den Buchtext in die Zwischenablage. Öffnet ein Popup, in dem du den Klartext auswählen und kopieren kannst.",
+	["READER_COPY_POPUP_TITLE"] = "Buchtext kopieren",
+	["READER_COPY_POPUP_LABEL"] = "Wähle den Text unten aus und benutze Strg+C, um ihn in die Zwischenablage zu kopieren.",
+	["READER_COPY_SELECT_ALL"] = "Alles auswählen",
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Wegpunkt Setzen",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Setzt einen Kartenwegpunkt am Fundort dieses Buches.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Standortdaten für dieses Buch nicht verfügbar.",
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Vorlesen",
+	["READER_TTS_TOOLTIP_BODY"] = "Verwendet Text-zu-Sprache, um dieses Buch vorzulesen. Erneut klicken zum Stoppen.",
+	["TTS_ENABLE_HINT"] = "Aktivieren Sie Text-zu-Sprache in WoW-Einstellungen > Barrierefreiheit, um diese Funktion zu nutzen.",
+	["READER_TTS_STOP"] = "Vorlesen Stoppen",
+	["READER_TTS_STOP_TOOLTIP"] = "Stoppt die Text-zu-Sprache-Wiedergabe.",
+	["READER_TTS_UNAVAILABLE"] = "Text-zu-Sprache ist auf deinem System nicht verfügbar.",
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Buch importieren",
 	["IMPORT_PROMPT_TEXT"] = "Fügen Sie die Buchexportzeichenfolge unten ein:",
@@ -105,7 +123,11 @@ Locales.deDE = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Hebt Layoutgrenzen zur Fehleranalyse hervor. Entspricht /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Auf letzter Seite fortsetzen",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "Wenn aktiviert, springt das erneute Öffnen eines gespeicherten Buches zur zuletzt angesehenen Seite, anstatt immer bei Seite 1 zu beginnen.",
-	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Export / Import",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Schriftgröße des Lesers",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Passe die Textgröße im Lesepanel an. 100% ist die normale Größe.",	["OPTIONS_TTS_FOCUS_NAV_LABEL"] = "TTS: Fokussierte Elemente ansagen",
+	["OPTIONS_TTS_FOCUS_NAV_TOOLTIP"] = "Wenn aktiviert, sagt die Sprachausgabe UI-Elemente (Tabs, Schaltflächen) an, während du mit der Tastatur navigierst.",
+	["OPTIONS_TTS_LIST_ITEM_LABEL"] = "TTS: Listenelemente ansagen",
+	["OPTIONS_TTS_LIST_ITEM_TOOLTIP"] = "Wenn aktiviert, sagt die Sprachausgabe Buchtitel und Ortsnamen an, wenn Listenelemente fokussiert werden.",	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Export / Import",
 	["OPTIONS_EXPORT_BUTTON"] = "Export erstellen",
 	["OPTIONS_EXPORT_LABEL"] = "Export",
 	["OPTIONS_EXPORT_BUTTON_COPY"] = "Kopieren",
@@ -253,4 +275,70 @@ Locales.deDE = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Benutzerdefiniertes Buch",
 	["EXIT_EDIT_MODE_TITLE"] = "Bearbeitungsmodus verlassen?",
 	["EXIT_EDIT_MODE_TEXT"] = "Sie haben nicht gespeicherte Änderungen. Verwerfen?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Nächst. | Shift+Tab: Vorh. | Enter: Aktivieren | Esc: Beenden",
+	["FOCUS_NO_ELEMENTS"] = "Keine fokussierbaren Elemente",
+	["FOCUS_SEARCH_BOX"] = "Suchfeld",
+	["FOCUS_BOOK_ROW"] = "Buch",
+	["FOCUS_LOCATION_ROW"] = "Ort",
+	["FOCUS_CATEGORY_HEADER"] = "Kopfzeile",
+	["FOCUS_CATEGORY_TABS"] = "Registerkarten",
+	["FOCUS_CATEGORY_FILTERS"] = "Filter",
+	["FOCUS_CATEGORY_LIST"] = "Buchliste",
+	["FOCUS_CATEGORY_READER"] = "Leseraktionen",
+	["FOCUS_CATEGORY_PAGINATION"] = "Seitennavigation",
+	["FOCUS_CATEGORY_OTHER"] = "Sonstiges",
+	["FOCUS_BLOCK_HEADER"] = "Kopfzeile",
+	["FOCUS_BLOCK_LIST"] = "Liste",
+	["FOCUS_BLOCK_READER"] = "Leser",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "Erste Seite",
+	["PAGINATION_LAST"] = "Letzte Seite",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Buch teilen",
+	["ACTION_COPY"] = "Text kopieren",
+	["ACTION_WAYPOINT"] = "Wegpunkt setzen",
+	["ACTION_FAVORITE"] = "Zu Favoriten hinzufügen",
+	["ACTION_UNFAVORITE"] = "Aus Favoriten entfernen",
+	["ACTION_DELETE"] = "Buch löschen",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Bücher-Tab",
+	["TAB_LOCATIONS"] = "Orte-Tab",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Vorschau",
+	["TTS_STOP_PREVIEW"] = "Stoppen",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Vorschau mit TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Hören Sie Ihre aktuelle Seite mit Text-zu-Sprache. Nützlich zum Überprüfen von diktiertem Text.",
+	["TTS_PREVIEW_EMPTY"] = "Nichts zum Vorhören. Schreiben Sie zuerst Inhalt.",
+	["TTS_PREVIEW_FAILED"] = "TTS-Vorschau fehlgeschlagen: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Tastenbelegungen",
 }
+
+-- ============================================================================
+-- Key Binding Localization (Global scope for Bindings.xml)
+-- These strings appear in WoW's Key Bindings UI (ESC → Key Bindings)
+-- Only set if the game locale is German
+-- ============================================================================
+
+if GetLocale() == "deDE" then
+	BINDING_HEADER_BOOKARCHIVIST = "Book Archivist"
+	BINDING_NAME_BOOKARCHIVIST_TOGGLE = "Book Archivist ein-/ausblenden"
+	BINDING_NAME_BOOKARCHIVIST_TTS_READ = "Aktuelles Buch vorlesen (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_TTS_STOP = "Vorlesen stoppen (TTS)"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_NEXT = "Nächste Seite"
+	BINDING_NAME_BOOKARCHIVIST_PAGE_PREV = "Vorherige Seite"
+	BINDING_NAME_BOOKARCHIVIST_NEW_BOOK = "Neues benutzerdefiniertes Buch"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT = "Nächstes Element fokussieren"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV = "Vorheriges Element fokussieren"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_ACTIVATE = "Fokussiertes Element aktivieren"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_TOGGLE = "Fokusnavigation umschalten"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_NEXT_BLOCK = "Nächster Bereich"
+	BINDING_NAME_BOOKARCHIVIST_FOCUS_PREV_BLOCK = "Vorheriger Bereich"
+end

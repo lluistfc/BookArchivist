@@ -71,9 +71,41 @@ Locales.enUS = {
 	["READER_SHARE_POPUP_TITLE"] = "Book export string",
 	["READER_SHARE_POPUP_LABEL"] = "Use Ctrl+C to copy this string, then share it with other players or paste it into another client of Book Archivist.",
 	["READER_SHARE_SELECT_ALL"] = "Select All",
+	["COPIED"] = "Copied!",
 	["SHARE_CHAT_HINT"] = "Create a clickable chat link, or copy the export string below to share directly.",
 	["SHARE_TO_CHAT_BUTTON"] = "Share to Chat",
 	["SHARE_LINK_INSERTED"] = "Chat link inserted! Press Enter to send.",
+
+	-- Copy to clipboard
+	["READER_COPY_BUTTON"] = "Copy",
+	["READER_COPY_TOOLTIP_BODY"] = "Copy the book's text content to your clipboard. Opens a popup where you can select and copy the plain text.",
+	["READER_COPY_POPUP_TITLE"] = "Copy Book Text",
+	["READER_COPY_POPUP_LABEL"] = "Select the text below and use Ctrl+C to copy it to your clipboard.",
+	["READER_COPY_SELECT_ALL"] = "Select All",
+
+	-- Waypoint feature
+	["READER_WAYPOINT_BUTTON"] = "Set Waypoint",
+	["READER_WAYPOINT_TOOLTIP_BODY"] = "Set a map waypoint at the location where this book was first discovered.",
+	["READER_WAYPOINT_UNAVAILABLE"] = "Location data not available for this book.",
+	["READER_WAYPOINT_INVENTORY_ITEM"] = "This is an inventory item. We cannot track where items are looted from.",
+	["READER_WAYPOINT_WOWHEAD_HINT"] = "Click to copy Wowhead link for this item.",
+	["READER_WAYPOINT_WOWHEAD_UNAVAILABLE"] = "Item ID not available for Wowhead link.",
+	["WAYPOINT_WOWHEAD_COPIED"] = "Wowhead link copied to clipboard:",
+	["WAYPOINT_WOWHEAD_NO_ITEMID"] = "Item ID not available. Cannot generate Wowhead link.",
+	-- Menu options (when multiple actions available)
+	["READER_WAYPOINT_MENU_SET"] = "Set Waypoint",
+	["READER_WAYPOINT_MENU_WOWHEAD"] = "View on Wowhead",
+	["READER_WAYPOINT_MENU_HINT"] = "Right-click for options.",
+	["READER_WAYPOINT_WOWHEAD_ONLY"] = "Click to view this book's source on Wowhead.",
+	["READER_WAYPOINT_BOTH_HINT"] = "Left-click: Set waypoint | Right-click: Wowhead",
+
+	-- Text-to-Speech feature
+	["READER_TTS_BUTTON"] = "Read Aloud",
+	["READER_TTS_TOOLTIP_BODY"] = "Use text-to-speech to read this book aloud. Click again to stop.",
+	["READER_TTS_STOP"] = "Stop Reading",
+	["READER_TTS_STOP_TOOLTIP"] = "Stop the text-to-speech playback.",
+	["READER_TTS_UNAVAILABLE"] = "Text-to-speech is not available on your system.",
+	["TTS_ENABLE_HINT"] = "Enable Text-to-Speech in WoW Settings > Accessibility to use this feature.",
 
 	-- Import from chat links
 	["IMPORT_PROMPT_TITLE"] = "Import Book",
@@ -107,6 +139,12 @@ Locales.enUS = {
 	["OPTIONS_UI_DEBUG_TOOLTIP"] = "Highlights layout bounds for troubleshooting. Same as /ba uidebug on/off.",
 	["OPTIONS_RESUME_LAST_PAGE_LABEL"] = "Resume on last page",
 	["OPTIONS_RESUME_LAST_PAGE_TOOLTIP"] = "When enabled, reopening a saved book returns to the last page you viewed instead of always starting at page 1.",
+	["OPTIONS_FONT_SIZE_LABEL"] = "Reader font size",
+	["OPTIONS_FONT_SIZE_TOOLTIP"] = "Adjust the text size in the reader panel. 100% is normal size.",
+	["OPTIONS_TTS_FOCUS_NAV_LABEL"] = "TTS: Announce focused elements",
+	["OPTIONS_TTS_FOCUS_NAV_TOOLTIP"] = "When enabled, Text-to-Speech announces UI elements (tabs, buttons) as you navigate with keyboard focus.",
+	["OPTIONS_TTS_LIST_ITEM_LABEL"] = "TTS: Announce list items",
+	["OPTIONS_TTS_LIST_ITEM_TOOLTIP"] = "When enabled, Text-to-Speech announces book titles and location names when focusing items in the list.",
 	["OPTIONS_EXPORT_IMPORT_LABEL"] = "Export / Import",
 	["OPTIONS_EXPORT_BUTTON"] = "Generate export string",
 	["OPTIONS_EXPORT_LABEL"] = "Export",
@@ -252,4 +290,51 @@ Locales.enUS = {
 	["CUSTOM_BOOK_TOOLTIP"] = "Custom Book",
 	["EXIT_EDIT_MODE_TITLE"] = "Exit Edit Mode?",
 	["EXIT_EDIT_MODE_TEXT"] = "You have unsaved changes. Discard them?",
+	
+	-- Focus Navigation (accessibility keyboard navigation)
+	["FOCUS_INSTRUCTIONS"] = "Tab: Next | Shift+Tab: Prev | Enter: Activate | Esc: Exit",
+	["FOCUS_NO_ELEMENTS"] = "No focusable elements",
+	["FOCUS_SEARCH_BOX"] = "Search box",
+	["FOCUS_BOOK_ROW"] = "Book",
+	["FOCUS_LOCATION_ROW"] = "Location",
+	["FOCUS_CATEGORY_HEADER"] = "Header",
+	["FOCUS_CATEGORY_TABS"] = "Tabs",
+	["FOCUS_CATEGORY_FILTERS"] = "Filters",
+	["FOCUS_CATEGORY_LIST"] = "Book List",
+	["FOCUS_CATEGORY_READER"] = "Reader Actions",
+	["FOCUS_CATEGORY_PAGINATION"] = "Pagination",
+	["FOCUS_CATEGORY_OTHER"] = "Other",
+	["FOCUS_BLOCK_HEADER"] = "Header",
+	["FOCUS_BLOCK_LIST"] = "List",
+	["FOCUS_BLOCK_READER"] = "Reader",
+	
+	-- Pagination buttons
+	["PAGINATION_FIRST"] = "First Page",
+	["PAGINATION_LAST"] = "Last Page",
+
+	-- Reader actions (for focus manager)
+	["ACTION_SHARE"] = "Share Book",
+	["ACTION_COPY"] = "Copy Text",
+	["ACTION_WAYPOINT"] = "Set Waypoint",
+	["ACTION_FAVORITE"] = "Add to Favorites",
+	["ACTION_UNFAVORITE"] = "Remove from Favorites",
+	["ACTION_DELETE"] = "Delete Book",
+
+	-- Tab names for focus manager
+	["TAB_BOOKS"] = "Books Tab",
+	["TAB_LOCATIONS"] = "Locations Tab",
+
+	-- TTS Preview (accessibility for custom books)
+	["TTS_PREVIEW"] = "Preview",
+	["TTS_STOP_PREVIEW"] = "Stop",
+	["TTS_PREVIEW_TOOLTIP_TITLE"] = "Preview with TTS",
+	["TTS_PREVIEW_TOOLTIP_BODY"] = "Listen to your current page using text-to-speech. Useful for proofreading dictated text.",
+	["TTS_PREVIEW_EMPTY"] = "Nothing to preview. Write some content first.",
+	["TTS_PREVIEW_FAILED"] = "TTS preview failed: ",
+
+	-- Keybindings Panel
+	["KEYBINDINGS_PANEL_TITLE"] = "Keybindings",
 }
+
+-- Note: Key Binding globals (BINDING_HEADER_*, BINDING_NAME_*) are defined in
+-- Bindings.lua which loads earlier. Non-English locales override them.

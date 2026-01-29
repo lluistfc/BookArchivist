@@ -88,6 +88,16 @@ local function buildFrame(safeCreateFrame)
 						if refreshFn then
 							refreshFn()
 						end
+						-- Initialize focus registration after first refresh
+						local FocusReg = BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusRegistration
+						if FocusReg and FocusReg.RegisterAll then
+							FocusReg:RegisterAll()
+						end
+						-- Show keybindings panel if any bindings are set
+						local KeybindingsPanel = BookArchivist and BookArchivist.UI and BookArchivist.UI.KeybindingsPanel
+						if KeybindingsPanel and KeybindingsPanel.Show then
+							KeybindingsPanel:Show()
+						end
 					elseif retryCount < 50 then -- Max 5 seconds (50 * 100ms)
 						C_Timer.After(0.1, checkReady)
 					else
@@ -95,6 +105,16 @@ local function buildFrame(safeCreateFrame)
 						local refreshFn = Internal.refreshAll
 						if refreshFn then
 							refreshFn()
+						end
+						-- Initialize focus registration after refresh
+						local FocusReg = BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusRegistration
+						if FocusReg and FocusReg.RegisterAll then
+							FocusReg:RegisterAll()
+						end
+						-- Show keybindings panel if any bindings are set
+						local KeybindingsPanel = BookArchivist and BookArchivist.UI and BookArchivist.UI.KeybindingsPanel
+						if KeybindingsPanel and KeybindingsPanel.Show then
+							KeybindingsPanel:Show()
 						end
 					end
 				end
@@ -105,6 +125,18 @@ local function buildFrame(safeCreateFrame)
 			local refreshFn = Internal.refreshAll
 			if refreshFn then
 				refreshFn()
+			end
+			
+			-- Initialize focus registration after refresh
+			local FocusReg = BookArchivist and BookArchivist.UI and BookArchivist.UI.FocusRegistration
+			if FocusReg and FocusReg.RegisterAll then
+				FocusReg:RegisterAll()
+			end
+			
+			-- Show keybindings panel if any bindings are set
+			local KeybindingsPanel = BookArchivist and BookArchivist.UI and BookArchivist.UI.KeybindingsPanel
+			if KeybindingsPanel and KeybindingsPanel.Show then
+				KeybindingsPanel:Show()
 			end
 		end,
 	}
@@ -143,7 +175,6 @@ local function setupUI()
 	else
 		Internal.setNeedsRefresh(true)
 	end
-	debugPrint("[BookArchivist] setupUI: finished, pending refresh (will flush in ensureUI)")
 	-- Don't flush here - let ensureUI handle it when everything is ready
 	return true
 end
@@ -333,7 +364,6 @@ local function ensureUI()
 	-- Don't mark as initialized yet - let async content build handle it
 	-- Don't flush pending refresh - let async completion trigger the first refresh
 	syncGridOverlayPreference()
-	debugPrint("[BookArchivist] ensureUI: setup started, waiting for async content build")
 	return true
 end
 

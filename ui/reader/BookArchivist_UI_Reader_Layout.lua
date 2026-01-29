@@ -85,8 +85,15 @@ local function applyHTMLFont(frame, tag, font)
 	if not resolved then
 		return
 	end
-	if not safeHTMLCall(frame, "SetFontObject", tag, resolved) then
-		unsupportedHTMLFontTags[tag] = true
+	-- SimpleHTML uses SetFont(tag, fontPath, size, flags) NOT SetFontObject
+	-- We need to extract font properties from the FontObject
+	if resolved.GetFont then
+		local fontPath, fontSize, fontFlags = resolved:GetFont()
+		if fontPath and fontSize then
+			if not safeHTMLCall(frame, "SetFont", tag, fontPath, fontSize, fontFlags or "") then
+				unsupportedHTMLFontTags[tag] = true
+			end
+		end
 	end
 end
 
@@ -171,18 +178,19 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 		rememberWidget("bookTitle", bookTitle)
 	end
 	bookTitle:SetJustifyH("LEFT")
-	bookTitle:SetJustifyV("MIDDLE")
+	bookTitle:SetJustifyV("TOP")
+	bookTitle:SetWordWrap(true)  -- Enable word wrap for long titles
 	bookTitle:SetText(t("READER_EMPTY_PROMPT"))
 	bookTitle:SetTextColor(1, 0.82, 0)
 	uiFrame.bookTitle = bookTitle
 	bookTitle:ClearAllPoints()
 	bookTitle:SetPoint("TOPLEFT", readerHeaderRow, "TOPLEFT", 0, 0)
 	if actionsRail then
-		bookTitle:SetPoint("TOPRIGHT", actionsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
+		bookTitle:SetPoint("RIGHT", actionsRail, "LEFT", -(Metrics.GAP_M or Metrics.GUTTER), 0)
 	else
-		bookTitle:SetPoint("TOPRIGHT", readerHeaderRow, "TOPRIGHT", 0, 0)
+		bookTitle:SetPoint("RIGHT", readerHeaderRow, "RIGHT", 0, 0)
 	end
-	bookTitle:SetPoint("BOTTOM", readerHeaderRow, "CENTER", 0, 0)
+	-- Height will be determined by content, not anchored to bottom
 
 	-- Echo text (Book Echo memory reflection)
 	local echoText = readerHeaderRow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -710,6 +718,413 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			end)
 		end
 
+		-- Copy button (copy text to clipboard) - icon only
+		local copyButton = state.copyButton
+		if not copyButton or not (copyButton.IsObjectType and copyButton:IsObjectType("Button")) then
+			copyButton = safeCreateFrame("Button", "BookArchivistCopyButton", actionsRail)
+			state.copyButton = copyButton
+			if rememberWidget then
+				rememberWidget("copyButton", copyButton)
+			end
+			local size = Metrics.BTN_H or 22
+			if copyButton.SetSize then
+				copyButton:SetSize(size, size)
+			end
+			-- Enable mouse clicks
+			copyButton:EnableMouse(true)
+			copyButton:RegisterForClicks("LeftButtonUp")
+			-- Create icon texture for copy
+			local icon = copyButton:CreateTexture(nil, "ARTWORK")
+			icon:SetAllPoints()
+			-- Use a visible copy/document icon - inv_inscription_scroll is a scroll with text
+			local success = false
+			if icon.SetAtlas then
+				success = pcall(function()
+					icon:SetAtlas("Garr_Building-AddFollowerPlus", true)
+				end)
+			end
+			if not success then
+				-- Fallback to scroll with text icon (good for "copy text")
+				icon:SetTexture("Interface\\Icons\\inv_inscription_scroll")
+				icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) -- Slight crop to remove border
+			end
+			copyButton.icon = icon
+			-- Tooltip
+			copyButton:SetScript("OnEnter", function(self)
+				if not GameTooltip then
+					return
+				end
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+				GameTooltip:SetText(t("READER_COPY_BUTTON"), 1, 1, 1)
+				if GameTooltip.AddLine then
+					GameTooltip:AddLine(t("READER_COPY_TOOLTIP_BODY"), nil, nil, nil, true)
+				end
+				GameTooltip:Show()
+			end)
+			copyButton:SetScript("OnLeave", function(self)
+				if GameTooltip then
+					GameTooltip:Hide()
+				end
+			end)
+			copyButton:SetScript("OnClick", function()
+				-- Delegate to Copy module
+				local ReaderCopy = BookArchivist
+					and BookArchivist.UI
+					and BookArchivist.UI.Reader
+					and BookArchivist.UI.Reader.Copy
+				if ReaderCopy and ReaderCopy.CopyCurrentBook then
+					ReaderCopy:CopyCurrentBook(ReaderUI.__getSelectedKey)
+				end
+			end)
+		end
+
+		-- Waypoint button (set map waypoint for book location) - icon only
+		local waypointButton = state.waypointButton
+		if not waypointButton or not (waypointButton.IsObjectType and waypointButton:IsObjectType("Button")) then
+			waypointButton = safeCreateFrame("Button", "BookArchivistWaypointButton", actionsRail)
+			state.waypointButton = waypointButton
+			if rememberWidget then
+				rememberWidget("waypointButton", waypointButton)
+			end
+			local size = Metrics.BTN_H or 22
+			if waypointButton.SetSize then
+				waypointButton:SetSize(size, size)
+			end
+			-- Enable mouse clicks
+			waypointButton:EnableMouse(true)
+			waypointButton:RegisterForClicks("LeftButtonUp")
+			-- Create icon texture for waypoint/map pin
+			local icon = waypointButton:CreateTexture(nil, "ARTWORK")
+			icon:SetAllPoints()
+			if icon.SetAtlas then
+				-- Try map pin icon first
+				local success = pcall(function()
+					icon:SetAtlas("Waypoint-MapPin-ChatIcon", true)
+				end)
+				if not success then
+					-- Fallback: poi icon
+					success = pcall(function()
+						icon:SetAtlas("poi-traveldirections-arrow", true)
+					end)
+					if not success then
+						-- Final fallback: location icon
+						icon:SetTexture("Interface\\Minimap\\Tracking\\POIArrow")
+					end
+				end
+			end
+			waypointButton.icon = icon
+			-- Disabled visual state
+			local disabledOverlay = waypointButton:CreateTexture(nil, "OVERLAY")
+			disabledOverlay:SetAllPoints()
+			disabledOverlay:SetColorTexture(0, 0, 0, 0.5)
+			disabledOverlay:Hide()
+			waypointButton.disabledOverlay = disabledOverlay
+			
+			-- Helper to get itemID from entry (stored or extracted from GUID)
+			local function getItemIDFromEntry(entry)
+				if not entry or not entry.source then
+					return nil
+				end
+				-- First try stored itemID
+				if entry.source.itemID then
+					return entry.source.itemID
+				end
+				-- Try to extract from GUID using C_Item API
+				if entry.source.guid and entry.source.objectType == "Item" then
+					if C_Item and C_Item.GetItemIDByGUID then
+						local ok, itemID = pcall(C_Item.GetItemIDByGUID, entry.source.guid)
+						if ok and itemID then
+							return itemID
+						end
+					end
+				end
+				return nil
+			end
+			
+			-- Helper to get Wowhead URL for an entry (object or item)
+			local function getWowheadURL(entry)
+				if not entry or not entry.source then
+					return nil
+				end
+				-- World objects use objectID
+				if entry.source.objectID then
+					return "https://www.wowhead.com/object=" .. entry.source.objectID
+				end
+				-- Inventory items use itemID
+				local itemID = getItemIDFromEntry(entry)
+				if itemID then
+					return "https://www.wowhead.com/item=" .. itemID
+				end
+				return nil
+			end
+			
+			-- Helper to copy Wowhead URL to clipboard and show message
+			local function copyWowheadURL(entry)
+				local BA = getAddon and getAddon()
+				local url = getWowheadURL(entry)
+				if url then
+					local L = BA and BA.L or {}
+					local msg = (L["WAYPOINT_WOWHEAD_COPIED"] or "Wowhead link copied to clipboard:") .. " " .. url
+					if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+						DEFAULT_CHAT_FRAME:AddMessage("|cFF00CCFFBookArchivist:|r " .. msg)
+					end
+					if C_ClipBoard and C_ClipBoard.SetClipboardText then
+						C_ClipBoard:SetClipboardText(url)
+					end
+					return true
+				else
+					local L = BA and BA.L or {}
+					local msg = L["WAYPOINT_WOWHEAD_NO_ITEMID"] or "Item ID not available. Cannot generate Wowhead link."
+					if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+						DEFAULT_CHAT_FRAME:AddMessage("|cFF00CCFFBookArchivist:|r " .. msg)
+					end
+					return false
+				end
+			end
+			
+			-- Tooltip - shows different hints based on available options
+			waypointButton:SetScript("OnEnter", function(self)
+				if not GameTooltip then
+					return
+				end
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+				local BA = getAddon and getAddon()
+				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
+				local entry = nil
+				if BA and BA.Repository and key then
+					local db = BA.Repository:GetDB()
+					if db and db.booksById then
+						entry = db.booksById[key]
+					end
+				end
+				
+				local hasWaypoint = BA and BA.Waypoint and BA.Waypoint.HasValidLocation and entry
+					and BA.Waypoint:HasValidLocation(entry)
+				local wowheadURL = getWowheadURL(entry)
+				local hasWowhead = wowheadURL ~= nil
+				
+				if hasWaypoint and hasWowhead then
+					-- Case: Both waypoint AND Wowhead available
+					GameTooltip:SetText(t("READER_WAYPOINT_BUTTON"), 1, 1, 1)
+					if GameTooltip.AddLine then
+						GameTooltip:AddLine(t("READER_WAYPOINT_TOOLTIP_BODY"), nil, nil, nil, true)
+						-- Show location info
+						if BA.Waypoint.GetLocationDisplayText then
+							local locText = BA.Waypoint:GetLocationDisplayText(entry)
+							if locText and locText ~= "" then
+								GameTooltip:AddLine(" ")
+								GameTooltip:AddLine(locText, 0.7, 0.7, 0.7, true)
+							end
+						end
+						GameTooltip:AddLine(" ")
+						-- Hint for both actions
+						GameTooltip:AddLine(t("READER_WAYPOINT_BOTH_HINT") or "Left-click: Set waypoint | Right-click: Wowhead", 0.3, 0.8, 1, true)
+					end
+				elseif hasWaypoint then
+					-- Case: Only waypoint available (no objectID/itemID for Wowhead)
+					GameTooltip:SetText(t("READER_WAYPOINT_BUTTON"), 1, 1, 1)
+					if GameTooltip.AddLine then
+						GameTooltip:AddLine(t("READER_WAYPOINT_TOOLTIP_BODY"), nil, nil, nil, true)
+						if BA.Waypoint.GetLocationDisplayText then
+							local locText = BA.Waypoint:GetLocationDisplayText(entry)
+							if locText and locText ~= "" then
+								GameTooltip:AddLine(" ")
+								GameTooltip:AddLine(locText, 0.7, 0.7, 0.7, true)
+							end
+						end
+					end
+				elseif hasWowhead then
+					-- Case: No waypoint but Wowhead available
+					GameTooltip:SetText(t("READER_WAYPOINT_MENU_WOWHEAD") or "View on Wowhead", 1, 1, 1)
+					if GameTooltip.AddLine then
+						GameTooltip:AddLine(t("READER_WAYPOINT_WOWHEAD_ONLY") or "Click to view this book's source on Wowhead.", nil, nil, nil, true)
+						-- Explain why no waypoint
+						GameTooltip:AddLine(" ")
+						local isInventoryItem = entry and entry.source and entry.source.kind == "inventory"
+						if isInventoryItem then
+							GameTooltip:AddLine(t("READER_WAYPOINT_INVENTORY_ITEM"), 1, 0.8, 0.3, true)
+						else
+							GameTooltip:AddLine(t("READER_WAYPOINT_UNAVAILABLE"), 1, 0.8, 0.3, true)
+						end
+					end
+				else
+					-- Case: Nothing available
+					GameTooltip:SetText(t("READER_WAYPOINT_BUTTON"), 0.5, 0.5, 0.5)
+					if GameTooltip.AddLine then
+						GameTooltip:AddLine(t("READER_WAYPOINT_UNAVAILABLE"), 1, 0.3, 0.3, true)
+					end
+				end
+				GameTooltip:Show()
+			end)
+			waypointButton:SetScript("OnLeave", function(self)
+				if GameTooltip then
+					GameTooltip:Hide()
+				end
+			end)
+			-- Register for both left and right mouse buttons
+			waypointButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+			waypointButton:SetScript("OnClick", function(self, button)
+				local BA = getAddon and getAddon()
+				if not BA then
+					return
+				end
+				-- Get the current entry
+				local key = ReaderUI.__getSelectedKey and ReaderUI.__getSelectedKey()
+				local entry = nil
+				if BA.Repository and key then
+					local db = BA.Repository:GetDB()
+					if db and db.booksById then
+						entry = db.booksById[key]
+					end
+				end
+				
+				local hasWaypoint = BA.Waypoint and BA.Waypoint.HasValidLocation and entry
+					and BA.Waypoint:HasValidLocation(entry)
+				local wowheadURL = getWowheadURL(entry)
+				local hasWowhead = wowheadURL ~= nil
+				
+				if hasWaypoint and hasWowhead then
+					-- Both options: left = waypoint, right = Wowhead
+					if button == "RightButton" then
+						copyWowheadURL(entry)
+					else
+						-- Left click: set waypoint
+						if BA.Waypoint and BA.Waypoint.SetWaypointForCurrentBook then
+							local success, err = BA.Waypoint:SetWaypointForCurrentBook()
+							if not success and err and BA.DebugPrint then
+								BA:DebugPrint("[Waypoint] " .. err)
+							end
+						end
+					end
+				elseif hasWaypoint then
+					-- Only waypoint: any click sets waypoint
+					if BA.Waypoint and BA.Waypoint.SetWaypointForCurrentBook then
+						local success, err = BA.Waypoint:SetWaypointForCurrentBook()
+						if not success and err and BA.DebugPrint then
+							BA:DebugPrint("[Waypoint] " .. err)
+						end
+					end
+				elseif hasWowhead then
+					-- Only Wowhead: any click copies link
+					copyWowheadURL(entry)
+				end
+				-- If neither available, do nothing
+			end)
+		end
+
+		-- TTS button (text-to-speech) - icon only
+		local ttsButton = state.ttsButton
+		if not ttsButton or not (ttsButton.IsObjectType and ttsButton:IsObjectType("Button")) then
+			ttsButton = safeCreateFrame("Button", "BookArchivistTTSButton", actionsRail)
+			state.ttsButton = ttsButton
+			if rememberWidget then
+				rememberWidget("ttsButton", ttsButton)
+			end
+			local size = Metrics.BTN_H or 22
+			if ttsButton.SetSize then
+				ttsButton:SetSize(size, size)
+			end
+			-- Enable mouse clicks
+			ttsButton:EnableMouse(true)
+			ttsButton:RegisterForClicks("LeftButtonUp")
+			-- Create icon texture for TTS
+			local icon = ttsButton:CreateTexture(nil, "ARTWORK")
+			icon:SetAllPoints()
+			if icon.SetAtlas then
+				-- Use the standard TTS icon
+				local success = pcall(function()
+					icon:SetAtlas("chatframe-button-icon-TTS", true)
+				end)
+				if not success then
+					-- Fallback: speaker icon
+					icon:SetTexture("Interface\\Common\\VoiceChat-Speaker")
+				end
+			end
+			ttsButton.icon = icon
+			-- Playing indicator overlay
+			local playingOverlay = ttsButton:CreateTexture(nil, "OVERLAY")
+			playingOverlay:SetAllPoints()
+			playingOverlay:SetColorTexture(0.3, 0.8, 0.3, 0.3)
+			playingOverlay:Hide()
+			ttsButton.playingOverlay = playingOverlay
+			-- Disabled visual state
+			local disabledOverlay = ttsButton:CreateTexture(nil, "OVERLAY")
+			disabledOverlay:SetAllPoints()
+			disabledOverlay:SetColorTexture(0, 0, 0, 0.5)
+			disabledOverlay:Hide()
+			ttsButton.disabledOverlay = disabledOverlay
+			-- Tooltip
+			ttsButton:SetScript("OnEnter", function(self)
+				if not GameTooltip then
+					return
+				end
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+				local BA = getAddon and getAddon()
+				local isSpeaking = BA and BA.TTS and BA.TTS.IsSpeaking and BA.TTS:IsSpeaking()
+				local isSupported = BA and BA.TTS and BA.TTS.IsSupported and BA.TTS:IsSupported()
+				if not isSupported then
+					GameTooltip:SetText(t("READER_TTS_BUTTON"), 0.5, 0.5, 0.5)
+					if GameTooltip.AddLine then
+						GameTooltip:AddLine(t("READER_TTS_UNAVAILABLE"), 1, 0.3, 0.3, true)
+					end
+				elseif isSpeaking then
+					GameTooltip:SetText(t("READER_TTS_STOP"), 1, 1, 1)
+					if GameTooltip.AddLine then
+						GameTooltip:AddLine(t("READER_TTS_STOP_TOOLTIP"), nil, nil, nil, true)
+					end
+				else
+					GameTooltip:SetText(t("READER_TTS_BUTTON"), 1, 1, 1)
+					if GameTooltip.AddLine then
+						GameTooltip:AddLine(t("READER_TTS_TOOLTIP_BODY"), nil, nil, nil, true)
+					end
+				end
+				GameTooltip:Show()
+			end)
+			ttsButton:SetScript("OnLeave", function(self)
+				if GameTooltip then
+					GameTooltip:Hide()
+				end
+			end)
+			ttsButton:SetScript("OnClick", function(self)
+				local BA = getAddon and getAddon()
+				if not BA or not BA.TTS or not BA.TTS.ToggleCurrentBook then
+					if BA and BA.DebugPrint then
+						BA:DebugPrint("[TTS] Module not available")
+					end
+					return
+				end
+				local started, err = BA.TTS:ToggleCurrentBook()
+				-- Show user-friendly message for common errors
+				if not started and err then
+					if err == "No TTS voices available" then
+						-- Show a helpful message to the user
+						if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+							DEFAULT_CHAT_FRAME:AddMessage("|cFFFFCC00BookArchivist:|r " .. t("TTS_ENABLE_HINT"), 1, 0.82, 0)
+						end
+					elseif BA and BA.DebugPrint then
+						BA:DebugPrint("[TTS] " .. tostring(err))
+					end
+				end
+				-- Update visual
+				if self.playingOverlay then
+					if started then
+						self.playingOverlay:Show()
+					else
+						self.playingOverlay:Hide()
+					end
+				end
+			end)
+			-- Register for TTS events to update button state
+			ttsButton:RegisterEvent("VOICE_CHAT_TTS_PLAYBACK_FINISHED")
+			ttsButton:SetScript("OnEvent", function(self, event)
+				if event == "VOICE_CHAT_TTS_PLAYBACK_FINISHED" then
+					if self.playingOverlay then
+						self.playingOverlay:Hide()
+					end
+				end
+			end)
+		end
+
 		local favoriteBtn = state.favoriteButton
 		if not favoriteBtn or not (favoriteBtn.IsObjectType and favoriteBtn:IsObjectType("Button")) then
 			favoriteBtn = safeCreateFrame("Button", "BookArchivistFavoriteButton", actionsRail)
@@ -851,6 +1266,56 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 				shareButton:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
 			end
 		end
+
+		-- Position copy button to left of share button
+		if copyButton then
+			copyButton:ClearAllPoints()
+			if shareButton then
+				copyButton:SetPoint("RIGHT", shareButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif favoriteBtn then
+				copyButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif deleteButton then
+				copyButton:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			else
+				copyButton:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
+		end
+
+		-- Position waypoint button to left of copy button
+		local waypointButton = state.waypointButton
+		if waypointButton then
+			waypointButton:ClearAllPoints()
+			if copyButton then
+				waypointButton:SetPoint("RIGHT", copyButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif shareButton then
+				waypointButton:SetPoint("RIGHT", shareButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif favoriteBtn then
+				waypointButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif deleteButton then
+				waypointButton:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			else
+				waypointButton:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
+		end
+
+		-- Position TTS button to left of waypoint button
+		local ttsButton = state.ttsButton
+		if ttsButton then
+			ttsButton:ClearAllPoints()
+			if waypointButton then
+				ttsButton:SetPoint("RIGHT", waypointButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif copyButton then
+				ttsButton:SetPoint("RIGHT", copyButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif shareButton then
+				ttsButton:SetPoint("RIGHT", shareButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif favoriteBtn then
+				ttsButton:SetPoint("RIGHT", favoriteBtn, "LEFT", -(Metrics.GAP_S or 4), 0)
+			elseif deleteButton then
+				ttsButton:SetPoint("RIGHT", deleteButton, "LEFT", -(Metrics.GAP_S or 4), 0)
+			else
+				ttsButton:SetPoint("RIGHT", actionsRail, "RIGHT", 0, 0)
+			end
+		end
 	end
 
 	local countTextParent = uiFrame or readerBlock
@@ -892,6 +1357,53 @@ function ReaderUI:Create(uiFrame, anchorFrame)
 			-- to keep this initialization code clean
 		end
 	end
+end
 
-	debugPrint("[BookArchivist] ReaderUI created")
+-- Update header height based on title content
+-- Call this after setting the book title to ensure proper layout
+function ReaderUI.UpdateHeaderHeight()
+	local state = ReaderUI.__state or {}
+	local bookTitle = state.bookTitle
+	local readerHeader = state.readerHeader
+	local echoText = state.echoText
+	local metaDisplay = state.metaDisplay
+	local actionsRail = state.readerActionsRail
+	
+	if not bookTitle or not readerHeader then
+		return
+	end
+	
+	local Metrics = (BookArchivist and BookArchivist.UI and BookArchivist.UI.Metrics) or {}
+	local minHeaderHeight = Metrics.READER_HEADER_H or 54
+	local gap = Metrics.GAP_XS or 2
+	
+	-- Calculate title height (it has word wrap enabled)
+	local titleHeight = bookTitle:GetStringHeight() or 20
+	
+	-- Calculate echo text height if visible
+	local echoHeight = 0
+	if echoText and echoText:IsShown() then
+		echoHeight = (echoText:GetStringHeight() or 0) + gap
+	end
+	
+	-- Calculate meta display height
+	local metaHeight = 0
+	if metaDisplay then
+		metaHeight = (metaDisplay:GetStringHeight() or 0) + gap
+	end
+	
+	-- Total needed height: title + echo + meta + some padding
+	local neededHeight = titleHeight + echoHeight + metaHeight + (gap * 2)
+	
+	-- Use the greater of minimum or needed height
+	local newHeight = math.max(minHeaderHeight, neededHeight)
+	
+	-- Update header height
+	readerHeader:SetHeight(newHeight)
+	
+	-- Update actions rail to match (it's anchored TOP/BOTTOM to header, but ensure it stays right)
+	if actionsRail then
+		-- Actions rail height follows header automatically via anchors
+		-- But we need to make sure buttons stay vertically centered
+	end
 end

@@ -38,8 +38,8 @@ describe("BookArchivist.DB logging", function()
 		assert.are.equal(2, db.dbVersion)
 		assert.is_table(db.booksById)
 		assert.is_table(db.indexes.objectToBookId)
-		assert.truthy(logs[1]:find("Init start"))
-		assert.truthy(logs[#logs]:find("DB init complete"))
+		-- Note: Init start/complete messages removed for cleaner logs
+		-- Just verify DB module works correctly
 	end)
 
 	it("repairs unhealthy databases, runs migrations, and logs summary only once", function()
@@ -96,13 +96,6 @@ describe("BookArchivist.DB logging", function()
 		assert.is_false(first.options.debug)
 		assert.is_false(first.options.uiDebug)
 		assert.are.equal(1, repairCount)
-
-		local summaryLogs = 0
-		for _, msg in ipairs(logs) do
-			if msg:find("DB init complete") then
-				summaryLogs = summaryLogs + 1
-			end
-		end
-		assert.is_true(summaryLogs >= 1)
+		-- Note: verbose logging removed - just verify functionality works
 	end)
 end)
